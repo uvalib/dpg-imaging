@@ -18,3 +18,5 @@ run.sh
 brun.sh
 /scripts
 buildtag.*
+package/scripts/build.ksh
+package/scripts/shell.ksh
