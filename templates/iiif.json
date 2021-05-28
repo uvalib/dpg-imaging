@@ -1,0 +1,44 @@
+{
+   "@context":"http://iiif.io/api/presentation/2/context.json",
+   "@id":"{{.URL}}",
+   "@type":"sc:Manifest",
+   "sequences":[
+      {
+         "startCanvas": "{{.IIIFURL}}/iiif/dl/{{.Unit}}/canvas/c0",
+         "@type":"sc:Sequence",
+         "canvases":[
+            {{- $unit := .Unit -}}
+            {{- $IIIFURL := .IIIFURL -}}
+            {{- range $index, $element := .MasterFiles -}}
+            {{- if $index}},{{end -}}
+            {
+               "@id":"{{$IIIFURL}}/iiif/dl/{{$unit}}/canvas/c{{$index}}",
+               "@type":"sc:Canvas",
+               "thumbnail":"{{$IIIFURL}}/iiif/2/{{$unit}}%2F{{.FileName}}/full/!200,200/0/default.jpg",
+               "width": {{.Width}},
+               "height": {{.Height}},
+               "images":[
+                  {
+                     "@type":"oa:Annotation",
+                     "motivation":"sc:painting",
+                     "resource":{
+                        "@id":"{{$IIIFURL}}/iiif/2/{{$unit}}%2F{{.FileName}}/full/full/0/default.jpg",
+                        "@type":"dcTypes:Image",
+                        "format":"image/jp2",
+                        "width": {{.Width}},
+                        "height": {{.Height}},
+                        "service":{
+                           "@context":"http://iiif.io/api/image/2/context.json",
+                           "@id":"{{$IIIFURL}}/iiif/2/{{$unit}}%2F{{.FileName}}",
+                           "profile":"http://iiif.io/api/image/2/level1.json"
+                        }
+                     },
+                     "on":"{{$IIIFURL}}/iiif/dl/{{$unit}}/canvas/c{{$index}}"
+                  }
+               ]
+            }
+            {{- end}}
+         ]
+      }
+   ]
+}
