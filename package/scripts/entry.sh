@@ -4,7 +4,7 @@
 #
 
 # run the server
-#cd bin; ./circulation -solr $CIRCDATA_SOLR_URL -core $CIRCDATA_SOLR_CORE
+cd bin; ./imagingsvc -url $DPG_SERVICE_URL -images $DPG_IMAGE_PATH -iiif $IIIF_SERVICE_URL -dbhost $DBHOST -dbport $DBPORT -dbname $DBNAME -dbuser $DBUSER -dbpass $DBPASS
 
 # return the status
 exit $?
