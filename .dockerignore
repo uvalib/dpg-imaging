@@ -1,0 +1,6 @@
+.git
+.idea
+env.*
+bin
+tmp
+frontend/node_modules
