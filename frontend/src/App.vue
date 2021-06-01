@@ -7,7 +7,10 @@
             </a>
          </div>
          <div class="site-link">
-            <router-link to="/">DPG Imaging</router-link>
+            <!-- NOTE: tify doesn't currently let you change the manifest. Only way to let users change
+                manifests is to reload the whole app (and therefor tify.js). Using a
+                regular <a href> instead of the router-link does this -->
+           <a href="/">DPG Imaging</a>
          </div>
       </div>
       <router-view />

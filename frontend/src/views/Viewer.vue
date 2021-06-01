@@ -28,8 +28,8 @@ export default {
          stylesheet: '/tify_mods.css',
          title: null,
       }
-      await import ('tify/dist/tify.css')
-      await import ('tify/dist/tify.js')
+      import ('tify/dist/tify.css')
+      import ('tify/dist/tify.js')
    },
    methods: {
    }
