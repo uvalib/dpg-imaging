@@ -18,6 +18,9 @@ export default new Vuex.Store({
          let out = []
          state.masterFiles.forEach( mf => out.push(mf.infoURL) )
          return out
+      },
+      masterFileInfo: state => page => {
+         return state.masterFiles[page]
       }
    },
    mutations: {

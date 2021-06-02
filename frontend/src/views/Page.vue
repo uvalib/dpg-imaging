@@ -3,6 +3,20 @@
       <WaitSpinner v-if="working" :overlay="true" message="Loading viewer..." />
       <template v-else>
          <div id="iiif-toolbar" class="toolbar">
+            <div class="info">
+               <div class="line">
+                  <label>File Name:</label>
+                  <span class="data">{{currMasterFile.fileName}}</span>
+               </div>
+               <div class="line">
+                  <label>Title:</label>
+                  <span class="data">{{currMasterFile.title}}</span>
+               </div>
+               <div class="line">
+                  <label>Caption:</label>
+                  <span class="data">{{currMasterFile.description}}</span>
+               </div>
+            </div>
             <span class="toolbar-button group back">
                <i class="fas fa-angle-double-left back-button"></i>
                <router-link :to="`/unit/${currUnit}`">Back to Unit</router-link>
@@ -36,7 +50,11 @@ export default {
       }),
       ...mapGetters([
         'pageInfoURLs',
-      ])
+        'masterFileInfo'
+      ]),
+      currMasterFile() {
+         return this.masterFileInfo( this.page-1)
+      }
    },
    data() {
       return {
@@ -74,6 +92,7 @@ export default {
          })
          this.viewer.addHandler("page", (data) => {
             this.page = data.page + 1
+            this.$router.replace(`/unit/${this.currUnit}/page/${this.page}`)
          })
       })
    },
@@ -89,6 +108,26 @@ export default {
       padding: 10px;
       background: var(--uvalib-grey-light);
       position: relative;
+      border-bottom: 1px solid var(--uvalib-grey);
+
+      .info {
+         text-align: left;
+         padding-bottom: 10px;
+         margin-bottom: 10px;
+         border-bottom: 1px solid var(--uvalib-grey);
+         .line {
+            label {
+               font-weight: bold;
+               width: 100px;
+               text-align: right;
+               display: inline-block;
+            }
+            .data {
+               margin-left: 10px;
+            }
+            padding: 3px 0;
+         }
+      }
 
       .group {
          display: inline-block;
@@ -109,7 +148,7 @@ export default {
       .back {
          position: absolute;
          left: 10px;
-         top: 7px;
+         bottom: 7px;
          a {
             text-decoration: none;
             color: var(--uvalib-text);
@@ -121,7 +160,7 @@ export default {
       .zoom {
          position: absolute;
          right: 10px;
-         top: 12px;
+         bottom: 12px;
       }
    }
 }
