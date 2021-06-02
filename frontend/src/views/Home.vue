@@ -5,8 +5,8 @@
       <template v-else>
          <p>Please select a unit from the list below</p>
          <ul class="units">
-            <li v-for="unit in units" :key="unit" @click="unitClicked(unit)">
-               {{unit}}
+            <li v-for="unit in units" :key="unit">
+               <router-link :to="`/unit/${unit}`">{{unit}}</router-link>
             </li>
          </ul>
       </template>
@@ -26,9 +26,6 @@ export default {
       })
    },
    methods: {
-      unitClicked( unit ) {
-         this.$router.push(`/view/${unit}`)
-      }
    },
    created() {
       this.$store.dispatch("getUnits")
@@ -53,8 +50,12 @@ export default {
       li {
          padding: 5px 0;
          cursor: pointer;
-         &:hover {
-            text-decoration: underline;
+         a {
+            color: var(--uvalib-text);
+            text-decoration: none;
+            &:hover {
+               text-decoration: underline;
+            }
          }
       }
 

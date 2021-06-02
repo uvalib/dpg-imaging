@@ -1,7 +1,8 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
-import Viewer from '../views/Viewer.vue'
+import Unit from '../views/Unit.vue'
+import Page from '../views/Page.vue'
 import NotFound from '../views/NotFound.vue'
 
 Vue.use(VueRouter)
@@ -13,9 +14,14 @@ const routes = [
       component: Home
    },
    {
-      path: '/view/:unit',
-      name: 'viewer',
-      component: Viewer
+      path: '/unit/:unit',
+      name: 'unit',
+      component: Unit
+   },
+   {
+      path: '/unit/:unit/page/:page',
+      name: 'page',
+      component: Page
    },
    {
       path: "*",

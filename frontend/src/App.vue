@@ -1,6 +1,6 @@
 <template>
    <div id="app">
-      <div class="header" role="banner">
+      <div class="header" role="banner" id="uva-header">
          <div class="library-link">
             <a target="_blank" href="https://library.virginia.edu">
                <UvaLibraryLogo />
