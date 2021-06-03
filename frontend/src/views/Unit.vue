@@ -24,7 +24,7 @@
                <td>{{mf.title}}</td>
                <td>{{mf.description}}</td>
                <td>{{mf.colorProfile}}</td>
-               <td>{{mf.path}}/{{mf.fileName}}</td>
+               <td>{{mf.path}}</td>
             </tr>
          </table>
       </template>

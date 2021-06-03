@@ -28,7 +28,9 @@
             </span>
             <span class="zoom group">
                <span id="zoom-in" title="Zoom in" class="toolbar-button"><i class="fas fa-search-plus"></i></span>
+               <span class="page">{{Math.round(zoom*100)}} %</span>
                <span id="zoom-out" title="Zoom in" class="toolbar-button"><i class="fas fa-search-minus"></i></span>
+               <span id="actual-size" title="Reset view" @click="viewActualSize" class="full toolbar-button">1:1</span>
                <span id="home" title="Reset view" class="toolbar-button"><i class="fas fa-home"></i></span>
                <span id="full-page" title="Full Screen" class="toolbar-button"><i class="fas fa-expand"></i></span>
             </span>
@@ -59,7 +61,13 @@ export default {
    data() {
       return {
         viewer: null,
-        page: 1
+        page: 1,
+        zoom: 50
+      }
+   },
+   methods: {
+      viewActualSize() {
+         this.viewer.viewport.zoomTo(this.viewer.viewport.imageToViewportZoom(1.0))
       }
    },
    async created() {
@@ -77,9 +85,10 @@ export default {
             showNavigator: true,
             sequenceMode: true,
             preserveViewport: true,
-            visibilityRatio:    1,
+            autoResize: true,
+            visibilityRatio: 1,
             imageSmoothingEnabled: false,
-            maxZoomLevel: 2,
+            maxZoomPixelRatio: 2.0,
             navigatorPosition: "BOTTOM_RIGHT",
             zoomInButton:   "zoom-in",
             zoomOutButton:  "zoom-out",
@@ -94,9 +103,10 @@ export default {
             this.page = data.page + 1
             this.$router.replace(`/unit/${this.currUnit}/page/${this.page}`)
          })
+         this.viewer.addHandler("zoom", (data) => {
+            this.zoom = this.viewer.viewport.viewportToImageZoom(data.zoom)
+         })
       })
-   },
-   methods: {
    }
 }
 </script>
@@ -138,6 +148,10 @@ export default {
          padding: 5px 10px;
          display: inline-block;
          position: relative;
+         cursor: pointer;
+         &:hover {
+            text-decoration: underline;
+         }
       }
       .back-button {
          padding: 5px 10px 5px 0;

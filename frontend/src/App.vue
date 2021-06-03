@@ -100,10 +100,9 @@ export default {
    justify-content: space-between;
    align-content: stretch;
    align-items: center;
-   height: 100px;
 }
 div.library-link {
-   width: 280px;
+   width: 220px;
    order: 0;
    flex: 0 1 auto;
    align-self: flex-start;

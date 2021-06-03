@@ -29,7 +29,6 @@ func main() {
 	router.GET("/healthcheck", svc.healthCheck)
 	api := router.Group("/api")
 	{
-		api.GET("/iiif/:unit", svc.getIIIFManifest)
 		api.GET("/units", svc.getUnits)
 		api.GET("/units/:dir", svc.getMasterFiles)
 	}
