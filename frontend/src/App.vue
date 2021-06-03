@@ -65,12 +65,6 @@ export default {
    --uvalib-text-light: #ffffff;
    --uvalib-text: var(--uvalib-grey-dark);
    --uvalib-text-dark: var(--uvalib-grey-darkest);
-   --uvalib-accessibility-highlight: var(--uvalib-brand-blue-light);
-   --color-primary-orange: var(--uvalib-brand-orange);
-   --color-link: var(--uvalib-blue-alt-dark);
-   --color-link-darker: var(--uvalib-blue-alt-dark);
-   --color-primary-text: var(--uvalib-grey-dark);
-   --color-error: var(--uvalib-red-emergency);
 }
 
 #app {

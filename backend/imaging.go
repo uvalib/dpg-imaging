@@ -91,7 +91,7 @@ func (svc *serviceContext) getMasterFiles(c *gin.Context) {
 
 				pathID := strings.Replace(relPath, "/", "%2F", -1)
 				mf.ThumbURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/30,/0/default.jpg", svc.IIIFURL, pathID, fName)
-				mf.MediumURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/200,/0/default.jpg", svc.IIIFURL, pathID, fName)
+				mf.MediumURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/250,/0/default.jpg", svc.IIIFURL, pathID, fName)
 				mf.LargeURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/400,/0/default.jpg", svc.IIIFURL, pathID, fName)
 				mf.InfoURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/info.json", svc.IIIFURL, pathID, fName)
 

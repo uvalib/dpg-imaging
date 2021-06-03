@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import axios from 'axios'
+import { getField, updateField } from 'vuex-map-fields'
 
 Vue.use(Vuex)
 
@@ -11,9 +12,11 @@ export default new Vuex.Store({
       errorMessage: "",
       units: [],
       currUnit: "",
-      masterFiles: []
+      masterFiles: [],
+      viewMode: "list"
    },
    getters: {
+      getField,
       pageInfoURLs: state => {
          let out = []
          state.masterFiles.forEach( mf => out.push(mf.infoURL) )
@@ -24,6 +27,7 @@ export default new Vuex.Store({
       }
    },
    mutations: {
+      updateField,
       setWorking(state, flag) {
          state.working = flag
          if (flag == true ) {
