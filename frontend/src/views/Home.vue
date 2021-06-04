@@ -1,7 +1,7 @@
 <template>
    <div class="home">
       <h2>Welcome to the DPG Imaging Service</h2>
-      <WaitSpinner v-if="working" :overlay="true" message="Loading units..." />
+      <WaitSpinner v-if="loading" :overlay="true" message="Loading units..." />
       <template v-else>
          <p>Please select a unit from the list below</p>
          <ul class="units">
@@ -21,7 +21,7 @@ export default {
    },
    computed: {
       ...mapState({
-         working : state => state.working,
+         loading : state => state.loading,
          units : state => state.units,
       })
    },

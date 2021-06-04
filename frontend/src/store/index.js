@@ -7,7 +7,8 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
    state: {
-      working: false,
+      loading: false,
+      updating: false,
       error: false,
       errorMessage: "",
       units: [],
@@ -28,8 +29,14 @@ export default new Vuex.Store({
    },
    mutations: {
       updateField,
-      setWorking(state, flag) {
-         state.working = flag
+      setLoading(state, flag) {
+         state.loading = flag
+         if (flag == true ) {
+            state.error = false
+         }
+      },
+      setUpdating(state, flag) {
+         state.updating = flag
          if (flag == true ) {
             state.error = false
          }
@@ -51,29 +58,55 @@ export default new Vuex.Store({
          masterFiles.forEach( mf =>{
             ctx.masterFiles.push(mf)
          })
+      },
+      updateMetadata( ctx, data) {
+         // data is an array of {file, title, description}
+         data.forEach( d => {
+            let mfIdx = ctx.masterFiles.findIndex( mf => mf.fileName == d.file)
+            if (mfIdx > -1) {
+               let mf = ctx.masterFiles[mfIdx]
+               mf.title = d.title
+               mf.description = d.description
+               ctx.masterFiles.splice(mfIdx,1, mf)
+            }
+         })
       }
    },
    actions: {
       getUnits(ctx) {
-         ctx.commit("setWorking", true)
+         ctx.commit("setLoading", true)
          axios.get("/api/units").then(response => {
             ctx.commit('setUnits', response.data)
-            ctx.commit("setWorking", false)
+            ctx.commit("setLoading", false)
          }).catch( e => {
             ctx.commit('setFailed', e)
-            ctx.commit("setWorking", false)
+            ctx.commit("setLoading", false)
          })
       },
       async getMasterFiles(ctx, unit) {
-         if (ctx.currUnit == unit && ctx.masterFiles.length > 0) return
+         if (ctx.state.currUnit == unit && ctx.state.masterFiles.length > 0) return
 
-         ctx.commit("setWorking", true)
+         ctx.commit("setLoading", true)
          return axios.get(`/api/units/${unit}`).then(response => {
             ctx.commit('setMasterFiles', {unit: unit, masterFiles: response.data})
-            ctx.commit("setWorking", false)
+            ctx.commit("setLoading", false)
          }).catch( e => {
             ctx.commit('setFailed', e)
-            ctx.commit("setWorking", false)
+            ctx.commit("setLoading", false)
+         })
+      },
+
+      // FIXME this doesn't work with box/folder structure. The path is not included in filename
+      updateMetadata(ctx, {file, title, description}) {
+         ctx.commit("setUpdating", true)
+         let data = [{file: file, title: title, description: description}]
+         axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
+            ctx.commit('updateMetadata', data )
+            ctx.commit("setUpdating", false)
+         }).catch( e => {
+            ctx.commit('setFailed', e)
+            ctx.commit("setUpdating", false)
+            // TODO show error!!
          })
       }
    },

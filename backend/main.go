@@ -31,6 +31,7 @@ func main() {
 	{
 		api.GET("/units", svc.getUnits)
 		api.GET("/units/:dir", svc.getMasterFiles)
+		api.POST("/units/:dir/update", svc.updateMetadata)
 	}
 
 	// Note: in dev mode, this is never actually used. The front end is served

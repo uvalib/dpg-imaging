@@ -130,6 +130,45 @@ func (svc *serviceContext) getMasterFiles(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+func (svc *serviceContext) updateMetadata(c *gin.Context) {
+	dir := c.Param("dir")
+	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, dir)
+	log.Printf("INFO: update master file metadata in %s", unitDir)
+
+	var mdPost []struct {
+		FileName    string `json:"file"`
+		Title       string `json:"title"`
+		Description string `json:"description"`
+	}
+
+	qpErr := c.ShouldBindJSON(&mdPost)
+	if qpErr != nil {
+		log.Printf("ERROR: invalid updateMetadata payload: %v", qpErr)
+		c.String(http.StatusBadRequest, "Invalid request")
+		return
+	}
+
+	for _, change := range mdPost {
+		mfPath := fmt.Sprintf("%s/%s", unitDir, change.FileName)
+		titleEdit := fmt.Sprintf("-iptc:headline=%s", change.Title)
+		descEdit := fmt.Sprintf("-iptc:caption-abstract=%s", change.Description)
+		log.Printf("INFO: exiftool %s %s %s", titleEdit, descEdit, mfPath)
+		_, err := exec.Command("exiftool", titleEdit, descEdit, mfPath).Output()
+		if err != nil {
+			log.Printf("ERROR: unable to update %s metadata: %s", mfPath, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		dupPath := fmt.Sprintf("%s/%s_original", unitDir, change.FileName)
+		removeErr := os.Remove(dupPath)
+		if removeErr != nil {
+			log.Printf("WARNING: unable to remove backup file %s:%s", dupPath, removeErr.Error())
+		}
+	}
+
+	c.String(http.StatusOK, "updated")
+}
+
 func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int) {
 	currIdx := startIdx
 	stdout, err := exec.Command("exiftool", cmdArray...).Output()

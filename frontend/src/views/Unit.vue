@@ -1,6 +1,9 @@
 <template>
    <div class="unit">
-      <WaitSpinner v-if="working" :overlay="true" message="Loading master file..." />
+      <WaitSpinner v-if="updating" :overlay="true" message="Updating data..." />
+      <div class="load" v-if="loading">
+         <WaitSpinner v-if="loading" message="Loading master file..." />
+      </div>
       <template v-else>
          <h2>Unit {{currUnit}}</h2>
          <div class="toolbar">
@@ -43,21 +46,36 @@
                </router-link>
                <div class="metadata">
                   <div class="row">
+                     <i tabindex="0" @click="editMetadata(mf)" class="edit-md fas fa-edit" v-if="!isEditing(mf)"></i>
                      <label>File Name</label>
                      <div class="data">{{mf.fileName}}</div>
                   </div>
                   <div class="row">
                      <label>Title</label>
                      <div class="data">
-                        <template v-if="mf.title">{{mf.title}}</template>
-                        <span v-else class="undefined">Undefined</span>
+                        <template v-if="isEditing(mf)">
+                           <input id="edit-title" type="text" v-model="newTitle"  @keyup.enter="submitEdit(mf)" />
+                        </template>
+                        <template v-else>
+                           <template v-if="mf.title">{{mf.title}}</template>
+                           <span v-else class="undefined">Undefined</span>
+                        </template>
                      </div>
                   </div>
                   <div class="row">
                      <label>Caption</label>
                      <div class="data">
-                        <template v-if="mf.title">{{mf.description}}</template>
-                        <span v-else class="undefined">Undefined</span>
+                        <template v-if="isEditing(mf)">
+                           <input id="edit-desc" type="text" v-model="newDescription" @keyup.enter="submitEdit(mf)" />
+                        </template>
+                        <template v-else>
+                           <template v-if="mf.title">{{mf.description}}</template>
+                           <span v-else class="undefined">Undefined</span>
+                        </template>
+                     </div>
+                     <div class="edit-ctls">
+                        <i tabindex="0" @click="cancelEdit" class="cancel fas fa-times-circle" v-if="isEditing(mf)"></i>
+                        <i tabindex="0" @click="submitEdit(mf)" class="accept fas fa-check-circle" v-if="isEditing(mf)"></i>
                      </div>
                   </div>
                </div>
@@ -70,11 +88,14 @@
 <script>
 import { mapState } from "vuex"
 import { mapFields } from 'vuex-map-fields'
+import WaitSpinner from '../components/WaitSpinner.vue'
 export default {
+   components: { WaitSpinner },
    name: "unit",
    computed: {
       ...mapState({
-         working : state => state.working,
+         loading : state => state.loading,
+         updating : state => state.updating,
          masterFiles : state => state.masterFiles,
          currUnit: state => state.currUnit
       }),
@@ -82,10 +103,37 @@ export default {
          'viewMode'
       ]),
    },
+   data() {
+      return {
+        editMF: null,
+        newTitle: "",
+        newDescription: ""
+      }
+   },
    created() {
       this.$store.dispatch("getMasterFiles", this.$route.params.unit)
    },
    methods: {
+      isEditing(mf) {
+         return this.editMF == mf
+      },
+      editMetadata(mf) {
+         this.editMF = mf
+         this.newTitle = mf.title
+         this.newDescription = mf.description
+         this.$nextTick( ()=> {
+            let ele = document.getElementById("edit-title")
+            ele.focus()
+            ele.select()
+         })
+      },
+      cancelEdit() {
+         this.editMF = null
+      },
+      submitEdit(mf) {
+         this.editMF = null
+         this.$store.dispatch("updateMetadata", {file: mf.fileName, title: this.newTitle, description: this.newDescription})
+      }
    }
 }
 </script>
@@ -93,6 +141,9 @@ export default {
 <style lang="scss">
 .unit {
    padding: 0;
+   .load {
+      margin-top: 10%;
+   }
    h2 {
       color: var(--uvalib-brand-orange);
       margin-bottom: 25px;
@@ -119,7 +170,41 @@ export default {
       justify-content: space-evenly;
       background: #e5e5e5;
 
+      .edit-md {
+         float: right;
+         cursor: pointer;
+         font-size: 1.25em;
+         font-weight: bold;
+         &:hover {
+            color: var(--uvalib-blue-alt);
+         }
+      }
+      .edit-ctls {
+         position: relative;
+         top: 10px;
+         right: -5px;
+         font-size: 1.25em;
+         text-align: right;
+         i {
+            display: inline-block;
+         }
+         .cancel {
+            color: var(--uvalib-red-darker);
+            margin-right: 5px;
+            &:hover {
+               color: var(--uvalib-red-emergency);
+            }
+         }
+         .accept {
+            color: var(--uvalib-green-dark);
+            &:hover {
+               color: var(--uvalib-green-lightest);
+            }
+         }
+      }
+
       div.card {
+         position: relative;
          border: 1px solid var(--uvalib-grey-light);
          padding: 10px;
          display: inline-block;
@@ -140,18 +225,43 @@ export default {
                font-weight: normal;
                text-align: left;
             }
+            input {
+               box-sizing: border-box;
+               width:100%;
+               border-radius: 3px;
+               padding: 3px 5px;
+               border: 1px solid var(--uvalib-grey-light);
+            }
             .undefined {
                font-style: italic;
                color: var(--uvalib-grey);
             }
          }
+         img {
+            background-image: url('~@/assets/dots.gif');
+            background-repeat:no-repeat;
+            background-position: center center;
+            background-color: #f5f5f5;
+         }
       }
    }
-   div.gallery.medium .card .metadata .data  {
-      max-width: 230px;
+   div.gallery.medium {
+      .card .metadata .data  {
+         max-width: 230px;
+      }
+      img {
+         min-width: 250px;
+         min-height: 390px;
+      }
    }
-   div.gallery.large .card .metadata .data  {
-      max-width: 380px;
+   div.gallery.large {
+      .card .metadata .data  {
+         max-width: 380px;
+      }
+      img {
+         min-width: 400px;
+         min-height: 590px;
+      }
    }
    table.unit-list {
       border-collapse: collapse;

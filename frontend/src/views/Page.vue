@@ -1,6 +1,6 @@
 <template>
    <div class="viewer">
-      <WaitSpinner v-if="working" :overlay="true" message="Loading viewer..." />
+      <WaitSpinner v-if="loading" :overlay="true" message="Loading viewer..." />
       <template v-else>
          <div id="iiif-toolbar" class="toolbar">
             <div class="info">
@@ -47,7 +47,7 @@ export default {
    name: "Page",
    computed: {
       ...mapState({
-         working : state => state.working,
+         loading : state => state.loading,
          currUnit: state => state.currUnit
       }),
       ...mapGetters([
