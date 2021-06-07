@@ -53,7 +53,7 @@ div.spinner-overlay {
    width: 100%;
    height: 100%;
    z-index: 1000;
-   background: rgba(196,196,196,0.5);
+   background: rgba(0,0,0,0.3);
    div.spinner {
       border: 1px solid var(--uvalib-grey);
       box-shadow:  0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);

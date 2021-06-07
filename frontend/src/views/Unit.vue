@@ -1,6 +1,6 @@
 <template>
    <div class="unit">
-      <WaitSpinner v-if="updating" :overlay="true" message="Updating data..." />
+      <WaitSpinner v-if="updating && viewMode != 'list'" :overlay="true" message="Updating data..." />
       <div class="load" v-if="loading">
          <WaitSpinner v-if="loading" message="Loading master file..." />
       </div>
@@ -32,8 +32,16 @@
                <td>{{mf.fileName}}</td>
                <td>{{mf.fileType}}</td>
                <td>{{mf.resolution}}</td>
-               <td>{{mf.title}}</td>
-               <td>{{mf.description}}</td>
+               <td @click="editMetadata(mf, 'title')" class="editable">
+                  <span  v-if="!isEditing(mf, 'title')"  class="editable">{{mf.title}}</span>
+                  <input v-else id="edit-title" type="text" v-model="newTitle"
+                     @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
+               </td>
+               <td @click="editMetadata(mf, 'description')" class="editable" >
+                  <span  v-if="!isEditing(mf, 'description')" class="editable">{{mf.description}}</span>
+                  <input v-else id="edit-desc" type="text" v-model="newDescription"
+                     @keyup.enter="submitEdit(mf)"  @keyup.esc="cancelEdit" />
+               </td>
                <td>{{mf.colorProfile}}</td>
                <td>{{mf.path}}</td>
             </tr>
@@ -46,15 +54,14 @@
                </router-link>
                <div class="metadata">
                   <div class="row">
-                     <i tabindex="0" @click="editMetadata(mf)" class="edit-md fas fa-edit" v-if="!isEditing(mf)"></i>
                      <label>File Name</label>
                      <div class="data">{{mf.fileName}}</div>
                   </div>
                   <div class="row">
                      <label>Title</label>
-                     <div class="data">
-                        <template v-if="isEditing(mf)">
-                           <input id="edit-title" type="text" v-model="newTitle"  @keyup.enter="submitEdit(mf)" />
+                     <div class="data editable" @click="editMetadata(mf, 'title')">
+                        <template v-if="isEditing(mf, 'title')">
+                           <input id="edit-title" type="text" v-model="newTitle"  @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
                         </template>
                         <template v-else>
                            <template v-if="mf.title">{{mf.title}}</template>
@@ -64,18 +71,14 @@
                   </div>
                   <div class="row">
                      <label>Caption</label>
-                     <div class="data">
-                        <template v-if="isEditing(mf)">
-                           <input id="edit-desc" type="text" v-model="newDescription" @keyup.enter="submitEdit(mf)" />
+                     <div class="data editable" @click="editMetadata(mf, 'description')">
+                        <template v-if="isEditing(mf, 'description')">
+                           <input id="edit-desc" type="text" v-model="newDescription" @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
                         </template>
                         <template v-else>
-                           <template v-if="mf.title">{{mf.description}}</template>
+                           <template v-if="mf.description">{{mf.description}}</template>
                            <span v-else class="undefined">Undefined</span>
                         </template>
-                     </div>
-                     <div class="edit-ctls">
-                        <i tabindex="0" @click="cancelEdit" class="cancel fas fa-times-circle" v-if="isEditing(mf)"></i>
-                        <i tabindex="0" @click="submitEdit(mf)" class="accept fas fa-check-circle" v-if="isEditing(mf)"></i>
                      </div>
                   </div>
                </div>
@@ -107,22 +110,27 @@ export default {
       return {
         editMF: null,
         newTitle: "",
-        newDescription: ""
+        newDescription: "",
+        editField: ""
       }
    },
    created() {
       this.$store.dispatch("getMasterFiles", this.$route.params.unit)
    },
    methods: {
-      isEditing(mf) {
-         return this.editMF == mf
+      isEditing(mf, field = "all") {
+         return this.editMF == mf && this.editField == field
       },
-      editMetadata(mf) {
+      editMetadata(mf, field) {
          this.editMF = mf
          this.newTitle = mf.title
          this.newDescription = mf.description
+         this.editField = field
          this.$nextTick( ()=> {
             let ele = document.getElementById("edit-title")
+            if ( field == "description") {
+               ele = document.getElementById("edit-desc")
+            }
             ele.focus()
             ele.select()
          })
@@ -132,7 +140,7 @@ export default {
       },
       submitEdit(mf) {
          this.editMF = null
-         this.$store.dispatch("updateMetadata", {file: mf.fileName, title: this.newTitle, description: this.newDescription})
+         this.$store.dispatch("updateMetadata", {file: mf.path, title: this.newTitle, description: this.newDescription})
       }
    }
 }
@@ -225,13 +233,6 @@ export default {
                font-weight: normal;
                text-align: left;
             }
-            input {
-               box-sizing: border-box;
-               width:100%;
-               border-radius: 3px;
-               padding: 3px 5px;
-               border: 1px solid var(--uvalib-grey-light);
-            }
             .undefined {
                font-style: italic;
                color: var(--uvalib-grey);
@@ -266,11 +267,12 @@ export default {
    table.unit-list {
       border-collapse: collapse;
       width: 100%;
+      font-size: 0.9em;
       th {
          background-color: var(--uvalib-grey-lightest);
       }
       th,td {
-         padding: 5px 10px;
+         padding: 5px;
          text-align: left;
          border-bottom: 1px solid var(--uvalib-grey-lightest);
       }
@@ -285,6 +287,20 @@ export default {
             background:var(  --uvalib-grey-lightest);
          }
       }
+   }
+   .editable {
+      cursor: pointer;
+      &:hover {
+         text-decoration: underline;
+         color: var(--uvalib-blue-alt) !important;
+      }
+   }
+   input {
+      box-sizing: border-box;
+      width:100%;
+      border-radius: 3px;
+      padding: 3px 5px;
+      border: 1px solid var(--uvalib-grey-light);
    }
 }
 </style>

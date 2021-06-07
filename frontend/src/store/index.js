@@ -62,7 +62,7 @@ export default new Vuex.Store({
       updateMetadata( ctx, data) {
          // data is an array of {file, title, description}
          data.forEach( d => {
-            let mfIdx = ctx.masterFiles.findIndex( mf => mf.fileName == d.file)
+            let mfIdx = ctx.masterFiles.findIndex( mf => mf.path == d.file)
             if (mfIdx > -1) {
                let mf = ctx.masterFiles[mfIdx]
                mf.title = d.title
@@ -96,7 +96,6 @@ export default new Vuex.Store({
          })
       },
 
-      // FIXME this doesn't work with box/folder structure. The path is not included in filename
       updateMetadata(ctx, {file, title, description}) {
          ctx.commit("setUpdating", true)
          let data = [{file: file, title: title, description: description}]

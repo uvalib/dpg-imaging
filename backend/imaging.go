@@ -33,14 +33,14 @@ type masterFileInfo struct {
 }
 
 type exifData struct {
-	ColorProfile string `json:"ICCProfileName"`
-	FileSize     string `json:"FileSize"`
-	FileType     string `json:"FileType"`
-	Resolution   int    `json:"XResolution"`
-	Title        string `json:"Headline"`
-	Description  string `json:"Caption-Abstract"`
-	Width        int    `json:"ImageWidth"`
-	Height       int    `json:"ImageHeight"`
+	ColorProfile string      `json:"ICCProfileName"`
+	FileSize     string      `json:"FileSize"`
+	FileType     string      `json:"FileType"`
+	Resolution   int         `json:"XResolution"`
+	Title        interface{} `json:"Headline"`
+	Description  interface{} `json:"Caption-Abstract"`
+	Width        int         `json:"ImageWidth"`
+	Height       int         `json:"ImageHeight"`
 }
 
 func (svc *serviceContext) getUnits(c *gin.Context) {
@@ -95,7 +95,6 @@ func (svc *serviceContext) getMasterFiles(c *gin.Context) {
 				mf.LargeURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/400,/0/default.jpg", svc.IIIFURL, pathID, fName)
 				mf.InfoURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/info.json", svc.IIIFURL, pathID, fName)
 
-				log.Printf("%+v", mf)
 				out = append(out, &mf)
 			}
 		}
@@ -136,7 +135,7 @@ func (svc *serviceContext) updateMetadata(c *gin.Context) {
 	log.Printf("INFO: update master file metadata in %s", unitDir)
 
 	var mdPost []struct {
-		FileName    string `json:"file"`
+		File        string `json:"file"`
 		Title       string `json:"title"`
 		Description string `json:"description"`
 	}
@@ -149,17 +148,16 @@ func (svc *serviceContext) updateMetadata(c *gin.Context) {
 	}
 
 	for _, change := range mdPost {
-		mfPath := fmt.Sprintf("%s/%s", unitDir, change.FileName)
 		titleEdit := fmt.Sprintf("-iptc:headline=%s", change.Title)
 		descEdit := fmt.Sprintf("-iptc:caption-abstract=%s", change.Description)
-		log.Printf("INFO: exiftool %s %s %s", titleEdit, descEdit, mfPath)
-		_, err := exec.Command("exiftool", titleEdit, descEdit, mfPath).Output()
+		log.Printf("INFO: exiftool %s %s %s", titleEdit, descEdit, change.File)
+		_, err := exec.Command("exiftool", titleEdit, descEdit, change.File).Output()
 		if err != nil {
-			log.Printf("ERROR: unable to update %s metadata: %s", mfPath, err.Error())
+			log.Printf("ERROR: unable to update %s metadata: %s", change.File, err.Error())
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-		dupPath := fmt.Sprintf("%s/%s_original", unitDir, change.FileName)
+		dupPath := fmt.Sprintf("%s_original", change.File)
 		removeErr := os.Remove(dupPath)
 		if removeErr != nil {
 			log.Printf("WARNING: unable to remove backup file %s:%s", dupPath, removeErr.Error())
@@ -181,12 +179,20 @@ func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int) {
 			log.Printf("WARNING: unable to parse metadata: %s", err.Error())
 		} else {
 			for _, md := range parsed {
+				title := ""
+				if md.Title != nil {
+					title = fmt.Sprintf("%v", md.Title)
+				}
+				desc := ""
+				if md.Description != nil {
+					desc = fmt.Sprintf("%v", md.Description)
+				}
 				files[currIdx].ColorProfile = md.ColorProfile
-				files[currIdx].Description = md.Description
+				files[currIdx].Description = desc
 				files[currIdx].FileSize = md.FileSize
 				files[currIdx].FileType = md.FileType
 				files[currIdx].Resolution = md.Resolution
-				files[currIdx].Title = md.Title
+				files[currIdx].Title = title
 				files[currIdx].Width = md.Width
 				files[currIdx].Height = md.Height
 				currIdx++

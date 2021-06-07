@@ -1,22 +1,39 @@
 <template>
    <div class="viewer">
-      <WaitSpinner v-if="loading" :overlay="true" message="Loading viewer..." />
+      <WaitSpinner v-if="updating" :overlay="true" message="Updating data..." />
+       <div class="load" v-if="loading">
+         <WaitSpinner v-if="loading" message="Loading viewer..." />
+      </div>
       <template v-else>
          <div id="iiif-toolbar" class="toolbar">
-            <div class="info">
-               <div class="line">
-                  <label>File Name:</label>
-                  <span class="data">{{currMasterFile.fileName}}</span>
-               </div>
-               <div class="line">
-                  <label>Title:</label>
-                  <span class="data">{{currMasterFile.title}}</span>
-               </div>
-               <div class="line">
-                  <label>Caption:</label>
-                  <span class="data">{{currMasterFile.description}}</span>
-               </div>
-            </div>
+            <table class="info">
+               <tr class="line">
+                  <td class="label">File Name:</td>
+                  <td class="data">{{currMasterFile.fileName}}</td>
+               </tr>
+               <tr class="line">
+                  <td class="label">Title:</td>
+                  <td class="data editable" @click="editMetadata('title')" >
+                     <input  v-if="isEditing('title')" id="edit-title" type="text" v-model="newTitle"
+                        @keyup.enter="submitEdit()" @keyup.esc="cancelEdit" />
+                     <template v-else>
+                        <span  v-if="currMasterFile.title">{{currMasterFile.title}}</span>
+                        <span v-else class="undefined editable">Undefined</span>
+                     </template>
+                  </td>
+               </tr>
+               <tr class="line">
+                  <td class="label">Caption:</td>
+                  <td class="data editable" @click="editMetadata('description')" >
+                     <input  v-if="isEditing('description')" id="edit-desc" type="text" v-model="newDescription"
+                        @keyup.enter="submitEdit()" @keyup.esc="cancelEdit" />
+                     <template v-else>
+                        <span v-if="currMasterFile.description">{{currMasterFile.description}}</span>
+                        <span v-else class="undefined editable">Undefined</span>
+                     </template>
+                  </td>
+               </tr>
+            </table>
             <span class="toolbar-button group back">
                <i class="fas fa-angle-double-left back-button"></i>
                <router-link :to="`/unit/${currUnit}`">Back to Unit</router-link>
@@ -48,6 +65,7 @@ export default {
    computed: {
       ...mapState({
          loading : state => state.loading,
+         updating : state => state.updating,
          currUnit: state => state.currUnit
       }),
       ...mapGetters([
@@ -62,12 +80,40 @@ export default {
       return {
         viewer: null,
         page: 1,
-        zoom: 50
+        zoom: 50,
+        newTitle: "",
+        newDescription: "",
+        editField: ""
       }
    },
    methods: {
       viewActualSize() {
          this.viewer.viewport.zoomTo(this.viewer.viewport.imageToViewportZoom(1.0))
+      },
+      isEditing(field = "all") {
+         return this.editField == field
+      },
+      editMetadata(field) {
+         let mf = this.currMasterFile
+         this.newTitle = mf.title
+         this.newDescription = mf.description
+         this.editField = field
+         this.$nextTick( ()=> {
+            let ele = document.getElementById("edit-title")
+            if ( field == "description") {
+               ele = document.getElementById("edit-desc")
+            }
+            ele.focus()
+            ele.select()
+         })
+      },
+      cancelEdit() {
+         this.editField = ""
+      },
+      submitEdit() {
+         this.editField = ""
+         let mf = this.currMasterFile
+         this.$store.dispatch("updateMetadata", {file: mf.path, title: this.newTitle, description: this.newDescription})
       }
    },
    async created() {
@@ -120,21 +166,47 @@ export default {
       background: var(--uvalib-grey-light);
       position: relative;
       border-bottom: 1px solid var(--uvalib-grey);
+      .undefined {
+         font-style: italic;
+         color: var(--uvalib-grey);
+      }
+      .editable {
+         display: inline-block;
+         cursor: pointer;
+         &:hover {
+            text-decoration: underline;
+            color: var(--uvalib-blue-alt) !important;
+         }
+      }
+      input {
+         box-sizing: border-box;
+         width:100%;
+         border-radius: 3px;
+         padding: 3px 5px;
+         border: 1px solid var(--uvalib-grey-light);
+         outline: none;
+         background: #f0f0f0;
+      }
 
       .info {
+         width: 100%;
          text-align: left;
          padding-bottom: 10px;
          margin-bottom: 10px;
          border-bottom: 1px solid var(--uvalib-grey);
          .line {
-            label {
-               font-weight: bold;
-               width: 100px;
-               text-align: right;
-               display: inline-block;
+            td {
+               padding: 5px;
             }
-            .data {
-               margin-left: 10px;
+            td.label {
+               font-weight: bold;
+               text-align: right;
+               width: max-content;
+               white-space: nowrap;
+            }
+            td.data {
+               text-align: left;
+               width:100%;
             }
             padding: 3px 0;
          }
@@ -193,22 +265,6 @@ export default {
    h2 {
       font-size: 1.5em;
       color: var(--uvalib-text);
-   }
-}
-.extra-tools {
-   z-index: 1000;
-   position: absolute;
-   left: 12px;
-   top: 12px;
-   font-size: 1.1em;
-   color: #222;
-   cursor: pointer;
-   .dl-text {
-      margin-left: 5px;
-      font-weight: 500;
-      &:hover {
-         text-decoration: underline;
-      }
    }
 }
 </style>
