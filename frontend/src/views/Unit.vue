@@ -32,7 +32,10 @@
                <th>Color Profile</th>
                <th>Path</th>
             </tr>
-            <tr v-for="mf in masterFiles" :key="mf.fileName" @mousedown.prevent="fileSelected(mf.fileName, $event)" :id="mf.fileName">
+            <tr v-for="mf in masterFiles" :key="mf.fileName" :id="mf.fileName"
+               @mousedown.prevent="fileSelected(mf.fileName, $event)"
+               @contextmenu.prevent="showContextMenu($event)"
+            >
                <td class="thumb">
                   <router-link :to="`/unit/${currUnit}/page/${mf.fileName.replace('.tif','').split('_')[1]}`"><img :src="mf.thumbURL"/></router-link>
                </td>
@@ -98,6 +101,13 @@
             </div>
          </div>
       </template>
+      <div class="popupmenu" id="popupmenu" v-show="menuVisible">
+         <ul>
+            <li @click="setPageNumbersClicked">Set Page Numbers</li>
+            <li>Rename Image</li>
+            <li>Delete Image</li>
+         </ul>
+      </div>
    </div>
 </template>
 
@@ -126,19 +136,41 @@ export default {
         newTitle: "",
         newDescription: "",
         editField: "",
+        menuVisible: false
       }
    },
    created() {
       this.$store.dispatch("getMasterFiles", this.$route.params.unit)
    },
    methods: {
+      showContextMenu(e) {
+         let m = document.getElementById("popupmenu")
+         m.style.left = e.pageX+"px"
+         m.style.top = e.pageY+"px"
+         this.menuVisible =  true
+         this.$nextTick( () => {
+            let mW = m.offsetWidth
+            let mH = m.offsetHeight
+            if ( mW +  e.pageX > window.innerWidth) {
+               m.style.left = (e.pageX - mW) + "px";
+            }
+            if ( mH +  e.pageY > window.innerHeight) {
+               m.style.top = (e.pageY - mH) + "px";
+            }
+         })
+      },
       setPageNumbersClicked() {
          this.editMode = "page"
+         this.menuVisible =  false
          this.$nextTick( () => {
-            document.getElementById("start-page").focus()
+            let p = document.getElementById("start-page-num")
+            p.focus()
+            p.select()
          })
       },
       fileSelected(fn, e) {
+         this.menuVisible = false
+         if ( e.ctrlKey ) return
          if (e.shiftKey) {
             let startNum = parseInt(this.rangeStart.replace(".tif","").split("_")[1],10)
             let endNum = parseInt(fn.replace(".tif","").split("_")[1],10)
@@ -357,6 +389,33 @@ export default {
       &:hover {
          text-decoration: underline;
          color: var(--uvalib-blue-alt) !important;
+      }
+   }
+   .popupmenu {
+      position: absolute;
+      background: var(--uvalib-blue-alt);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+      padding: 5px;
+      top: 50px;
+      left: 50px;
+      text-align: left;
+      border-radius: 5px;
+      ul {
+         border-radius: 5px;
+         background: white;
+         list-style: none;
+         margin: 0;
+         padding: 0;
+         border: 1px solid var(--uvalib-blue-alt-dark);
+         li {
+            border-radius: 5px;
+            padding: 4px 15px 4px 5px;
+            white-space: nowrap;
+            cursor:pointer;
+            &:hover {
+               background: var(--uvalib-blue-alt-light);
+            }
+         }
       }
    }
 }

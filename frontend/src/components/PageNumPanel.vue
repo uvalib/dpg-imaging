@@ -18,7 +18,7 @@
          </span>
             <span class="entry">
             <label>Starting Page:</label>
-            <input type="text" v-model="startPage" />
+            <input id="start-page-num" type="text" v-model="startPage"  @keyup.enter="okPagesClicked"/>
             </span>
       </div>
       <p class="error" v-if="error" v-html="errorMessage"></p>
