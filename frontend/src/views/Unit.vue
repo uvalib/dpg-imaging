@@ -1,6 +1,6 @@
 <template>
    <div class="unit">
-      <WaitSpinner v-if="updating && viewMode != 'list'" :overlay="true" message="Updating data..." />
+      <WaitSpinner v-if="updating" :overlay="true" message="Updating data..." />
       <div class="load" v-if="loading">
          <WaitSpinner v-if="loading" message="Loading master file..." />
       </div>
@@ -20,33 +20,7 @@
                <span tabindex="0" id="set-titles" @click="setPageNumbersClicked" class="button">Set Page Numbers</span>
             </span>
          </div>
-         <div class="page-number panel" v-if="editPanel == 'page'">
-            <h3>Set Page Numbering</h3>
-            <div class="content">
-               <span class="entry">
-                  <label>Start Image:</label>
-                  <select id="start-page" v-model="rangeStart">
-                     <option disabled value="">Select start page</option>
-                     <option v-for="mf in masterFiles" :value="mf.fileName" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
-                  </select>
-               </span>
-               <span class="entry">
-                  <label>End Image:</label>
-                  <select id="end-page" v-model="rangeEnd">
-                     <option disabled value="">Select end page</option>
-                     <option v-for="mf in masterFiles" :value="mf.fileName" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
-                  </select>
-               </span>
-                <span class="entry">
-                  <label>Starting Page:</label>
-                  <input type="text" :value="startPage" />
-                </span>
-            </div>
-            <div class="panel-actions">
-               <span tabindex="0" class="button" @click="cancelEditClicked">Cancel</span>
-               <span tabindex="0" class="button" @click="okPagesClicked">OK</span>
-            </div>
-         </div>
+         <PageNumPanel v-if="editMode == 'page'" />
          <table class="unit-list" v-if="viewMode == 'list'">
             <tr>
                <th></th>
@@ -66,12 +40,18 @@
                <td>{{mf.fileType}}</td>
                <td>{{mf.resolution}}</td>
                <td @click="editMetadata(mf, 'title')" class="editable">
-                  <span  v-if="!isEditing(mf, 'title')"  class="editable">{{mf.title}}</span>
+                  <span  v-if="!isEditing(mf, 'title')"  class="editable">
+                     <span v-if="mf.title">{{mf.title}}</span>
+                     <span v-else class="undefined">Undefined</span>
+                  </span>
                   <input v-else id="edit-title" type="text" v-model="newTitle"
                      @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
                </td>
                <td @click="editMetadata(mf, 'description')" class="editable" >
-                  <span  v-if="!isEditing(mf, 'description')" class="editable">{{mf.description}}</span>
+                  <span  v-if="!isEditing(mf, 'description')" class="editable">
+                     <span v-if="mf.description">{{mf.description}}</span>
+                     <span v-else class="undefined">Undefined</span>
+                  </span>
                   <input v-else id="edit-desc" type="text" v-model="newDescription"
                      @keyup.enter="submitEdit(mf)"  @keyup.esc="cancelEdit" />
                </td>
@@ -125,8 +105,9 @@
 import { mapState } from "vuex"
 import { mapFields } from 'vuex-map-fields'
 import WaitSpinner from '../components/WaitSpinner.vue'
+import PageNumPanel from '../components/PageNumPanel.vue'
 export default {
-   components: { WaitSpinner },
+   components: { WaitSpinner,PageNumPanel },
    name: "unit",
    computed: {
       ...mapState({
@@ -136,7 +117,7 @@ export default {
          currUnit: state => state.currUnit
       }),
       ...mapFields([
-         'viewMode'
+         'viewMode', "rangeStart", "rangeEnd", "editMode"
       ]),
    },
    data() {
@@ -145,24 +126,14 @@ export default {
         newTitle: "",
         newDescription: "",
         editField: "",
-        rangeStart: "",
-        rangeEnd: "",
-        startPage: "1",
-        editPanel: ""
       }
    },
    created() {
       this.$store.dispatch("getMasterFiles", this.$route.params.unit)
    },
    methods: {
-      cancelEditClicked() {
-         this.editPanel = ""
-      },
-      okPagesClicked() {
-
-      },
       setPageNumbersClicked() {
-         this.editPanel = "page"
+         this.editMode = "page"
          this.$nextTick( () => {
             document.getElementById("start-page").focus()
          })
@@ -230,7 +201,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .unit {
    padding: 0;
    .load {
@@ -261,48 +232,12 @@ export default {
          margin-right: 10px;
       }
    }
-   .panel {
-      background: white;
-      border-bottom: 1px solid var(--uvalib-grey);
-      h3 {
-         margin: 0;
-         padding: 8px 0;
-         font-size: 1em;
-         background: var(--uvalib-blue-alt-light);
-         border-bottom: 1px solid var(--uvalib-grey);
-         font-weight: 500;
-      }
-      .panel-actions {
-         padding: 0 10px 10px 0;
-         display: flex;
-         flex-flow: row wrap;
-         justify-content: flex-end;
-         width: 50%;
-         margin: 0 auto;
-         .button {
-            margin-left: 10px;
-         }
-      }
-      .content {
-         padding: 10px;
-         display: flex;
-         flex-flow: row wrap;
-         justify-content: space-between;
-         width: 50%;
-         margin: 0 auto;
-         .entry {
-            flex-grow: 1;
-            margin: 0 10px;
-            text-align: left;
-            label {
-               display: block;
-               margin: 0 0 5px 0;
-            }
-         }
-      }
-   }
    .selected {
       background:  var(--uvalib-yellow-light) !important;
+   }
+   .undefined {
+      font-style: italic;
+      color: var(--uvalib-grey);
    }
    div.gallery {
       display: flex;
@@ -366,10 +301,6 @@ export default {
                font-weight: normal;
                text-align: left;
             }
-            .undefined {
-               font-style: italic;
-               color: var(--uvalib-grey);
-            }
          }
          img {
             background-image: url('~@/assets/dots.gif');
@@ -426,26 +357,6 @@ export default {
       &:hover {
          text-decoration: underline;
          color: var(--uvalib-blue-alt) !important;
-      }
-   }
-   input, select {
-      box-sizing: border-box;
-      border-radius: 4px;
-      padding: 3px 5px;
-      border: 1px solid var(--uvalib-grey);
-      width: 100%;
-   }
-   .button {
-      border-radius: 5px;
-      font-weight: normal;
-      border: 1px solid var(--uvalib-grey);
-      padding: 2px 12px;
-      background: var(--uvalib-grey-lightest);
-      cursor: pointer;
-      font-size: 0.9em;
-      transition: all 0.5s ease-out;
-      &:hover {
-         background: #fafafa;
       }
    }
 }

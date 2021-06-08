@@ -14,7 +14,10 @@ export default new Vuex.Store({
       units: [],
       currUnit: "",
       masterFiles: [],
-      viewMode: "list"
+      viewMode: "list",
+      rangeStart: "",
+      rangeEnd: "",
+      editMode: "",
    },
    getters: {
       getField,
@@ -29,6 +32,14 @@ export default new Vuex.Store({
    },
    mutations: {
       updateField,
+      setError(state, msg) {
+         state.error = true
+         state.errorMessage = msg
+      },
+      clearError(state) {
+         state.error = false
+         state.errorMessage = ""
+      },
       setLoading(state, flag) {
          state.loading = flag
          if (flag == true ) {
@@ -93,6 +104,35 @@ export default new Vuex.Store({
          }).catch( e => {
             ctx.commit('setFailed', e)
             ctx.commit("setLoading", false)
+         })
+      },
+
+      updatePageNumbers(ctx, startPage) {
+         ctx.commit("setUpdating", true)
+         let data = []
+         let foundStart = false
+         let foundEnd = false
+         let page = parseInt(startPage,10)
+         ctx.state.masterFiles.some( mf => {
+            if (mf.fileName == ctx.state.rangeStart) {
+               foundStart = true
+            }
+            if (foundStart) {
+               data.push( {file: mf.path, title: ""+page, description: mf.description})
+               page+=1
+            }
+            if (mf.fileName == ctx.state.rangeEnd) {
+               foundEnd = true
+            }
+            return foundEnd
+         })
+         axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
+            ctx.commit('updateMetadata', data )
+            ctx.commit("setUpdating", false)
+         }).catch( e => {
+            ctx.commit('setFailed', e)
+            ctx.commit("setUpdating", false)
+            // TODO show error!!
          })
       },
 

@@ -79,11 +79,31 @@ export default {
     padding: 0;
     background: white;
  }
- body {
-    margin:0;
-    padding: 0;
- }
- div.header {
+.button {
+   border-radius: 5px;
+   font-weight: normal;
+   border: 1px solid var(--uvalib-grey);
+   padding: 2px 12px;
+   background: var(--uvalib-grey-lightest);
+   cursor: pointer;
+   font-size: 0.9em;
+   transition: all 0.5s ease-out;
+   &:hover {
+      background: #fafafa;
+   }
+}
+input, select {
+   box-sizing: border-box;
+   border-radius: 4px;
+   padding: 3px 5px;
+   border: 1px solid var(--uvalib-grey);
+   width: 100%;
+}
+body {
+   margin:0;
+   padding: 0;
+}
+div.header {
    background-color: var(--uvalib-brand-blue);
    color: white;
    padding: 1vw 20px;
