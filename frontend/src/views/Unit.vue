@@ -7,12 +7,45 @@
       <template v-else>
          <h2>Unit {{currUnit}}</h2>
          <div class="toolbar">
-            <label>View:</label>
-            <select id="layout" v-model="viewMode">
-               <option value="list">List</option>
-               <option value="medium">Gallery (medium)</option>
-               <option value="large">Gallery (large)</option>
-            </select>
+            <span class="viewe-mode">
+               <label>View:</label>
+               <select id="layout" v-model="viewMode">
+                  <option value="list">List</option>
+                  <option value="medium">Gallery (medium)</option>
+                  <option value="large">Gallery (large)</option>
+               </select>
+            </span>
+            <span class="actions">
+               <span tabindex="0" id="rename" class="button">Batch Rename</span>
+               <span tabindex="0" id="set-titles" @click="setPageNumbersClicked" class="button">Set Page Numbers</span>
+            </span>
+         </div>
+         <div class="page-number panel" v-if="editPanel == 'page'">
+            <h3>Set Page Numbering</h3>
+            <div class="content">
+               <span class="entry">
+                  <label>Start Image:</label>
+                  <select id="start-page" v-model="rangeStart">
+                     <option disabled value="">Select start page</option>
+                     <option v-for="mf in masterFiles" :value="mf.fileName" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
+                  </select>
+               </span>
+               <span class="entry">
+                  <label>End Image:</label>
+                  <select id="end-page" v-model="rangeEnd">
+                     <option disabled value="">Select end page</option>
+                     <option v-for="mf in masterFiles" :value="mf.fileName" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
+                  </select>
+               </span>
+                <span class="entry">
+                  <label>Starting Page:</label>
+                  <input type="text" :value="startPage" />
+                </span>
+            </div>
+            <div class="panel-actions">
+               <span tabindex="0" class="button" @click="cancelEditClicked">Cancel</span>
+               <span tabindex="0" class="button" @click="okPagesClicked">OK</span>
+            </div>
          </div>
          <table class="unit-list" v-if="viewMode == 'list'">
             <tr>
@@ -25,7 +58,7 @@
                <th>Color Profile</th>
                <th>Path</th>
             </tr>
-            <tr v-for="mf in masterFiles" :key="mf.fileName">
+            <tr v-for="mf in masterFiles" :key="mf.fileName" @mousedown.prevent="fileSelected(mf.fileName, $event)" :id="mf.fileName">
                <td class="thumb">
                   <router-link :to="`/unit/${currUnit}/page/${mf.fileName.replace('.tif','').split('_')[1]}`"><img :src="mf.thumbURL"/></router-link>
                </td>
@@ -47,7 +80,7 @@
             </tr>
          </table>
          <div class="gallery" :class="viewMode" v-else>
-            <div class="card" v-for="mf in masterFiles" :key="mf.fileName">
+            <div class="card" v-for="mf in masterFiles" :key="mf.fileName"  @mousedown.prevent="fileSelected(mf.fileName, $event)" :id="mf.fileName">
                <router-link :to="`/unit/${currUnit}/page/${mf.fileName.replace('.tif','').split('_')[1]}`">
                   <img :src="mf.mediumURL" v-if="viewMode == 'medium'"/>
                   <img :src="mf.largeURL" v-if="viewMode == 'large'"/>
@@ -111,13 +144,64 @@ export default {
         editMF: null,
         newTitle: "",
         newDescription: "",
-        editField: ""
+        editField: "",
+        rangeStart: "",
+        rangeEnd: "",
+        startPage: "1",
+        editPanel: ""
       }
    },
    created() {
       this.$store.dispatch("getMasterFiles", this.$route.params.unit)
    },
    methods: {
+      cancelEditClicked() {
+         this.editPanel = ""
+      },
+      okPagesClicked() {
+
+      },
+      setPageNumbersClicked() {
+         this.editPanel = "page"
+         this.$nextTick( () => {
+            document.getElementById("start-page").focus()
+         })
+      },
+      fileSelected(fn, e) {
+         if (e.shiftKey) {
+            let startNum = parseInt(this.rangeStart.replace(".tif","").split("_")[1],10)
+            let endNum = parseInt(fn.replace(".tif","").split("_")[1],10)
+            this.rangeEnd = fn
+            if ( this.rangeStart > fn) {
+               let t = endNum
+               endNum = startNum
+               startNum = t
+               this.rangeEnd = this.rangeStart
+               this.rangeStart = fn
+            }
+            for (let i=startNum; i<=endNum; i++) {
+               let numStr = ""+i
+               let tgt = this.currUnit+"_"+numStr.padStart(4,0)+".tif"
+               let tgtEle = document.getElementById(tgt)
+               if (tgtEle.classList.contains("selected") == false) {
+                  tgtEle.classList.add("selected")
+               }
+            }
+         } else {
+            this.rangeStart = ""
+            let tgtEle = document.getElementById(fn)
+            let selectIt = (tgtEle.classList.contains("selected") == false)
+            let eles=document.getElementsByClassName("selected")
+            while (eles[0]) {
+               eles[0].classList.remove('selected')
+            }
+            if (selectIt) {
+               document.getElementById(fn).classList.add("selected")
+               this.rangeStart = fn
+            }
+         }
+
+      },
       isEditing(mf, field = "all") {
          return this.editMF == mf && this.editField == field
       },
@@ -170,12 +254,61 @@ export default {
       select {
          width:max-content;
       }
+      .actions {
+         margin-left: auto;
+      }
+      #rename {
+         margin-right: 10px;
+      }
+   }
+   .panel {
+      background: white;
+      border-bottom: 1px solid var(--uvalib-grey);
+      h3 {
+         margin: 0;
+         padding: 8px 0;
+         font-size: 1em;
+         background: var(--uvalib-blue-alt-light);
+         border-bottom: 1px solid var(--uvalib-grey);
+         font-weight: 500;
+      }
+      .panel-actions {
+         padding: 0 10px 10px 0;
+         display: flex;
+         flex-flow: row wrap;
+         justify-content: flex-end;
+         width: 50%;
+         margin: 0 auto;
+         .button {
+            margin-left: 10px;
+         }
+      }
+      .content {
+         padding: 10px;
+         display: flex;
+         flex-flow: row wrap;
+         justify-content: space-between;
+         width: 50%;
+         margin: 0 auto;
+         .entry {
+            flex-grow: 1;
+            margin: 0 10px;
+            text-align: left;
+            label {
+               display: block;
+               margin: 0 0 5px 0;
+            }
+         }
+      }
+   }
+   .selected {
+      background:  var(--uvalib-yellow-light) !important;
    }
    div.gallery {
       display: flex;
       flex-flow: row wrap;
       padding: 15px;
-      justify-content: space-evenly;
+      justify-content: flex-start;
       background: #e5e5e5;
 
       .edit-md {
@@ -214,9 +347,9 @@ export default {
       div.card {
          position: relative;
          border: 1px solid var(--uvalib-grey-light);
-         padding: 10px;
+         padding: 20px;
          display: inline-block;
-         margin: 15px;
+         margin: 5px;
          background: white;
          box-shadow:  0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.12);
          .metadata {
@@ -295,12 +428,25 @@ export default {
          color: var(--uvalib-blue-alt) !important;
       }
    }
-   input {
+   input, select {
       box-sizing: border-box;
-      width:100%;
-      border-radius: 3px;
+      border-radius: 4px;
       padding: 3px 5px;
-      border: 1px solid var(--uvalib-grey-light);
+      border: 1px solid var(--uvalib-grey);
+      width: 100%;
+   }
+   .button {
+      border-radius: 5px;
+      font-weight: normal;
+      border: 1px solid var(--uvalib-grey);
+      padding: 2px 12px;
+      background: var(--uvalib-grey-lightest);
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.5s ease-out;
+      &:hover {
+         background: #fafafa;
+      }
    }
 }
 </style>

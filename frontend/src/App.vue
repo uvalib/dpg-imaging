@@ -14,14 +14,16 @@
          </div>
       </div>
       <router-view />
+      <ScrollToTop />
    </div>
 </template>
 
 <script>
 import UvaLibraryLogo from "@/components/UvaLibraryLogo"
+import ScrollToTop from "@/components/ScrollToTop"
 export default {
    components: {
-      UvaLibraryLogo,
+      UvaLibraryLogo,ScrollToTop
    },
 };
 </script>
