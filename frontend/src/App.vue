@@ -7,13 +7,11 @@
             </a>
          </div>
          <div class="site-link">
-            <!-- NOTE: tify doesn't currently let you change the manifest. Only way to let users change
-                manifests is to reload the whole app (and therefor tify.js). Using a
-                regular <a href> instead of the router-link does this -->
            <a href="/">DPG Imaging</a>
          </div>
       </div>
       <router-view />
+      <ErrorMessage v-if="hasError" />
       <ScrollToTop />
    </div>
 </template>
@@ -21,10 +19,16 @@
 <script>
 import UvaLibraryLogo from "@/components/UvaLibraryLogo"
 import ScrollToTop from "@/components/ScrollToTop"
+import { mapState } from "vuex"
 export default {
    components: {
       UvaLibraryLogo,ScrollToTop
    },
+   computed: {
+      ...mapState({
+         hasError: state => state.error,
+      }),
+   }
 };
 </script>
 
@@ -79,19 +83,6 @@ export default {
     padding: 0;
     background: white;
  }
-.button {
-   border-radius: 5px;
-   font-weight: normal;
-   border: 1px solid var(--uvalib-grey);
-   padding: 2px 12px;
-   background: var(--uvalib-grey-lightest);
-   cursor: pointer;
-   font-size: 0.9em;
-   transition: all 0.5s ease-out;
-   &:hover {
-      background: #fafafa;
-   }
-}
 input, select {
    box-sizing: border-box;
    border-radius: 4px;

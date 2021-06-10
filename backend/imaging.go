@@ -192,9 +192,7 @@ func (svc *serviceContext) renameFiles(c *gin.Context) {
 		return
 	}
 
-	// TODO add error handling... make a backup first. any errors restores all
-
-	// do this is two passes tp avoid conflicts... move the files to tmp with new name first
+	// do this is two passes to avoid conflicts... move the files to tmp with new name first
 	for _, rn := range rnPost {
 		tmpFile := path.Join(backUpDir, rn.NewName)
 		log.Printf("INFO: rename %s to %s", rn.Original, tmpFile)

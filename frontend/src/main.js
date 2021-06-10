@@ -6,6 +6,12 @@ import store from './store'
 import WaitSpinner from "@/components/WaitSpinner"
 Vue.component('WaitSpinner', WaitSpinner)
 
+import ErrorMessage from "@/components/ErrorMessage"
+Vue.component('ErrorMessage', ErrorMessage)
+
+import DPGButton from "@/components/DPGButton"
+Vue.component('DPGButton', DPGButton)
+
 import '@fortawesome/fontawesome-free/css/all.css'
 
 Vue.config.productionTip = false

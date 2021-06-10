@@ -16,9 +16,9 @@
                </select>
             </span>
             <span class="actions">
-               <span tabindex="0" id="sort" class="button right-pad" @click="resetSort">File Name Sort</span>
-               <span tabindex="0" id="rename" class="button right-pad" @click="renameAllClicked">Batch Rename</span>
-               <span tabindex="0" id="set-titles" @click="setPageNumbersClicked" class="button">Set Page Numbers</span>
+               <DPGButton id="sort" class="right-pad" @click="resetSort">File Name Sort</DPGButton>
+               <DPGButton id="rename" class="right-pad" @click="renameAllClicked">Batch Rename</DPGButton>
+               <DPGButton id="set-titles" @click="setPageNumbersClicked" class="button">Set Page Numbers</DPGButton>
             </span>
          </div>
          <PageNumPanel v-if="editMode == 'page'" />
@@ -121,11 +121,10 @@
 <script>
 import { mapState } from "vuex"
 import { mapFields } from 'vuex-map-fields'
-import WaitSpinner from '../components/WaitSpinner.vue'
 import PageNumPanel from '../components/PageNumPanel.vue'
 import draggable from 'vuedraggable'
 export default {
-   components: { WaitSpinner,PageNumPanel,draggable },
+   components: {PageNumPanel, draggable },
    name: "unit",
    computed: {
       ...mapState({

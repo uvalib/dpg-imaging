@@ -66,10 +66,6 @@ export default new Vuex.Store({
             state.units.push( u )
          })
       },
-      setFailed(state, err) {
-         state.error = true
-         state.errorMessage = err
-      },
       setMasterFiles(ctx, {unit, masterFiles}) {
          ctx.currUnit = unit
          ctx.masterFiles.splice(0, ctx.masterFiles.length)
@@ -97,7 +93,7 @@ export default new Vuex.Store({
             ctx.commit('setUnits', response.data)
             ctx.commit("setLoading", false)
          }).catch( e => {
-            ctx.commit('setFailed', e)
+            ctx.commit('setError', e)
             ctx.commit("setLoading", false)
          })
       },
@@ -109,7 +105,7 @@ export default new Vuex.Store({
             ctx.commit('setMasterFiles', {unit: unit, masterFiles: response.data})
             ctx.commit("setLoading", false)
          }).catch( e => {
-            ctx.commit('setFailed', e)
+            ctx.commit('setError', e)
             ctx.commit("setLoading", false)
          })
       },
@@ -127,9 +123,8 @@ export default new Vuex.Store({
             ctx.commit('updateMetadata', data )
             ctx.commit("setUpdating", false)
          }).catch( e => {
-            ctx.commit('setFailed', e)
+            ctx.commit('setError', e)
             ctx.commit("setUpdating", false)
-            // TODO show error!!
          })
       },
 
@@ -140,9 +135,8 @@ export default new Vuex.Store({
             ctx.commit('updateMetadata', data )
             ctx.commit("setUpdating", false)
          }).catch( e => {
-            ctx.commit('setFailed', e)
+            ctx.commit('setError', e)
             ctx.commit("setUpdating", false)
-            // TODO show error!!
          })
       },
 
@@ -154,7 +148,7 @@ export default new Vuex.Store({
             if (mfPage !=  idx+1) {
                let newPg = `${idx+1}`
                newPg = newPg.padStart(4,'0')
-               let newFN = `${mf.fileName.split("_")[0]}_${newPg}.tif`
+               let newFN = `${ctx.state.currUnit}_${newPg}.tif`
                data.push({original: mf.path, new: newFN })
             }
 
@@ -162,9 +156,8 @@ export default new Vuex.Store({
          axios.post(`/api/units/${ctx.state.currUnit}/rename`, data).then(() => {
             window.location.reload()
          }).catch( e => {
-            ctx.commit('setFailed', e)
+            ctx.commit('setError', e)
             ctx.commit("setUpdating", false)
-            // TODO show error!!
          })
       }
    },
