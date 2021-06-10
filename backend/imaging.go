@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -65,7 +66,7 @@ func (svc *serviceContext) getUnits(c *gin.Context) {
 
 func (svc *serviceContext) getMasterFiles(c *gin.Context) {
 	dir := c.Param("dir")
-	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, dir)
+	unitDir := path.Join(svc.ImagesDir, dir)
 	log.Printf("INFO: get master files from %s", unitDir)
 
 	// walk the unit directory and generate masterFile info for each .tif
@@ -73,29 +74,29 @@ func (svc *serviceContext) getMasterFiles(c *gin.Context) {
 	out := make([]*masterFileInfo, 0)
 	err := filepath.Walk(unitDir, func(path string, f os.FileInfo, err error) error {
 		if err != nil {
-			log.Printf("ERROR: directory traverse failed: %s", err.Error())
-			return err
-		}
-		if f.IsDir() == false {
-			log.Printf("INFO: Found .tif image %s", path)
+			log.Printf("WARNING: directory traverse failed: %s", err.Error())
+		} else {
+			if f.IsDir() == false {
+				log.Printf("INFO: Found .tif image %s", path)
 
-			// NOTE: path param is the full path to the tif - including the filename
-			// Strip the base image dir and file name to get relative path
-			fName := f.Name()
-			relPath := strings.Replace(path, fmt.Sprintf("%s/", svc.ImagesDir), "", 1)
-			relPath = strings.Replace(relPath, fmt.Sprintf("/%s", fName), "", 1)
+				// NOTE: path param is the full path to the tif - including the filename
+				// Strip the base image dir and file name to get relative path
+				fName := f.Name()
+				relPath := strings.Replace(path, fmt.Sprintf("%s/", svc.ImagesDir), "", 1)
+				relPath = strings.Replace(relPath, fmt.Sprintf("/%s", fName), "", 1)
 
-			if mfRegex.Match([]byte(fName)) {
-				mf := masterFileInfo{FileName: fName, Path: path}
-				fName = strings.ReplaceAll(fName, ".tif", "")
+				if mfRegex.Match([]byte(fName)) {
+					mf := masterFileInfo{FileName: fName, Path: path}
+					fName = strings.ReplaceAll(fName, ".tif", "")
 
-				pathID := strings.Replace(relPath, "/", "%2F", -1)
-				mf.ThumbURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/30,/0/default.jpg", svc.IIIFURL, pathID, fName)
-				mf.MediumURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/250,/0/default.jpg", svc.IIIFURL, pathID, fName)
-				mf.LargeURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/400,/0/default.jpg", svc.IIIFURL, pathID, fName)
-				mf.InfoURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/info.json", svc.IIIFURL, pathID, fName)
+					pathID := strings.Replace(relPath, "/", "%2F", -1)
+					mf.ThumbURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/30,/0/default.jpg", svc.IIIFURL, pathID, fName)
+					mf.MediumURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/250,/0/default.jpg", svc.IIIFURL, pathID, fName)
+					mf.LargeURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/400,/0/default.jpg", svc.IIIFURL, pathID, fName)
+					mf.InfoURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/info.json", svc.IIIFURL, pathID, fName)
 
-				out = append(out, &mf)
+					out = append(out, &mf)
+				}
 			}
 		}
 		return nil
@@ -165,6 +166,72 @@ func (svc *serviceContext) updateMetadata(c *gin.Context) {
 	}
 
 	c.String(http.StatusOK, "updated")
+}
+
+func (svc *serviceContext) renameFiles(c *gin.Context) {
+	unit := c.Param("dir")
+	var rnPost []struct {
+		Original string `json:"original"`
+		NewName  string `json:"new"`
+	}
+	log.Printf("INFO: rename files for unit %s", unit)
+
+	qpErr := c.ShouldBindJSON(&rnPost)
+	if qpErr != nil {
+		log.Printf("ERROR: invalid rename payload: %v", qpErr)
+		c.String(http.StatusBadRequest, "Invalid request")
+		return
+	}
+
+	// create a working dir in the root of the unit directory to hold the original files to be renamed
+	backUpDir := path.Join(svc.ImagesDir, unit, "tmp")
+	err := os.Mkdir(backUpDir, 0777)
+	if err != nil {
+		log.Printf("ERROR: unable to make backup dir %s: %s", backUpDir, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// TODO add error handling... make a backup first. any errors restores all
+
+	// do this is two passes tp avoid conflicts... move the files to tmp with new name first
+	for _, rn := range rnPost {
+		tmpFile := path.Join(backUpDir, rn.NewName)
+		log.Printf("INFO: rename %s to %s", rn.Original, tmpFile)
+		err := os.Rename(rn.Original, tmpFile)
+		if err != nil {
+			log.Printf("ERROR: unable to rename %s: %s", rn.Original, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	// second pass moves the renambed files back where they belong
+	for _, rn := range rnPost {
+		tmpFile := path.Join(backUpDir, rn.NewName)
+		origDir, _ := path.Split(rn.Original)
+		renamed := path.Join(origDir, rn.NewName)
+		log.Printf("INFO: move tmp %s to %s", tmpFile, renamed)
+		err := os.Rename(tmpFile, renamed)
+		if err != nil {
+			log.Printf("ERROR: unable to restore %s from %s: %s", renamed, tmpFile, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	// last, cleanup tmp
+	os.Remove(backUpDir)
+
+	c.String(http.StatusOK, "ok")
+}
+
+func (svc *serviceContext) deleteFile(c *gin.Context) {
+	unit := c.Param("dir")
+	file := c.Param("file")
+	log.Printf("INFO delete %s from unit %s", file, unit)
+
+	c.String(http.StatusNotImplemented, "not yet")
 }
 
 func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int) {

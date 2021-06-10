@@ -16,89 +16,96 @@
                </select>
             </span>
             <span class="actions">
-               <span tabindex="0" id="rename" class="button">Batch Rename</span>
+               <span tabindex="0" id="sort" class="button right-pad" @click="resetSort">File Name Sort</span>
+               <span tabindex="0" id="rename" class="button right-pad" @click="renameAllClicked">Batch Rename</span>
                <span tabindex="0" id="set-titles" @click="setPageNumbersClicked" class="button">Set Page Numbers</span>
             </span>
          </div>
          <PageNumPanel v-if="editMode == 'page'" />
          <table class="unit-list" v-if="viewMode == 'list'">
-            <tr>
-               <th></th>
-               <th>File Name</th>
-               <th>File Type</th>
-               <th>Resolution</th>
-               <th>Title</th>
-               <th>Caption</th>
-               <th>Color Profile</th>
-               <th>Path</th>
-            </tr>
-            <tr v-for="mf in masterFiles" :key="mf.fileName" :id="mf.fileName"
-               @mousedown.prevent="fileSelected(mf.fileName, $event)"
-               @contextmenu.prevent="showContextMenu($event)"
-            >
-               <td class="thumb">
-                  <router-link :to="`/unit/${currUnit}/page/${mf.fileName.replace('.tif','').split('_')[1]}`"><img :src="mf.thumbURL"/></router-link>
-               </td>
-               <td>{{mf.fileName}}</td>
-               <td>{{mf.fileType}}</td>
-               <td>{{mf.resolution}}</td>
-               <td @click="editMetadata(mf, 'title')" class="editable">
-                  <span  v-if="!isEditing(mf, 'title')"  class="editable">
-                     <span v-if="mf.title">{{mf.title}}</span>
-                     <span v-else class="undefined">Undefined</span>
-                  </span>
-                  <input v-else id="edit-title" type="text" v-model="newTitle"
-                     @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
-               </td>
-               <td @click="editMetadata(mf, 'description')" class="editable" >
-                  <span  v-if="!isEditing(mf, 'description')" class="editable">
-                     <span v-if="mf.description">{{mf.description}}</span>
-                     <span v-else class="undefined">Undefined</span>
-                  </span>
-                  <input v-else id="edit-desc" type="text" v-model="newDescription"
-                     @keyup.enter="submitEdit(mf)"  @keyup.esc="cancelEdit" />
-               </td>
-               <td>{{mf.colorProfile}}</td>
-               <td>{{mf.path}}</td>
-            </tr>
+            <thead>
+               <tr>
+                  <th></th>
+                  <th>File Name</th>
+                  <th>File Type</th>
+                  <th>Resolution</th>
+                  <th>Title</th>
+                  <th>Caption</th>
+                  <th>Color Profile</th>
+                  <th>Path</th>
+               </tr>
+            </thead>
+            <draggable v-model="masterFiles" tag="tbody"  @start="dragStarted" >
+               <tr v-for="mf in masterFiles" :key="mf.fileName" :id="mf.fileName"
+                  @mousedown="fileSelected(mf.fileName, $event)"
+                  @contextmenu.prevent="showContextMenu($event)"
+               >
+                  <td class="thumb">
+                     <router-link :to="`/unit/${currUnit}/page/${mf.fileName.replace('.tif','').split('_')[1]}`"><img :src="mf.thumbURL"/></router-link>
+                  </td>
+                  <td>{{mf.fileName}}</td>
+                  <td>{{mf.fileType}}</td>
+                  <td>{{mf.resolution}}</td>
+                  <td @click="editMetadata(mf, 'title')" class="editable">
+                     <span  v-if="!isEditing(mf, 'title')"  class="editable">
+                        <span v-if="mf.title">{{mf.title}}</span>
+                        <span v-else class="undefined">Undefined</span>
+                     </span>
+                     <input v-else id="edit-title" type="text" v-model="newTitle"
+                        @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
+                  </td>
+                  <td @click="editMetadata(mf, 'description')" class="editable" >
+                     <span  v-if="!isEditing(mf, 'description')" class="editable">
+                        <span v-if="mf.description">{{mf.description}}</span>
+                        <span v-else class="undefined">Undefined</span>
+                     </span>
+                     <input v-else id="edit-desc" type="text" v-model="newDescription"
+                        @keyup.enter="submitEdit(mf)"  @keyup.esc="cancelEdit" />
+                  </td>
+                  <td>{{mf.colorProfile}}</td>
+                  <td>{{mf.path}}</td>
+               </tr>
+            </draggable>
          </table>
          <div class="gallery" :class="viewMode" v-else>
-            <div class="card" v-for="mf in masterFiles" :key="mf.fileName"  @mousedown.prevent="fileSelected(mf.fileName, $event)" :id="mf.fileName">
-               <router-link :to="`/unit/${currUnit}/page/${mf.fileName.replace('.tif','').split('_')[1]}`">
-                  <img :src="mf.mediumURL" v-if="viewMode == 'medium'"/>
-                  <img :src="mf.largeURL" v-if="viewMode == 'large'"/>
-               </router-link>
-               <div class="metadata">
-                  <div class="row">
-                     <label>File Name</label>
-                     <div class="data">{{mf.fileName}}</div>
-                  </div>
-                  <div class="row">
-                     <label>Title</label>
-                     <div class="data editable" @click="editMetadata(mf, 'title')">
-                        <template v-if="isEditing(mf, 'title')">
-                           <input id="edit-title" type="text" v-model="newTitle"  @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
-                        </template>
-                        <template v-else>
-                           <template v-if="mf.title">{{mf.title}}</template>
-                           <span v-else class="undefined">Undefined</span>
-                        </template>
+            <draggable v-model="masterFiles" @start="dragStarted" >
+               <div class="card" v-for="mf in masterFiles" :key="mf.fileName"  @mousedown="fileSelected(mf.fileName, $event)" :id="mf.fileName">
+                  <router-link :to="`/unit/${currUnit}/page/${mf.fileName.replace('.tif','').split('_')[1]}`">
+                     <img :src="mf.mediumURL" v-if="viewMode == 'medium'"/>
+                     <img :src="mf.largeURL" v-if="viewMode == 'large'"/>
+                  </router-link>
+                  <div class="metadata">
+                     <div class="row">
+                        <label>File Name</label>
+                        <div class="data">{{mf.fileName}}</div>
                      </div>
-                  </div>
-                  <div class="row">
-                     <label>Caption</label>
-                     <div class="data editable" @click="editMetadata(mf, 'description')">
-                        <template v-if="isEditing(mf, 'description')">
-                           <input id="edit-desc" type="text" v-model="newDescription" @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
-                        </template>
-                        <template v-else>
-                           <template v-if="mf.description">{{mf.description}}</template>
-                           <span v-else class="undefined">Undefined</span>
-                        </template>
+                     <div class="row">
+                        <label>Title</label>
+                        <div class="data editable" @click="editMetadata(mf, 'title')">
+                           <template v-if="isEditing(mf, 'title')">
+                              <input id="edit-title" type="text" v-model="newTitle"  @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
+                           </template>
+                           <template v-else>
+                              <template v-if="mf.title">{{mf.title}}</template>
+                              <span v-else class="undefined">Undefined</span>
+                           </template>
+                        </div>
+                     </div>
+                     <div class="row">
+                        <label>Caption</label>
+                        <div class="data editable" @click="editMetadata(mf, 'description')">
+                           <template v-if="isEditing(mf, 'description')">
+                              <input id="edit-desc" type="text" v-model="newDescription" @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
+                           </template>
+                           <template v-else>
+                              <template v-if="mf.description">{{mf.description}}</template>
+                              <span v-else class="undefined">Undefined</span>
+                           </template>
+                        </div>
                      </div>
                   </div>
                </div>
-            </div>
+            </draggable>
          </div>
       </template>
       <div class="popupmenu" id="popupmenu" v-show="menuVisible">
@@ -116,18 +123,18 @@ import { mapState } from "vuex"
 import { mapFields } from 'vuex-map-fields'
 import WaitSpinner from '../components/WaitSpinner.vue'
 import PageNumPanel from '../components/PageNumPanel.vue'
+import draggable from 'vuedraggable'
 export default {
-   components: { WaitSpinner,PageNumPanel },
+   components: { WaitSpinner,PageNumPanel,draggable },
    name: "unit",
    computed: {
       ...mapState({
          loading : state => state.loading,
          updating : state => state.updating,
-         masterFiles : state => state.masterFiles,
          currUnit: state => state.currUnit
       }),
       ...mapFields([
-         'viewMode', "rangeStart", "rangeEnd", "editMode"
+         'viewMode', "rangeStartIdx", "rangeEndIdx", "editMode", "masterFiles"
       ]),
    },
    data() {
@@ -136,13 +143,16 @@ export default {
         newTitle: "",
         newDescription: "",
         editField: "",
-        menuVisible: false
+        menuVisible: false,
       }
    },
    created() {
       this.$store.dispatch("getMasterFiles", this.$route.params.unit)
    },
    methods: {
+      resetSort() {
+         this.$store.commit("filenameSort")
+      },
       showContextMenu(e) {
          let m = document.getElementById("popupmenu")
          m.style.left = e.pageX+"px"
@@ -159,6 +169,9 @@ export default {
             }
          })
       },
+      renameAllClicked() {
+         this.$store.dispatch("renameAll")
+      },
       setPageNumbersClicked() {
          this.editMode = "page"
          this.menuVisible =  false
@@ -168,39 +181,50 @@ export default {
             p.select()
          })
       },
+      dragStarted() {
+         let eles=document.getElementsByClassName("selected")
+         while (eles[0]) {
+            eles[0].classList.remove('selected')
+         }
+      },
       fileSelected(fn, e) {
          this.menuVisible = false
          if ( e.ctrlKey ) return
-         if (e.shiftKey) {
-            let startNum = parseInt(this.rangeStart.replace(".tif","").split("_")[1],10)
-            let endNum = parseInt(fn.replace(".tif","").split("_")[1],10)
-            this.rangeEnd = fn
-            if ( this.rangeStart > fn) {
-               let t = endNum
-               endNum = startNum
-               startNum = t
-               this.rangeEnd = this.rangeStart
-               this.rangeStart = fn
+
+         if ( e.shiftKey ) {
+            // start of by considering this the end of a range
+            this.rangeEndIdx = this.masterFiles.findIndex( mf => mf.fileName == fn)
+            if ( this.rangeStartIdx > this.rangeEndIdx ) {
+               // if not, swap indexes
+               let t = this.rangeEndIdx
+               this.rangeEndIdx =  this.rangeStartIdx
+               this.rangeStartIdx = t
             }
-            for (let i=startNum; i<=endNum; i++) {
-               let numStr = ""+i
-               let tgt = this.currUnit+"_"+numStr.padStart(4,0)+".tif"
+
+            // get all of the masterfiels in the range and select them
+            for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+               let tgt = this.masterFiles[i].fileName
                let tgtEle = document.getElementById(tgt)
                if (tgtEle.classList.contains("selected") == false) {
                   tgtEle.classList.add("selected")
                }
             }
          } else {
-            this.rangeStart = ""
+            // grab selected element and set a flag if it is not currently selected
+            this.rangeStartIdx = -1
             let tgtEle = document.getElementById(fn)
             let selectIt = (tgtEle.classList.contains("selected") == false)
+
+            // clear all selected classes
             let eles=document.getElementsByClassName("selected")
             while (eles[0]) {
                eles[0].classList.remove('selected')
             }
+
+            // if the just-clicked element needs to be selected, select it now
             if (selectIt) {
                document.getElementById(fn).classList.add("selected")
-               this.rangeStart = fn
+               this.rangeStartIdx =  this.masterFiles.findIndex( mf => mf.fileName == fn)
             }
          }
 
@@ -259,23 +283,31 @@ export default {
       }
       .actions {
          margin-left: auto;
-      }
-      #rename {
-         margin-right: 10px;
+         display: flex;
+         flex-flow: row wrap;
+         justify-content: flex-end;
+         align-content: center;
+         .right-pad {
+            margin-right: 10px;
+         }
       }
    }
    .selected {
-      background:  var(--uvalib-yellow-light) !important;
+      background: var(--uvalib-blue-alt-light) !important;
+      td {
+         border-bottom: 1px solid  var(--uvalib-blue-alt) !important;
+      }
    }
    .undefined {
       font-style: italic;
-      color: var(--uvalib-grey);
    }
    div.gallery {
       display: flex;
       flex-flow: row wrap;
       padding: 15px;
+      text-align: left;
       justify-content: flex-start;
+      align-content: flex-start;
       background: #e5e5e5;
 
       .edit-md {
@@ -373,7 +405,10 @@ export default {
          border-bottom: 1px solid var(--uvalib-grey-lightest);
       }
       td.thumb {
-         padding-left: 5px;
+         padding: 5px 5px 2px 5px;
+         img {
+            border:1px solid var(--uvalib-grey);
+         }
       }
       th {
          border-bottom: 1px solid var(--uvalib-grey);

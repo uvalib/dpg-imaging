@@ -15,8 +15,8 @@ export default new Vuex.Store({
       currUnit: "",
       masterFiles: [],
       viewMode: "list",
-      rangeStart: "",
-      rangeEnd: "",
+      rangeStartIdx: -1,
+      rangeEndIdx: -1,
       editMode: "",
    },
    getters: {
@@ -32,6 +32,13 @@ export default new Vuex.Store({
    },
    mutations: {
       updateField,
+      filenameSort(state) {
+         state.masterFiles.sort( (a,b) => {
+            if (a.fileName < b.fileName) return -1
+            if (a.fileName > b.fileName) return 1
+            return 0
+         })
+      },
       setError(state, msg) {
          state.error = true
          state.errorMessage = msg
@@ -110,22 +117,12 @@ export default new Vuex.Store({
       updatePageNumbers(ctx, startPage) {
          ctx.commit("setUpdating", true)
          let data = []
-         let foundStart = false
-         let foundEnd = false
          let page = parseInt(startPage,10)
-         ctx.state.masterFiles.some( mf => {
-            if (mf.fileName == ctx.state.rangeStart) {
-               foundStart = true
-            }
-            if (foundStart) {
-               data.push( {file: mf.path, title: ""+page, description: mf.description})
-               page+=1
-            }
-            if (mf.fileName == ctx.state.rangeEnd) {
-               foundEnd = true
-            }
-            return foundEnd
-         })
+         for (let i=ctx.state.rangeStartIdx; i<=ctx.state.rangeEndIdx; i++) {
+            let mf = ctx.state.masterFiles[i]
+            data.push( {file: mf.path, title: ""+page, description: mf.description})
+            page+=1
+         }
          axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
             ctx.commit('updateMetadata', data )
             ctx.commit("setUpdating", false)
@@ -142,6 +139,28 @@ export default new Vuex.Store({
          axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
             ctx.commit('updateMetadata', data )
             ctx.commit("setUpdating", false)
+         }).catch( e => {
+            ctx.commit('setFailed', e)
+            ctx.commit("setUpdating", false)
+            // TODO show error!!
+         })
+      },
+
+      renameAll( ctx ) {
+         ctx.commit("setUpdating", true)
+         let data = []
+         ctx.state.masterFiles.forEach( (mf,idx) => {
+            let mfPage = parseInt(mf.fileName.toLowerCase().replace(".tif").split("_")[1],10)
+            if (mfPage !=  idx+1) {
+               let newPg = `${idx+1}`
+               newPg = newPg.padStart(4,'0')
+               let newFN = `${mf.fileName.split("_")[0]}_${newPg}.tif`
+               data.push({original: mf.path, new: newFN })
+            }
+
+         })
+         axios.post(`/api/units/${ctx.state.currUnit}/rename`, data).then(() => {
+            window.location.reload()
          }).catch( e => {
             ctx.commit('setFailed', e)
             ctx.commit("setUpdating", false)

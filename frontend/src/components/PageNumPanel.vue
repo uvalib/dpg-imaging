@@ -4,16 +4,16 @@
       <div class="content">
          <span class="entry">
             <label>Start Image:</label>
-            <select id="start-page" v-model="rangeStart">
+            <select id="start-page" v-model="rangeStartIdx">
                <option disabled value="">Select start page</option>
-               <option v-for="mf in masterFiles" :value="mf.fileName" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
+               <option v-for="(mf,idx) in masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
             </select>
          </span>
          <span class="entry">
             <label>End Image:</label>
-            <select id="end-page" v-model="rangeEnd">
+            <select id="end-page" v-model="rangeEndIdx">
                <option disabled value="">Select end page</option>
-               <option v-for="mf in masterFiles" :value="mf.fileName" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
+               <option v-for="(mf,idx) in masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
             </select>
          </span>
             <span class="entry">
@@ -41,7 +41,7 @@ export default {
          errorMessage: state => state.errorMessage,
       }),
       ...mapFields([
-         "rangeStart", "rangeEnd", "editMode"
+         "rangeStartIdx", "rangeEndIdx", "editMode"
       ]),
    },
    data() {

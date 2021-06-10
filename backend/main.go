@@ -32,6 +32,8 @@ func main() {
 		api.GET("/units", svc.getUnits)
 		api.GET("/units/:dir", svc.getMasterFiles)
 		api.POST("/units/:dir/update", svc.updateMetadata)
+		api.POST("/units/:dir/rename", svc.renameFiles)
+		api.DELETE("/units/:dir/:file", svc.deleteFile)
 	}
 
 	// Note: in dev mode, this is never actually used. The front end is served
