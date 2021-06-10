@@ -12,6 +12,9 @@ Vue.component('ErrorMessage', ErrorMessage)
 import DPGButton from "@/components/DPGButton"
 Vue.component('DPGButton', DPGButton)
 
+import ConfirmModal from "@/components/ConfirmModal"
+Vue.component('ConfirmModal', ConfirmModal)
+
 import '@fortawesome/fontawesome-free/css/all.css'
 
 Vue.config.productionTip = false

@@ -1,5 +1,7 @@
 <template>
    <button tabindex="0" class="dpg-button"
+      @keydown.exact.tab="tabNext($event)"
+      @keydown.shift.tab="tabBack($event)"
       @click.prevent.stop="clicked" @keydown.prevent.stop.enter="clicked" @keydown.space.prevent.stop="clicked">
       <slot></slot>
    </button>
@@ -7,12 +9,36 @@
 
 <script>
 export default {
+   props: {
+      focusNextOverride: {
+         type: Boolean,
+         default: false
+      },
+      focusBackOverride: {
+         type: Boolean,
+         default: false
+      },
+   },
    methods: {
       clicked() {
          this.$nextTick( () => {
             this.$emit('click')
          })
       },
+      tabBack(event) {
+         if (this.focusBackOverride ) {
+            event.stopPropagation()
+            event.preventDefault()
+            this.$emit('tabback')
+         }
+      },
+      tabNext(event ) {
+         if (this.focusNextOverride ) {
+            event.stopPropagation()
+            event.preventDefault()
+            this.$emit('tabnext')
+         }
+      }
    }
 }
 </script>

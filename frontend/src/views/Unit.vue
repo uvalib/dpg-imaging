@@ -17,7 +17,10 @@
             </span>
             <span class="actions">
                <DPGButton id="sort" class="right-pad" @click="resetSort">File Name Sort</DPGButton>
-               <DPGButton id="rename" class="right-pad" @click="renameAllClicked">Batch Rename</DPGButton>
+               <ConfirmModal label="Batch Rename" class="right-pad" @confirmed="renameAll">
+                  <div>All files will be renamed to match the following format:</div>
+                  <code>{{currUnit}}_0001.tif</code>
+               </ConfirmModal>
                <DPGButton id="set-titles" @click="setPageNumbersClicked" class="button">Set Page Numbers</DPGButton>
             </span>
          </div>
@@ -168,7 +171,7 @@ export default {
             }
          })
       },
-      renameAllClicked() {
+      renameAll() {
          this.$store.dispatch("renameAll")
       },
       setPageNumbersClicked() {

@@ -71,7 +71,11 @@ export default {
    --uvalib-text-light: #ffffff;
    --uvalib-text: var(--uvalib-grey-dark);
    --uvalib-text-dark: var(--uvalib-grey-darkest);
+
+   --box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
 }
+
+
 
 #app {
     font-family: "franklin-gothic-urw", arial, sans-serif;
