@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -227,9 +228,36 @@ func (svc *serviceContext) renameFiles(c *gin.Context) {
 func (svc *serviceContext) deleteFile(c *gin.Context) {
 	unit := c.Param("dir")
 	file := c.Param("file")
-	log.Printf("INFO delete %s from unit %s", file, unit)
+	unitDir := path.Join(svc.ImagesDir, unit)
+	log.Printf("INFO: delete %s from unit %s", file, unit)
 
-	c.String(http.StatusNotImplemented, "not yet")
+	delFilePath := ""
+	err := filepath.Walk(unitDir, func(path string, f os.FileInfo, err error) error {
+		if err != nil {
+			log.Printf("WARNING: delete file directory traverse failed: %s", err.Error())
+		} else {
+			if f.IsDir() == false && f.Name() == file {
+				delFilePath = path
+				return io.EOF
+			}
+		}
+		return nil
+	})
+	if err != nil && err != io.EOF {
+		log.Printf("ERROR: unable to traverse %s for file delete: %s", unitDir, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: delete %s", delFilePath)
+	err = os.Remove(delFilePath)
+	if err != nil {
+		log.Printf("ERROR: unable to delete %s: %s", delFilePath, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.String(http.StatusOK, fmt.Sprintf("deleted %s", delFilePath))
 }
 
 func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int) {

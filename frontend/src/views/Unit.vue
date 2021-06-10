@@ -41,7 +41,7 @@
             <draggable v-model="masterFiles" tag="tbody"  @start="dragStarted" >
                <tr v-for="mf in masterFiles" :key="mf.fileName" :id="mf.fileName"
                   @mousedown="fileSelected(mf.fileName, $event)"
-                  @contextmenu.prevent="showContextMenu($event)"
+                  @contextmenu.prevent="showContextMenu(mf.fileName, $event)"
                >
                   <td class="thumb">
                      <router-link :to="`/unit/${currUnit}/page/${mf.fileName.replace('.tif','').split('_')[1]}`"><img :src="mf.thumbURL"/></router-link>
@@ -72,7 +72,11 @@
          </table>
          <div class="gallery" :class="viewMode" v-else>
             <draggable v-model="masterFiles" @start="dragStarted" >
-               <div class="card" v-for="mf in masterFiles" :key="mf.fileName"  @mousedown="fileSelected(mf.fileName, $event)" :id="mf.fileName">
+               <div class="card" v-for="mf in masterFiles" :key="mf.fileName"
+                  @mousedown="fileSelected(mf.fileName, $event)"
+                  @contextmenu.prevent="showContextMenu(mf.fileName, $event)"
+                  :id="mf.fileName"
+               >
                   <router-link :to="`/unit/${currUnit}/page/${mf.fileName.replace('.tif','').split('_')[1]}`">
                      <img :src="mf.mediumURL" v-if="viewMode == 'medium'"/>
                      <img :src="mf.largeURL" v-if="viewMode == 'large'"/>
@@ -112,10 +116,20 @@
          </div>
       </template>
       <div class="popupmenu" id="popupmenu" v-show="menuVisible">
-         <ul>
-            <li @click="setPageNumbersClicked">Set Page Numbers</li>
-            <li>Rename Image</li>
-            <li>Delete Image</li>
+         <ul @keydown.esc="clearState">
+            <li tabindex="0" @click.stop.prevent="setPageNumbersClicked" class="menuitem"
+               @keydown.exact.shift.tab.stop.prevent="focusLastmenu()"
+            >
+               Set Page Numbers
+            </li>
+            <li tabindex="0" class="menuitem">
+               <ConfirmModal label="Delete Image" type="text" @confirmed="deleteSelected" @closed="menuVisible=false" >
+                  <div>Delete image {{rightClickedMF}}? This cannot be reversed.</div>
+               </ConfirmModal>
+            </li>
+            <li tabindex="0" @click="menuVisible = false" class="menuitem" @keydown.exact.tab.stop.prevent="focusFirstmenu()">
+               Close Menu
+            </li>
          </ul>
       </div>
    </div>
@@ -142,6 +156,7 @@ export default {
    data() {
       return {
         editMF: null,
+        rightClickedMF: "",
         newTitle: "",
         newDescription: "",
         editField: "",
@@ -152,10 +167,20 @@ export default {
       this.$store.dispatch("getMasterFiles", this.$route.params.unit)
    },
    methods: {
+      clearState() {
+          this.rightClickedMF = ""
+          this.menuVisible= false
+          this.rangeStartIdx = -1
+          this.rangeEndIdx = -1
+      },
+      deleteSelected() {
+         this.$store.dispatch("deleteMasterFile", this.rightClickedMF)
+      },
       resetSort() {
          this.$store.commit("filenameSort")
       },
-      showContextMenu(e) {
+      showContextMenu(fileName, e) {
+         this.rightClickedMF = fileName
          let m = document.getElementById("popupmenu")
          m.style.left = e.pageX+"px"
          m.style.top = e.pageY+"px"
@@ -169,7 +194,23 @@ export default {
             if ( mH +  e.pageY > window.innerHeight) {
                m.style.top = (e.pageY - mH) + "px";
             }
+            let items = document.getElementsByClassName("menuitem")
+            if (items.length > 0) {
+               items[0].focus()
+            }
          })
+      },
+      focusLastmenu() {
+          let items = document.getElementsByClassName("menuitem")
+            if (items.length > 0) {
+               items[items.length-1].focus()
+            }
+      },
+      focusFirstmenu() {
+          let items = document.getElementsByClassName("menuitem")
+            if (items.length > 0) {
+               items[0].focus()
+            }
       },
       renameAll() {
          this.$store.dispatch("renameAll")
@@ -203,17 +244,20 @@ export default {
                this.rangeStartIdx = t
             }
 
-            // get all of the masterfiels in the range and select them
+            let eles=document.getElementsByClassName("selected")
+            while (eles[0]) {
+               eles[0].classList.remove('selected')
+            }
+
             for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
                let tgt = this.masterFiles[i].fileName
                let tgtEle = document.getElementById(tgt)
-               if (tgtEle.classList.contains("selected") == false) {
-                  tgtEle.classList.add("selected")
-               }
+               tgtEle.classList.add("selected")
             }
          } else {
             // grab selected element and set a flag if it is not currently selected
             this.rangeStartIdx = -1
+            this.rangeEndIdx = -1
             let tgtEle = document.getElementById(fn)
             let selectIt = (tgtEle.classList.contains("selected") == false)
 
@@ -294,12 +338,6 @@ export default {
          }
       }
    }
-   .selected {
-      background: var(--uvalib-blue-alt-light) !important;
-      td {
-         border-bottom: 1px solid  var(--uvalib-blue-alt) !important;
-      }
-   }
    .undefined {
       font-style: italic;
    }
@@ -375,7 +413,11 @@ export default {
             background-color: #f5f5f5;
          }
       }
+      div.card.selected {
+         background: var(--uvalib-blue-alt-light);
+      }
    }
+
    div.gallery.medium {
       .card .metadata .data  {
          max-width: 230px;
@@ -417,7 +459,18 @@ export default {
       }
       tr {
          &:hover {
-            background:var(  --uvalib-grey-lightest);
+            background: aliceblue;
+         }
+      }
+      tr.selected {
+         &:hover {
+            background: aliceblue;
+         }
+      }
+      .selected {
+         background: var(--uvalib-blue-alt-light);
+         td {
+            border-bottom: 1px solid  var(--uvalib-blue-alt-light);
          }
       }
    }
@@ -432,22 +485,20 @@ export default {
       position: absolute;
       background: var(--uvalib-blue-alt);
       box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-      padding: 5px;
+      padding: 0;
       top: 50px;
       left: 50px;
       text-align: left;
-      border-radius: 5px;
       ul {
-         border-radius: 5px;
          background: white;
          list-style: none;
          margin: 0;
          padding: 0;
          border: 1px solid var(--uvalib-blue-alt-dark);
          li {
-            border-radius: 5px;
             padding: 4px 15px 4px 5px;
             white-space: nowrap;
+            outline: 0;
             cursor:pointer;
             &:hover {
                background: var(--uvalib-blue-alt-light);

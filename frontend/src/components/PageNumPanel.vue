@@ -23,8 +23,8 @@
       </div>
       <p class="error" v-if="error" v-html="errorMessage"></p>
       <div class="panel-actions">
-         <span tabindex="0" class="button" @click="cancelEditClicked">Cancel</span>
-         <span tabindex="0" class="button" @click="okPagesClicked">OK</span>
+         <DPGButton @click="cancelEditClicked" class="right-pad">Cancel</DPGButton>
+         <DPGButton @click="okPagesClicked">OK</DPGButton>
       </div>
    </div>
 </template>

@@ -7,7 +7,8 @@
       @keyup.stop.prevent.left
       @keyup.stop.prevent.right
    >
-      <DPGButton id="confirm-trigger" @click="show">{{label}}</DPGButton>
+      <DPGButton v-if="type=='button'" id="confirm-trigger" @click.stop.prevent="show">{{label}}</DPGButton>
+      <span class="txt-trigger" v-else id="confirm-trigger" @click.stop.prevent="show">{{label}}</span>
       <div class="confirm-modal-dimmer" v-if="isOpen">
          <div role="dialog" aria-labelledby="confirm-modal-title" id="confirm-modal" class="confirm-modal">
             <div id="confirm-modal-title" class="confirm-modal-title">Confirm Action</div>
@@ -35,6 +36,10 @@ export default {
       label: {
          type: String,
          required: true
+      },
+      type: {
+         type: String,
+         default: "button"
       }
    },
    data: function()  {
@@ -80,6 +85,14 @@ export default {
    height: 100%;
    z-index: 1000;
    background: rgba(0, 0, 0, 0.2);
+}
+.txt-trigger {
+   display: inline-block;
+   cursor: pointer;
+   width: 100%;
+   &:hover {
+      text-decoration: underline;
+   }
 }
 div.confirm-modal {
    color: var(--uvalib-text);

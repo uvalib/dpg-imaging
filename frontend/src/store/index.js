@@ -84,6 +84,13 @@ export default new Vuex.Store({
                ctx.masterFiles.splice(mfIdx,1, mf)
             }
          })
+      },
+
+      removeMasterFile(ctx, fn) {
+         let mfIdx = ctx.masterFiles.findIndex( mf => mf.fileName == fn)
+         if (mfIdx > -1) {
+            ctx.masterFiles.splice(mfIdx,1)
+         }
       }
    },
    actions: {
@@ -133,6 +140,17 @@ export default new Vuex.Store({
          let data = [{file: file, title: title, description: description}]
          axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
             ctx.commit('updateMetadata', data )
+            ctx.commit("setUpdating", false)
+         }).catch( e => {
+            ctx.commit('setError', e)
+            ctx.commit("setUpdating", false)
+         })
+      },
+
+      deleteMasterFile(ctx, mf) {
+         ctx.commit("setUpdating", true)
+         axios.delete(`/api/units/${ctx.state.currUnit}/${mf}`).then(() => {
+            ctx.commit('removeMasterFile', mf )
             ctx.commit("setUpdating", false)
          }).catch( e => {
             ctx.commit('setError', e)
