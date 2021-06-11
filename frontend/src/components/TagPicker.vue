@@ -1,7 +1,7 @@
 <template>
    <div class="tag-picker">
-      <span tabindex="0" @click="showMenu" @keydown.enter="showMenu" class="tag current" :class="masterFile.status"></span>
-      <div class="popup-list" v-if="menuOpen">
+      <span tabindex="0" @click="showMenu" @keydown.enter="showMenu" class="tag current" :class="[masterFile.status, display]"></span>
+      <div class="popup-list" v-if="menuOpen" :class="position">
          <div class="title">
             <span>Select a tag</span>
             <span tabindex="0" @click.stop.prevent="hideMenu()" class="close">X</span>
@@ -47,6 +47,14 @@ export default {
          type: Object,
          required: true
       },
+      display: {
+         type: String,
+         default: "default"
+      },
+      position: {
+         type: String,
+         default: "default"
+      }
    },
    data() {
       return {
@@ -71,6 +79,9 @@ export default {
 <style lang="scss" scoped>
 .tag-picker {
    position: relative;
+   .popup-list.topright {
+      right:0;
+   }
    .popup-list {
       position: absolute;
       background: white;
@@ -136,6 +147,14 @@ export default {
       display: none;
    }
 
+   .tag.large {
+      width: 50px;
+      height: 50px;
+   }
+   .tag.wide {
+      width: 100%;
+      box-sizing: border-box;
+   }
    .tag {
       display: block;
       width: 20px;

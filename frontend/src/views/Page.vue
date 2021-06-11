@@ -6,10 +6,14 @@
       </div>
       <template v-else>
          <div id="iiif-toolbar" class="toolbar">
+            <TagPicker :masterFile="currMasterFile" display="large" position="topright" class="top-right"/>
             <table class="info">
                <tr class="line">
-                  <td class="label">File Name:</td>
-                  <td class="data">{{currMasterFile.fileName}}</td>
+                  <td class="label">Image:</td>
+                  <td class="data">
+                     <span>{{currMasterFile.fileName}}</span>
+                     <span class="detail">(Size: {{currMasterFile.width}} x {{currMasterFile.height}}, Resolution: {{currMasterFile.resolution}})</span>
+                  </td>
                </tr>
                <tr class="line">
                   <td class="label">Title:</td>
@@ -60,8 +64,12 @@
 <script>
 import { mapState, mapGetters } from "vuex"
 import OpenSeadragon from "openseadragon"
+import TagPicker from '../components/TagPicker.vue'
 export default {
    name: "Page",
+   components: {
+      TagPicker
+   },
    computed: {
       ...mapState({
          loading : state => state.loading,
@@ -167,6 +175,11 @@ export default {
       background: var(--uvalib-grey-light);
       position: relative;
       border-bottom: 1px solid var(--uvalib-grey);
+      .top-right {
+         position: absolute;
+         top: 5px;
+         right: 5px;
+      }
       .undefined {
          font-style: italic;
          color: var(--uvalib-grey);
@@ -208,6 +221,11 @@ export default {
             td.data {
                text-align: left;
                width:100%;
+               .detail {
+                  font-weight: 100;
+                  font-size: 0.8em;
+                  margin-left: 15px;
+               }
             }
             padding: 3px 0;
          }

@@ -72,50 +72,52 @@
                </tr>
             </draggable>
          </table>
-         <div class="gallery" :class="viewMode" v-else>
-            <draggable v-model="masterFiles" @start="dragStarted" >
-               <div class="card" v-for="mf in masterFiles" :key="mf.fileName"
-                  @mousedown="fileSelected(mf.fileName, $event)"
-                  @contextmenu.prevent="showContextMenu(mf.fileName, $event)"
-                  :id="mf.fileName"
-               >
-                  <router-link :to="`/unit/${currUnit}/page/${mf.fileName.replace('.tif','').split('_')[1]}`">
-                     <img :src="mf.mediumURL" v-if="viewMode == 'medium'"/>
-                     <img :src="mf.largeURL" v-if="viewMode == 'large'"/>
-                  </router-link>
-                  <div class="metadata">
-                     <div class="row">
-                        <label>File Name</label>
-                        <div class="data">{{mf.fileName}}</div>
+         <draggable v-else v-model="masterFiles" @start="dragStarted" class="gallery" :class="viewMode" >
+            <div class="card" v-for="mf in masterFiles" :key="mf.fileName"
+               @mousedown="fileSelected(mf.fileName, $event)"
+               @contextmenu.prevent="showContextMenu(mf.fileName, $event)"
+               :id="mf.fileName"
+            >
+               <router-link :to="`/unit/${currUnit}/page/${mf.fileName.replace('.tif','').split('_')[1]}`">
+                  <img :src="mf.mediumURL" v-if="viewMode == 'medium'"/>
+                  <img :src="mf.largeURL" v-if="viewMode == 'large'"/>
+               </router-link>
+               <div class="tag">
+                  <TagPicker :masterFile="mf" display="wide"/>
+               </div>
+               <div class="metadata">
+                  <div class="row">
+                     <label>Image</label>
+                     <div class="data">{{mf.fileName}}</div>
+                     <div class="data">{{mf.width}} x {{mf.height}}, {{mf.resolution}}</div>
+                  </div>
+                  <div class="row">
+                     <label>Title</label>
+                     <div class="data editable" @click="editMetadata(mf, 'title')">
+                        <template v-if="isEditing(mf, 'title')">
+                           <input id="edit-title" type="text" v-model="newTitle"  @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
+                        </template>
+                        <template v-else>
+                           <template v-if="mf.title">{{mf.title}}</template>
+                           <span v-else class="undefined">Undefined</span>
+                        </template>
                      </div>
-                     <div class="row">
-                        <label>Title</label>
-                        <div class="data editable" @click="editMetadata(mf, 'title')">
-                           <template v-if="isEditing(mf, 'title')">
-                              <input id="edit-title" type="text" v-model="newTitle"  @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
-                           </template>
-                           <template v-else>
-                              <template v-if="mf.title">{{mf.title}}</template>
-                              <span v-else class="undefined">Undefined</span>
-                           </template>
-                        </div>
-                     </div>
-                     <div class="row">
-                        <label>Caption</label>
-                        <div class="data editable" @click="editMetadata(mf, 'description')">
-                           <template v-if="isEditing(mf, 'description')">
-                              <input id="edit-desc" type="text" v-model="newDescription" @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
-                           </template>
-                           <template v-else>
-                              <template v-if="mf.description">{{mf.description}}</template>
-                              <span v-else class="undefined">Undefined</span>
-                           </template>
-                        </div>
+                  </div>
+                  <div class="row">
+                     <label>Caption</label>
+                     <div class="data editable" @click="editMetadata(mf, 'description')">
+                        <template v-if="isEditing(mf, 'description')">
+                           <input id="edit-desc" type="text" v-model="newDescription" @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
+                        </template>
+                        <template v-else>
+                           <template v-if="mf.description">{{mf.description}}</template>
+                           <span v-else class="undefined">Undefined</span>
+                        </template>
                      </div>
                   </div>
                </div>
-            </draggable>
-         </div>
+            </div>
+         </draggable>
       </template>
       <div class="popupmenu" id="popupmenu" v-show="menuVisible">
          <ul @keydown.esc="clearState">
@@ -345,13 +347,14 @@ export default {
       font-style: italic;
    }
    div.gallery {
-      display: flex;
-      flex-flow: row wrap;
       padding: 15px;
       text-align: left;
+      background: #e5e5e5;
+
+      display: flex;
+      flex-flow: row wrap;
       justify-content: flex-start;
       align-content: flex-start;
-      background: #e5e5e5;
 
       .edit-md {
          float: right;
