@@ -18,8 +18,7 @@
                <tr class="line">
                   <td class="label">Title:</td>
                   <td class="data editable" @click="editMetadata('title')" >
-                     <input  v-if="isEditing('title')" id="edit-title" type="text" v-model="newTitle"
-                        @keyup.enter="submitEdit()" @keyup.esc="cancelEdit" />
+                     <TitleInput  v-if="isEditing('title')" @canceled="cancelEdit" @accepted="submitEdit" v-model="newTitle"/>
                      <template v-else>
                         <span  v-if="currMasterFile.title">{{currMasterFile.title}}</span>
                         <span v-else class="undefined editable">Undefined</span>
@@ -65,10 +64,11 @@
 import { mapState, mapGetters } from "vuex"
 import OpenSeadragon from "openseadragon"
 import TagPicker from '../components/TagPicker.vue'
+import TitleInput from '../components/TitleInput.vue'
 export default {
    name: "Page",
    components: {
-      TagPicker
+      TagPicker, TitleInput
    },
    computed: {
       ...mapState({
@@ -107,12 +107,11 @@ export default {
          this.newDescription = mf.description
          this.editField = field
          this.$nextTick( ()=> {
-            let ele = document.getElementById("edit-title")
             if ( field == "description") {
-               ele = document.getElementById("edit-desc")
+               let ele = document.getElementById("edit-desc")
+               ele.focus()
+               ele.select()
             }
-            ele.focus()
-            ele.select()
          })
       },
       cancelEdit() {

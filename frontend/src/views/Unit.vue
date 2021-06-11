@@ -56,8 +56,7 @@
                         <span v-if="mf.title">{{mf.title}}</span>
                         <span v-else class="undefined">Undefined</span>
                      </span>
-                     <input v-else id="edit-title" type="text" v-model="newTitle"
-                        @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
+                     <TitleInput v-else @canceled="cancelEdit" @accepted="submitEdit(mf)" v-model="newTitle"/>
                   </td>
                   <td @click="editMetadata(mf, 'description')" class="editable" >
                      <span  v-if="!isEditing(mf, 'description')" class="editable">
@@ -95,7 +94,7 @@
                      <label>Title</label>
                      <div class="data editable" @click="editMetadata(mf, 'title')">
                         <template v-if="isEditing(mf, 'title')">
-                           <input id="edit-title" type="text" v-model="newTitle"  @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
+                           <TitleInput  @canceled="cancelEdit" @accepted="submitEdit(mf)" v-model="newTitle"/>
                         </template>
                         <template v-else>
                            <template v-if="mf.title">{{mf.title}}</template>
@@ -144,9 +143,10 @@ import { mapState } from "vuex"
 import { mapFields } from 'vuex-map-fields'
 import PageNumPanel from '../components/PageNumPanel.vue'
 import TagPicker from '../components/TagPicker.vue'
+import TitleInput from '../components/TitleInput.vue'
 import draggable from 'vuedraggable'
 export default {
-   components: {PageNumPanel, draggable, TagPicker },
+   components: {PageNumPanel, draggable, TagPicker, TitleInput },
    name: "unit",
    computed: {
       ...mapState({
@@ -289,12 +289,11 @@ export default {
          this.newDescription = mf.description
          this.editField = field
          this.$nextTick( ()=> {
-            let ele = document.getElementById("edit-title")
             if ( field == "description") {
-               ele = document.getElementById("edit-desc")
+               let ele = document.getElementById("edit-desc")
+               ele.focus()
+               ele.select()
             }
-            ele.focus()
-            ele.select()
          })
       },
       cancelEdit() {

@@ -159,7 +159,7 @@ export default {
       display: block;
       width: 20px;
       height: 20px;
-      border: 1px solid var(--uvalib-grey-light);
+      border: 1px solid var(--uvalib-grey);
       background: white;
    }
    .tag.rescan {
