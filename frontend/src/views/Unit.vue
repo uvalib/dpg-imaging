@@ -29,6 +29,7 @@
             <thead>
                <tr>
                   <th></th>
+                  <th>Tag</th>
                   <th>File Name</th>
                   <th>File Type</th>
                   <th>Resolution</th>
@@ -46,6 +47,7 @@
                   <td class="thumb">
                      <router-link :to="`/unit/${currUnit}/page/${mf.fileName.replace('.tif','').split('_')[1]}`"><img :src="mf.thumbURL"/></router-link>
                   </td>
+                  <td><TagPicker :masterFile="mf" /></td>
                   <td>{{mf.fileName}}</td>
                   <td>{{mf.fileType}}</td>
                   <td>{{mf.resolution}}</td>
@@ -139,9 +141,10 @@
 import { mapState } from "vuex"
 import { mapFields } from 'vuex-map-fields'
 import PageNumPanel from '../components/PageNumPanel.vue'
+import TagPicker from '../components/TagPicker.vue'
 import draggable from 'vuedraggable'
 export default {
-   components: {PageNumPanel, draggable },
+   components: {PageNumPanel, draggable, TagPicker },
    name: "unit",
    computed: {
       ...mapState({
@@ -295,9 +298,9 @@ export default {
       cancelEdit() {
          this.editMF = null
       },
-      submitEdit(mf) {
+      async submitEdit(mf) {
+         await this.$store.dispatch("updateMetadata", {file: mf.path, title: this.newTitle, description: this.newDescription, status: mf.status})
          this.editMF = null
-         this.$store.dispatch("updateMetadata", {file: mf.path, title: this.newTitle, description: this.newDescription})
       }
    }
 }

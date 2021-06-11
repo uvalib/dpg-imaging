@@ -110,10 +110,11 @@ export default {
       cancelEdit() {
          this.editField = ""
       },
-      submitEdit() {
-         this.editField = ""
+      async submitEdit() {
          let mf = this.currMasterFile
-         this.$store.dispatch("updateMetadata", {file: mf.path, title: this.newTitle, description: this.newDescription})
+         await this.$store.dispatch("updateMetadata", {file: mf.path, title: this.newTitle, description: this.newDescription, status: mf.status})
+         this.editField = ""
+
       }
    },
    async created() {

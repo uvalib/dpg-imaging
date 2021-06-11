@@ -81,6 +81,7 @@ export default new Vuex.Store({
                let mf = ctx.masterFiles[mfIdx]
                mf.title = d.title
                mf.description = d.description
+               mf.status = d.status
                ctx.masterFiles.splice(mfIdx,1, mf)
             }
          })
@@ -123,7 +124,7 @@ export default new Vuex.Store({
          let page = parseInt(startPage,10)
          for (let i=ctx.state.rangeStartIdx; i<=ctx.state.rangeEndIdx; i++) {
             let mf = ctx.state.masterFiles[i]
-            data.push( {file: mf.path, title: ""+page, description: mf.description})
+            data.push( {file: mf.path, title: ""+page, description: mf.description, status: mf.status})
             page+=1
          }
          axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
@@ -135,10 +136,27 @@ export default new Vuex.Store({
          })
       },
 
-      updateMetadata(ctx, {file, title, description}) {
+      async updateMetadata(ctx, {file, title, description, status}) {
          ctx.commit("setUpdating", true)
-         let data = [{file: file, title: title, description: description}]
-         axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
+         let data = [{file: file, title: title, description: description, status: status}]
+         return axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
+            ctx.commit('updateMetadata', data )
+            ctx.commit("setUpdating", false)
+         }).catch( e => {
+            ctx.commit('setError', e)
+            ctx.commit("setUpdating", false)
+         })
+      },
+
+      async setTag(ctx, {file, tag}) {
+         ctx.commit("setUpdating", true)
+         let mf = ctx.state.masterFiles.find( mf => mf.path == file)
+         let status = tag
+         if (tag == "none") {
+            status = ""
+         }
+         let data = [{file: file, title: mf.title, description: mf.description, status: status}]
+         return axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
             ctx.commit('updateMetadata', data )
             ctx.commit("setUpdating", false)
          }).catch( e => {

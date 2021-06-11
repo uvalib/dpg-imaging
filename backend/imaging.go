@@ -32,17 +32,19 @@ type masterFileInfo struct {
 	Description  string `json:"description"`
 	Width        int    `json:"width"`
 	Height       int    `json:"height"`
+	Status       string `json:"status"`
 }
 
 type exifData struct {
-	ColorProfile string      `json:"ICCProfileName"`
-	FileSize     string      `json:"FileSize"`
-	FileType     string      `json:"FileType"`
-	Resolution   int         `json:"XResolution"`
-	Title        interface{} `json:"Headline"`
-	Description  interface{} `json:"Caption-Abstract"`
-	Width        int         `json:"ImageWidth"`
-	Height       int         `json:"ImageHeight"`
+	ColorProfile  string      `json:"ICCProfileName"`
+	FileSize      string      `json:"FileSize"`
+	FileType      string      `json:"FileType"`
+	Resolution    int         `json:"XResolution"`
+	Title         interface{} `json:"Headline"`
+	Description   interface{} `json:"Caption-Abstract"`
+	Width         int         `json:"ImageWidth"`
+	Height        int         `json:"ImageHeight"`
+	ClassifyState string      `json:"ClassifyState"`
 }
 
 func (svc *serviceContext) getUnits(c *gin.Context) {
@@ -140,6 +142,7 @@ func (svc *serviceContext) updateMetadata(c *gin.Context) {
 		File        string `json:"file"`
 		Title       string `json:"title"`
 		Description string `json:"description"`
+		Status      string `json:"status"`
 	}
 
 	qpErr := c.ShouldBindJSON(&mdPost)
@@ -152,8 +155,9 @@ func (svc *serviceContext) updateMetadata(c *gin.Context) {
 	for _, change := range mdPost {
 		titleEdit := fmt.Sprintf("-iptc:headline=%s", change.Title)
 		descEdit := fmt.Sprintf("-iptc:caption-abstract=%s", change.Description)
+		statusEdit := fmt.Sprintf("-iptc:ClassifyState=%s", change.Status)
 		log.Printf("INFO: exiftool %s %s %s", titleEdit, descEdit, change.File)
-		_, err := exec.Command("exiftool", titleEdit, descEdit, change.File).Output()
+		_, err := exec.Command("exiftool", titleEdit, descEdit, statusEdit, change.File).Output()
 		if err != nil {
 			log.Printf("ERROR: unable to update %s metadata: %s", change.File, err.Error())
 			c.String(http.StatusInternalServerError, err.Error())
@@ -288,6 +292,7 @@ func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int) {
 				files[currIdx].Title = title
 				files[currIdx].Width = md.Width
 				files[currIdx].Height = md.Height
+				files[currIdx].Status = md.ClassifyState
 				currIdx++
 			}
 		}
@@ -297,6 +302,6 @@ func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int) {
 func baseExifCmd() []string {
 	out := []string{"-json", "-ImageWidth", "-ImageHeight",
 		"-FileType", "-XResolution", "-FileSize", "-ICCProfileName",
-		"-iptc:headline", "-iptc:caption-abstract"}
+		"-iptc:headline", "-iptc:caption-abstract", "-iptc:ClassifyState"}
 	return out
 }
