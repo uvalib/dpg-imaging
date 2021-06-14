@@ -138,6 +138,7 @@ func (svc *serviceContext) getUnitDetails(c *gin.Context) {
 	// walk the unit directory and generate masterFile info for each .tif
 	mfRegex := regexp.MustCompile(`^\d{9}_\w{4,}\.tif$`)
 	tifRegex := regexp.MustCompile(`^.*\.tif$`)
+	hiddenRegex := regexp.MustCompile(`^\.`)
 	err := filepath.Walk(unitDir, func(path string, f os.FileInfo, err error) error {
 		if err != nil {
 			log.Printf("WARNING: directory traverse failed: %s", err.Error())
@@ -146,6 +147,10 @@ func (svc *serviceContext) getUnitDetails(c *gin.Context) {
 
 		if f.IsDir() == false {
 			fName := f.Name()
+			if hiddenRegex.Match([]byte(fName)) {
+				log.Printf("INFO: skipping hidden file %s", fName)
+				return nil
+			}
 			log.Printf("INFO: Found file %s", path)
 
 			if !tifRegex.Match([]byte(fName)) {

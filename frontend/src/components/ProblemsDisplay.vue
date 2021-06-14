@@ -75,6 +75,7 @@ div.problems-wrap {
          margin: 0;
          padding-left: 20px;
          font-weight: 100;
+         text-align: left;
          li {
             white-space: nowrap;
             padding: 2px 8px;
