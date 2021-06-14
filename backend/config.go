@@ -14,11 +14,12 @@ type dbConfig struct {
 }
 
 type configData struct {
-	port       int
-	db         dbConfig
-	imagesDir  string
-	iiifURL    string
-	serviceURL string
+	port        int
+	db          dbConfig
+	imagesDir   string
+	iiifURL     string
+	serviceURL  string
+	tracksysURL string
 }
 
 func getConfiguration() *configData {
@@ -27,6 +28,7 @@ func getConfiguration() *configData {
 	flag.StringVar(&config.imagesDir, "images", "", "Images directory")
 	flag.StringVar(&config.iiifURL, "iiif", "", "IIIF server URL")
 	flag.StringVar(&config.serviceURL, "url", "", "Base URL for DPG Imaging service")
+	flag.StringVar(&config.tracksysURL, "tsurl", "https://tracksys.lib.virginia.edu", "URL for TrackSys")
 
 	// DB connection params
 	flag.StringVar(&config.db.Host, "dbhost", "", "Database host")

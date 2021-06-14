@@ -30,10 +30,10 @@ func main() {
 	api := router.Group("/api")
 	{
 		api.GET("/units", svc.getUnits)
-		api.GET("/units/:dir", svc.getMasterFiles)
-		api.POST("/units/:dir/update", svc.updateMetadata)
-		api.POST("/units/:dir/rename", svc.renameFiles)
-		api.DELETE("/units/:dir/:file", svc.deleteFile)
+		api.GET("/units/:uid", svc.getUnitDetails)
+		api.POST("/units/:uid/update", svc.updateMetadata)
+		api.POST("/units/:uid/rename", svc.renameFiles)
+		api.DELETE("/units/:uid/:file", svc.deleteFile)
 	}
 
 	// Note: in dev mode, this is never actually used. The front end is served

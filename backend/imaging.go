@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,9 +13,11 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	dbx "github.com/go-ozzo/ozzo-dbx"
 )
 
 type masterFileInfo struct {
@@ -47,6 +50,29 @@ type exifData struct {
 	ClassifyState string      `json:"ClassifyState"`
 }
 
+type unitMetadata struct {
+	ID         int64         `db:"id" json:"id"`
+	CallNumber string        `db:"call_number" json:"callNumber"`
+	Title      string        `db:"title" json:"title"`
+	ProjectID  sql.NullInt64 `db:"project" json:"-"`
+	ProjectURL string        `json:"projectURL"`
+}
+
+type unitData struct {
+	Metadata    *unitMetadata     `json:"metadata"`
+	MasterFiles []*masterFileInfo `json:"masterFiles"`
+	Problems    []string          `json:"problems"`
+}
+
+func padLeft(str string, tgtLen int) string {
+	for {
+		if len(str) == tgtLen {
+			return str
+		}
+		str = "0" + str
+	}
+}
+
 func (svc *serviceContext) getUnits(c *gin.Context) {
 	log.Printf("INFO: get available units from %s", svc.ImagesDir)
 	files, err := ioutil.ReadDir(svc.ImagesDir)
@@ -67,41 +93,95 @@ func (svc *serviceContext) getUnits(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-func (svc *serviceContext) getMasterFiles(c *gin.Context) {
-	dir := c.Param("dir")
-	unitDir := path.Join(svc.ImagesDir, dir)
+func (svc *serviceContext) getUnitMetadata(uidStr string) (*unitMetadata, error) {
+	log.Printf("INFO: get metadata for unit %s", uidStr)
+	uid, convErr := strconv.Atoi(uidStr)
+	if convErr != nil {
+		return nil, fmt.Errorf("unit id %s is not valid", uidStr)
+	}
+
+	qSQL := `select m.id, call_number, title, p.id as project from metadata m
+		inner join units u on u.metadata_id = m.id
+		left outer join projects p on p.unit_id=u.id
+		where u.id={:uid}`
+	q := svc.DB.NewQuery(qSQL)
+	q.Bind(dbx.Params{"uid": uid})
+	var dbInfo unitMetadata
+	err := q.One(&dbInfo)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get metadata for unit %d: %s", uid, err.Error())
+	}
+
+	if dbInfo.ProjectID.Valid {
+		dbInfo.ProjectURL = fmt.Sprintf("%s/admin/projects/%d", svc.TrackSysURL, dbInfo.ProjectID.Int64)
+	}
+
+	return &dbInfo, nil
+}
+
+func (svc *serviceContext) getUnitDetails(c *gin.Context) {
+	uidStr := padLeft(c.Param("uid"), 9)
+	unitDir := path.Join(svc.ImagesDir, uidStr)
+	out := unitData{MasterFiles: make([]*masterFileInfo, 0), Problems: make([]string, 0)}
+
+	log.Printf("INFO: get details for unit %s", uidStr)
+	unitMD, uErr := svc.getUnitMetadata(uidStr)
+	if uErr != nil {
+		log.Printf("ERROR: %s", uErr.Error())
+		c.String(http.StatusInternalServerError, uErr.Error())
+		return
+	}
+	out.Metadata = unitMD
+
 	log.Printf("INFO: get master files from %s", unitDir)
 
 	// walk the unit directory and generate masterFile info for each .tif
-	mfRegex := regexp.MustCompile(`^\d{9}_\w{4,}.tif$`)
-	out := make([]*masterFileInfo, 0)
+	mfRegex := regexp.MustCompile(`^\d{9}_\w{4,}\.tif$`)
+	tifRegex := regexp.MustCompile(`^.*\.tif$`)
 	err := filepath.Walk(unitDir, func(path string, f os.FileInfo, err error) error {
 		if err != nil {
 			log.Printf("WARNING: directory traverse failed: %s", err.Error())
-		} else {
-			if f.IsDir() == false {
-				log.Printf("INFO: Found .tif image %s", path)
-
-				// NOTE: path param is the full path to the tif - including the filename
-				// Strip the base image dir and file name to get relative path
-				fName := f.Name()
-				relPath := strings.Replace(path, fmt.Sprintf("%s/", svc.ImagesDir), "", 1)
-				relPath = strings.Replace(relPath, fmt.Sprintf("/%s", fName), "", 1)
-
-				if mfRegex.Match([]byte(fName)) {
-					mf := masterFileInfo{FileName: fName, Path: path}
-					fName = strings.ReplaceAll(fName, ".tif", "")
-
-					pathID := strings.Replace(relPath, "/", "%2F", -1)
-					mf.ThumbURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/30,/0/default.jpg", svc.IIIFURL, pathID, fName)
-					mf.MediumURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/250,/0/default.jpg", svc.IIIFURL, pathID, fName)
-					mf.LargeURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/400,/0/default.jpg", svc.IIIFURL, pathID, fName)
-					mf.InfoURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/info.json", svc.IIIFURL, pathID, fName)
-
-					out = append(out, &mf)
-				}
-			}
+			return nil
 		}
+
+		if f.IsDir() == false {
+			fName := f.Name()
+			log.Printf("INFO: Found file %s", path)
+
+			if !tifRegex.Match([]byte(fName)) {
+				log.Printf("INFO: %s is not a tif; skipping", fName)
+				out.Problems = append(out.Problems, fmt.Sprintf("%s is not an image file", path))
+				return nil
+			}
+
+			// NOTE: path param is the full path to the tif - including the filename
+			// Strip the base image dir and file name to get relative path
+			relPath := strings.Replace(path, fmt.Sprintf("%s/", svc.ImagesDir), "", 1)
+			relPath = strings.Replace(relPath, fmt.Sprintf("/%s", fName), "", 1)
+
+			if !mfRegex.Match([]byte(fName)) {
+				log.Printf("INFO: %s is named incorrectly", fName)
+				out.Problems = append(out.Problems, fmt.Sprintf("%s is named incorrectly", path))
+			}
+
+			mf := masterFileInfo{FileName: fName, Path: path}
+			fName = strings.ReplaceAll(fName, ".tif", "")
+
+			if strings.Split(fName, "_")[0] != uidStr {
+				out.Problems = append(out.Problems, fmt.Sprintf("%s doesn't match unit number", path))
+			}
+
+			pathID := strings.Replace(relPath, "/", "%2F", -1)
+			mf.ThumbURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/30,/0/default.jpg", svc.IIIFURL, pathID, fName)
+			mf.MediumURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/250,/0/default.jpg", svc.IIIFURL, pathID, fName)
+			mf.LargeURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/400,/0/default.jpg", svc.IIIFURL, pathID, fName)
+			mf.InfoURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/info.json", svc.IIIFURL, pathID, fName)
+
+			out.MasterFiles = append(out.MasterFiles, &mf)
+			return nil
+
+		}
+
 		return nil
 	})
 
@@ -111,15 +191,23 @@ func (svc *serviceContext) getMasterFiles(c *gin.Context) {
 		return
 	}
 
+	lastMF := out.MasterFiles[len(out.MasterFiles)-1]
+	lastSeq := strings.Split(lastMF.FileName, "_")[1]
+	lastSeq = strings.Replace(lastSeq, ".tif", "", 1)
+	lastSeqNum, _ := strconv.Atoi(lastSeq)
+	if len(out.MasterFiles) != lastSeqNum {
+		out.Problems = append(out.Problems, "Last masterfile number doesn't match count")
+	}
+
 	// use exiftool to get metadata for master files in batches of 10
 	currIdx := 0
 	pendingFilesCnt := 0
 	cmdArray := baseExifCmd()
-	for _, mf := range out {
+	for _, mf := range out.MasterFiles {
 		cmdArray = append(cmdArray, mf.Path)
 		pendingFilesCnt++
 		if pendingFilesCnt == 10 {
-			getExifData(cmdArray, out, currIdx)
+			getExifData(cmdArray, out.MasterFiles, currIdx)
 			cmdArray = baseExifCmd()
 			currIdx = pendingFilesCnt
 			pendingFilesCnt = 0
@@ -127,15 +215,15 @@ func (svc *serviceContext) getMasterFiles(c *gin.Context) {
 	}
 
 	if pendingFilesCnt > 0 {
-		getExifData(cmdArray, out, currIdx)
+		getExifData(cmdArray, out.MasterFiles, currIdx)
 	}
 
 	c.JSON(http.StatusOK, out)
 }
 
 func (svc *serviceContext) updateMetadata(c *gin.Context) {
-	dir := c.Param("dir")
-	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, dir)
+	uid := padLeft(c.Param("uid"), 9)
+	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
 	log.Printf("INFO: update master file metadata in %s", unitDir)
 
 	var mdPost []struct {
@@ -174,7 +262,7 @@ func (svc *serviceContext) updateMetadata(c *gin.Context) {
 }
 
 func (svc *serviceContext) renameFiles(c *gin.Context) {
-	unit := c.Param("dir")
+	unit := padLeft(c.Param("uid"), 9)
 	var rnPost []struct {
 		Original string `json:"original"`
 		NewName  string `json:"new"`
@@ -230,7 +318,7 @@ func (svc *serviceContext) renameFiles(c *gin.Context) {
 }
 
 func (svc *serviceContext) deleteFile(c *gin.Context) {
-	unit := c.Param("dir")
+	unit := padLeft(c.Param("uid"), 9)
 	file := c.Param("file")
 	unitDir := path.Join(svc.ImagesDir, unit)
 	log.Printf("INFO: delete %s from unit %s", file, unit)

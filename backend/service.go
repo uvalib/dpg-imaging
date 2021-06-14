@@ -21,6 +21,7 @@ type serviceContext struct {
 	ServiceURL      string
 	ImagesDir       string
 	IIIFURL         string
+	TrackSysURL     string
 	HTTPClient      *http.Client
 	IIIFManTemplate *template.Template
 	DB              *dbx.DB
@@ -28,7 +29,7 @@ type serviceContext struct {
 
 // InitializeService sets up the service context for all API handlers
 func initializeService(version string, cfg *configData) *serviceContext {
-	ctx := serviceContext{Version: version, ImagesDir: cfg.imagesDir, IIIFURL: cfg.iiifURL, ServiceURL: cfg.serviceURL}
+	ctx := serviceContext{Version: version, ImagesDir: cfg.imagesDir, IIIFURL: cfg.iiifURL, ServiceURL: cfg.serviceURL, TrackSysURL: cfg.tracksysURL}
 
 	log.Printf("INFO: connecting to DB...")
 	connectStr := fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true",
