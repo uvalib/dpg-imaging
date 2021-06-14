@@ -169,7 +169,7 @@ export default {
       }
    },
    created() {
-      this.$store.dispatch("getMasterFiles", this.$route.params.unit)
+      this.$store.dispatch("getUnitDetails", this.$route.params.unit)
    },
    methods: {
       clearState() {

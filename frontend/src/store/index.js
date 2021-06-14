@@ -105,12 +105,12 @@ export default new Vuex.Store({
             ctx.commit("setLoading", false)
          })
       },
-      async getMasterFiles(ctx, unit) {
+      async getUnitDetails(ctx, unit) {
          if (ctx.state.currUnit == unit && ctx.state.masterFiles.length > 0) return
 
          ctx.commit("setLoading", true)
          return axios.get(`/api/units/${unit}`).then(response => {
-            ctx.commit('setMasterFiles', {unit: unit, masterFiles: response.data})
+            ctx.commit('setMasterFiles', {unit: unit, masterFiles: response.data.masterFiles})
             ctx.commit("setLoading", false)
          }).catch( e => {
             ctx.commit('setError', e)

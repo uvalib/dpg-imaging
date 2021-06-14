@@ -125,7 +125,7 @@ export default {
       }
    },
    async created() {
-      await this.$store.dispatch("getMasterFiles", this.$route.params.unit)
+      await this.$store.dispatch("getUnitDetails", this.$route.params.unit)
       this.$nextTick( ()=>{
          let hdr = document.getElementById("uva-header")
          let toolbar = document.getElementById("iiif-toolbar")
