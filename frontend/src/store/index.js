@@ -18,6 +18,10 @@ export default new Vuex.Store({
       rangeStartIdx: -1,
       rangeEndIdx: -1,
       editMode: "",
+      callNumber: "",
+      title: "",
+      projectURL: "",
+      problems: []
    },
    getters: {
       getField,
@@ -66,6 +70,15 @@ export default new Vuex.Store({
             state.units.push( u )
          })
       },
+      setUnitMetadata(state, data) {
+         state.callNumber = data.callNumber
+         state.title = data.title
+         state.projectURL = data.projectURL
+      },
+      setUnitProblems(state, problems) {
+         state.problems.splice(0, state.problems.length)
+         problems.forEach( p => state.problems.push(p) )
+      },
       setMasterFiles(ctx, {unit, masterFiles}) {
          ctx.currUnit = unit
          ctx.masterFiles.splice(0, ctx.masterFiles.length)
@@ -73,7 +86,7 @@ export default new Vuex.Store({
             ctx.masterFiles.push(mf)
          })
       },
-      updateMetadata( ctx, data) {
+      updateMasterFileMetadata( ctx, data) {
          // data is an array of {file, title, description}
          data.forEach( d => {
             let mfIdx = ctx.masterFiles.findIndex( mf => mf.path == d.file)
@@ -111,6 +124,8 @@ export default new Vuex.Store({
          ctx.commit("setLoading", true)
          return axios.get(`/api/units/${unit}`).then(response => {
             ctx.commit('setMasterFiles', {unit: unit, masterFiles: response.data.masterFiles})
+            ctx.commit('setUnitMetadata', response.data.metadata)
+            ctx.commit('setUnitProblems', response.data.problems)
             ctx.commit("setLoading", false)
          }).catch( e => {
             ctx.commit('setError', e)
@@ -128,7 +143,7 @@ export default new Vuex.Store({
             page+=1
          }
          axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
-            ctx.commit('updateMetadata', data )
+            ctx.commit('updateMasterFileMetadata', data )
             ctx.commit("setUpdating", false)
          }).catch( e => {
             ctx.commit('setError', e)
@@ -136,11 +151,11 @@ export default new Vuex.Store({
          })
       },
 
-      async updateMetadata(ctx, {file, title, description, status}) {
+      async updateMasterFileMetadata(ctx, {file, title, description, status}) {
          ctx.commit("setUpdating", true)
          let data = [{file: file, title: title, description: description, status: status}]
          return axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
-            ctx.commit('updateMetadata', data )
+            ctx.commit('updateMasterFileMetadata', data )
             ctx.commit("setUpdating", false)
          }).catch( e => {
             ctx.commit('setError', e)
@@ -157,7 +172,7 @@ export default new Vuex.Store({
          }
          let data = [{file: file, title: mf.title, description: mf.description, status: status}]
          return axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
-            ctx.commit('updateMetadata', data )
+            ctx.commit('updateMasterFileMetadata', data )
             ctx.commit("setUpdating", false)
          }).catch( e => {
             ctx.commit('setError', e)

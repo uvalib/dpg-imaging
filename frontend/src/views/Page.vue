@@ -119,7 +119,7 @@ export default {
       },
       async submitEdit() {
          let mf = this.currMasterFile
-         await this.$store.dispatch("updateMetadata", {file: mf.path, title: this.newTitle, description: this.newDescription, status: mf.status})
+         await this.$store.dispatch("updateMasterFileMetadata", {file: mf.path, title: this.newTitle, description: this.newDescription, status: mf.status})
          this.editField = ""
 
       }

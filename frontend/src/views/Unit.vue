@@ -5,7 +5,17 @@
          <WaitSpinner v-if="loading" message="Loading master file..." />
       </div>
       <template v-else>
-         <h2>Unit {{currUnit}}</h2>
+         <div class="metadata">
+            <h2>
+               <ProblemsDisplay class="topleft" />
+               <span>{{title}}</span>
+            </h2>
+            <h3>
+               <div>{{callNumber}}</div>
+               <div>Unit {{currUnit}}</div>
+            </h3>
+            <div><a :href="projectURL" target="_blank">TrackSys Project<i class="link fas fa-external-link-alt"></i></a></div>
+         </div>
          <div class="toolbar">
             <span class="viewe-mode">
                <label>View:</label>
@@ -144,15 +154,20 @@ import { mapFields } from 'vuex-map-fields'
 import PageNumPanel from '../components/PageNumPanel.vue'
 import TagPicker from '../components/TagPicker.vue'
 import TitleInput from '../components/TitleInput.vue'
+import ProblemsDisplay from '../components/ProblemsDisplay.vue'
 import draggable from 'vuedraggable'
 export default {
-   components: {PageNumPanel, draggable, TagPicker, TitleInput },
+   components: {PageNumPanel, draggable, TagPicker, TitleInput, ProblemsDisplay },
    name: "unit",
    computed: {
       ...mapState({
          loading : state => state.loading,
          updating : state => state.updating,
-         currUnit: state => state.currUnit
+         currUnit: state => state.currUnit,
+         title: state => state.title,
+         callNumber: state => state.callNumber,
+         projectURL: state => state.projectURL,
+         problems: state => state.problems
       }),
       ...mapFields([
          'viewMode', "rangeStartIdx", "rangeEndIdx", "editMode", "masterFiles"
@@ -300,7 +315,7 @@ export default {
          this.editMF = null
       },
       async submitEdit(mf) {
-         await this.$store.dispatch("updateMetadata", {file: mf.path, title: this.newTitle, description: this.newDescription, status: mf.status})
+         await this.$store.dispatch("updateMasterFileMetadata", {file: mf.path, title: this.newTitle, description: this.newDescription, status: mf.status})
          this.editMF = null
       }
    }
@@ -313,9 +328,37 @@ export default {
    .load {
       margin-top: 10%;
    }
-   h2 {
-      color: var(--uvalib-brand-orange);
-      margin-bottom: 25px;
+   .metadata {
+      margin-bottom: 15px;
+      position: relative;
+      .topleft {
+         position: absolute;
+         top:0;
+         left: 0px;
+      }
+      h2 {
+         color: var(--uvalib-brand-orange);
+         margin: 10px 0;
+      }
+      h3 {
+          margin: 5px 0;
+          font-weight: normal;
+      }
+      a {
+         display: inline-block;
+         margin-top: 8px;
+         font-weight: bold;
+         text-decoration: none;
+         cursor: pointer;
+         color: var(--uvalib-blue-alt);
+         .link {
+            display: inline-block;
+            margin-left: 8px;
+         }
+         &:hover {
+            text-decoration: underline;
+         }
+      }
    }
    .toolbar {
       display: flex;
