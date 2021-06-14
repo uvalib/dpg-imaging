@@ -1,5 +1,5 @@
 <template>
-   <div class="problems-wrap">
+   <div class="problems-wrap" v-if="problems.length > 0">
       <span class="problems-btn" v-if="problems" @click="toggleList()">
          {{problems.length}} <span v-if="problems.length==1">issue</span><span v-else>issues</span> detected
          <i class="caret fas fa-angle-down" :class="{rotate: opened}"></i>

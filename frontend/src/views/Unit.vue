@@ -167,7 +167,6 @@ export default {
          title: state => state.title,
          callNumber: state => state.callNumber,
          projectURL: state => state.projectURL,
-         problems: state => state.problems
       }),
       ...mapFields([
          'viewMode', "rangeStartIdx", "rangeEndIdx", "editMode", "masterFiles"
