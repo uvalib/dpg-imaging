@@ -107,6 +107,7 @@ export default new Vuex.Store({
                mf.title = d.title
                mf.description = d.description
                mf.status = d.status
+               mf.componentID = d.componentID
                ctx.masterFiles.splice(mfIdx,1, mf)
             }
          })
@@ -168,7 +169,7 @@ export default new Vuex.Store({
          let page = parseInt(startPage,10)
          for (let i=ctx.state.rangeStartIdx; i<=ctx.state.rangeEndIdx; i++) {
             let mf = ctx.state.masterFiles[i]
-            data.push( {file: mf.path, title: ""+page, description: mf.description, status: mf.status})
+            data.push( {file: mf.path, title: ""+page, description: mf.description, status: mf.status, componentID: mf.componentID})
             page+=1
          }
          axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
@@ -180,9 +181,25 @@ export default new Vuex.Store({
          })
       },
 
-      async updateMasterFileMetadata(ctx, {file, title, description, status}) {
+      async componentLink(ctx, componentID) {
          ctx.commit("setUpdating", true)
-         let data = [{file: file, title: title, description: description, status: status}]
+         let data = []
+         for (let i=ctx.state.rangeStartIdx; i<=ctx.state.rangeEndIdx; i++) {
+            let mf = ctx.state.masterFiles[i]
+            data.push( {file: mf.path, title: mf.title, description: mf.description, status: mf.status, componentID: componentID})
+         }
+         return axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
+            ctx.commit('updateMasterFileMetadata', data )
+            ctx.commit("setUpdating", false)
+         }).catch( e => {
+            ctx.commit('setError', e)
+            ctx.commit("setUpdating", false)
+         })
+      },
+
+      async updateMasterFileMetadata(ctx, {file, title, description, status, componentID}) {
+         ctx.commit("setUpdating", true)
+         let data = [{file: file, title: title, description: description, status: status, componentID: componentID}]
          return axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
             ctx.commit('updateMasterFileMetadata', data )
             ctx.commit("setUpdating", false)
@@ -224,8 +241,11 @@ export default new Vuex.Store({
          ctx.commit("setUpdating", true)
          let data = []
          ctx.state.masterFiles.forEach( (mf,idx) => {
-            let mfPage = parseInt(mf.fileName.toLowerCase().replace(".tif").split("_")[1],10)
-            if (mfPage !=  idx+1) {
+            let mfParts = mf.fileName.toLowerCase().replace(".tif").split("_")
+            let mfPage = parseInt(mfParts[1],10)
+
+            // detect either sequence issues or unit prefix issues
+            if (mfPage !=  idx+1 || mfParts[0] != ctx.state.currUnit) {
                let newPg = `${idx+1}`
                newPg = newPg.padStart(4,'0')
                let newFN = `${ctx.state.currUnit}_${newPg}.tif`

@@ -23,6 +23,7 @@
       </div>
       <div class="panel-actions">
          <DPGButton @click="selectAllClicked" class="left">Select All</DPGButton>
+         <DPGButton @click="unlinkClicked" class="right-pad">Unlink</DPGButton>
          <DPGButton @click="cancelEditClicked" class="right-pad">Cancel</DPGButton>
          <DPGButton @click="okClicked">OK</DPGButton>
       </div>
@@ -55,7 +56,7 @@
                <p class="confirm">Link this component to selected images?</p>
             </div>
             <div class="component-modal-controls">
-               <DPGButton id="close-confirm" @click="cancelEditClicked" @tabback="setFocus('ok-confirm')" :focusBackOverride="true">
+               <DPGButton id="close-confirm" @click="noLinkClicked" @tabback="setFocus('ok-confirm')" :focusBackOverride="true">
                   No
                </DPGButton>
                <span class="spacer"></span>
@@ -105,14 +106,28 @@ export default {
          }
          this.$store.dispatch("lookupComponentID", this.componentID)
       },
+      noLinkClicked() {
+         this.$store.commit("clearError")
+         this.$store.commit("clearComponent")
+      },
       cancelEditClicked() {
          this.$store.commit("clearError")
          this.$store.commit("clearComponent")
-         this.$store.commit("clearError")
          this.editMode = ""
       },
-      linkConfirmed() {
-          this.$store.commit("setError", "Not yet implemented")
+      async unlinkClicked() {
+         this.$store.commit("clearError")
+         this.$store.commit("clearComponent")
+         if ( this.rangeStartIdx == -1 || this.rangeEndIdx == -1) {
+            this.$store.commit("setError", "Start and end image must be selected")
+            return
+         }
+         await this.$store.dispatch("componentLink","")
+         this.cancelEditClicked()
+      },
+      async linkConfirmed() {
+         await this.$store.dispatch("componentLink",this.componentID)
+         this.cancelEditClicked()
       },
       selectAllClicked() {
          this.$store.commit("selectAll")

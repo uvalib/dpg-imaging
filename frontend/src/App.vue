@@ -7,7 +7,7 @@
             </a>
          </div>
          <div class="site-link">
-           <a href="/">DPG Imaging</a>
+           <router-link to="/">DPG Imaging</router-link>
          </div>
       </div>
       <router-view />

@@ -1,14 +1,7 @@
 <template>
-   <div class="confirm-modal-wrapper"
-      @keydown.stop.prevent.down
-      @keydown.stop.prevent.up
-      @keyup.stop.prevent.down
-      @keyup.stop.prevent.up
-      @keyup.stop.prevent.left
-      @keyup.stop.prevent.right
-   >
-      <DPGButton v-if="type=='button'" id="confirm-trigger" @click.stop.prevent="show">{{label}}</DPGButton>
-      <span class="txt-trigger" v-else id="confirm-trigger" @click.stop.prevent="show">{{label}}</span>
+   <div class="confirm-modal-wrapper">
+      <DPGButton v-if="type=='button'" id="confirm-trigger" @click="show">{{label}}</DPGButton>
+      <span class="txt-trigger" v-else id="confirm-trigger" @click="show">{{label}}</span>
       <div class="confirm-modal-dimmer" v-if="isOpen">
          <div role="dialog" aria-labelledby="confirm-modal-title" id="confirm-modal" class="confirm-modal">
             <div id="confirm-modal-title" class="confirm-modal-title">Confirm Action</div>

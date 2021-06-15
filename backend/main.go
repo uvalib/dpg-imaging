@@ -10,11 +10,11 @@ import (
 )
 
 // Version of the service
-const Version = "0.5.0"
+const Version = "0.9.0"
 
 func main() {
 	// Load cfg
-	log.Printf("===> DPG Imaging Service is staring up <===")
+	log.Printf("===> DPG Imaging Service is starting up <===")
 	cfg := getConfiguration()
 	svc := initializeService(Version, cfg)
 

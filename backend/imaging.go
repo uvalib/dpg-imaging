@@ -36,6 +36,7 @@ type masterFileInfo struct {
 	Width        int    `json:"width"`
 	Height       int    `json:"height"`
 	Status       string `json:"status"`
+	ComponentID  string `json:"componentID"`
 }
 
 type exifData struct {
@@ -48,6 +49,7 @@ type exifData struct {
 	Width         int         `json:"ImageWidth"`
 	Height        int         `json:"ImageHeight"`
 	ClassifyState string      `json:"ClassifyState"`
+	OwnerID       interface{} `json:"OwnerID"`
 }
 
 type unitMetadata struct {
@@ -279,6 +281,7 @@ func (svc *serviceContext) updateMetadata(c *gin.Context) {
 		Title       string `json:"title"`
 		Description string `json:"description"`
 		Status      string `json:"status"`
+		ComponentID string `json:"componentID"`
 	}
 
 	qpErr := c.ShouldBindJSON(&mdPost)
@@ -292,8 +295,9 @@ func (svc *serviceContext) updateMetadata(c *gin.Context) {
 		titleEdit := fmt.Sprintf("-iptc:headline=%s", change.Title)
 		descEdit := fmt.Sprintf("-iptc:caption-abstract=%s", change.Description)
 		statusEdit := fmt.Sprintf("-iptc:ClassifyState=%s", change.Status)
-		log.Printf("INFO: exiftool %s %s %s", titleEdit, descEdit, change.File)
-		_, err := exec.Command("exiftool", titleEdit, descEdit, statusEdit, change.File).Output()
+		componentEdit := fmt.Sprintf("-iptc:OwnerID=%s", change.ComponentID)
+		log.Printf("INFO: exiftool %s %s %s %s", titleEdit, descEdit, componentEdit, change.File)
+		_, err := exec.Command("exiftool", titleEdit, descEdit, statusEdit, componentEdit, change.File).Output()
 		if err != nil {
 			log.Printf("ERROR: unable to update %s metadata: %s", change.File, err.Error())
 			c.String(http.StatusInternalServerError, err.Error())
@@ -420,6 +424,10 @@ func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int) {
 				if md.Description != nil {
 					desc = fmt.Sprintf("%v", md.Description)
 				}
+				component := ""
+				if md.OwnerID != nil {
+					component = fmt.Sprintf("%v", md.OwnerID)
+				}
 				files[currIdx].ColorProfile = md.ColorProfile
 				files[currIdx].Description = desc
 				files[currIdx].FileSize = md.FileSize
@@ -429,6 +437,7 @@ func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int) {
 				files[currIdx].Width = md.Width
 				files[currIdx].Height = md.Height
 				files[currIdx].Status = md.ClassifyState
+				files[currIdx].ComponentID = component
 				currIdx++
 			}
 		}
@@ -437,7 +446,7 @@ func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int) {
 
 func baseExifCmd() []string {
 	out := []string{"-json", "-ImageWidth", "-ImageHeight",
-		"-FileType", "-XResolution", "-FileSize", "-ICCProfileName",
+		"-FileType", "-XResolution", "-FileSize", "-ICCProfileName", "-iptc:OwnerID",
 		"-iptc:headline", "-iptc:caption-abstract", "-iptc:ClassifyState"}
 	return out
 }

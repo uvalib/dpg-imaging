@@ -15,6 +15,10 @@
                <div>Unit {{currUnit}}</div>
             </h3>
             <div><a :href="projectURL" target="_blank">TrackSys Project<i class="link fas fa-external-link-alt"></i></a></div>
+            <span class="back">
+               <i class="fas fa-angle-double-left back-button"></i>
+               <router-link :to="`/`">Back to Units</router-link>
+            </span>
          </div>
          <div class="toolbar">
             <span class="viewe-mode">
@@ -43,10 +47,11 @@
                   <th></th>
                   <th>Tag</th>
                   <th>File Name</th>
-                  <th>File Type</th>
-                  <th>Resolution</th>
                   <th>Title</th>
                   <th>Caption</th>
+                  <th>Component</th>
+                  <th>Size</th>
+                  <th>Resolution</th>
                   <th>Color Profile</th>
                   <th>Path</th>
                </tr>
@@ -61,8 +66,6 @@
                   </td>
                   <td><TagPicker :masterFile="mf" /></td>
                   <td>{{mf.fileName}}</td>
-                  <td>{{mf.fileType}}</td>
-                  <td>{{mf.resolution}}</td>
                   <td @click="editMetadata(mf, 'title')" class="editable">
                      <span  v-if="!isEditing(mf, 'title')"  class="editable">
                         <span v-if="mf.title">{{mf.title}}</span>
@@ -78,6 +81,12 @@
                      <input v-else id="edit-desc" type="text" v-model="newDescription"
                         @keyup.enter="submitEdit(mf)"  @keyup.esc="cancelEdit" />
                   </td>
+                  <td>
+                     <span v-if="mf.componentID">{{mf.componentID}}</span>
+                     <span v-else>N/A</span>
+                  </td>
+                  <td>{{mf.width}} x {{mf.height}}</td>
+                  <td>{{mf.resolution}}</td>
                   <td>{{mf.colorProfile}}</td>
                   <td>{{mf.path}}</td>
                </tr>
@@ -125,6 +134,10 @@
                            <span v-else class="undefined">Undefined</span>
                         </template>
                      </div>
+                  </div>
+                  <div class="row" v-if="mf.componentID">
+                     <label>Component</label>
+                     <div class="data">{{mf.componentID}}</div>
                   </div>
                </div>
             </div>
@@ -330,7 +343,9 @@ export default {
          this.editMF = null
       },
       async submitEdit(mf) {
-         await this.$store.dispatch("updateMasterFileMetadata", {file: mf.path, title: this.newTitle, description: this.newDescription, status: mf.status})
+         await this.$store.dispatch("updateMasterFileMetadata",
+            { file: mf.path, title: this.newTitle, description: this.newDescription,
+              status: mf.status, componentID: mf.componentID } )
          this.editMF = null
       }
    }
@@ -372,6 +387,21 @@ export default {
          }
          &:hover {
             text-decoration: underline;
+         }
+      }
+      .back {
+         position: absolute;
+         left: 10px;
+         bottom: 0;
+         a {
+            font-weight: normal;
+            text-decoration: none;
+            color: var(--uvalib-text);
+            display: inline-block;
+            margin-left: 5px;
+            &:hover {
+               text-decoration: underline ;
+            }
          }
       }
    }
