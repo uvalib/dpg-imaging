@@ -73,6 +73,49 @@ func padLeft(str string, tgtLen int) string {
 	}
 }
 
+func (svc *serviceContext) getComponent(c *gin.Context) {
+	cid := c.Param("id")
+	log.Printf("INFO: lookup component %s", cid)
+	qs := `select title,label,date,content_desc,name from components c inner join component_types t on t.id = c.component_type_id where c.id={:cid}`
+	q := svc.DB.NewQuery(qs)
+	q.Bind(dbx.Params{"cid": cid})
+
+	var dbInfo struct {
+		Title       sql.NullString `db:"title"`
+		Label       sql.NullString `db:"label"`
+		Description sql.NullString `db:"content_desc"`
+		Date        sql.NullString `db:"date"`
+		Type        string         `db:"name"`
+	}
+	err := q.One(&dbInfo)
+	if err != nil {
+		log.Printf("ERROR: component %s not found: %s", cid, err.Error())
+		c.String(http.StatusNotFound, "component not found")
+		return
+	}
+
+	out := make(map[string]string)
+	out["type"] = dbInfo.Type
+	out["title"] = ""
+	out["label"] = ""
+	out["description"] = ""
+	out["date"] = ""
+	if dbInfo.Title.Valid {
+		out["title"] = dbInfo.Title.String
+	}
+	if dbInfo.Label.Valid {
+		out["label"] = dbInfo.Label.String
+	}
+	if dbInfo.Description.Valid {
+		out["description"] = dbInfo.Description.String
+	}
+	if dbInfo.Date.Valid {
+		out["date"] = dbInfo.Date.String
+	}
+
+	c.JSON(http.StatusOK, out)
+}
+
 func (svc *serviceContext) getUnits(c *gin.Context) {
 	log.Printf("INFO: get available units from %s", svc.ImagesDir)
 	files, err := ioutil.ReadDir(svc.ImagesDir)

@@ -29,6 +29,7 @@ func main() {
 	router.GET("/healthcheck", svc.healthCheck)
 	api := router.Group("/api")
 	{
+		api.GET("/components/:id", svc.getComponent)
 		api.GET("/units", svc.getUnits)
 		api.GET("/units/:uid", svc.getUnitDetails)
 		api.POST("/units/:uid/update", svc.updateMetadata)

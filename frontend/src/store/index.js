@@ -21,7 +21,15 @@ export default new Vuex.Store({
       callNumber: "",
       title: "",
       projectURL: "",
-      problems: []
+      problems: [],
+      component: {
+         valid: false,
+         title: "",
+         label: "",
+         desc: "",
+         date: "",
+         type: "",
+      }
    },
    getters: {
       getField,
@@ -36,6 +44,10 @@ export default new Vuex.Store({
    },
    mutations: {
       updateField,
+      selectAll(state) {
+         state.rangeStartIdx = 0
+         state.rangeEndIdx = state.masterFiles.length - 1
+      },
       filenameSort(state) {
          state.masterFiles.sort( (a,b) => {
             if (a.fileName < b.fileName) return -1
@@ -105,6 +117,23 @@ export default new Vuex.Store({
          if (mfIdx > -1) {
             ctx.masterFiles.splice(mfIdx,1)
          }
+      },
+
+      setComponentInfo(ctx, data) {
+         ctx.component.title = data.title
+         ctx.component.label = data.label
+         ctx.component.desc = data.description
+         ctx.component.date = data.date
+         ctx.component.type = data.type
+         ctx.component.valid = true
+      },
+      clearComponent(ctx) {
+         ctx.component.valid = false
+         ctx.component.title = ""
+         ctx.component.label = ""
+         ctx.component.desc = ""
+         ctx.component.date = ""
+         ctx.component.type = ""
       }
    },
    actions: {
@@ -206,6 +235,17 @@ export default new Vuex.Store({
          })
          axios.post(`/api/units/${ctx.state.currUnit}/rename`, data).then(() => {
             window.location.reload()
+         }).catch( e => {
+            ctx.commit('setError', e)
+            ctx.commit("setUpdating", false)
+         })
+      },
+
+      lookupComponentID(ctx, componentID) {
+         ctx.commit("setUpdating", true)
+         axios.get(`/api/components/${componentID}`).then(response => {
+            ctx.commit('setComponentInfo', response.data)
+            ctx.commit("setUpdating", false)
          }).catch( e => {
             ctx.commit('setError', e)
             ctx.commit("setUpdating", false)

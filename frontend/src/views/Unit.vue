@@ -31,10 +31,12 @@
                   <div>All files will be renamed to match the following format:</div>
                   <code>{{currUnit}}_0001.tif</code>
                </ConfirmModal>
-               <DPGButton id="set-titles" @click="setPageNumbersClicked" class="button">Set Page Numbers</DPGButton>
+               <DPGButton id="set-titles" @click="setPageNumbersClicked" class="button right-pad">Set Page Numbers</DPGButton>
+               <DPGButton id="set-titles" @click="componentLinkClicked" class="button">Component Link</DPGButton>
             </span>
          </div>
          <PageNumPanel v-if="editMode == 'page'" />
+         <ComponentPanel v-if="editMode == 'component'" />
          <table class="unit-list" v-if="viewMode == 'list'">
             <thead>
                <tr>
@@ -135,6 +137,9 @@
             >
                Set Page Numbers
             </li>
+            <li tabindex="0" @click.stop.prevent="componentLinkClicked" class="menuitem">
+               Component Link
+            </li>
             <li tabindex="0" class="menuitem">
                <ConfirmModal label="Delete Image" type="text" @confirmed="deleteSelected" @closed="menuVisible=false" >
                   <div>Delete image {{rightClickedMF}}? This cannot be reversed.</div>
@@ -151,13 +156,14 @@
 <script>
 import { mapState } from "vuex"
 import { mapFields } from 'vuex-map-fields'
+import ComponentPanel from '../components/ComponentPanel.vue'
 import PageNumPanel from '../components/PageNumPanel.vue'
 import TagPicker from '../components/TagPicker.vue'
 import TitleInput from '../components/TitleInput.vue'
 import ProblemsDisplay from '../components/ProblemsDisplay.vue'
 import draggable from 'vuedraggable'
 export default {
-   components: {PageNumPanel, draggable, TagPicker, TitleInput, ProblemsDisplay },
+   components: {PageNumPanel, draggable, TagPicker, TitleInput, ProblemsDisplay, ComponentPanel },
    name: "unit",
    computed: {
       ...mapState({
@@ -233,6 +239,16 @@ export default {
       },
       renameAll() {
          this.$store.dispatch("renameAll")
+      },
+      componentLinkClicked() {
+         console.log("COMPONENT CLICK")
+         this.editMode = "component"
+         this.menuVisible =  false
+         this.$nextTick( () => {
+            let p = document.getElementById("component-id")
+            p.focus()
+            p.select()
+         })
       },
       setPageNumbersClicked() {
          this.editMode = "page"

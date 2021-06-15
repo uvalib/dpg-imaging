@@ -2,17 +2,17 @@
    <div class="page-number panel">
       <h3>Set Page Numbering</h3>
       <div class="content">
-         <span class="entry">
+         <span class="entry pad-right">
             <label>Start Image:</label>
             <select id="start-page" v-model="rangeStartIdx">
-               <option disabled value="">Select start page</option>
+               <option disabled :value="-1">Select start page</option>
                <option v-for="(mf,idx) in masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
             </select>
          </span>
-         <span class="entry">
+         <span class="entry  pad-right">
             <label>End Image:</label>
             <select id="end-page" v-model="rangeEndIdx">
-               <option disabled value="">Select end page</option>
+               <option disabled :value="-1">Select end page</option>
                <option v-for="(mf,idx) in masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
             </select>
          </span>
@@ -21,8 +21,8 @@
             <input id="start-page-num" type="text" v-model="startPage"  @keyup.enter="okPagesClicked"/>
             </span>
       </div>
-      <p class="error" v-if="error" v-html="errorMessage"></p>
       <div class="panel-actions">
+         <DPGButton @click="selectAllClicked" class="left">Select All</DPGButton>
          <DPGButton @click="cancelEditClicked" class="right-pad">Cancel</DPGButton>
          <DPGButton @click="okPagesClicked">OK</DPGButton>
       </div>
@@ -37,8 +37,6 @@ export default {
       ...mapState({
          masterFiles : state => state.masterFiles,
          currUnit: state => state.currUnit,
-         error: state => state.error,
-         errorMessage: state => state.errorMessage,
       }),
       ...mapFields([
          "rangeStartIdx", "rangeEndIdx", "editMode"
@@ -56,13 +54,20 @@ export default {
       },
       okPagesClicked() {
          this.$store.commit("clearError")
-         if ( this.rangeStart == "" || this.rangeEnd == "") {
+         if ( this.rangeStartIdx == -1 || this.rangeEndIdx == -1) {
             this.$store.commit("setError", "Start and end image must be selected")
+            return
+         }
+         if (this.startPage == "") {
+            this.$store.commit("setError", "Start page is required")
             return
          }
          this.$store.dispatch("updatePageNumbers", this.startPage)
          this.editMode = ""
       },
+      selectAllClicked() {
+         this.$store.commit("selectAll")
+      }
    }
 }
 </script>
@@ -80,7 +85,7 @@ export default {
       font-weight: 500;
    }
    .panel-actions {
-      padding: 0 10px 10px 0;
+      padding: 0 0 20px 0;
       display: flex;
       flex-flow: row wrap;
       justify-content: flex-end;
@@ -89,9 +94,12 @@ export default {
       .button {
          margin-left: 10px;
       }
+      .left {
+         margin-right: auto;
+      }
    }
    .content {
-      padding: 10px;
+      padding: 10px 0;
       display: flex;
       flex-flow: row wrap;
       justify-content: space-between;
@@ -99,12 +107,15 @@ export default {
       margin: 0 auto;
       .entry {
          flex-grow: 1;
-         margin: 0 10px;
+         margin: 0;
          text-align: left;
          label {
             display: block;
             margin: 0 0 5px 0;
          }
+      }
+      .entry.pad-right {
+         padding-right: 25px;
       }
    }
    .error {
