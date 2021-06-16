@@ -8,7 +8,7 @@
          <div class="metadata">
             <h2>
                <ProblemsDisplay class="topleft" />
-               <span>{{title}}</span>
+               <span class="title">{{title}}</span>
             </h2>
             <h3>
                <div>{{callNumber}}</div>
@@ -369,6 +369,10 @@ export default {
       h2 {
          color: var(--uvalib-brand-orange);
          margin: 10px 0;
+         .title {
+            display: inline-block;
+            max-width: 60%;
+         }
       }
       h3 {
           margin: 5px 0;
