@@ -149,7 +149,8 @@ export default new Vuex.Store({
          })
       },
       async getUnitDetails(ctx, unit) {
-         if (ctx.state.currUnit == unit && ctx.state.masterFiles.length > 0) return
+         // dont try to reload a unit if the data is already present - unless an update is in process
+         if (ctx.state.currUnit == unit && ctx.state.masterFiles.length > 0 && ctx.state.updating == false) return
 
          ctx.commit("setLoading", true)
          return axios.get(`/api/units/${unit}`).then(response => {
@@ -157,9 +158,11 @@ export default new Vuex.Store({
             ctx.commit('setUnitMetadata', response.data.metadata)
             ctx.commit('setUnitProblems', response.data.problems)
             ctx.commit("setLoading", false)
+            ctx.commit("setUpdating", false)
          }).catch( e => {
             ctx.commit('setError', e)
             ctx.commit("setLoading", false)
+            ctx.commit("setUpdating", false)
          })
       },
 
@@ -254,7 +257,7 @@ export default new Vuex.Store({
 
          })
          axios.post(`/api/units/${ctx.state.currUnit}/rename`, data).then(() => {
-            window.location.reload()
+            ctx.dispatch('getUnitDetails', ctx.state.currUnit)
          }).catch( e => {
             ctx.commit('setError', e)
             ctx.commit("setUpdating", false)

@@ -57,12 +57,12 @@
                </tr>
             </thead>
             <draggable v-model="masterFiles" tag="tbody"  @start="dragStarted" >
-               <tr v-for="mf in masterFiles" :key="mf.fileName" :id="mf.fileName"
+               <tr v-for="(mf,idx) in masterFiles" :key="mf.fileName" :id="mf.fileName"
                   @mousedown="fileSelected(mf.fileName, $event)"
                   @contextmenu.prevent="showContextMenu(mf.fileName, $event)"
                >
                   <td class="thumb">
-                     <router-link :to="`/unit/${currUnit}/page/${mf.fileName.replace('.tif','').split('_')[1]}`"><img :src="mf.thumbURL"/></router-link>
+                     <router-link :to="`/unit/${currUnit}/page/${idx+1}`"><img :src="mf.thumbURL"/></router-link>
                   </td>
                   <td><TagPicker :masterFile="mf" /></td>
                   <td>{{mf.fileName}}</td>
@@ -93,12 +93,12 @@
             </draggable>
          </table>
          <draggable v-else v-model="masterFiles" @start="dragStarted" class="gallery" :class="viewMode" >
-            <div class="card" v-for="mf in masterFiles" :key="mf.fileName"
+            <div class="card" v-for="(mf,idx) in masterFiles" :key="mf.fileName"
                @mousedown="fileSelected(mf.fileName, $event)"
                @contextmenu.prevent="showContextMenu(mf.fileName, $event)"
                :id="mf.fileName"
             >
-               <router-link :to="`/unit/${currUnit}/page/${mf.fileName.replace('.tif','').split('_')[1]}`">
+               <router-link :to="`/unit/${currUnit}/page/${idx+1}`">
                   <img :src="mf.mediumURL" v-if="viewMode == 'medium'"/>
                   <img :src="mf.largeURL" v-if="viewMode == 'large'"/>
                </router-link>
