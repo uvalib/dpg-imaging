@@ -23,13 +23,13 @@ FROM alpine:3.13
 RUN apk update && apk upgrade && apk add bash tzdata ca-certificates curl exiftool && rm -rf /var/cache/apk/*
 
 # Create the run user and group
-RUN addgroup --gid 18570 sse && adduser --uid 1984 docker -G sse -D
+RUN addgroup --gid 16339 lb-digiserv && adduser --uid 118698 libsnlocal -G sse -D
 
 # set the timezone appropriatly
 ENV TZ=UTC
 RUN cp /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# Specify home 
+# Specify home
 ENV APP_HOME /dpg-imaging
 WORKDIR $APP_HOME
 
