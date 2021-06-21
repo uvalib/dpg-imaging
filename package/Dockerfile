@@ -23,7 +23,7 @@ FROM alpine:3.13
 RUN apk update && apk upgrade && apk add bash tzdata ca-certificates curl exiftool && rm -rf /var/cache/apk/*
 
 # Create the run user and group
-RUN addgroup --gid 16339 lb-digiserv && adduser --uid 118698 libsnlocal -G sse -D
+RUN addgroup --gid 16339 lb-digiserv && adduser --uid 118698 libsnlocal -G lb-digiserv -D
 
 # set the timezone appropriatly
 ENV TZ=UTC
@@ -35,29 +35,29 @@ WORKDIR $APP_HOME
 
 # Create necessary directories
 RUN mkdir -p $APP_HOME $APP_HOME/bin $APP_HOME/scripts
-RUN chown -R docker $APP_HOME && chgrp -R sse $APP_HOME
+RUN chown -R libsnlocal $APP_HOME && chgrp -R lb-digiserv $APP_HOME
 
 # port and run command
 EXPOSE 8080
 CMD scripts/entry.sh
 
 # Move in necessary assets
-COPY package/data/container_bash_profile /home/docker/.profile
+COPY package/data/container_bash_profile /home/libsnlocal/.profile
 COPY package/scripts/entry.sh $APP_HOME/scripts/entry.sh
 COPY --from=builder /build/bin/imagingsvc.linux $APP_HOME/bin/imagingsvc
 COPY --from=builder /build/bin/public $APP_HOME/bin/public
 COPY --from=builder /build/bin/templates $APP_HOME/bin/templates
 
 # Ensure permissions are correct
-RUN chown docker:sse /home/docker/.profile $APP_HOME/scripts/entry.sh $APP_HOME/bin/imagingsvc && chmod 755 /home/docker/.profile $APP_HOME/scripts/entry.sh $APP_HOME/bin/imagingsvc
-RUN chown -R docker:sse $APP_HOME/bin/public && chmod -R 755 $APP_HOME/bin/public
+RUN chown libsnlocal:lb-digiserv /home/libsnlocal/.profile $APP_HOME/scripts/entry.sh $APP_HOME/bin/imagingsvc && chmod 755 /home/libsnlocal/.profile $APP_HOME/scripts/entry.sh $APP_HOME/bin/imagingsvc
+RUN chown -R libsnlocal:lb-digiserv $APP_HOME/bin/public && chmod -R 755 $APP_HOME/bin/public
 
 # Add the build tag
 ARG BUILD_TAG
 RUN test -n "$BUILD_TAG" && touch $APP_HOME/buildtag.build-$BUILD_TAG || touch $APP_HOME/buildtag.build-0
 
 # Specify the user
-USER docker
+USER libsnlocal
 
 #
 # end of file
