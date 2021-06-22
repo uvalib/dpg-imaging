@@ -21,15 +21,17 @@
             </span>
          </div>
          <div class="toolbar">
-            <span class="viewe-mode">
-               <label>View:</label>
-               <select id="layout" v-model="viewMode">
-                  <option value="list">List</option>
-                  <option value="medium">Gallery (medium)</option>
-                  <option value="large">Gallery (large)</option>
-               </select>
-            </span>
+            <ImagePagination />
+
             <span class="actions">
+               <span class="view-mode">
+                  <label>View:</label>
+                  <select id="layout" v-model="viewMode">
+                     <option value="list">List</option>
+                     <option value="medium">Gallery (medium)</option>
+                     <option value="large">Gallery (large)</option>
+                  </select>
+               </span>
                <DPGButton id="sort" class="right-pad" @click="resetSort">File Name Sort</DPGButton>
                <ConfirmModal label="Batch Rename" class="right-pad" @confirmed="renameAll">
                   <div>All files will be renamed to match the following format:</div>
@@ -57,12 +59,12 @@
                </tr>
             </thead>
             <draggable v-model="masterFiles" tag="tbody"  @start="dragStarted" >
-               <tr v-for="(mf,idx) in masterFiles" :key="mf.fileName" :id="mf.fileName"
+               <tr v-for="(mf,idx) in pageMasterFiles" :key="mf.fileName" :id="mf.fileName"
                   @mousedown="fileSelected(mf.fileName, $event)"
                   @contextmenu.prevent="showContextMenu(mf.fileName, $event)"
                >
                   <td class="thumb">
-                     <router-link :to="`/unit/${currUnit}/page/${idx+1}`"><img :src="mf.thumbURL"/></router-link>
+                     <router-link :to="`/unit/${currUnit}/page/${pageStartIdx+idx+1}`"><img :src="mf.thumbURL"/></router-link>
                   </td>
                   <td><TagPicker :masterFile="mf" /></td>
                   <td>{{mf.fileName}}</td>
@@ -93,12 +95,12 @@
             </draggable>
          </table>
          <draggable v-else v-model="masterFiles" @start="dragStarted" class="gallery" :class="viewMode" >
-            <div class="card" v-for="(mf,idx) in masterFiles" :key="mf.fileName"
+            <div class="card" v-for="(mf,idx) in pageMasterFiles" :key="mf.fileName"
                @mousedown="fileSelected(mf.fileName, $event)"
                @contextmenu.prevent="showContextMenu(mf.fileName, $event)"
                :id="mf.fileName"
             >
-               <router-link :to="`/unit/${currUnit}/page/${idx+1}`">
+               <router-link :to="`/unit/${currUnit}/page/${pageStartIdx+idx+1}`">
                   <img :src="mf.mediumURL" v-if="viewMode == 'medium'"/>
                   <img :src="mf.largeURL" v-if="viewMode == 'large'"/>
                </router-link>
@@ -167,16 +169,17 @@
 </template>
 
 <script>
-import { mapState } from "vuex"
+import { mapState, mapGetters } from "vuex"
 import { mapFields } from 'vuex-map-fields'
 import ComponentPanel from '../components/ComponentPanel.vue'
 import PageNumPanel from '../components/PageNumPanel.vue'
 import TagPicker from '../components/TagPicker.vue'
 import TitleInput from '../components/TitleInput.vue'
+import ImagePagination from '../components/ImagePagination.vue'
 import ProblemsDisplay from '../components/ProblemsDisplay.vue'
 import draggable from 'vuedraggable'
 export default {
-   components: {PageNumPanel, draggable, TagPicker, TitleInput, ProblemsDisplay, ComponentPanel },
+   components: {PageNumPanel, draggable, TagPicker, TitleInput, ProblemsDisplay, ComponentPanel, ImagePagination },
    name: "unit",
    computed: {
       ...mapState({
@@ -187,6 +190,10 @@ export default {
          callNumber: state => state.callNumber,
          projectURL: state => state.projectURL,
       }),
+      ...mapGetters([
+        'pageMasterFiles',
+        'pageStartIdx',
+      ]),
       ...mapFields([
          'viewMode', "rangeStartIdx", "rangeEndIdx", "editMode", "masterFiles"
       ]),
@@ -412,10 +419,13 @@ export default {
    .toolbar {
       display: flex;
       flex-flow: row wrap;
+      justify-content: center;
+      align-content: center;
       padding: 10px;
       background: var(--uvalib-grey-light);
       border-bottom: 1px solid var(--uvalib-grey);
       border-top: 1px solid var(--uvalib-grey);
+
       label {
          font-weight: bold;
          margin-right: 10px;
@@ -423,6 +433,11 @@ export default {
       select {
          width:max-content;
       }
+
+      .pager {
+         margin-right: auto;
+      }
+
       .actions {
          margin-left: auto;
          display: flex;
@@ -431,6 +446,10 @@ export default {
          align-content: center;
          .right-pad {
             margin-right: 10px;
+         }
+         .view-mode {
+            margin-right: 15px;
+            display: inline-block;
          }
       }
    }

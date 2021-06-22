@@ -29,7 +29,9 @@ export default new Vuex.Store({
          desc: "",
          date: "",
          type: "",
-      }
+      },
+      pageSize: 20,
+      currPage: 0,
    },
    getters: {
       getField,
@@ -40,6 +42,19 @@ export default new Vuex.Store({
       },
       masterFileInfo: state => page => {
          return state.masterFiles[page]
+      },
+      pageMasterFiles: state => {
+         let startIdx = state.currPage*state.pageSize
+         return state.masterFiles.slice(startIdx, startIdx+state.pageSize)
+      },
+      pageStartIdx: state => {
+         return state.currPage*state.pageSize
+      },
+      totalPages: state => {
+         return Math.ceil(state.masterFiles.length / state.pageSize)
+      },
+      totalFiles: state => {
+         return state.masterFiles.length
       }
    },
    mutations: {

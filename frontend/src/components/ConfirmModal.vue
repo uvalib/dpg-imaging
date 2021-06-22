@@ -70,6 +70,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.confirm-modal-wrapper {
+   button {
+      height: 100%;
+   }
+}
 .confirm-modal-dimmer {
    position: fixed;
    left: 0;

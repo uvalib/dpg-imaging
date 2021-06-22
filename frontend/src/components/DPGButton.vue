@@ -1,5 +1,5 @@
 <template>
-   <button tabindex="0" class="dpg-button"
+   <button tabindex="0" class="dpg-button" :class="{icon: mode=='icon'}"
       @keydown.exact.tab="tabNext($event)"
       @keydown.shift.tab="tabBack($event)"
       @click.prevent.stop="clicked" @keydown.prevent.stop.enter="clicked" @keydown.space.prevent.stop="clicked">
@@ -18,6 +18,10 @@ export default {
          type: Boolean,
          default: false
       },
+      mode: {
+         type: String,
+         default: "button"
+      }
    },
    methods: {
       clicked() {
@@ -60,6 +64,15 @@ export default {
    &:focus {
       background: #f0f0ff;
       border: 1px solid var(--uvalib-blue-alt);
+   }
+}
+.dpg-button.icon {
+   border: none;
+   background: transparent;
+   padding: 2px 4px;
+   font-size: 1em;
+   &:hover {
+      color: var(--uvalib-blue-alt);
    }
 }
 </style>
