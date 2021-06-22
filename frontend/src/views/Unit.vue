@@ -2,7 +2,7 @@
    <div class="unit">
       <WaitSpinner v-if="updating" :overlay="true" message="Updating data..." />
       <div class="load" v-if="loading">
-         <WaitSpinner v-if="loading" message="Loading master file..." />
+         <WaitSpinner v-if="loading" message="Loading master files..." />
       </div>
       <template v-else>
          <div class="metadata">

@@ -252,20 +252,35 @@ func (svc *serviceContext) getUnitDetails(c *gin.Context) {
 	// use exiftool to get metadata for master files in batches of 10
 	currIdx := 0
 	pendingFilesCnt := 0
+	chunkSize := 10
 	cmdArray := baseExifCmd()
+	channel := make(chan bool)
+	outstandingRequests := 0
 	for _, mf := range out.MasterFiles {
 		cmdArray = append(cmdArray, mf.Path)
 		pendingFilesCnt++
-		if pendingFilesCnt == 10 {
-			getExifData(cmdArray, out.MasterFiles, currIdx)
+		if pendingFilesCnt == chunkSize {
+			outstandingRequests++
+			log.Printf("INFO: get batch #%d of %d exif metadata starting at %d", outstandingRequests, chunkSize, currIdx)
+			go getExifData(cmdArray, out.MasterFiles, currIdx, channel)
 			cmdArray = baseExifCmd()
-			currIdx = pendingFilesCnt
 			pendingFilesCnt = 0
+			currIdx += chunkSize
 		}
 	}
 
 	if pendingFilesCnt > 0 {
-		getExifData(cmdArray, out.MasterFiles, currIdx)
+		log.Printf("INFO: get batch #%d of %d exif metadata starting at %d", outstandingRequests, chunkSize, currIdx)
+		outstandingRequests++
+		go getExifData(cmdArray, out.MasterFiles, currIdx, channel)
+	}
+
+	// wait for all metadata to complete
+	log.Printf("INFO: await all metadata")
+	for outstandingRequests > 0 {
+		<-channel
+		log.Printf("INFO: got done response from a batch")
+		outstandingRequests--
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -404,7 +419,8 @@ func (svc *serviceContext) deleteFile(c *gin.Context) {
 	c.String(http.StatusOK, fmt.Sprintf("deleted %s", delFilePath))
 }
 
-func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int) {
+// getExifData will retrieve a batch of metadata for masterfiles in a goroutine. When complete return true
+func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int, channel chan bool) {
 	currIdx := startIdx
 	stdout, err := exec.Command("exiftool", cmdArray...).Output()
 	if err != nil {
@@ -442,6 +458,10 @@ func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int) {
 			}
 		}
 	}
+
+	// notify caller that the block is done
+	log.Printf("INFO: exif batch from index %d done", startIdx)
+	channel <- true
 }
 
 func baseExifCmd() []string {
