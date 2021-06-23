@@ -13,6 +13,7 @@
             <h3>
                <div>{{callNumber}}</div>
                <div>Unit {{currUnit}}</div>
+               <div class="small">{{masterFiles.length}} Images</div>
             </h3>
             <div><a :href="projectURL" target="_blank">TrackSys Project<i class="link fas fa-external-link-alt"></i></a></div>
             <span class="back">
@@ -67,7 +68,13 @@
                      <router-link :to="`/unit/${currUnit}/page/${pageStartIdx+idx+1}`"><img :src="mf.thumbURL"/></router-link>
                   </td>
                   <td><TagPicker :masterFile="mf" /></td>
-                  <td>{{mf.fileName}}</td>
+                  <td class="hover-container">
+                     <span>{{mf.fileName}}</span>
+                     <span v-if="mf.error">
+                        <i class="image-err fas fa-exclamation-circle" @mouseover="hoverEnter(mf.fileName)" @mouseleave="hoverExit()"></i>
+                        <span v-if="showError==mf.fileName" class="hover-error">{{mf.error}}</span>
+                     </span>
+                  </td>
                   <td @click="editMetadata(mf, 'title')" class="editable">
                      <span  v-if="!isEditing(mf, 'title')"  class="editable">
                         <span v-if="mf.title">{{mf.title}}</span>
@@ -110,7 +117,13 @@
                <div class="metadata">
                   <div class="row">
                      <label>Image</label>
-                     <div class="data">{{mf.fileName}}</div>
+                     <div class="data hover-container">
+                        <span>{{mf.fileName}}</span>
+                        <span v-if="mf.error">
+                           <i class="image-err fas fa-exclamation-circle" @mouseover="hoverEnter(mf.fileName)" @mouseleave="hoverExit()"></i>
+                           <span v-if="showError==mf.fileName" class="hover-error">{{mf.error}}</span>
+                        </span>
+                     </div>
                      <div class="data">{{mf.width}} x {{mf.height}}, {{mf.resolution}}</div>
                   </div>
                   <div class="row">
@@ -206,12 +219,20 @@ export default {
         newDescription: "",
         editField: "",
         menuVisible: false,
+        showError: ""
       }
    },
    created() {
       this.$store.dispatch("getUnitDetails", this.$route.params.unit)
    },
    methods: {
+      hoverExit() {
+         this.showError = ""
+      },
+      hoverEnter(f) {
+         console.log("HOVER "+f)
+         this.showError = f
+      },
       clearState() {
           this.rightClickedMF = ""
           this.menuVisible= false
@@ -368,6 +389,9 @@ export default {
    .metadata {
       margin-bottom: 15px;
       position: relative;
+      .small {
+         font-size: 0.8em;
+      }
       .topleft {
          position: absolute;
          top:0;
@@ -455,6 +479,25 @@ export default {
    }
    .undefined {
       font-style: italic;
+   }
+   .hover-container {
+      position: relative;
+      .image-err {
+         color: var(--uvalib-red);
+         margin: 0 5px;
+         cursor: pointer;
+      }
+      .hover-error {
+         position: absolute;
+         white-space: nowrap;
+         background: white;
+         padding: 5px 10px;
+         border: 2px solid var(--uvalib-red-dark);
+         border-radius: 4px;
+         box-shadow: var(--box-shadow);
+         bottom: 5px;
+         z-index: 10000;
+      }
    }
    div.gallery {
       padding: 15px;
@@ -563,6 +606,7 @@ export default {
          padding: 5px;
          text-align: left;
          border-bottom: 1px solid var(--uvalib-grey-lightest);
+         cursor: grab;
       }
       td.thumb {
          padding: 5px 5px 2px 5px;

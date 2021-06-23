@@ -110,6 +110,7 @@ export default new Vuex.Store({
          ctx.currUnit = unit
          ctx.masterFiles.splice(0, ctx.masterFiles.length)
          masterFiles.forEach( mf =>{
+            mf.error = ""
             ctx.masterFiles.push(mf)
          })
       },
@@ -123,6 +124,18 @@ export default new Vuex.Store({
                mf.description = d.description
                mf.status = d.status
                mf.componentID = d.componentID
+               mf.error = ""
+               ctx.masterFiles.splice(mfIdx,1, mf)
+            }
+         })
+      },
+
+      setMasterFileProblems(ctx, data) {
+         data.forEach( p => {
+            let mfIdx = ctx.masterFiles.findIndex( mf => mf.fileName == p.file)
+            if (mfIdx > -1) {
+               let mf = ctx.masterFiles[mfIdx]
+               mf.error = p.problem
                ctx.masterFiles.splice(mfIdx,1, mf)
             }
          })
@@ -150,11 +163,22 @@ export default new Vuex.Store({
          ctx.component.desc = ""
          ctx.component.date = ""
          ctx.component.type = ""
+      },
+      clearUnitDetails(ctx) {
+         ctx.masterFiles.splice(0, ctx.masterFiles.length)
+         ctx.rangeStartIdx = -1
+         ctx.rangeEndIdx = -1
+         ctx.editMode = ""
+         ctx.callNumber = "Unknown"
+         ctx.title = "Unknown"
+         ctx.projectURL = ""
+         ctx.problems.splice(0, ctx.problems.length)
       }
    },
    actions: {
       getUnits(ctx) {
          ctx.commit("setLoading", true)
+         ctx.commit("clearUnitDetails")
          axios.get("/api/units").then(response => {
             ctx.commit('setUnits', response.data)
             ctx.commit("setLoading", false)
@@ -168,6 +192,7 @@ export default new Vuex.Store({
          if (ctx.state.currUnit == unit && ctx.state.masterFiles.length > 0 && ctx.state.updating == false) return
 
          ctx.commit("setLoading", true)
+         ctx.commit("clearUnitDetails")
          return axios.get(`/api/units/${unit}`).then(response => {
             ctx.commit('setMasterFiles', {unit: unit, masterFiles: response.data.masterFiles})
             ctx.commit('setUnitMetadata', response.data.metadata)
@@ -190,9 +215,13 @@ export default new Vuex.Store({
             data.push( {file: mf.path, title: ""+page, description: mf.description, status: mf.status, componentID: mf.componentID})
             page+=1
          }
-         axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
+         axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then( resp => {
             ctx.commit('updateMasterFileMetadata', data )
             ctx.commit("setUpdating", false)
+            if (resp.data.success == false) {
+               ctx.commit('setError', "Some images were not renumbered")
+               ctx.commit('setMasterFileProblems', resp.data.problems)
+            }
          }).catch( e => {
             ctx.commit('setError', e)
             ctx.commit("setUpdating", false)
@@ -206,9 +235,13 @@ export default new Vuex.Store({
             let mf = ctx.state.masterFiles[i]
             data.push( {file: mf.path, title: mf.title, description: mf.description, status: mf.status, componentID: componentID})
          }
-         return axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
+         return axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then( resp => {
             ctx.commit('updateMasterFileMetadata', data )
             ctx.commit("setUpdating", false)
+            if (resp.data.success == false) {
+               ctx.commit('setError', "Some images could not be linked with component "+componentID)
+               ctx.commit('setMasterFileProblems', resp.data.problems)
+            }
          }).catch( e => {
             ctx.commit('setError', e)
             ctx.commit("setUpdating", false)
@@ -218,9 +251,13 @@ export default new Vuex.Store({
       async updateMasterFileMetadata(ctx, {file, title, description, status, componentID}) {
          ctx.commit("setUpdating", true)
          let data = [{file: file, title: title, description: description, status: status, componentID: componentID}]
-         return axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
+         return axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then( resp => {
             ctx.commit('updateMasterFileMetadata', data )
             ctx.commit("setUpdating", false)
+            if (resp.data.success == false) {
+               ctx.commit('setError', "Unable to update image metadata")
+               ctx.commit('setMasterFileProblems', resp.data.problems)
+            }
          }).catch( e => {
             ctx.commit('setError', e)
             ctx.commit("setUpdating", false)
@@ -235,9 +272,13 @@ export default new Vuex.Store({
             status = ""
          }
          let data = [{file: file, title: mf.title, description: mf.description, status: status}]
-         return axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then(() => {
+         return axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then( resp => {
             ctx.commit('updateMasterFileMetadata', data )
             ctx.commit("setUpdating", false)
+            if (resp.data.success == false) {
+               ctx.commit('setError', "Unable to set tag on image")
+               ctx.commit('setMasterFileProblems', resp.data.problems)
+            }
          }).catch( e => {
             ctx.commit('setError', e)
             ctx.commit("setUpdating", false)

@@ -15,6 +15,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	dbx "github.com/go-ozzo/ozzo-dbx"
@@ -64,6 +65,11 @@ type unitData struct {
 	Metadata    *unitMetadata     `json:"metadata"`
 	MasterFiles []*masterFileInfo `json:"masterFiles"`
 	Problems    []string          `json:"problems"`
+}
+
+type updateProblem struct {
+	File    string `json:"file"`
+	Problem string `json:"problem"`
 }
 
 func padLeft(str string, tgtLen int) string {
@@ -170,13 +176,15 @@ func (svc *serviceContext) getUnitDetails(c *gin.Context) {
 	out := unitData{MasterFiles: make([]*masterFileInfo, 0), Problems: make([]string, 0)}
 
 	log.Printf("INFO: get details for unit %s", uidStr)
+	start := time.Now()
 	unitMD, uErr := svc.getUnitMetadata(uidStr)
 	if uErr != nil {
 		log.Printf("ERROR: %s", uErr.Error())
-		c.String(http.StatusInternalServerError, uErr.Error())
-		return
+		out.Problems = append(out.Problems, "No metadata record found for this unit")
+		out.Metadata = &unitMetadata{Title: "Unknown", CallNumber: "Unknown"}
+	} else {
+		out.Metadata = unitMD
 	}
-	out.Metadata = unitMD
 
 	log.Printf("INFO: get master files from %s", unitDir)
 
@@ -241,12 +249,16 @@ func (svc *serviceContext) getUnitDetails(c *gin.Context) {
 		return
 	}
 
-	lastMF := out.MasterFiles[len(out.MasterFiles)-1]
-	lastSeq := strings.Split(lastMF.FileName, "_")[1]
-	lastSeq = strings.Replace(lastSeq, ".tif", "", 1)
-	lastSeqNum, _ := strconv.Atoi(lastSeq)
-	if len(out.MasterFiles) != lastSeqNum {
-		out.Problems = append(out.Problems, "Last masterfile number doesn't match count")
+	if len(out.MasterFiles) > 0 {
+		lastMF := out.MasterFiles[len(out.MasterFiles)-1]
+		lastSeq := strings.Split(lastMF.FileName, "_")[1]
+		lastSeq = strings.Replace(lastSeq, ".tif", "", 1)
+		lastSeqNum, _ := strconv.Atoi(lastSeq)
+		if len(out.MasterFiles) != lastSeqNum {
+			out.Problems = append(out.Problems, "Last image number doesn't match count")
+		}
+	} else {
+		out.Problems = append(out.Problems, "No images found")
 	}
 
 	// use exiftool to get metadata for master files in batches of 10
@@ -279,9 +291,12 @@ func (svc *serviceContext) getUnitDetails(c *gin.Context) {
 	log.Printf("INFO: await all metadata")
 	for outstandingRequests > 0 {
 		<-channel
-		log.Printf("INFO: got done response from a batch")
 		outstandingRequests--
 	}
+
+	elapsed := time.Since(start)
+	elapsedMS := int64(elapsed / time.Millisecond)
+	log.Printf("INFO: got %d masterfiles for unit %s in %dms", len(out.MasterFiles), uidStr, elapsedMS)
 
 	c.JSON(http.StatusOK, out)
 }
@@ -306,26 +321,56 @@ func (svc *serviceContext) updateMetadata(c *gin.Context) {
 		return
 	}
 
+	start := time.Now()
+	pendingFilesCnt := 0
+	chunkSize := 10
+	fileCommands := make(map[string][]string)
+	channel := make(chan []updateProblem)
+	outstandingRequests := 0
 	for _, change := range mdPost {
-		titleEdit := fmt.Sprintf("-iptc:headline=%s", change.Title)
-		descEdit := fmt.Sprintf("-iptc:caption-abstract=%s", change.Description)
-		statusEdit := fmt.Sprintf("-iptc:ClassifyState=%s", change.Status)
-		componentEdit := fmt.Sprintf("-iptc:OwnerID=%s", change.ComponentID)
-		log.Printf("INFO: exiftool %s %s %s %s", titleEdit, descEdit, componentEdit, change.File)
-		_, err := exec.Command("exiftool", titleEdit, descEdit, statusEdit, componentEdit, change.File).Output()
-		if err != nil {
-			log.Printf("ERROR: unable to update %s metadata: %s", change.File, err.Error())
-			c.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-		dupPath := fmt.Sprintf("%s_original", change.File)
-		removeErr := os.Remove(dupPath)
-		if removeErr != nil {
-			log.Printf("WARNING: unable to remove backup file %s:%s", dupPath, removeErr.Error())
+		cmd := make([]string, 0)
+		cmd = append(cmd, fmt.Sprintf("-iptc:headline=%s", change.Title))
+		cmd = append(cmd, fmt.Sprintf("-iptc:caption-abstract=%s", change.Description))
+		cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%s", change.Status))
+		cmd = append(cmd, fmt.Sprintf("-iptc:OwnerID=%s", change.ComponentID))
+		cmd = append(cmd, change.File)
+		fileCommands[change.File] = cmd
+		pendingFilesCnt++
+		if pendingFilesCnt == chunkSize {
+			outstandingRequests++
+			log.Printf("INFO: update batch #%d of %d images", outstandingRequests, chunkSize)
+			go updateExifData(fileCommands, channel)
+			fileCommands = make(map[string][]string)
+			pendingFilesCnt = 0
 		}
 	}
 
-	c.String(http.StatusOK, "updated")
+	if pendingFilesCnt > 0 {
+		outstandingRequests++
+		log.Printf("INFO: update batch #%d of %d images", outstandingRequests, chunkSize)
+		go updateExifData(fileCommands, channel)
+	}
+
+	// wait for all metadata updates to complete
+
+	var resp struct {
+		Success  bool            `json:"success"`
+		Problems []updateProblem `json:"problems"`
+	}
+	resp.Success = true
+	resp.Problems = make([]updateProblem, 0)
+	log.Printf("INFO: await all metadata updates")
+	for outstandingRequests > 0 {
+		errs := <-channel
+		outstandingRequests--
+		resp.Problems = append(resp.Problems, errs...)
+	}
+
+	elapsed := time.Since(start)
+	elapsedMS := int64(elapsed / time.Millisecond)
+	log.Printf("INFO: updated  %d masterfiles in %dms", len(mdPost), elapsedMS)
+
+	c.JSON(http.StatusOK, resp)
 }
 
 func (svc *serviceContext) renameFiles(c *gin.Context) {
@@ -364,7 +409,7 @@ func (svc *serviceContext) renameFiles(c *gin.Context) {
 		}
 	}
 
-	// second pass moves the renambed files back where they belong
+	// second pass moves the renamed files back where they belong
 	for _, rn := range rnPost {
 		tmpFile := path.Join(backUpDir, rn.NewName)
 		origDir, _ := path.Split(rn.Original)
@@ -417,6 +462,29 @@ func (svc *serviceContext) deleteFile(c *gin.Context) {
 	}
 
 	c.String(http.StatusOK, fmt.Sprintf("deleted %s", delFilePath))
+}
+
+// updateExifData is called as a goroutine. It will update a batch of files, then return true on the channel
+func updateExifData(fileCommands map[string][]string, channel chan []updateProblem) {
+	log.Printf("INFO: batch %+v", fileCommands)
+	errors := make([]updateProblem, 0)
+	for tgtFile, command := range fileCommands {
+		log.Printf("INFO: exiftool %v", command)
+		_, err := exec.Command("exiftool", command...).Output()
+		if err != nil {
+			log.Printf("ERROR: unable to update %s metadata: %s", tgtFile, err.Error())
+			errors = append(errors, updateProblem{File: path.Base(tgtFile), Problem: err.Error()})
+		} else {
+			dupPath := fmt.Sprintf("%s_original", tgtFile)
+			removeErr := os.Remove(dupPath)
+			if removeErr != nil {
+				log.Printf("WARNING: unable to remove backup file %s:%s", dupPath, removeErr.Error())
+			}
+		}
+	}
+
+	// notify caller that the block is done
+	channel <- errors
 }
 
 // getExifData will retrieve a batch of metadata for masterfiles in a goroutine. When complete return true
