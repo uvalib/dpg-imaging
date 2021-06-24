@@ -390,6 +390,16 @@ func (svc *serviceContext) renameFiles(c *gin.Context) {
 
 	// create a working dir in the root of the unit directory to hold the original files to be renamed
 	backUpDir := path.Join(svc.ImagesDir, unit, "tmp")
+	_, existErr := os.Stat(backUpDir)
+	if existErr == nil {
+		log.Printf("INFO: working directory %s already exists, removing it", backUpDir)
+		err := os.RemoveAll(backUpDir)
+		if err != nil {
+			log.Printf("ERROR: unable to remove %s: %s", backUpDir, err.Error())
+			c.String(http.StatusInternalServerError, "unable to cleanup old working directory")
+			return
+		}
+	}
 	err := os.Mkdir(backUpDir, 0777)
 	if err != nil {
 		log.Printf("ERROR: unable to make backup dir %s: %s", backUpDir, err.Error())
@@ -424,7 +434,11 @@ func (svc *serviceContext) renameFiles(c *gin.Context) {
 	}
 
 	// last, cleanup tmp
-	os.Remove(backUpDir)
+	log.Printf("INFO: cleaning up working dorectory %s", backUpDir)
+	err = os.RemoveAll(backUpDir)
+	if err != nil {
+		log.Printf("ERROR: unable to clean up %s: %s", backUpDir, err.Error())
+	}
 
 	c.String(http.StatusOK, "ok")
 }
