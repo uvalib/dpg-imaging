@@ -173,6 +173,7 @@ export default new Vuex.Store({
          ctx.title = "Unknown"
          ctx.projectURL = ""
          ctx.problems.splice(0, ctx.problems.length)
+         ctx.currPage = 0
       }
    },
    actions: {
