@@ -76,19 +76,19 @@
                      </span>
                   </td>
                   <td @click="editMetadata(mf, 'title')" class="editable">
-                     <span  v-if="!isEditing(mf, 'title')"  class="editable">
+                     <span  tabindex="0" @focus.stop.prevent="editMetadata(mf, 'title')" v-if="!isEditing(mf, 'title')"  class="editable">
                         <span v-if="mf.title">{{mf.title}}</span>
                         <span v-else class="undefined">Undefined</span>
                      </span>
-                     <TitleInput v-else @canceled="cancelEdit" @accepted="submitEdit(mf)" v-model="newTitle"/>
+                     <TitleInput v-else @canceled="cancelEdit" @accepted="submitEdit(mf)" v-model="newTitle"  @blur.stop.prevent="cancelEdit"/>
                   </td>
                   <td @click="editMetadata(mf, 'description')" class="editable" >
-                     <span  v-if="!isEditing(mf, 'description')" class="editable">
+                     <span  tabindex="0" @focus.stop.prevent="editMetadata(mf, 'description')" v-if="!isEditing(mf, 'description')" class="editable">
                         <span v-if="mf.description">{{mf.description}}</span>
                         <span v-else class="undefined">Undefined</span>
                      </span>
                      <input v-else id="edit-desc" type="text" v-model="newDescription"
-                        @keyup.enter="submitEdit(mf)"  @keyup.esc="cancelEdit" />
+                        @keyup.enter="submitEdit(mf)"  @keyup.esc="cancelEdit"  @blur.stop.prevent="cancelEdit"/>
                   </td>
                   <td>
                      <span v-if="mf.componentID">{{mf.componentID}}</span>
@@ -128,9 +128,9 @@
                   </div>
                   <div class="row">
                      <label>Title</label>
-                     <div class="data editable" @click="editMetadata(mf, 'title')">
+                     <div tabindex="0" @focus.stop.prevent="editMetadata(mf, 'title')" class="data editable" @click="editMetadata(mf, 'title')">
                         <template v-if="isEditing(mf, 'title')">
-                           <TitleInput  @canceled="cancelEdit" @accepted="submitEdit(mf)" v-model="newTitle"/>
+                           <TitleInput  @canceled="cancelEdit" @accepted="submitEdit(mf)" v-model="newTitle" @blur.stop.prevent="cancelEdit"/>
                         </template>
                         <template v-else>
                            <template v-if="mf.title">{{mf.title}}</template>
@@ -140,9 +140,9 @@
                   </div>
                   <div class="row">
                      <label>Caption</label>
-                     <div class="data editable" @click="editMetadata(mf, 'description')">
+                     <div class="data editable" tabindex="0" @focus.stop.prevent="editMetadata(mf, 'description')"  @click="editMetadata(mf, 'description')">
                         <template v-if="isEditing(mf, 'description')">
-                           <input id="edit-desc" type="text" v-model="newDescription" @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" />
+                           <input id="edit-desc" type="text" v-model="newDescription" @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" @blur.stop.prevent="cancelEdit"/>
                         </template>
                         <template v-else>
                            <template v-if="mf.description">{{mf.description}}</template>
@@ -581,18 +581,10 @@ export default {
       .card .metadata .data  {
          max-width: 230px;
       }
-      img {
-         min-width: 250px;
-         min-height: 390px;
-      }
    }
    div.gallery.large {
       .card .metadata .data  {
          max-width: 380px;
-      }
-      img {
-         min-width: 400px;
-         min-height: 590px;
       }
    }
    table.unit-list {
