@@ -41,7 +41,7 @@ type masterFileInfo struct {
 }
 
 type exifData struct {
-	ColorProfile  string      `json:"ICCProfileName"`
+	ColorProfile  string      `json:"ProfileDescription"`
 	FileSize      string      `json:"FileSize"`
 	FileType      string      `json:"FileType"`
 	Resolution    int         `json:"XResolution"`
@@ -548,7 +548,7 @@ func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int, chann
 
 func baseExifCmd() []string {
 	out := []string{"-json", "-ImageWidth", "-ImageHeight",
-		"-FileType", "-XResolution", "-FileSize", "-ICCProfileName", "-iptc:OwnerID",
+		"-FileType", "-XResolution", "-FileSize", "-icc_profile:ProfileDescription", "-iptc:OwnerID",
 		"-iptc:headline", "-iptc:caption-abstract", "-iptc:ClassifyState"}
 	return out
 }
