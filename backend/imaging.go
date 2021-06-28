@@ -230,9 +230,9 @@ func (svc *serviceContext) getUnitDetails(c *gin.Context) {
 			}
 
 			pathID := strings.Replace(relPath, "/", "%2F", -1)
-			mf.ThumbURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/30,/0/default.jpg", svc.IIIFURL, pathID, fName)
-			mf.MediumURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/250,/0/default.jpg", svc.IIIFURL, pathID, fName)
-			mf.LargeURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/400,/0/default.jpg", svc.IIIFURL, pathID, fName)
+			mf.ThumbURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/!30,45/0/default.jpg", svc.IIIFURL, pathID, fName)
+			mf.MediumURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/!250,375/0/default.jpg", svc.IIIFURL, pathID, fName)
+			mf.LargeURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/full/!400,600/0/default.jpg", svc.IIIFURL, pathID, fName)
 			mf.InfoURL = fmt.Sprintf("%s/iiif/2/%s%%2F%s/info.json", svc.IIIFURL, pathID, fName)
 
 			out.MasterFiles = append(out.MasterFiles, &mf)
@@ -301,6 +301,97 @@ func (svc *serviceContext) getUnitDetails(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+func (svc *serviceContext) finalizeUnit(c *gin.Context) {
+	uid := padLeft(c.Param("uid"), 9)
+	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
+	log.Printf("INFO: finalize unit %s", unitDir)
+
+	start := time.Now()
+	pendingFilesCnt := 0
+	chunkSize := 10
+	fileCommands := make(map[string][]string)
+	channel := make(chan []updateProblem)
+	outstandingRequests := 0
+
+	unitMD, uErr := svc.getUnitMetadata(uid)
+	if uErr != nil {
+		log.Printf("ERROR: %s", uErr.Error())
+		c.String(http.StatusInternalServerError, uErr.Error())
+		return
+	}
+
+	// walk the unit directory and generate masterFile info for each .tif
+	mfRegex := regexp.MustCompile(`^\d{9}_\w{4,}\.tif$`)
+	tifRegex := regexp.MustCompile(`^.*\.tif$`)
+	hiddenRegex := regexp.MustCompile(`^\..*`)
+	err := filepath.Walk(unitDir, func(path string, f os.FileInfo, err error) error {
+		if err != nil {
+			log.Printf("WARNING: directory traverse failed: %s", err.Error())
+			return nil
+		}
+
+		if f.IsDir() == true {
+			return nil
+		}
+		fName := f.Name()
+		if hiddenRegex.Match([]byte(fName)) || !tifRegex.Match([]byte(fName)) || !mfRegex.Match([]byte(fName)) {
+			return nil
+		}
+
+		cmd := make([]string, 0)
+		cmd = append(cmd, fmt.Sprintf("-iptc:MasterDocumentID=%s", fmt.Sprintf("UVA Library: %s", unitMD.CallNumber)))
+		cmd = append(cmd, fmt.Sprintf("-iptc:ObjectName=%s", fName))
+		cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%s", ""))
+		cmd = append(cmd, path)
+		fileCommands[path] = cmd
+		pendingFilesCnt++
+		if pendingFilesCnt == chunkSize {
+			outstandingRequests++
+			log.Printf("INFO: finalize %s batch #%d of %d images", uid, outstandingRequests, chunkSize)
+			go updateExifData(fileCommands, channel)
+			fileCommands = make(map[string][]string)
+			pendingFilesCnt = 0
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Printf("ERROR: unable to walk contents of %s: %s", unitDir, err.Error())
+		c.String(http.StatusInternalServerError, "unable to find unit images")
+		return
+	}
+
+	if pendingFilesCnt > 0 {
+		outstandingRequests++
+		log.Printf("INFO: finalize %s batch #%d of %d images", uid, outstandingRequests, chunkSize)
+		go updateExifData(fileCommands, channel)
+	}
+
+	log.Printf("INFO: await all finalization updates")
+	var resp struct {
+		Success  bool            `json:"success"`
+		Problems []updateProblem `json:"problems"`
+	}
+	resp.Success = true
+	resp.Problems = make([]updateProblem, 0)
+	for outstandingRequests > 0 {
+		errs := <-channel
+		outstandingRequests--
+		if len(errs) > 0 {
+			log.Printf("ERROR: finalize %s failed: %+v", uid, errs)
+			resp.Success = false
+			resp.Problems = append(resp.Problems, errs...)
+		}
+	}
+
+	elapsed := time.Since(start)
+	elapsedMS := int64(elapsed / time.Millisecond)
+
+	log.Printf("INFO: finalized  unit %s in %dms", uid, elapsedMS)
+	c.JSON(http.StatusOK, resp)
+}
+
 func (svc *serviceContext) updateMetadata(c *gin.Context) {
 	uid := padLeft(c.Param("uid"), 9)
 	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
@@ -352,7 +443,6 @@ func (svc *serviceContext) updateMetadata(c *gin.Context) {
 	}
 
 	// wait for all metadata updates to complete
-
 	var resp struct {
 		Success  bool            `json:"success"`
 		Problems []updateProblem `json:"problems"`
@@ -363,7 +453,10 @@ func (svc *serviceContext) updateMetadata(c *gin.Context) {
 	for outstandingRequests > 0 {
 		errs := <-channel
 		outstandingRequests--
-		resp.Problems = append(resp.Problems, errs...)
+		if len(errs) > 0 {
+			resp.Success = false
+			resp.Problems = append(resp.Problems, errs...)
+		}
 	}
 
 	elapsed := time.Since(start)
@@ -490,9 +583,10 @@ func updateExifData(fileCommands map[string][]string, channel chan []updateProbl
 			errors = append(errors, updateProblem{File: path.Base(tgtFile), Problem: err.Error()})
 		} else {
 			dupPath := fmt.Sprintf("%s_original", tgtFile)
+			log.Printf("INFO: remove backup file [%s]", dupPath)
 			removeErr := os.Remove(dupPath)
 			if removeErr != nil {
-				log.Printf("WARNING: unable to remove backup file %s:%s", dupPath, removeErr.Error())
+				log.Printf("WARNING: unable to remove backup file [%s]: %s", dupPath, removeErr.Error())
 			}
 		}
 	}

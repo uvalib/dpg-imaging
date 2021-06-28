@@ -10,7 +10,7 @@ import (
 )
 
 // Version of the service
-const Version = "0.9.9"
+const Version = "1.0.0"
 
 func main() {
 	// Load cfg
@@ -32,6 +32,7 @@ func main() {
 		api.GET("/components/:id", svc.getComponent)
 		api.GET("/units", svc.getUnits)
 		api.GET("/units/:uid", svc.getUnitDetails)
+		api.POST("/units/:uid/finalize", svc.finalizeUnit)
 		api.POST("/units/:uid/update", svc.updateMetadata)
 		api.POST("/units/:uid/rename", svc.renameFiles)
 		api.DELETE("/units/:uid/:file", svc.deleteFile)
