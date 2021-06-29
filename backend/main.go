@@ -36,6 +36,7 @@ func main() {
 		api.POST("/units/:uid/update", svc.updateMetadata)
 		api.POST("/units/:uid/rename", svc.renameFiles)
 		api.DELETE("/units/:uid/:file", svc.deleteFile)
+		api.POST("/units/:uid/:file/rotate", svc.rotateFile)
 	}
 
 	// Note: in dev mode, this is never actually used. The front end is served

@@ -224,7 +224,7 @@ export default {
         showError: ""
       }
    },
-   mounted() {
+   created() {
       this.$store.dispatch("getUnitDetails", this.$route.params.unit)
    },
    methods: {
@@ -241,7 +241,8 @@ export default {
           this.rangeEndIdx = -1
       },
       deleteSelected() {
-         this.$store.dispatch("deleteMasterFile", this.rightClickedMF)
+         alert(this.rightClickedMF)
+         // this.$store.dispatch("deleteMasterFile", this.rightClickedMF)
       },
       resetSort() {
          this.$store.commit("filenameSort")

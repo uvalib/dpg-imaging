@@ -47,6 +47,7 @@
                <span id="next" title="Next" class="toolbar-button"><i class="fas fa-arrow-right"></i></span>
             </span>
             <span class="zoom group">
+               <span id="rotate" title="Rotate Right" class="toolbar-button"  @click="rotateImage"><i class="fas fa-sync"></i></span>
                <span id="zoom-in" title="Zoom in" class="toolbar-button"><i class="fas fa-search-plus"></i></span>
                <span class="page">{{Math.round(zoom*100)}} %</span>
                <span id="zoom-out" title="Zoom in" class="toolbar-button"><i class="fas fa-search-minus"></i></span>
@@ -95,6 +96,9 @@ export default {
       }
    },
    methods: {
+      rotateImage() {
+         this.$store.dispatch("rotateImage", this.currMasterFile.fileName)
+      },
       viewActualSize() {
          this.viewer.viewport.zoomTo(this.viewer.viewport.imageToViewportZoom(1.0))
       },
@@ -126,7 +130,7 @@ export default {
 
       }
    },
-   async mounted() {
+   async created() {
       await this.$store.dispatch("getUnitDetails", this.$route.params.unit)
       this.$nextTick( ()=>{
          let hdr = document.getElementById("uva-header")

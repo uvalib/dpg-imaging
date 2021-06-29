@@ -302,6 +302,20 @@ export default createStore({
          })
       },
 
+      rotateImage(ctx, mf) {
+         ctx.commit("setUpdating", true)
+         axios.post(`/api/units/${ctx.state.currUnit}/${mf}/rotate`, {}).then(() => {
+            setTimeout( ()=>{
+               ctx.commit("setUpdating", false)
+               window.location.reload()
+            }, 250)
+         }).catch( e => {
+            ctx.commit('setError', e)
+            ctx.commit("setUpdating", false)
+         })
+      },
+
+
       renameAll( ctx ) {
          ctx.commit("setUpdating", true)
          let data = []

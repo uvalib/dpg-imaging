@@ -580,6 +580,21 @@ func (svc *serviceContext) deleteFile(c *gin.Context) {
 	c.String(http.StatusOK, fmt.Sprintf("deleted %s", delFilePath))
 }
 
+func (svc *serviceContext) rotateFile(c *gin.Context) {
+	unit := padLeft(c.Param("uid"), 9)
+	file := c.Param("file")
+	fullPath := path.Join(svc.ImagesDir, unit, file)
+	log.Printf("INFO: rotate %s", fullPath)
+	cmd := []string{fullPath, "-rotate", "90", fullPath}
+	_, err := exec.Command("convert", cmd...).Output()
+	if err != nil {
+		log.Printf("ERROR: unable to rotate %s: %s", fullPath, err.Error())
+		c.String(http.StatusInternalServerError, fmt.Sprintf("unable to rotate file: %s", err.Error()))
+		return
+	}
+	c.String(http.StatusOK, "rotated")
+}
+
 // updateExifData is called as a goroutine. It will update a batch of files, then return true on the channel
 func updateExifData(fileCommands map[string][]string, channel chan []updateProblem) {
 	log.Printf("INFO: batch %+v", fileCommands)
