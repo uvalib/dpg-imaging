@@ -33,10 +33,10 @@
                      <option value="large">Gallery (large)</option>
                   </select>
                </span>
-               <DPGButton id="sort" class="right-pad" @clicked="resetSort">File Name Sort</DPGButton>
+               <!-- <DPGButton id="sort" class="right-pad" @clicked="resetSort">File Name Sort</DPGButton> -->
                <ConfirmModal label="Batch Rename" class="right-pad" @confirmed="renameAll">
                   <div>All files will be renamed to match the following format:</div>
-                  <code>{{currUnit}}_0001.tif</code>
+                  <code>{{currUnit}}_0001.tif - {{currUnit}}_nnnn.tif</code>
                </ConfirmModal>
                <DPGButton id="set-titles" @clicked="setPageNumbersClicked" class="button right-pad">Set Page Numbers</DPGButton>
                <DPGButton id="set-titles" @clicked="componentLinkClicked" class="button">Component Link</DPGButton>
