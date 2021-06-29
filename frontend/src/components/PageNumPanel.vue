@@ -22,9 +22,9 @@
             </span>
       </div>
       <div class="panel-actions">
-         <DPGButton @click="selectAllClicked" class="left">Select All</DPGButton>
-         <DPGButton @click="cancelEditClicked" class="right-pad">Cancel</DPGButton>
-         <DPGButton @click="okPagesClicked">OK</DPGButton>
+         <DPGButton @clicked="selectAllClicked" class="left">Select All</DPGButton>
+         <DPGButton @clicked="cancelEditClicked" class="right-pad">Cancel</DPGButton>
+         <DPGButton @clicked="okPagesClicked">OK</DPGButton>
       </div>
    </div>
 </template>

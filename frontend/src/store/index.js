@@ -1,11 +1,8 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+import { createStore } from 'vuex'
 import axios from 'axios'
 import { getField, updateField } from 'vuex-map-fields'
 
-Vue.use(Vuex)
-
-export default new Vuex.Store({
+export default createStore({
    state: {
       loading: false,
       updating: false,
@@ -14,6 +11,7 @@ export default new Vuex.Store({
       units: [],
       currUnit: "",
       masterFiles: [],
+      pageMasterFiles: [],
       viewMode: "list",
       rangeStartIdx: -1,
       rangeEndIdx: -1,
@@ -42,10 +40,6 @@ export default new Vuex.Store({
       },
       masterFileInfo: state => page => {
          return state.masterFiles[page]
-      },
-      pageMasterFiles: state => {
-         let startIdx = state.currPage*state.pageSize
-         return state.masterFiles.slice(startIdx, startIdx+state.pageSize)
       },
       pageStartIdx: state => {
          return state.currPage*state.pageSize
@@ -105,6 +99,16 @@ export default new Vuex.Store({
       setUnitProblems(state, problems) {
          state.problems.splice(0, state.problems.length)
          problems.forEach( p => state.problems.push(p) )
+      },
+      setPage(state, startPageNum) {
+         state.pageMasterFiles.splice(0, state.pageMasterFiles.length)
+         for (let idx = 0; idx<state.pageSize; idx++) {
+            let mfIdx = startPageNum*state.pageSize + idx
+            if (mfIdx < state.masterFiles.length ) {
+               state.pageMasterFiles.push( state.masterFiles[mfIdx])
+            }
+         }
+         state.currPage = startPageNum
       },
       setMasterFiles(ctx, {unit, masterFiles}) {
          ctx.currUnit = unit
@@ -196,6 +200,7 @@ export default new Vuex.Store({
          ctx.commit("clearUnitDetails")
          return axios.get(`/api/units/${unit}`).then(response => {
             ctx.commit('setMasterFiles', {unit: unit, masterFiles: response.data.masterFiles})
+            ctx.commit('setPage', 0)
             ctx.commit('setUnitMetadata', response.data.metadata)
             ctx.commit('setUnitProblems', response.data.problems)
             ctx.commit("setLoading", false)
@@ -300,16 +305,35 @@ export default new Vuex.Store({
       renameAll( ctx ) {
          ctx.commit("setUpdating", true)
          let data = []
+         let pStartIdx = ctx.state.currPage*ctx.state.pageSize
+         let pEndIdx = pStartIdx + ctx.state.pageSize-1
+         let numRegex = /^\d{4}$/
          ctx.state.masterFiles.forEach( (mf,idx) => {
-            let mfParts = mf.fileName.toLowerCase().replace(".tif").split("_")
-            let mfPage = parseInt(mfParts[1],10)
+            let originalFN = mf.fileName.toLowerCase()
+            let originalPath = mf.path
 
-            // detect either sequence issues or unit prefix issues
-            if (mfPage !=  idx+1 || mfParts[0] != ctx.state.currUnit) {
+            // if this MF is in the range of the acitve page, grab data for it from
+            // the pageMasterFiles array instead as it may have been reordered with drag/drop
+            if (idx >= pStartIdx && idx <= pEndIdx) {
+               let pageMf = ctx.state.pageMasterFiles[idx-pStartIdx]
+               originalFN = pageMf.fileName.toLowerCase()
+               originalPath = pageMf.path
+            }
+
+            originalFN = originalFN.replace(".tif","")
+            let mfParts = originalFN.split("_")
+            let mfPage = parseInt(mfParts[1],10)
+            let badName = false
+            if ( !mfParts[1].match(numRegex) ) {
+               badName = true
+            }
+
+            // detect either sequence issues, bad name, or unit prefix issues
+            if ( badName || mfPage !=  idx+1 || mfParts[0] != ctx.state.currUnit) {
                let newPg = `${idx+1}`
                newPg = newPg.padStart(4,'0')
                let newFN = `${ctx.state.currUnit}_${newPg}.tif`
-               data.push({original: mf.path, new: newFN })
+               data.push({original: originalPath, new: newFN })
             }
 
          })

@@ -22,10 +22,10 @@
          </span>
       </div>
       <div class="panel-actions">
-         <DPGButton @click="selectAllClicked" class="left">Select All</DPGButton>
-         <DPGButton @click="unlinkClicked" class="right-pad">Unlink</DPGButton>
-         <DPGButton @click="cancelEditClicked" class="right-pad">Cancel</DPGButton>
-         <DPGButton @click="okClicked">OK</DPGButton>
+         <DPGButton @clicked="selectAllClicked" class="left">Select All</DPGButton>
+         <DPGButton @clicked="unlinkClicked" class="right-pad">Unlink</DPGButton>
+         <DPGButton @clicked="cancelEditClicked" class="right-pad">Cancel</DPGButton>
+         <DPGButton @clicked="okClicked">OK</DPGButton>
       </div>
       <div class="component-dimmer" v-if="component.valid">
          <div role="dialog" aria-labelledby="component-modal-title" id="component-modal" class="component-modal">
@@ -56,11 +56,11 @@
                <p class="confirm">Link this component to selected images?</p>
             </div>
             <div class="component-modal-controls">
-               <DPGButton id="close-confirm" @click="noLinkClicked" @tabback="setFocus('ok-confirm')" :focusBackOverride="true">
+               <DPGButton id="close-confirm" @clicked="noLinkClicked" @tabback="setFocus('ok-confirm')" :focusBackOverride="true">
                   No
                </DPGButton>
                <span class="spacer"></span>
-               <DPGButton id="ok-confirm" @click="linkConfirmed" @tabnext="setFocus('close-confirm')" :focusNextOverride="true">
+               <DPGButton id="ok-confirm" @clicked="linkConfirmed" @tabnext="setFocus('close-confirm')" :focusNextOverride="true">
                   Yes
                </DPGButton>
             </div>

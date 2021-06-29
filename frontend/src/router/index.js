@@ -1,11 +1,9 @@
-import Vue from 'vue'
-import VueRouter from 'vue-router'
+
+import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import Unit from '../views/Unit.vue'
 import Page from '../views/Page.vue'
 import NotFound from '../views/NotFound.vue'
-
-Vue.use(VueRouter)
 
 const routes = [
    {
@@ -24,15 +22,14 @@ const routes = [
       component: Page
    },
    {
-      path: "*",
+      path: '/:pathMatch(.*)*',
       name: "not_found",
       component: NotFound
    }
 ]
 
-const router = new VueRouter({
-   mode: 'history',
-   base: process.env.BASE_URL,
+const router = createRouter({
+   history: createWebHistory( process.env.BASE_URL ),
    routes
 })
 

@@ -9,16 +9,16 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.3",
+    "@vue/compat": "^3.1.0",
     "axios": "^0.21.1",
     "core-js": "^3.6.5",
     "openseadragon": "^2.4.2",
     "sass": "^1.34.0",
     "sass-loader": "^10",
-    "tify": "^0.24.2",
-    "vue": "^2.6.11",
-    "vue-router": "^3.2.0",
-    "vuedraggable": "^2.24.3",
-    "vuex": "^3.4.0",
+    "vue": "^3.1.0",
+    "vue-router": "^4.0.0",
+    "vuedraggable": "^4.0.1",
+    "vuex": "^4.0.2",
     "vuex-map-fields": "^1.4.1"
   },
   "devDependencies": {
@@ -27,9 +27,28 @@
     "@vue/cli-plugin-router": "~4.5.0",
     "@vue/cli-plugin-vuex": "~4.5.0",
     "@vue/cli-service": "~4.5.0",
+    "@vue/compiler-sfc": "^3.1.0",
     "babel-eslint": "^10.1.0",
     "eslint": "^6.7.2",
-    "eslint-plugin-vue": "^6.2.2",
-    "vue-template-compiler": "^2.6.11"
-  }
+    "eslint-plugin-vue": "^6.2.2"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/vue3-essential",
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "parser": "babel-eslint"
+    },
+    "rules": {}
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
 }

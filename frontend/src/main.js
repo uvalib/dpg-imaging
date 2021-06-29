@@ -1,26 +1,25 @@
-import Vue from 'vue'
+import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import store from './store'
 
 import WaitSpinner from "@/components/WaitSpinner"
-Vue.component('WaitSpinner', WaitSpinner)
-
 import ErrorMessage from "@/components/ErrorMessage"
-Vue.component('ErrorMessage', ErrorMessage)
-
 import DPGButton from "@/components/DPGButton"
-Vue.component('DPGButton', DPGButton)
-
 import ConfirmModal from "@/components/ConfirmModal"
-Vue.component('ConfirmModal', ConfirmModal)
+
+const app = createApp(App)
+app.use(store)
+app.use(router)
+
+app.component("WaitSpinner", WaitSpinner)
+app.component("ErrorMessage", ErrorMessage)
+app.component("DPGButton", DPGButton)
+app.component("ConfirmModal", ConfirmModal)
+
+
 
 import '@fortawesome/fontawesome-free/css/all.css'
 
-Vue.config.productionTip = false
-
-new Vue({
-  router,
-  store,
-  render: h => h(App)
-}).$mount('#app')
+// actually mount to DOM
+app.mount('#app')

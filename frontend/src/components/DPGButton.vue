@@ -26,7 +26,7 @@ export default {
    methods: {
       clicked() {
          this.$nextTick( () => {
-            this.$emit('click')
+            this.$emit('clicked')
          })
       },
       tabBack(event) {

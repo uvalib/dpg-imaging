@@ -33,13 +33,13 @@
                      <option value="large">Gallery (large)</option>
                   </select>
                </span>
-               <DPGButton id="sort" class="right-pad" @click="resetSort">File Name Sort</DPGButton>
+               <DPGButton id="sort" class="right-pad" @clicked="resetSort">File Name Sort</DPGButton>
                <ConfirmModal label="Batch Rename" class="right-pad" @confirmed="renameAll">
                   <div>All files will be renamed to match the following format:</div>
                   <code>{{currUnit}}_0001.tif</code>
                </ConfirmModal>
-               <DPGButton id="set-titles" @click="setPageNumbersClicked" class="button right-pad">Set Page Numbers</DPGButton>
-               <DPGButton id="set-titles" @click="componentLinkClicked" class="button">Component Link</DPGButton>
+               <DPGButton id="set-titles" @clicked="setPageNumbersClicked" class="button right-pad">Set Page Numbers</DPGButton>
+               <DPGButton id="set-titles" @clicked="componentLinkClicked" class="button">Component Link</DPGButton>
             </span>
          </div>
          <PageNumPanel v-if="editMode == 'page'" />
@@ -59,103 +59,106 @@
                   <th>Path</th>
                </tr>
             </thead>
-            <draggable v-model="masterFiles" tag="tbody"  @start="dragStarted" >
-               <tr v-for="(mf,idx) in pageMasterFiles" :key="mf.fileName" :id="mf.fileName"
-                  @mousedown="fileSelected(mf.fileName, $event)"
-                  @contextmenu.prevent="showContextMenu(mf.fileName, $event)"
-               >
-                  <td class="thumb">
-                     <router-link :to="`/unit/${currUnit}/page/${pageStartIdx+idx+1}`"><img :src="mf.thumbURL"/></router-link>
-                  </td>
-                  <td><TagPicker :masterFile="mf" /></td>
-                  <td class="hover-container">
-                     <span>{{mf.fileName}}</span>
-                     <span v-if="mf.error">
-                        <i class="image-err fas fa-exclamation-circle" @mouseover="hoverEnter(mf.fileName)" @mouseleave="hoverExit()"></i>
-                        <span v-if="showError==mf.fileName" class="hover-error">{{mf.error}}</span>
-                     </span>
-                  </td>
-                  <td @click="editMetadata(mf, 'title')" class="editable">
-                     <span  tabindex="0" @focus.stop.prevent="editMetadata(mf, 'title')" v-if="!isEditing(mf, 'title')"  class="editable">
-                        <span v-if="mf.title">{{mf.title}}</span>
-                        <span v-else class="undefined">Undefined</span>
-                     </span>
-                     <TitleInput v-else @canceled="cancelEdit" @accepted="submitEdit(mf)" v-model="newTitle"  @blur.stop.prevent="cancelEdit"/>
-                  </td>
-                  <td @click="editMetadata(mf, 'description')" class="editable" >
-                     <span  tabindex="0" @focus.stop.prevent="editMetadata(mf, 'description')" v-if="!isEditing(mf, 'description')" class="editable">
-                        <span v-if="mf.description">{{mf.description}}</span>
-                        <span v-else class="undefined">Undefined</span>
-                     </span>
-                     <input v-else id="edit-desc" type="text" v-model="newDescription"
-                        @keyup.enter="submitEdit(mf)"  @keyup.esc="cancelEdit"  @blur.stop.prevent="cancelEdit"/>
-                  </td>
-                  <td>
-                     <span v-if="mf.componentID">{{mf.componentID}}</span>
-                     <span v-else>N/A</span>
-                  </td>
-                  <td>{{mf.width}} x {{mf.height}}</td>
-                  <td>{{mf.resolution}}</td>
-                  <td>{{mf.colorProfile}}</td>
-                  <td>{{mf.path}}</td>
-               </tr>
+            <draggable v-model="pageMasterFiles" tag="tbody"  @start="dragStarted" item-key="fileName">
+               <template #item="{element, index}">
+                  <tr @mousedown="fileSelected(element.fileName, $event)"  :id="element.fileName" :key="element.fileName"
+                     @contextmenu.prevent="showContextMenu(element.fileName, $event)"
+                  >
+                     <td class="thumb">
+                        <router-link :to="`/unit/${currUnit}/page/${pageStartIdx+index+1}`"><img :src="element.thumbURL"/></router-link>
+                     </td>
+                     <td><TagPicker :masterFile="element" /></td>
+                     <td class="hover-container">
+                        <span>{{element.fileName}}</span>
+                        <span v-if="element.error">
+                           <i class="image-err fas fa-exclamation-circle" @mouseover="hoverEnter(element.fileName)" @mouseleave="hoverExit()"></i>
+                           <span v-if="showError==element.fileName" class="hover-error">{{element.error}}</span>
+                        </span>
+                     </td>
+                     <td @click="editMetadata(element, 'title')" class="editable" tabindex="0" @focus.stop.prevent="editMetadata(element, 'title')" >
+                        <span v-if="!isEditing(element, 'title')"  class="editable">
+                           <span v-if="element.title">{{element.title}}</span>
+                           <span v-else class="undefined">Undefined</span>
+                        </span>
+                        <TitleInput v-else @canceled="cancelEdit" @accepted="submitEdit(element)" v-model="newTitle"  @blur.stop.prevent="cancelEdit"/>
+                     </td>
+                     <td @click="editMetadata(element, 'description')" class="editable" >
+                        <span  tabindex="0" @focus.stop.prevent="editMetadata(element, 'description')" v-if="!isEditing(element, 'description')" class="editable">
+                           <span v-if="element.description">{{element.description}}</span>
+                           <span v-else class="undefined">Undefined</span>
+                        </span>
+                        <input v-else id="edit-desc" type="text" v-model="newDescription"
+                           @keyup.enter="submitEdit(element)"  @keyup.esc="cancelEdit"  @blur.stop.prevent="cancelEdit"/>
+                     </td>
+                     <td>
+                        <span v-if="element.componentID">{{element.componentID}}</span>
+                        <span v-else>N/A</span>
+                     </td>
+                     <td>{{element.width}} x {{element.height}}</td>
+                     <td>{{element.resolution}}</td>
+                     <td>{{element.colorProfile}}</td>
+                     <td>{{element.path}}</td>
+                  </tr>
+               </template>
             </draggable>
          </table>
-         <draggable v-else v-model="masterFiles" @start="dragStarted" class="gallery" :class="viewMode" >
-            <div class="card" v-for="(mf,idx) in pageMasterFiles" :key="mf.fileName"
-               @mousedown="fileSelected(mf.fileName, $event)"
-               @contextmenu.prevent="showContextMenu(mf.fileName, $event)"
-               :id="mf.fileName"
-            >
-               <router-link :to="`/unit/${currUnit}/page/${pageStartIdx+idx+1}`">
-                  <img :src="mf.mediumURL" v-if="viewMode == 'medium'"/>
-                  <img :src="mf.largeURL" v-if="viewMode == 'large'"/>
-               </router-link>
-               <div class="tag">
-                  <TagPicker :masterFile="mf" display="wide"/>
+         <draggable v-else v-model="pageMasterFiles" @start="dragStarted" class="gallery" :class="viewMode" item-key="fileName">
+            <template #item="{element, index}">
+               <div class="card" :id="element.fileName"
+                  @mousedown="fileSelected(element.fileName, $event)"
+                  @contextmenu.prevent="showContextMenu(element.fileName, $event)"
+
+               >
+                  <router-link :to="`/unit/${currUnit}/page/${pageStartIdx+index+1}`">
+                     <img :src="element.mediumURL" v-if="viewMode == 'medium'"/>
+                     <img :src="element.largeURL" v-if="viewMode == 'large'"/>
+                  </router-link>
+                  <div class="tag">
+                     <TagPicker :masterFile="element" display="wide"/>
+                  </div>
+                  <div class="metadata">
+                     <div class="row">
+                        <label>Image</label>
+                        <div class="data hover-container">
+                           <span>{{element.fileName}}</span>
+                           <span v-if="element.error">
+                              <i class="image-err fas fa-exclamation-circle" @mouseover="hoverEnter(element.fileName)" @mouseleave="hoverExit()"></i>
+                              <span v-if="showError==element.fileName" class="hover-error">{{element.error}}</span>
+                           </span>
+                        </div>
+                        <div class="data">{{element.width}} x {{element.height}}, {{element.resolution}}</div>
+                     </div>
+                     <div class="row">
+                        <label>Title</label>
+                        <div tabindex="0" @focus.stop.prevent="editMetadata(element, 'title')" class="data editable" @click="editMetadata(element, 'title')">
+                           <template v-if="isEditing(element, 'title')">
+                              <TitleInput  @canceled="cancelEdit" @accepted="submitEdit(element)" v-model="newTitle" @blur.stop.prevent="cancelEdit"/>
+                           </template>
+                           <template v-else>
+                              <template v-if="element.title">{{element.title}}</template>
+                              <span v-else class="undefined">Undefined</span>
+                           </template>
+                        </div>
+                     </div>
+                     <div class="row">
+                        <label>Caption</label>
+                        <div class="data editable" tabindex="0" @focus.stop.prevent="editMetadata(element, 'description')"  @click="editMetadata(element, 'description')">
+                           <template v-if="isEditing(element, 'description')">
+                              <input id="edit-desc" type="text" v-model="newDescription" @keyup.enter="submitEdit(element)" @keyup.esc="cancelEdit" @blur.stop.prevent="cancelEdit"/>
+                           </template>
+                           <template v-else>
+                              <template v-if="element.description">{{element.description}}</template>
+                              <span v-else class="undefined">Undefined</span>
+                           </template>
+                        </div>
+                     </div>
+                     <div class="row" v-if="element.componentID">
+                        <label>Component</label>
+                        <div class="data">{{element.componentID}}</div>
+                     </div>
+                  </div>
                </div>
-               <div class="metadata">
-                  <div class="row">
-                     <label>Image</label>
-                     <div class="data hover-container">
-                        <span>{{mf.fileName}}</span>
-                        <span v-if="mf.error">
-                           <i class="image-err fas fa-exclamation-circle" @mouseover="hoverEnter(mf.fileName)" @mouseleave="hoverExit()"></i>
-                           <span v-if="showError==mf.fileName" class="hover-error">{{mf.error}}</span>
-                        </span>
-                     </div>
-                     <div class="data">{{mf.width}} x {{mf.height}}, {{mf.resolution}}</div>
-                  </div>
-                  <div class="row">
-                     <label>Title</label>
-                     <div tabindex="0" @focus.stop.prevent="editMetadata(mf, 'title')" class="data editable" @click="editMetadata(mf, 'title')">
-                        <template v-if="isEditing(mf, 'title')">
-                           <TitleInput  @canceled="cancelEdit" @accepted="submitEdit(mf)" v-model="newTitle" @blur.stop.prevent="cancelEdit"/>
-                        </template>
-                        <template v-else>
-                           <template v-if="mf.title">{{mf.title}}</template>
-                           <span v-else class="undefined">Undefined</span>
-                        </template>
-                     </div>
-                  </div>
-                  <div class="row">
-                     <label>Caption</label>
-                     <div class="data editable" tabindex="0" @focus.stop.prevent="editMetadata(mf, 'description')"  @click="editMetadata(mf, 'description')">
-                        <template v-if="isEditing(mf, 'description')">
-                           <input id="edit-desc" type="text" v-model="newDescription" @keyup.enter="submitEdit(mf)" @keyup.esc="cancelEdit" @blur.stop.prevent="cancelEdit"/>
-                        </template>
-                        <template v-else>
-                           <template v-if="mf.description">{{mf.description}}</template>
-                           <span v-else class="undefined">Undefined</span>
-                        </template>
-                     </div>
-                  </div>
-                  <div class="row" v-if="mf.componentID">
-                     <label>Component</label>
-                     <div class="data">{{mf.componentID}}</div>
-                  </div>
-               </div>
-            </div>
+            </template>
          </draggable>
       </template>
       <div class="popupmenu" id="popupmenu" v-show="menuVisible">
@@ -192,7 +195,7 @@ import ImagePagination from '../components/ImagePagination.vue'
 import ProblemsDisplay from '../components/ProblemsDisplay.vue'
 import draggable from 'vuedraggable'
 export default {
-   components: {PageNumPanel, draggable, TagPicker, TitleInput, ProblemsDisplay, ComponentPanel, ImagePagination },
+   components: {PageNumPanel, draggable, ProblemsDisplay, ComponentPanel, ImagePagination, TagPicker, TitleInput },
    name: "unit",
    computed: {
       ...mapState({
@@ -204,11 +207,10 @@ export default {
          projectURL: state => state.projectURL,
       }),
       ...mapGetters([
-        'pageMasterFiles',
         'pageStartIdx',
       ]),
       ...mapFields([
-         'viewMode', "rangeStartIdx", "rangeEndIdx", "editMode", "masterFiles"
+         'viewMode', "rangeStartIdx", "rangeEndIdx", "editMode", "masterFiles", "pageMasterFiles"
       ]),
    },
    data() {
@@ -230,7 +232,6 @@ export default {
          this.showError = ""
       },
       hoverEnter(f) {
-         console.log("HOVER "+f)
          this.showError = f
       },
       clearState() {
@@ -282,7 +283,6 @@ export default {
          this.$store.dispatch("renameAll")
       },
       componentLinkClicked() {
-         console.log("COMPONENT CLICK")
          this.editMode = "component"
          this.menuVisible =  false
          this.$nextTick( () => {

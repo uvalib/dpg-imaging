@@ -1,19 +1,19 @@
 <template>
    <span class=pager>
       <span class="pages">
-         <DPGButton mode="icon" :disabled="!prevAvailable" @click="firstClicked" aria-label="first page">
+         <DPGButton mode="icon" :disabled="!prevAvailable" @clicked="firstClicked" aria-label="first page">
             <i class="fas fa-angle-double-left"></i>
          </DPGButton>
-         <DPGButton mode="icon" :disabled="!prevAvailable"  @click="priorClicked" aria-label="previous page">
+         <DPGButton mode="icon" :disabled="!prevAvailable"  @clicked="priorClicked" aria-label="previous page">
             <i class="fas fa-angle-left"></i>
          </DPGButton>
-         <span class="page-info" @click="showPageJump">
+         <span class="page-info" @clicked="showPageJump">
             {{currPage+1}} of {{totalPages}}
          </span>
-         <DPGButton mode="icon"  :disabled="!nextAvailable" @click="nextClicked" aria-label="next page">
+         <DPGButton mode="icon"  :disabled="!nextAvailable" @clicked="nextClicked" aria-label="next page">
             <i class="fas fa-angle-right"></i>
          </DPGButton>
-         <DPGButton mode="icon" :disabled="!nextAvailable" @click="lastClicked" aria-label="last page">
+         <DPGButton mode="icon" :disabled="!nextAvailable" @clicked="lastClicked" aria-label="last page">
             <i class="fas fa-angle-double-right"></i>
          </DPGButton>
          <div class="page-jump" v-if="pageJumpOpen">
@@ -34,8 +34,7 @@
 </template>
 
 <script>
-import { mapGetters } from "vuex"
-import { mapFields } from 'vuex-map-fields'
+import { mapGetters, mapState } from "vuex"
 export default {
    computed: {
       ...mapGetters([
@@ -43,9 +42,10 @@ export default {
         'totalPages',
         'totalFiles'
       ]),
-      ...mapFields([
-         'currPage', "pageSize",
-      ]),
+      ...mapState({
+         currPage : state => state.currPage,
+         pageSize : state => state.pageSize,
+      }),
       prevAvailable() {
          return this.currPage > 0
       },
@@ -65,7 +65,8 @@ export default {
       },
       pageJumpSelected() {
          if (this.pageJump <= 0 || this.pageJump > this.totalPages) return
-         this.currPage = (this.pageJump-1)
+         let tgtPage = (this.pageJump-1)
+         this.$store.commit("setPage", tgtPage)
          this.pageJumpOpen = false
        },
       showPageJump() {
@@ -77,16 +78,16 @@ export default {
          })
       },
       priorClicked() {
-         this.currPage--
+         this.$store.commit("setPage", this.currPage-1)
       },
       nextClicked() {
-         this.currPage++
+         this.$store.commit("setPage", this.currPage+1)
       },
       lastClicked() {
-         this.currPage = this.totalPages-1
+         this.$store.commit("setPage", this.totalPages-1)
       },
       firstClicked() {
-         this.currPage = 0
+         this.$store.commit("setPage", 0)
       }
    }
 }

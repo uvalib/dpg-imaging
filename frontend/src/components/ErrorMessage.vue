@@ -9,7 +9,7 @@
             </div>
             <div class="message-body" id="msgbody" v-html="message"></div>
             <div class="controls">
-               <DPGButton id="close-error" @click="dismiss">OK</DPGButton>
+               <DPGButton id="close-error" @clicked="dismiss">OK</DPGButton>
             </div>
          </div>
       </div>

@@ -17,10 +17,11 @@
 
 <script>
 export default {
-   props: ['value'],
+   props: ['modelValue'],
+   emits: ['update:modelValue', 'accepted', 'canceled'],
    data() {
       return {
-         editVal: this.value,
+         editVal: this.modelValue,
          dropdownOpen: false,
          vocab: ["Spine", "Front Cover", "Front Cover verso", "Back Cover", "Back Cover recto",
                  "Head", "Tail", "Fore-edge", "Front Paste-down Endpaper", "Front Free Endpaper page #",
@@ -46,13 +47,13 @@ export default {
       },
       vocabSelected(val) {
          this.editVal = val
-         this.$emit('input', this.editVal)
+         this.$emit('update:modelValue', val)
          document.getElementById("title-input-box").focus()
 
       },
       handleInput(newVal) {
          this.editVal = newVal
-         this.$emit('input', newVal)
+         this.$emit('update:modelValue', newVal)
       },
    },
    mounted() {
