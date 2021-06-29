@@ -241,8 +241,7 @@ export default {
           this.rangeEndIdx = -1
       },
       deleteSelected() {
-         alert(this.rightClickedMF)
-         // this.$store.dispatch("deleteMasterFile", this.rightClickedMF)
+         this.$store.dispatch("deleteMasterFile", this.rightClickedMF)
       },
       resetSort() {
          this.$store.commit("filenameSort")

@@ -1,7 +1,7 @@
 <template>
    <div class="confirm-modal-wrapper">
       <DPGButton v-if="type=='button'" id="confirm-trigger" @clicked="show">{{label}}</DPGButton>
-      <span class="txt-trigger" v-else id="confirm-trigger" @clicked="show">{{label}}</span>
+      <span class="txt-trigger" v-else id="confirm-trigger" @click="show">{{label}}</span>
       <div class="confirm-modal-dimmer" v-if="isOpen">
          <div role="dialog" aria-labelledby="confirm-modal-title" id="confirm-modal" class="confirm-modal">
             <div id="confirm-modal-title" class="confirm-modal-title">Confirm Action</div>
