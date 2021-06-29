@@ -126,7 +126,7 @@ export default {
 
       }
    },
-   async created() {
+   async mounted() {
       await this.$store.dispatch("getUnitDetails", this.$route.params.unit)
       this.$nextTick( ()=>{
          let hdr = document.getElementById("uva-header")

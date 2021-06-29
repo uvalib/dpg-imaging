@@ -39,10 +39,10 @@ export default {
          }
       }
    },
-   created: function() {
+   mounted: function() {
       window.addEventListener("scroll", this.scrollChecker)
    },
-   destroyed: function() {
+   unmounted: function() {
       window.removeEventListener("scroll", this.scrollChecker)
    }
 }

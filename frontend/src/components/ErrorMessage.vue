@@ -29,7 +29,7 @@ export default {
          this.$store.commit("clearError")
       },
    },
-   created() {
+   mounted() {
       this.$nextTick( () =>{
          let ele = document.getElementById("close-error")
          ele.focus()

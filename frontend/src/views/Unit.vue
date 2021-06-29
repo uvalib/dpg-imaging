@@ -224,7 +224,7 @@ export default {
         showError: ""
       }
    },
-   created() {
+   mounted() {
       this.$store.dispatch("getUnitDetails", this.$route.params.unit)
    },
    methods: {
