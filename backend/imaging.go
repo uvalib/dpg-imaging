@@ -517,6 +517,15 @@ func (svc *serviceContext) renameFiles(c *gin.Context) {
 		tmpFile := path.Join(backUpDir, rn.NewName)
 		origDir, _ := path.Split(rn.Original)
 		renamed := path.Join(origDir, rn.NewName)
+
+		/// if renamed already exists, something is wrong! leave as-is and abort before files are lost or overwritten
+		_, existErr := os.Stat(renamed)
+		if existErr == nil {
+			log.Printf("ERROR: renamed file %s already exists. Abort to avoid data loss", renamed)
+			c.String(http.StatusInternalServerError, fmt.Sprintf("Renamed file %s already exists! Rename aborted. Manual corrections are required.", renamed))
+			return
+		}
+
 		log.Printf("INFO: move tmp %s to %s", tmpFile, renamed)
 		err := os.Rename(tmpFile, renamed)
 		if err != nil {
