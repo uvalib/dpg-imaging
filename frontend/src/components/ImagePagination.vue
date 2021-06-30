@@ -24,7 +24,7 @@
       </span>
       <span class="setup">
          <label>per page:</label>
-         <select v-model="pageSize" >
+         <select v-model="currPageSize" @change="pageSizeChanged">
             <option :value="20">20</option>
             <option :value="50">50</option>
             <option :value="75">75</option>
@@ -56,10 +56,14 @@ export default {
    data() {
       return {
          pageJumpOpen: false,
-         pageJump: 1
+         pageJump: 1,
+         currPageSize: this.pageSize
       }
    },
    methods: {
+      pageSizeChanged() {
+         this.$store.dispatch("setPageSize", this.currPageSize)
+      },
       pageJumpCanceled() {
          this.pageJumpOpen = false
       },
@@ -89,6 +93,9 @@ export default {
       firstClicked() {
          this.$store.commit("setPage", 0)
       }
+   },
+   mounted() {
+      this.currPageSize = this.pageSize
    }
 }
 </script>

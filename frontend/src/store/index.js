@@ -110,6 +110,9 @@ export default createStore({
          }
          state.currPage = startPageNum
       },
+      setPageSize(state, newSize) {
+         state.pageSize = newSize
+      },
       setMasterFiles(ctx, {unit, masterFiles}) {
          ctx.currUnit = unit
          ctx.masterFiles.splice(0, ctx.masterFiles.length)
@@ -181,6 +184,14 @@ export default createStore({
       }
    },
    actions: {
+      setPageSize(ctx, newSize) {
+         ctx.commit("setPageSize", newSize)
+         if (ctx.state.currPage*ctx.state.pageSize > ctx.state.masterFiles.length-1 && ctx.state.currPage > 0) {
+            ctx.commit('setPage', ctx.state.currPage-1)
+         } else {
+            ctx.commit('setPage', ctx.state.currPage)
+         }
+      },
       getUnits(ctx) {
          ctx.commit("setLoading", true)
          ctx.commit("clearUnitDetails")
