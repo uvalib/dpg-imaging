@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -69,4 +70,48 @@ func (svc *serviceContext) authenticate(c *gin.Context) {
 	c.SetCookie("dpg_jwt", signedStr, 10, "/", "", false, false)
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.Redirect(http.StatusFound, "/granted")
+}
+
+// AuthMiddleware is middleware that checks for a user auth token in the
+// Authorization header. For now, it does nothing but ensure token presence.
+func (svc *serviceContext) authMiddleware(c *gin.Context) {
+	log.Printf("Authorize access to %s", c.Request.URL)
+	tokenStr, err := getBearerToken(c.Request.Header.Get("Authorization"))
+	if err != nil {
+		log.Printf("Authentication failed: [%s]", err.Error())
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	if tokenStr == "undefined" {
+		log.Printf("Authentication failed; bearer token is undefined")
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	log.Printf("Validating JWT auth token...")
+	jwtClaims := &jwtClaims{}
+	_, jwtErr := jwt.ParseWithClaims(tokenStr, jwtClaims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(svc.JWTKey), nil
+	})
+	if jwtErr != nil {
+		log.Printf("Authentication failed; token validation failed: %+v", jwtErr)
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	log.Printf("got valid bearer token: [%s] for %s", tokenStr, jwtClaims.UserID)
+	c.Next()
+}
+
+// getBearerToken is a helper to extract the token from headers
+func getBearerToken(authorization string) (string, error) {
+	components := strings.Split(strings.Join(strings.Fields(authorization), " "), " ")
+
+	// must have two components, the first of which is "Bearer", and the second a non-empty token
+	if len(components) != 2 || components[0] != "Bearer" || components[1] == "" {
+		return "", fmt.Errorf("Invalid Authorization header: [%s]", authorization)
+	}
+
+	return components[1], nil
 }

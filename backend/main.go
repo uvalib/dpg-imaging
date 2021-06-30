@@ -30,14 +30,14 @@ func main() {
 	router.GET("/authenticate", svc.authenticate)
 	api := router.Group("/api")
 	{
-		api.GET("/components/:id", svc.getComponent)
-		api.GET("/units", svc.getUnits)
-		api.GET("/units/:uid", svc.getUnitDetails)
-		api.POST("/units/:uid/finalize", svc.finalizeUnit)
-		api.POST("/units/:uid/update", svc.updateMetadata)
-		api.POST("/units/:uid/rename", svc.renameFiles)
-		api.DELETE("/units/:uid/:file", svc.deleteFile)
-		api.POST("/units/:uid/:file/rotate", svc.rotateFile)
+		api.GET("/components/:id", svc.authMiddleware, svc.getComponent)
+		api.GET("/units", svc.authMiddleware, svc.getUnits)
+		api.GET("/units/:uid", svc.authMiddleware, svc.getUnitDetails)
+		api.POST("/units/:uid/finalize", svc.authMiddleware, svc.finalizeUnit)
+		api.POST("/units/:uid/update", svc.authMiddleware, svc.updateMetadata)
+		api.POST("/units/:uid/rename", svc.authMiddleware, svc.renameFiles)
+		api.DELETE("/units/:uid/:file", svc.authMiddleware, svc.deleteFile)
+		api.POST("/units/:uid/:file/rotate", svc.authMiddleware, svc.rotateFile)
 	}
 
 	// Note: in dev mode, this is never actually used. The front end is served

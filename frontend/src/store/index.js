@@ -1,6 +1,7 @@
 import { createStore } from 'vuex'
 import axios from 'axios'
 import { getField, updateField } from 'vuex-map-fields'
+import router from '../router'
 
 export default createStore({
    state: {
@@ -55,8 +56,37 @@ export default createStore({
    mutations: {
       updateField,
       setJWT(state, jwt) {
-         state.jwt = jwt
-         localStorage.setItem("dpg_jwt", jwt)
+         if (jwt != state.jwt) {
+            state.jwt = jwt
+            localStorage.setItem("dpg_jwt", jwt)
+
+            // add interceptor to put bearer token in header
+            axios.interceptors.request.use( config => {
+               config.headers['Authorization'] = 'Bearer ' + jwt
+               return config
+            }, error => {
+               return Promise.reject(error)
+            })
+
+            // Catch 401 errors and redirect to an expired auth page (unauth would have been caught el)
+            axios.interceptors.response.use(
+               res => res,
+               err => {
+                  if (err.config.url.match(/\/authenticate/) ) {
+                     router.push( "/forbidden" )
+                  } else {
+                     if (err.response && err.response.status == 401 ) {
+                        // just reload the page, forcing back thru netbadge
+                        // NOTE: the reload will go to authenticete -> granted, but granted
+                        // always redirects to / so place will be lost. Fix later
+                        localStorage.removeItem("dpg_jwt")
+                        window.location.reload()
+                     }
+                  }
+                  return Promise.reject(err)
+            })
+
+         }
       },
       selectAll(state) {
          state.rangeStartIdx = 0
