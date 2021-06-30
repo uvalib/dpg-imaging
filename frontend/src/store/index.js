@@ -4,6 +4,7 @@ import { getField, updateField } from 'vuex-map-fields'
 
 export default createStore({
    state: {
+      jwt: "",
       loading: false,
       updating: false,
       error: false,
@@ -53,6 +54,10 @@ export default createStore({
    },
    mutations: {
       updateField,
+      setJWT(state, jwt) {
+         state.jwt = jwt
+         localStorage.setItem("dpg_jwt", jwt)
+      },
       selectAll(state) {
          state.rangeStartIdx = 0
          state.rangeEndIdx = state.masterFiles.length - 1

@@ -5,6 +5,8 @@ import Unit from '../views/Unit.vue'
 import Page from '../views/Page.vue'
 import NotFound from '../views/NotFound.vue'
 import Forbidden from '../views/Forbidden.vue'
+import VueCookies from 'vue-cookies'
+import store from '../store'
 
 const routes = [
    {
@@ -23,10 +25,11 @@ const routes = [
       component: Page
    },
    {
-      // NOTES: the authenticated route doesn't have a visual representation. It just stores token and redirects
-      path: '/authenticated',
+      // NOTES: the granted route doesn't have a visual representation. It just stores token and redirects
+      path: '/granted',
       beforeEnter: async (_to, _from, next) => {
-         console.log(`authenticated!`)
+         let jwtStr = VueCookies.get("dpg_jwt")
+         store.commit("setJWT", jwtStr)
          next( "/" )
       }
    },
@@ -46,5 +49,20 @@ const router = createRouter({
    history: createWebHistory( process.env.BASE_URL ),
    routes
 })
+
+router.beforeEach((to, _from, next) => {
+   if (to.path !== '/granted') {
+      let jwtStr = localStorage.getItem('dpg_jwt')
+      if ( jwtStr) {
+         store.commit("setJWT", jwtStr)
+         next()
+      } else {
+         window.location.href = "/authenticate"
+      }
+   }
+   else {
+      next()
+   }
+ })
 
 export default router

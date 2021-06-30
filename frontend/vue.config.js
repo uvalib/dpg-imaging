@@ -13,6 +13,11 @@ module.exports = {
         changeOrigin: true,
         logLevel: 'debug'
       },
+      '/authenticate': {
+        target: process.env.DPG_SRV, // or 'http://localhost:8085',
+        changeOrigin: true,
+        logLevel: 'debug'
+      },
       '/version': {
         target: process.env.DPG_SRV, // or 'http://localhost:8085',
         changeOrigin: true,

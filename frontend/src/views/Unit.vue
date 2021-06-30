@@ -126,7 +126,6 @@
                               <span v-if="showError==element.fileName" class="hover-error">{{element.error}}</span>
                            </span>
                         </div>
-                        <div class="data">{{element.width}} x {{element.height}}, {{element.resolution}}</div>
                      </div>
                      <div class="row">
                         <label>Title</label>
