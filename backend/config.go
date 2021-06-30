@@ -20,6 +20,8 @@ type configData struct {
 	iiifURL     string
 	serviceURL  string
 	tracksysURL string
+	jwtKey      string
+	devAuthUser string
 }
 
 func getConfiguration() *configData {
@@ -29,6 +31,7 @@ func getConfiguration() *configData {
 	flag.StringVar(&config.iiifURL, "iiif", "", "IIIF server URL")
 	flag.StringVar(&config.serviceURL, "url", "", "Base URL for DPG Imaging service")
 	flag.StringVar(&config.tracksysURL, "tsurl", "https://tracksys.lib.virginia.edu", "URL for TrackSys")
+	flag.StringVar(&config.jwtKey, "jwtkey", "", "JWT signature key")
 
 	// DB connection params
 	flag.StringVar(&config.db.Host, "dbhost", "", "Database host")
@@ -37,8 +40,14 @@ func getConfiguration() *configData {
 	flag.StringVar(&config.db.User, "dbuser", "", "Database user")
 	flag.StringVar(&config.db.Pass, "dbpass", "", "Database password")
 
+	// dev setup
+	flag.StringVar(&config.devAuthUser, "devuser", "", "Authorized computing id for dev")
+
 	flag.Parse()
 
+	if config.jwtKey == "" {
+		log.Fatal("Parameter jwtkey is required")
+	}
 	if config.imagesDir == "" {
 		log.Fatal("images param is required")
 	}

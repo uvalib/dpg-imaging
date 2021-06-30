@@ -27,6 +27,7 @@ func main() {
 	router.Use(cors.Default())
 	router.GET("/version", svc.getVersion)
 	router.GET("/healthcheck", svc.healthCheck)
+	router.GET("/authenticate", svc.authenticate)
 	api := router.Group("/api")
 	{
 		api.GET("/components/:id", svc.getComponent)

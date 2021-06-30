@@ -363,7 +363,7 @@ export default createStore({
 
          })
          axios.post(`/api/units/${ctx.state.currUnit}/rename`, data).then(() => {
-            ctx.dispatch('getUnitDetails', ctx.state.currUnit)
+            window.location.reload()
          }).catch( e => {
             ctx.commit('setError', e)
             ctx.commit("setUpdating", false)

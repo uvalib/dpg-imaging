@@ -4,6 +4,7 @@ import Home from '../views/Home.vue'
 import Unit from '../views/Unit.vue'
 import Page from '../views/Page.vue'
 import NotFound from '../views/NotFound.vue'
+import Forbidden from '../views/Forbidden.vue'
 
 const routes = [
    {
@@ -20,6 +21,19 @@ const routes = [
       path: '/unit/:unit/page/:page',
       name: 'page',
       component: Page
+   },
+   {
+      // NOTES: the authenticated route doesn't have a visual representation. It just stores token and redirects
+      path: '/authenticated',
+      beforeEnter: async (_to, _from, next) => {
+         console.log(`authenticated!`)
+         next( "/" )
+      }
+   },
+   {
+      path: '/forbidden',
+      name: 'forbidden',
+      component: Forbidden
    },
    {
       path: '/:pathMatch(.*)*',

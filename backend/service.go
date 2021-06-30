@@ -25,11 +25,19 @@ type serviceContext struct {
 	HTTPClient      *http.Client
 	IIIFManTemplate *template.Template
 	DB              *dbx.DB
+	DevAuthUser     string
+	JWTKey          string
 }
 
 // InitializeService sets up the service context for all API handlers
 func initializeService(version string, cfg *configData) *serviceContext {
-	ctx := serviceContext{Version: version, ImagesDir: cfg.imagesDir, IIIFURL: cfg.iiifURL, ServiceURL: cfg.serviceURL, TrackSysURL: cfg.tracksysURL}
+	ctx := serviceContext{Version: version,
+		ImagesDir:   cfg.imagesDir,
+		IIIFURL:     cfg.iiifURL,
+		JWTKey:      cfg.jwtKey,
+		ServiceURL:  cfg.serviceURL,
+		TrackSysURL: cfg.tracksysURL,
+		DevAuthUser: cfg.devAuthUser}
 
 	log.Printf("INFO: connecting to DB...")
 	connectStr := fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true",
