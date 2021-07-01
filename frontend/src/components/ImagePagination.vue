@@ -110,6 +110,10 @@ export default {
    },
    mounted() {
       this.currPageSize = this.pageSize
+      if ( this.$route.query.pagesize ) {
+         let ps = parseInt(this.$route.query.pagesize, 10)
+         this.currPageSize = ps
+      }
    }
 }
 </script>
