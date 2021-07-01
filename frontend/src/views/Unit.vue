@@ -385,12 +385,10 @@ export default {
       }
       if ( this.$route.query.pagesize ) {
          let ps = parseInt(this.$route.query.pagesize, 10)
-         console.log("SIZE "+ps)
          this.$store.dispatch("setPageSize", ps)
       }
       if ( this.$route.query.page ) {
          let pg = parseInt(this.$route.query.page, 10)-1
-         console.log("PAGE "+pg)
          this.$store.commit("setPage", pg)
       }
    },

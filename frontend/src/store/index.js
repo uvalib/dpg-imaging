@@ -258,15 +258,28 @@ export default createStore({
          })
       },
 
-      updatePageNumbers(ctx, startPage) {
+      updatePageNumbers(ctx, {start, verso}) {
          ctx.commit("setUpdating", true)
          let data = []
-         let page = parseInt(startPage,10)
+         let page = parseInt(start,10)
+         let pageCnt = 0
          for (let i=ctx.state.rangeStartIdx; i<=ctx.state.rangeEndIdx; i++) {
             let mf = ctx.state.masterFiles[i]
-            data.push( {file: mf.path, title: ""+page, description: mf.description, status: mf.status, componentID: mf.componentID})
-            page+=1
+
+            // numbering is expected to begin on front, so verso is odd numbers
+            let title = ""+page
+            if (verso == false) {
+               if (pageCnt%2 != 0) {
+                  title = page+" verso"
+                  page+=1
+               }
+            } else {
+               page+=1
+            }
+            data.push( {file: mf.path, title: title, description: mf.description, status: mf.status, componentID: mf.componentID})
+            pageCnt+=1
          }
+
          axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then( resp => {
             ctx.commit('updateMasterFileMetadata', data )
             ctx.commit("setUpdating", false)

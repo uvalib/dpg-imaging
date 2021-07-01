@@ -23,6 +23,7 @@
       </div>
       <div class="panel-actions">
          <DPGButton @clicked="selectAllClicked" class="left">Select All</DPGButton>
+         <label class="verso">Unnumbered Verso<input v-model="unnumberVerso" type="checkbox"/></label>
          <DPGButton @clicked="cancelEditClicked" class="right-pad">Cancel</DPGButton>
          <DPGButton @clicked="okPagesClicked">OK</DPGButton>
       </div>
@@ -45,6 +46,7 @@ export default {
    data() {
       return {
         startPage: "1",
+        unnumberVerso: false
       }
    },
    methods: {
@@ -62,7 +64,11 @@ export default {
             this.$store.commit("setError", "Start page is required")
             return
          }
-         this.$store.dispatch("updatePageNumbers", this.startPage)
+         if (this.unnumberVerso && (this.rangeEndIdx-this.rangeStartIdx)%2 == 0) {
+            this.$store.commit("setError", "An even number of pages is required for unnumbered verso")
+            return
+         }
+         this.$store.dispatch("updatePageNumbers", {start: this.startPage, verso: !this.unnumberVerso})
          this.editMode = ""
       },
       selectAllClicked() {
@@ -96,6 +102,19 @@ export default {
       }
       .left {
          margin-right: auto;
+      }
+   }
+   .verso {
+      cursor: pointer;
+      margin-right: auto;
+      label {
+         vertical-align: middle;
+      }
+      input {
+         width: 16px;
+         height: 16px;
+         margin-left: 10px;
+         vertical-align: middle;
       }
    }
    .content {
