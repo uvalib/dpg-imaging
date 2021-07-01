@@ -132,7 +132,7 @@ export default {
    },
    async created() {
       await this.$store.dispatch("getUnitDetails", this.$route.params.unit)
-      setTimeout(()=>{
+      this.$nextTick(()=>{
          let hdr = document.getElementById("uva-header")
          let toolbar = document.getElementById("iiif-toolbar")
          let h = hdr.offsetHeight + toolbar.offsetHeight
@@ -169,7 +169,12 @@ export default {
          this.viewer.addHandler("zoom", (data) => {
             this.zoom = this.viewer.viewport.viewportToImageZoom(data.zoom)
          })
-      }, 250)
+      })
+   },
+   unmounted() {
+      if (this.viewer) {
+         this.viewer.destroy()
+      }
    }
 }
 </script>
