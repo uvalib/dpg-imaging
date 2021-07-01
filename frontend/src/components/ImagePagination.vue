@@ -7,7 +7,7 @@
          <DPGButton mode="icon" :disabled="!prevAvailable"  @clicked="priorClicked" aria-label="previous page">
             <i class="fas fa-angle-left"></i>
          </DPGButton>
-         <span class="page-info" @clicked="showPageJump">
+         <span class="page-info" @click="showPageJump">
             {{currPage+1}} of {{totalPages}}
          </span>
          <DPGButton mode="icon"  :disabled="!nextAvailable" @clicked="nextClicked" aria-label="next page">

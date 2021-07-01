@@ -150,6 +150,7 @@ export default {
             constrainDuringPan: true,
             imageSmoothingEnabled: false,
             maxZoomPixelRatio: 2.0,
+            placeholderFillStyle: '#333333',
             navigatorPosition: "BOTTOM_RIGHT",
             zoomInButton:   "zoom-in",
             zoomOutButton:  "zoom-out",
