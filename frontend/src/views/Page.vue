@@ -150,7 +150,6 @@ export default {
             constrainDuringPan: true,
             imageSmoothingEnabled: false,
             maxZoomPixelRatio: 2.0,
-            immediateRender: true,
             placeholderFillStyle: '#333333',
             navigatorPosition: "BOTTOM_RIGHT",
             zoomInButton:   "zoom-in",
@@ -169,6 +168,7 @@ export default {
          this.viewer.addHandler("zoom", (data) => {
             this.zoom = this.viewer.viewport.viewportToImageZoom(data.zoom)
          })
+         this.viewer.forceRedraw()
       })
    },
    unmounted() {
