@@ -39,7 +39,7 @@
             </table>
             <span class="toolbar-button group back">
                <i class="fas fa-angle-double-left back-button"></i>
-               <router-link :to="`/unit/${currUnit}`">Back to Unit</router-link>
+               <span @click="$router.back()">Back to Unit</span>
             </span>
             <span class="paging group">
                <span id="previous" title="Previous" class="toolbar-button"><i class="fas fa-arrow-left"></i></span>

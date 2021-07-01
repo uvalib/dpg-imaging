@@ -63,6 +63,10 @@ export default {
    methods: {
       pageSizeChanged() {
          this.$store.dispatch("setPageSize", this.currPageSize)
+         let query = Object.assign({}, this.$route.query)
+         query.pagesize = this.currPageSize
+         query.page = this.currPage+1
+         this.$router.push({query})
       },
       pageJumpCanceled() {
          this.pageJumpOpen = false
@@ -71,6 +75,7 @@ export default {
          if (this.pageJump <= 0 || this.pageJump > this.totalPages) return
          let tgtPage = (this.pageJump-1)
          this.$store.commit("setPage", tgtPage)
+         this.pageChanged()
          this.pageJumpOpen = false
        },
       showPageJump() {
@@ -83,15 +88,24 @@ export default {
       },
       priorClicked() {
          this.$store.commit("setPage", this.currPage-1)
+         this.pageChanged()
       },
       nextClicked() {
          this.$store.commit("setPage", this.currPage+1)
+         this.pageChanged()
       },
       lastClicked() {
          this.$store.commit("setPage", this.totalPages-1)
+         this.pageChanged()
       },
       firstClicked() {
          this.$store.commit("setPage", 0)
+         this.pageChanged()
+      },
+      pageChanged() {
+         let query = Object.assign({}, this.$route.query)
+         query.page = this.currPage+1
+         this.$router.push({query})
       }
    },
    mounted() {

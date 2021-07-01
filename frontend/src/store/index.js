@@ -1,7 +1,6 @@
 import { createStore } from 'vuex'
 import axios from 'axios'
 import { getField, updateField } from 'vuex-map-fields'
-import router from '../router'
 
 export default createStore({
    state: {
@@ -73,7 +72,7 @@ export default createStore({
                res => res,
                err => {
                   if (err.config.url.match(/\/authenticate/) ) {
-                     router.push( "/forbidden" )
+                     this.router.push( "/forbidden" )
                   } else {
                      if (err.response && err.response.status == 401 ) {
                         // just reload the page, forcing back thru netbadge
@@ -216,6 +215,7 @@ export default createStore({
          ctx.projectURL = ""
          ctx.problems.splice(0, ctx.problems.length)
          ctx.currPage = 0
+         ctx.viewMode = "list"
       }
    },
    actions: {
