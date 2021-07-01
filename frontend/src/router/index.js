@@ -41,7 +41,11 @@ const router = createRouter({
 })
 
 router.beforeEach((to, _from, next) => {
-   if (to.path !== '/granted') {
+   if (to.path === '/granted') {
+      let jwtStr = VueCookies.get("dpg_jwt")
+      router.store.commit("setJWT", jwtStr)
+      next( "/" )
+   } else if (to.name !== 'not_found' && to.name !== 'forbidden') {
       let jwtStr = localStorage.getItem('dpg_jwt')
       if ( jwtStr) {
          router.store.commit("setJWT", jwtStr)
@@ -50,9 +54,7 @@ router.beforeEach((to, _from, next) => {
          window.location.href = "/authenticate"
       }
    } else {
-      let jwtStr = VueCookies.get("dpg_jwt")
-      router.store.commit("setJWT", jwtStr)
-      next( "/" )
+      next()
    }
  })
 

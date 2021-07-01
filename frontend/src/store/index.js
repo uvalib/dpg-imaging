@@ -83,8 +83,8 @@ export default createStore({
                      }
                   }
                   return Promise.reject(err)
-            })
-
+               }
+            )
          }
       },
       selectAll(state) {
