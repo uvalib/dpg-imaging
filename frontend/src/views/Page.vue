@@ -132,7 +132,7 @@ export default {
    },
    async created() {
       await this.$store.dispatch("getUnitDetails", this.$route.params.unit)
-      this.$nextTick( ()=>{
+      setTimeout(()=>{
          let hdr = document.getElementById("uva-header")
          let toolbar = document.getElementById("iiif-toolbar")
          let h = hdr.offsetHeight + toolbar.offsetHeight
@@ -151,7 +151,7 @@ export default {
             imageSmoothingEnabled: false,
             maxZoomPixelRatio: 2.0,
             immediateRender: true,
-            placeholderFillStyle: '#4333333',
+            placeholderFillStyle: '#333333',
             navigatorPosition: "BOTTOM_RIGHT",
             zoomInButton:   "zoom-in",
             zoomOutButton:  "zoom-out",
@@ -169,7 +169,7 @@ export default {
          this.viewer.addHandler("zoom", (data) => {
             this.zoom = this.viewer.viewport.viewportToImageZoom(data.zoom)
          })
-      })
+      }, 250)
    }
 }
 </script>
