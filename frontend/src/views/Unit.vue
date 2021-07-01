@@ -378,8 +378,8 @@ export default {
          this.editMF = null
       }
    },
-   created() {
-      this.$store.dispatch("getUnitDetails", this.$route.params.unit)
+   async created() {
+      await this.$store.dispatch("getUnitDetails", this.$route.params.unit)
       if ( this.$route.query.view ) {
          this.viewMode = this.$route.query.view
       }
