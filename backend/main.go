@@ -33,7 +33,7 @@ func main() {
 		api.GET("/components/:id", svc.authMiddleware, svc.getComponent)
 		api.GET("/units", svc.authMiddleware, svc.getUnits)
 		api.GET("/units/:uid", svc.authMiddleware, svc.getUnitDetails)
-		api.POST("/units/:uid/finalize", svc.authMiddleware, svc.finalizeUnit)
+		api.POST("/units/:uid/finalize", svc.finalizeUnit)
 		api.POST("/units/:uid/update", svc.authMiddleware, svc.updateMetadata)
 		api.POST("/units/:uid/rename", svc.authMiddleware, svc.renameFiles)
 		api.DELETE("/units/:uid/:file", svc.authMiddleware, svc.deleteFile)
