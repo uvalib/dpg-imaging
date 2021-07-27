@@ -21,6 +21,7 @@ export default createStore({
       title: "",
       projectURL: "",
       problems: [],
+      version: "unknown",
       component: {
          valid: false,
          title: "",
@@ -54,6 +55,9 @@ export default createStore({
    },
    mutations: {
       updateField,
+      setVersion(state, data) {
+         state.version = `${data.version}-${data.build}`
+      },
       setJWT(state, jwt) {
          if (jwt != state.jwt) {
             state.jwt = jwt
@@ -219,6 +223,14 @@ export default createStore({
       }
    },
    actions: {
+      getVersion(ctx) {
+         axios.get("/version").then(response => {
+            ctx.commit('setVersion', response.data)
+         }).catch( e => {
+            ctx.commit('setError', e)
+            ctx.commit("setLoading", false)
+         })
+      },
       setPageSize(ctx, newSize) {
          ctx.commit("setPageSize", newSize)
          if (ctx.state.currPage*ctx.state.pageSize > ctx.state.masterFiles.length-1 && ctx.state.currPage > 0) {

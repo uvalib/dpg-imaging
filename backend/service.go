@@ -5,6 +5,8 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -49,6 +51,19 @@ func initializeService(version string, cfg *configData) *serviceContext {
 	ctx.DB = db
 	db.LogFunc = log.Printf
 	log.Printf("INFO: DB Connection established")
+
+	log.Printf("INFO: create tmp directory for working files...")
+	tmpDir := path.Join(ctx.ImagesDir, "tmp")
+	_, existErr := os.Stat(tmpDir)
+	if existErr != nil {
+		err := os.Mkdir(tmpDir, 0777)
+		if err != nil {
+			log.Fatal(fmt.Sprintf("unable to make tmp dir %s: %s", tmpDir, err.Error()))
+		}
+		log.Printf("INFO: tmp directory created")
+	} else {
+		log.Printf("INFO: tmp directory already exists")
+	}
 
 	log.Printf("INFO: create HTTP client...")
 	defaultTransport := &http.Transport{

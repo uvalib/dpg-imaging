@@ -54,11 +54,12 @@ type exifData struct {
 }
 
 type unitMetadata struct {
-	ID         int64         `db:"id" json:"id"`
-	CallNumber string        `db:"call_number" json:"callNumber"`
-	Title      string        `db:"title" json:"title"`
-	ProjectID  sql.NullInt64 `db:"project" json:"-"`
-	ProjectURL string        `json:"projectURL"`
+	ID           int64          `db:"id" json:"id"`
+	DBCallNumber sql.NullString `db:"call_number" json:"-"`
+	CallNumber   string         `json:"callNumber"`
+	Title        string         `db:"title" json:"title"`
+	ProjectID    sql.NullInt64  `db:"project" json:"-"`
+	ProjectURL   string         `json:"projectURL"`
 }
 
 type unitData struct {
@@ -133,6 +134,7 @@ func (svc *serviceContext) getUnits(c *gin.Context) {
 		return
 	}
 
+	// get only directories that match naming requirements for a unit; 9 digits.
 	unitRegex := regexp.MustCompile(`^\d{9}$`)
 	out := make([]string, 0)
 	for _, f := range files {
@@ -184,6 +186,9 @@ func (svc *serviceContext) getUnitDetails(c *gin.Context) {
 		out.Metadata = &unitMetadata{Title: "Unknown", CallNumber: "Unknown"}
 	} else {
 		out.Metadata = unitMD
+		if unitMD.DBCallNumber.Valid {
+			out.Metadata.CallNumber = unitMD.DBCallNumber.String
+		}
 	}
 
 	log.Printf("INFO: get master files from %s", unitDir)
@@ -339,7 +344,7 @@ func (svc *serviceContext) finalizeUnit(c *gin.Context) {
 		}
 
 		cmd := make([]string, 0)
-		cmd = append(cmd, fmt.Sprintf("-iptc:MasterDocumentID=%s", fmt.Sprintf("UVA Library: %s", unitMD.CallNumber)))
+		cmd = append(cmd, fmt.Sprintf("-iptc:MasterDocumentID=%s", fmt.Sprintf("UVA Library: %s", unitMD.DBCallNumber.String)))
 		cmd = append(cmd, fmt.Sprintf("-iptc:ObjectName=%s", fName))
 		cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%s", ""))
 		cmd = append(cmd, path)
@@ -482,7 +487,7 @@ func (svc *serviceContext) renameFiles(c *gin.Context) {
 	}
 
 	// create a working dir in the root of the unit directory to hold the original files to be renamed
-	backUpDir := path.Join(svc.ImagesDir, unit, "tmp")
+	backUpDir := path.Join(svc.ImagesDir, "tmp", unit)
 	_, existErr := os.Stat(backUpDir)
 	if existErr == nil {
 		log.Printf("INFO: working directory %s already exists, removing it", backUpDir)
@@ -569,6 +574,12 @@ func (svc *serviceContext) deleteFile(c *gin.Context) {
 		return
 	}
 
+	if delFilePath == "" {
+		log.Printf("ERROR: unable to delete %s; file not found", file)
+		c.String(http.StatusNotFound, fmt.Sprintf("unable to delete %s: file not found", file))
+		return
+
+	}
 	log.Printf("INFO: delete %s", delFilePath)
 	err = os.Remove(delFilePath)
 	if err != nil {

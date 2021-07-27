@@ -8,6 +8,7 @@
          </div>
          <div class="site-link">
            <router-link to="/">DPG Imaging</router-link>
+           <p class="version">v{{version}}</p>
          </div>
       </div>
       <router-view />
@@ -27,7 +28,11 @@ export default {
    computed: {
       ...mapState({
          hasError: state => state.error,
+         version: state => state.version
       }),
+   },
+   created: function() {
+      this.$store.dispatch("getVersion")
    }
 };
 </script>
@@ -113,6 +118,11 @@ div.header {
    justify-content: space-between;
    align-content: stretch;
    align-items: center;
+}
+p.version {
+   margin: 5px 0 0 0;
+   font-size: 0.5em;
+   text-align: right;
 }
 div.library-link {
    width: 220px;
