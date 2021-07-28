@@ -23,12 +23,15 @@ export default {
       ...mapState({
          loading : state => state.loading,
          units : state => state.units,
+         jwt : state => state.jwt,
       })
    },
    methods: {
    },
    created() {
-      this.$store.dispatch("getUnits")
+      if (this.jwt != "") {
+         this.$store.dispatch("getUnits")
+      }
    },
 };
 </script>

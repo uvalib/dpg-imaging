@@ -9,7 +9,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -19,16 +18,15 @@ import (
 
 // ServiceContext contains common data used by all handlers
 type serviceContext struct {
-	Version         string
-	ServiceURL      string
-	ImagesDir       string
-	IIIFURL         string
-	TrackSysURL     string
-	HTTPClient      *http.Client
-	IIIFManTemplate *template.Template
-	DB              *dbx.DB
-	DevAuthUser     string
-	JWTKey          string
+	Version     string
+	ServiceURL  string
+	ImagesDir   string
+	IIIFURL     string
+	TrackSysURL string
+	HTTPClient  *http.Client
+	DB          *dbx.DB
+	DevAuthUser string
+	JWTKey      string
 }
 
 // InitializeService sets up the service context for all API handlers
@@ -84,9 +82,6 @@ func initializeService(version string, cfg *configData) *serviceContext {
 		Timeout:   5 * time.Second,
 	}
 	log.Printf("INFO: HTTP Client created")
-
-	log.Printf("INFO: Load IIIF Manifest template")
-	ctx.IIIFManTemplate = template.Must(template.ParseFiles("./templates/iiif.json"))
 	return &ctx
 }
 

@@ -220,6 +220,14 @@ export default createStore({
          ctx.problems.splice(0, ctx.problems.length)
          ctx.currPage = 0
          ctx.viewMode = "list"
+      },
+      handleError(state, err) {
+         if ( !(err.response && err.response.status == 401) ) {
+            state.error = true
+            state.errorMessage = err
+            state.updating = false
+            state.loading = false
+         }
       }
    },
    actions: {
@@ -227,8 +235,7 @@ export default createStore({
          axios.get("/version").then(response => {
             ctx.commit('setVersion', response.data)
          }).catch( e => {
-            ctx.commit('setError', e)
-            ctx.commit("setLoading", false)
+            ctx.commit("handleError", e)
          })
       },
       setPageSize(ctx, newSize) {
@@ -246,8 +253,7 @@ export default createStore({
             ctx.commit('setUnits', response.data)
             ctx.commit("setLoading", false)
          }).catch( e => {
-            ctx.commit('setError', e)
-            ctx.commit("setLoading", false)
+            ctx.commit("handleError", e)
          })
       },
       async getUnitDetails(ctx, unit) {
@@ -264,9 +270,7 @@ export default createStore({
             ctx.commit("setLoading", false)
             ctx.commit("setUpdating", false)
          }).catch( e => {
-            ctx.commit('setError', e)
-            ctx.commit("setLoading", false)
-            ctx.commit("setUpdating", false)
+            ctx.commit("handleError", e)
          })
       },
 
@@ -300,8 +304,7 @@ export default createStore({
                ctx.commit('setMasterFileProblems', resp.data.problems)
             }
          }).catch( e => {
-            ctx.commit('setError', e)
-            ctx.commit("setUpdating", false)
+            ctx.commit("handleError", e)
          })
       },
 
@@ -320,8 +323,7 @@ export default createStore({
                ctx.commit('setMasterFileProblems', resp.data.problems)
             }
          }).catch( e => {
-            ctx.commit('setError', e)
-            ctx.commit("setUpdating", false)
+            ctx.commit("handleError", e)
          })
       },
 
@@ -336,8 +338,7 @@ export default createStore({
                ctx.commit('setMasterFileProblems', resp.data.problems)
             }
          }).catch( e => {
-            ctx.commit('setError', e)
-            ctx.commit("setUpdating", false)
+            ctx.commit("handleError", e)
          })
       },
 
@@ -357,8 +358,7 @@ export default createStore({
                ctx.commit('setMasterFileProblems', resp.data.problems)
             }
          }).catch( e => {
-            ctx.commit('setError', e)
-            ctx.commit("setUpdating", false)
+            ctx.commit("handleError", e)
          })
       },
 
@@ -367,9 +367,9 @@ export default createStore({
          axios.delete(`/api/units/${ctx.state.currUnit}/${mf}`).then(() => {
             ctx.commit('removeMasterFile', mf )
             ctx.commit("setUpdating", false)
+            window.location.reload()
          }).catch( e => {
-            ctx.commit('setError', e)
-            ctx.commit("setUpdating", false)
+            ctx.commit("handleError", e)
          })
       },
 
@@ -381,8 +381,7 @@ export default createStore({
                window.location.reload()
             }, 250)
          }).catch( e => {
-            ctx.commit('setError', e)
-            ctx.commit("setUpdating", false)
+            ctx.commit("handleError", e)
          })
       },
 
@@ -425,8 +424,7 @@ export default createStore({
          axios.post(`/api/units/${ctx.state.currUnit}/rename`, data).then(() => {
             window.location.reload()
          }).catch( e => {
-            ctx.commit('setError', e)
-            ctx.commit("setUpdating", false)
+            ctx.commit("handleError", e)
          })
       },
 
@@ -436,8 +434,7 @@ export default createStore({
             ctx.commit('setComponentInfo', response.data)
             ctx.commit("setUpdating", false)
          }).catch( e => {
-            ctx.commit('setError', e)
-            ctx.commit("setUpdating", false)
+            ctx.commit("handleError", e)
          })
       }
    },

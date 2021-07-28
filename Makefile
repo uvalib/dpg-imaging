@@ -9,25 +9,19 @@ GOVET = $(GOCMD) vet
 
 BASE_NAME=imagingsvc
 
-build: darwin web deploy-templates
+build: darwin web
 
-all: darwin linux web deploy-templates
+all: darwin linux web
 
-linux-full: linux web deploy-templates
+linux-full: linux web
 
-darwin-full: darwin web deploy-templates
+darwin-full: darwin web
 
 web:
 	mkdir -p bin/
 	cd frontend && yarn install && yarn build
 	rm -rf bin/public
 	mv frontend/dist bin/public
-
-deploy-templates:
-	mkdir -p bin/
-	rm -rf bin/templates
-	mkdir -p bin/templates
-	cp ./templates/* bin/templates
 
 darwin:
 	GOOS=darwin GOARCH=amd64 $(GOBUILD) -a -o bin/$(BASE_NAME).darwin backend/*.go

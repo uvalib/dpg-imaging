@@ -11,7 +11,6 @@ WORKDIR /build
 COPY go.mod go.sum Makefile ./
 COPY backend ./backend
 COPY frontend ./frontend
-COPY templates ./templates
 RUN make linux-full
 
 #
@@ -46,7 +45,6 @@ COPY package/data/container_bash_profile /home/libsnlocal/.profile
 COPY package/scripts/entry.sh $APP_HOME/scripts/entry.sh
 COPY --from=builder /build/bin/imagingsvc.linux $APP_HOME/bin/imagingsvc
 COPY --from=builder /build/bin/public $APP_HOME/bin/public
-COPY --from=builder /build/bin/templates $APP_HOME/bin/templates
 
 # Ensure permissions are correct
 RUN chown libsnlocal:lb-digiserv /home/libsnlocal/.profile $APP_HOME/scripts/entry.sh $APP_HOME/bin/imagingsvc && chmod 755 /home/libsnlocal/.profile $APP_HOME/scripts/entry.sh $APP_HOME/bin/imagingsvc

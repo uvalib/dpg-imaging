@@ -554,13 +554,10 @@ func (svc *serviceContext) deleteFile(c *gin.Context) {
 	unit := padLeft(c.Param("uid"), 9)
 	file := c.Param("file")
 	unitDir := path.Join(svc.ImagesDir, unit)
-	log.Printf("INFO: delete %s from unit %s", file, unit)
-
+	log.Printf("INFO: delete %s from %s", file, unitDir)
 	delFilePath := ""
 	err := filepath.Walk(unitDir, func(path string, f os.FileInfo, err error) error {
-		if err != nil {
-			log.Printf("WARNING: delete file directory traverse failed: %s", err.Error())
-		} else {
+		if err == nil {
 			if f.IsDir() == false && f.Name() == file {
 				delFilePath = path
 				return io.EOF
