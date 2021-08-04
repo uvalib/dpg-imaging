@@ -54,12 +54,12 @@ type exifData struct {
 }
 
 type unitMetadata struct {
-	ID           int64          `db:"id" json:"id"`
-	DBCallNumber sql.NullString `db:"call_number" json:"-"`
-	CallNumber   string         `json:"callNumber"`
-	Title        string         `db:"title" json:"title"`
-	ProjectID    sql.NullInt64  `db:"project" json:"-"`
-	ProjectURL   string         `json:"projectURL"`
+	ID         int64         `db:"id" json:"id"`
+	PID        string        `db:"pid" json:"pid"`
+	CallNumber *string       `db:"call_number" json:"callNumber,omitempty"`
+	Title      string        `db:"title" json:"title"`
+	ProjectID  sql.NullInt64 `db:"project" json:"-"`
+	ProjectURL string        `json:"projectURL"`
 }
 
 type unitData struct {
@@ -180,14 +180,15 @@ func (svc *serviceContext) getUnitDetails(c *gin.Context) {
 	log.Printf("INFO: get details for unit %s", uidStr)
 	start := time.Now()
 	unitMD, uErr := svc.getUnitMetadata(uidStr)
+	unknown := "Unknown"
 	if uErr != nil {
 		log.Printf("ERROR: %s", uErr.Error())
 		out.Problems = append(out.Problems, "No metadata record found for this unit")
-		out.Metadata = &unitMetadata{Title: "Unknown", CallNumber: "Unknown"}
+		out.Metadata = &unitMetadata{Title: unknown, CallNumber: &unknown}
 	} else {
 		out.Metadata = unitMD
-		if unitMD.DBCallNumber.Valid {
-			out.Metadata.CallNumber = unitMD.DBCallNumber.String
+		if unitMD.CallNumber == nil {
+			out.Metadata.CallNumber = &unknown
 		}
 	}
 
@@ -344,7 +345,11 @@ func (svc *serviceContext) finalizeUnit(c *gin.Context) {
 		}
 
 		cmd := make([]string, 0)
-		cmd = append(cmd, fmt.Sprintf("-iptc:MasterDocumentID=%s", fmt.Sprintf("UVA Library: %s", unitMD.DBCallNumber.String)))
+		id := unitMD.CallNumber
+		if id == nil {
+			id = &unitMD.PID
+		}
+		cmd = append(cmd, fmt.Sprintf("-iptc:MasterDocumentID=%s", fmt.Sprintf("UVA Library: %s", *id)))
 		cmd = append(cmd, fmt.Sprintf("-iptc:ObjectName=%s", fName))
 		cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%s", ""))
 		cmd = append(cmd, path)
