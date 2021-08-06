@@ -267,10 +267,10 @@ func (svc *serviceContext) getUnitDetails(c *gin.Context) {
 		out.Problems = append(out.Problems, "No images found")
 	}
 
-	// use exiftool to get metadata for master files in batches of 10
+	// use exiftool to get metadata for master files in batches
 	currIdx := 0
 	pendingFilesCnt := 0
-	chunkSize := 10
+	chunkSize := 20
 	cmdArray := baseExifCmd()
 	channel := make(chan bool)
 	outstandingRequests := 0
@@ -314,7 +314,7 @@ func (svc *serviceContext) finalizeUnit(c *gin.Context) {
 
 	start := time.Now()
 	pendingFilesCnt := 0
-	chunkSize := 10
+	chunkSize := 20
 	fileCommands := make(map[string][]string)
 	channel := make(chan []updateProblem)
 	outstandingRequests := 0
@@ -332,7 +332,6 @@ func (svc *serviceContext) finalizeUnit(c *gin.Context) {
 	hiddenRegex := regexp.MustCompile(`^\..*`)
 	err := filepath.Walk(unitDir, func(path string, f os.FileInfo, err error) error {
 		if err != nil {
-			log.Printf("WARNING: directory traverse failed: %s", err.Error())
 			return nil
 		}
 
@@ -610,21 +609,17 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 
 // updateExifData is called as a goroutine. It will update a batch of files, then return true on the channel
 func updateExifData(fileCommands map[string][]string, channel chan []updateProblem) {
-	log.Printf("INFO: batch %+v", fileCommands)
 	errors := make([]updateProblem, 0)
 	for tgtFile, command := range fileCommands {
-		log.Printf("INFO: exiftool %v", command)
 		_, err := exec.Command("exiftool", command...).Output()
 		if err != nil {
-			log.Printf("ERROR: unable to update %s metadata: %s", tgtFile, err.Error())
+			log.Printf("ERROR: unable to update %s metadata with [exiftool %v]: %s", tgtFile, command, err.Error())
 			errors = append(errors, updateProblem{File: path.Base(tgtFile), Problem: err.Error()})
 		} else {
 			dupPath := fmt.Sprintf("%s_original", tgtFile)
-			log.Printf("INFO: remove backup file [%s]", dupPath)
-			removeErr := os.Remove(dupPath)
-			if removeErr != nil {
-				log.Printf("WARNING: unable to remove backup file [%s]: %s", dupPath, removeErr.Error())
-			}
+			os.Remove(dupPath)
+			dupPath = fmt.Sprintf("%s_exiftool_tmp", tgtFile)
+			os.Remove(dupPath)
 		}
 	}
 
@@ -673,7 +668,6 @@ func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int, chann
 	}
 
 	// notify caller that the block is done
-	log.Printf("INFO: exif batch from index %d done", startIdx)
 	channel <- true
 }
 
