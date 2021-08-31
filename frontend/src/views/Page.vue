@@ -47,7 +47,8 @@
                <span id="next" title="Next" class="toolbar-button"><i class="fas fa-arrow-right"></i></span>
             </span>
             <span class="zoom group">
-               <span id="rotate" title="Rotate Right" class="toolbar-button"  @click="rotateImage"><i class="fas fa-sync"></i></span>
+               <span id="rotate-left" title="Rotate Left" class="toolbar-button"  @click="rotateImage('left')"><i class="fas fa-undo"></i></span>
+               <span id="rotate-right" title="Rotate Right" class="toolbar-button"  @click="rotateImage('right')"><i class="rotated fas fa-undo"></i></span>
                <span id="zoom-in" title="Zoom in" class="toolbar-button"><i class="fas fa-search-plus"></i></span>
                <span class="page">{{Math.round(zoom*100)}} %</span>
                <span id="zoom-out" title="Zoom in" class="toolbar-button"><i class="fas fa-search-minus"></i></span>
@@ -96,8 +97,8 @@ export default {
       }
    },
    methods: {
-      rotateImage() {
-         this.$store.dispatch("rotateImage", this.currMasterFile.fileName)
+      rotateImage(dir) {
+         this.$store.dispatch("rotateImage", {file: this.currMasterFile.fileName, dir: dir})
       },
       viewActualSize() {
          this.viewer.viewport.zoomTo(this.viewer.viewport.imageToViewportZoom(1.0))
@@ -246,6 +247,9 @@ export default {
       .group {
          display: inline-block;
          position: relative;
+      }
+      .rotated {
+         transform: scaleX(-1);
       }
 
       .toolbar-button {

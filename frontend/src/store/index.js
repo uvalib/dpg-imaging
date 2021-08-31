@@ -373,9 +373,9 @@ export default createStore({
          })
       },
 
-      rotateImage(ctx, mf) {
+      rotateImage(ctx, {file, dir}) {
          ctx.commit("setUpdating", true)
-         axios.post(`/api/units/${ctx.state.currUnit}/${mf}/rotate`, {}).then(() => {
+         axios.post(`/api/units/${ctx.state.currUnit}/${file}/rotate?dir=${dir}`, {}).then(() => {
             setTimeout( ()=>{
                ctx.commit("setUpdating", false)
                window.location.reload()

@@ -595,15 +595,56 @@ func (svc *serviceContext) deleteFile(c *gin.Context) {
 func (svc *serviceContext) rotateFile(c *gin.Context) {
 	unit := padLeft(c.Param("uid"), 9)
 	file := c.Param("file")
+	rotateDirString := c.Query("dir")
+	if rotateDirString == "" {
+		rotateDirString = "right"
+	}
+	rotateDir := "90"
+	if rotateDirString == "left" {
+		rotateDir = "-90"
+	}
 	fullPath := path.Join(svc.ImagesDir, unit, file)
+
+	// grab the currrent data inthe exif heassers ad the rotate command wipes it all
+	cmdArray := []string{"-json", "-iptc:OwnerID", "-iptc:headline", "-iptc:caption-abstract", "-iptc:ClassifyState", fullPath}
+	stdout, err := exec.Command("exiftool", cmdArray...).Output()
+	if err != nil {
+		log.Printf("ERROR: unable to get %s metadata before rotation: %s", file, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	var origMD []exifData
+	err = json.Unmarshal(stdout, &origMD)
+	if err != nil {
+		log.Printf("ERROR: unable to parse %s metadata before rotation: %s", file, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	log.Printf("INFO: rotate %s", fullPath)
-	cmd := []string{fullPath, "-rotate", "90", fullPath}
-	_, err := exec.Command("convert", cmd...).Output()
+	cmd := []string{fullPath, "-rotate", rotateDir, fullPath}
+	_, err = exec.Command("convert", cmd...).Output()
 	if err != nil {
 		log.Printf("ERROR: unable to rotate %s: %s", fullPath, err.Error())
 		c.String(http.StatusInternalServerError, fmt.Sprintf("unable to rotate file: %s", err.Error()))
 		return
 	}
+
+	log.Printf("INFO: restoring metadata after rotaion of %s", file)
+	cmd = make([]string, 0)
+	cmd = append(cmd, fmt.Sprintf("-iptc:OwnerID=%s", origMD[0].OwnerID))
+	cmd = append(cmd, fmt.Sprintf("-iptc:headline=%s", origMD[0].Title))
+	cmd = append(cmd, fmt.Sprintf("-iptc:caption-abstract=%s", origMD[0].Description))
+	cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%s", origMD[0].ClassifyState))
+	cmd = append(cmd, fullPath)
+	_, err = exec.Command("exiftool", cmd...).Output()
+	if err != nil {
+		log.Printf("WARNING: unable to restore metadata to %s after rotation: %s", file, err.Error())
+	} else {
+		dupPath := fmt.Sprintf("%s_original", fullPath)
+		os.Remove(dupPath)
+	}
+
 	c.String(http.StatusOK, "rotated")
 }
 
