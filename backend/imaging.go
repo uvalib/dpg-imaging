@@ -632,10 +632,16 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 
 	log.Printf("INFO: restoring metadata after rotaion of %s", file)
 	cmd = make([]string, 0)
-	cmd = append(cmd, fmt.Sprintf("-iptc:OwnerID=%s", origMD[0].OwnerID))
-	cmd = append(cmd, fmt.Sprintf("-iptc:headline=%s", origMD[0].Title))
-	cmd = append(cmd, fmt.Sprintf("-iptc:caption-abstract=%s", origMD[0].Description))
-	cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%s", origMD[0].ClassifyState))
+	if origMD[0].OwnerID != nil {
+		cmd = append(cmd, fmt.Sprintf("-iptc:OwnerID=%v", origMD[0].OwnerID))
+	}
+	if origMD[0].Title != nil {
+		cmd = append(cmd, fmt.Sprintf("-iptc:headline=%v", origMD[0].Title))
+	}
+	if origMD[0].Description != nil {
+		cmd = append(cmd, fmt.Sprintf("-iptc:caption-abstract=%v", origMD[0].Description))
+	}
+	cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%v", origMD[0].ClassifyState))
 	cmd = append(cmd, fullPath)
 	_, err = exec.Command("exiftool", cmd...).Output()
 	if err != nil {
