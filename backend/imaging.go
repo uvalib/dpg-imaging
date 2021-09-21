@@ -44,7 +44,7 @@ type exifData struct {
 	ColorProfile  string      `json:"ProfileDescription"`
 	FileSize      string      `json:"FileSize"`
 	FileType      string      `json:"FileType"`
-	Resolution    int         `json:"XResolution"`
+	Resolution    interface{} `json:"XResolution"`
 	Title         interface{} `json:"Headline"`
 	Description   interface{} `json:"Caption-Abstract"`
 	Width         int         `json:"ImageWidth"`
@@ -687,28 +687,33 @@ func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int, chann
 			log.Printf("WARNING: unable to parse metadata: %s", err.Error())
 		} else {
 			for _, md := range parsed {
-				title := ""
 				if md.Title != nil {
-					title = fmt.Sprintf("%v", md.Title)
+					files[currIdx].Title = fmt.Sprintf("%v", md.Title)
 				}
-				desc := ""
 				if md.Description != nil {
-					desc = fmt.Sprintf("%v", md.Description)
+					files[currIdx].Description = fmt.Sprintf("%v", md.Description)
 				}
-				component := ""
 				if md.OwnerID != nil {
-					component = fmt.Sprintf("%v", md.OwnerID)
+					files[currIdx].ComponentID = fmt.Sprintf("%v", md.OwnerID)
+				}
+				if md.Resolution != nil {
+					valType := fmt.Sprintf("%T", md.Resolution)
+					if valType == "int" {
+						files[currIdx].Resolution = md.Resolution.(int)
+					} else if valType == "float64" {
+						fRes := md.Resolution.(float64)
+						files[currIdx].Resolution = int(fRes)
+					} else {
+						log.Printf("WARN: unsupported resolution type %s", valType)
+						files[currIdx].Resolution = 0
+					}
 				}
 				files[currIdx].ColorProfile = md.ColorProfile
-				files[currIdx].Description = desc
 				files[currIdx].FileSize = md.FileSize
 				files[currIdx].FileType = md.FileType
-				files[currIdx].Resolution = md.Resolution
-				files[currIdx].Title = title
 				files[currIdx].Width = md.Width
 				files[currIdx].Height = md.Height
 				files[currIdx].Status = md.ClassifyState
-				files[currIdx].ComponentID = component
 				currIdx++
 			}
 		}
