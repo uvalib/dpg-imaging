@@ -19,7 +19,6 @@ export default createStore({
       editMode: "",
       callNumber: "",
       title: "",
-      projectURL: "",
       problems: [],
       version: "unknown",
       component: {
@@ -132,7 +131,6 @@ export default createStore({
       setUnitMetadata(state, data) {
          state.callNumber = data.callNumber
          state.title = data.title
-         state.projectURL = data.projectURL
       },
       setUnitProblems(state, problems) {
          state.problems.splice(0, state.problems.length)
@@ -198,7 +196,7 @@ export default createStore({
          ctx.component.label = data.label
          ctx.component.desc = data.description
          ctx.component.date = data.date
-         ctx.component.type = data.type
+         ctx.component.type = data.componentType.name
          ctx.component.valid = true
       },
       clearComponent(ctx) {
@@ -216,7 +214,6 @@ export default createStore({
          ctx.editMode = ""
          ctx.callNumber = "Unknown"
          ctx.title = "Unknown"
-         ctx.projectURL = ""
          ctx.problems.splice(0, ctx.problems.length)
          ctx.currPage = 0
          ctx.viewMode = "list"

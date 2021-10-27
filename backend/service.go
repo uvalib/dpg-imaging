@@ -12,8 +12,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	dbx "github.com/go-ozzo/ozzo-dbx"
 	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 // ServiceContext contains common data used by all handlers
@@ -24,7 +25,7 @@ type serviceContext struct {
 	IIIFURL     string
 	TrackSysURL string
 	HTTPClient  *http.Client
-	DB          *dbx.DB
+	GDB         *gorm.DB
 	DevAuthUser string
 	JWTKey      string
 }
@@ -42,13 +43,12 @@ func initializeService(version string, cfg *configData) *serviceContext {
 	log.Printf("INFO: connecting to DB...")
 	connectStr := fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true",
 		cfg.db.User, cfg.db.Pass, cfg.db.Host, cfg.db.Name)
-	db, err := dbx.Open("mysql", connectStr)
+	gdb, err := gorm.Open(mysql.Open(connectStr), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	ctx.DB = db
-	db.LogFunc = log.Printf
-	log.Printf("INFO: DB Connection established")
+	ctx.GDB = gdb
+	log.Printf("INFO: DB Connections established")
 
 	log.Printf("INFO: create tmp directory for working files...")
 	tmpDir := path.Join(ctx.ImagesDir, "tmp")

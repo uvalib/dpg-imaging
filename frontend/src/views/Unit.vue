@@ -15,7 +15,6 @@
                <div>Unit {{currUnit}}</div>
                <div class="small">{{masterFiles.length}} Images</div>
             </h3>
-            <div><a :href="projectURL" target="_blank">TrackSys Project<i class="link fas fa-external-link-alt"></i></a></div>
             <span class="back">
                <i class="fas fa-angle-double-left back-button"></i>
                <router-link :to="`/`">Back to Units</router-link>
@@ -203,7 +202,6 @@ export default {
          currUnit: state => state.currUnit,
          title: state => state.title,
          callNumber: state => state.callNumber,
-         projectURL: state => state.projectURL,
       }),
       ...mapGetters([
         'pageStartIdx',

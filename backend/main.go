@@ -31,7 +31,8 @@ func main() {
 	api := router.Group("/api")
 	{
 		api.GET("/components/:id", svc.authMiddleware, svc.getComponent)
-		api.GET("/units", svc.authMiddleware, svc.getUnits)
+		api.GET("/projects", svc.getProjects)
+		api.GET("/units", svc.authMiddleware, svc.getQAUnits)
 		api.GET("/units/:uid", svc.authMiddleware, svc.getUnitDetails)
 		api.POST("/units/:uid/finalize", svc.finalizeUnit)
 		api.POST("/units/:uid/update", svc.authMiddleware, svc.updateMetadata)

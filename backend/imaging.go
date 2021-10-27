@@ -1,11 +1,9 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -18,7 +16,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	dbx "github.com/go-ozzo/ozzo-dbx"
 )
 
 type masterFileInfo struct {
@@ -53,17 +50,8 @@ type exifData struct {
 	OwnerID       interface{} `json:"OwnerID"`
 }
 
-type unitMetadata struct {
-	ID         int64         `db:"id" json:"id"`
-	PID        string        `db:"pid" json:"pid"`
-	CallNumber *string       `db:"call_number" json:"callNumber,omitempty"`
-	Title      string        `db:"title" json:"title"`
-	ProjectID  sql.NullInt64 `db:"project" json:"-"`
-	ProjectURL string        `json:"projectURL"`
-}
-
 type unitData struct {
-	Metadata    *unitMetadata     `json:"metadata"`
+	Metadata    *metadata         `json:"metadata"`
 	MasterFiles []*masterFileInfo `json:"masterFiles"`
 	Problems    []string          `json:"problems"`
 }
@@ -82,96 +70,6 @@ func padLeft(str string, tgtLen int) string {
 	}
 }
 
-func (svc *serviceContext) getComponent(c *gin.Context) {
-	cid := c.Param("id")
-	log.Printf("INFO: lookup component %s", cid)
-	qs := `select title,label,date,content_desc,name from components c inner join component_types t on t.id = c.component_type_id where c.id={:cid}`
-	q := svc.DB.NewQuery(qs)
-	q.Bind(dbx.Params{"cid": cid})
-
-	var dbInfo struct {
-		Title       sql.NullString `db:"title"`
-		Label       sql.NullString `db:"label"`
-		Description sql.NullString `db:"content_desc"`
-		Date        sql.NullString `db:"date"`
-		Type        string         `db:"name"`
-	}
-	err := q.One(&dbInfo)
-	if err != nil {
-		log.Printf("ERROR: component %s not found: %s", cid, err.Error())
-		c.String(http.StatusNotFound, "component not found")
-		return
-	}
-
-	out := make(map[string]string)
-	out["type"] = dbInfo.Type
-	out["title"] = ""
-	out["label"] = ""
-	out["description"] = ""
-	out["date"] = ""
-	if dbInfo.Title.Valid {
-		out["title"] = dbInfo.Title.String
-	}
-	if dbInfo.Label.Valid {
-		out["label"] = dbInfo.Label.String
-	}
-	if dbInfo.Description.Valid {
-		out["description"] = dbInfo.Description.String
-	}
-	if dbInfo.Date.Valid {
-		out["date"] = dbInfo.Date.String
-	}
-
-	c.JSON(http.StatusOK, out)
-}
-
-func (svc *serviceContext) getUnits(c *gin.Context) {
-	log.Printf("INFO: get available units from %s", svc.ImagesDir)
-	files, err := ioutil.ReadDir(svc.ImagesDir)
-	if err != nil {
-		log.Printf("ERROR: unable to list contents of images directory: %s", err.Error())
-		c.String(http.StatusInternalServerError, "unable to find units")
-		return
-	}
-
-	// get only directories that match naming requirements for a unit; 9 digits.
-	unitRegex := regexp.MustCompile(`^\d{9}$`)
-	out := make([]string, 0)
-	for _, f := range files {
-		fName := f.Name()
-		if unitRegex.Match([]byte(fName)) {
-			out = append(out, fName)
-		}
-	}
-	c.JSON(http.StatusOK, out)
-}
-
-func (svc *serviceContext) getUnitMetadata(uidStr string) (*unitMetadata, error) {
-	log.Printf("INFO: get metadata for unit %s", uidStr)
-	uid, convErr := strconv.Atoi(uidStr)
-	if convErr != nil {
-		return nil, fmt.Errorf("unit id %s is not valid", uidStr)
-	}
-
-	qSQL := `select m.id, call_number, title, p.id as project from metadata m
-		inner join units u on u.metadata_id = m.id
-		left outer join projects p on p.unit_id=u.id
-		where u.id={:uid}`
-	q := svc.DB.NewQuery(qSQL)
-	q.Bind(dbx.Params{"uid": uid})
-	var dbInfo unitMetadata
-	err := q.One(&dbInfo)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get metadata for unit %d: %s", uid, err.Error())
-	}
-
-	if dbInfo.ProjectID.Valid {
-		dbInfo.ProjectURL = fmt.Sprintf("%s/admin/projects/%d", svc.TrackSysURL, dbInfo.ProjectID.Int64)
-	}
-
-	return &dbInfo, nil
-}
-
 func (svc *serviceContext) getUnitDetails(c *gin.Context) {
 	uidStr := padLeft(c.Param("uid"), 9)
 	unitDir := path.Join(svc.ImagesDir, uidStr)
@@ -184,12 +82,9 @@ func (svc *serviceContext) getUnitDetails(c *gin.Context) {
 	if uErr != nil {
 		log.Printf("ERROR: %s", uErr.Error())
 		out.Problems = append(out.Problems, "No metadata record found for this unit")
-		out.Metadata = &unitMetadata{Title: unknown, CallNumber: &unknown}
+		out.Metadata = &metadata{Title: unknown, CallNumber: unknown}
 	} else {
 		out.Metadata = unitMD
-		if unitMD.CallNumber == nil {
-			out.Metadata.CallNumber = &unknown
-		}
 	}
 
 	log.Printf("INFO: get master files from %s", unitDir)
@@ -345,10 +240,10 @@ func (svc *serviceContext) finalizeUnit(c *gin.Context) {
 
 		cmd := make([]string, 0)
 		id := unitMD.CallNumber
-		if id == nil {
-			id = &unitMD.PID
+		if id == "" {
+			id = unitMD.PID
 		}
-		cmd = append(cmd, fmt.Sprintf("-iptc:MasterDocumentID=%s", fmt.Sprintf("UVA Library: %s", *id)))
+		cmd = append(cmd, fmt.Sprintf("-iptc:MasterDocumentID=%s", fmt.Sprintf("UVA Library: %s", id)))
 		cmd = append(cmd, fmt.Sprintf("-iptc:ObjectName=%s", fName))
 		cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%s", ""))
 		cmd = append(cmd, path)
