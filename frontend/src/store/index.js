@@ -2,14 +2,32 @@ import { createStore } from 'vuex'
 import axios from 'axios'
 import { getField, updateField } from 'vuex-map-fields'
 
+function parseJwt(token) {
+   var base64Url = token.split('.')[1]
+   var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+   var jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+   }).join(''))
+
+   return JSON.parse(jsonPayload);
+}
+
 export default createStore({
    state: {
-      jwt: "",
+      user: {
+         jwt: "",
+         firstName: "",
+         lastName: "",
+         role: "",
+         computeID: "",
+      },
+      adminURL: "",
       loading: false,
       updating: false,
       error: false,
       errorMessage: "",
-      units: [],
+      projects: [],
+      projectsPage: 1,
       currUnit: "",
       masterFiles: [],
       pageMasterFiles: [],
@@ -45,6 +63,9 @@ export default createStore({
       pageStartIdx: state => {
          return state.currPage*state.pageSize
       },
+      signedInUser: state => {
+         return `${state.user.firstName} ${state.user.lastName} (${state.user.computeID})`
+      },
       totalPages: state => {
          return Math.ceil(state.masterFiles.length / state.pageSize)
       },
@@ -58,9 +79,16 @@ export default createStore({
          state.version = `${data.version}-${data.build}`
       },
       setJWT(state, jwt) {
-         if (jwt != state.jwt) {
-            state.jwt = jwt
+         if (jwt != state.user.jwt) {
+            state.user.jwt = jwt
             localStorage.setItem("dpg_jwt", jwt)
+
+            let parsed = parseJwt(jwt)
+            state.adminURL = parsed.adminURL
+            state.user.computeID = parsed.userID
+            state.user.firstName = parsed.firstName
+            state.user.lastName = parsed.lastName
+            state.user.role = parsed.role
 
             // add interceptor to put bearer token in header
             axios.interceptors.request.use( config => {
@@ -121,12 +149,8 @@ export default createStore({
             state.error = false
          }
       },
-      setUnits(state, data) {
-         state.units.splice(0, state.units.length)
-         data.sort()
-         data.forEach( u => {
-            state.units.push( u )
-         })
+      addProjects(state, data) {
+         data.forEach( p => state.projects.push(p))
       },
       setUnitMetadata(state, data) {
          state.callNumber = data.callNumber
@@ -218,6 +242,9 @@ export default createStore({
          ctx.currPage = 0
          ctx.viewMode = "list"
       },
+      clearProjects(ctx) {
+         ctx.projects.splice(0, ctx.projects.length)
+      },
       handleError(state, err) {
          if ( !(err.response && err.response.status == 401) ) {
             state.error = true
@@ -243,11 +270,12 @@ export default createStore({
             ctx.commit('setPage', ctx.state.currPage)
          }
       },
-      getUnits(ctx) {
+      getProjects(ctx) {
          ctx.commit("setLoading", true)
          ctx.commit("clearUnitDetails")
-         axios.get("/api/units").then(response => {
-            ctx.commit('setUnits', response.data)
+         ctx.commit("clearProjects")
+         axios.get(`/api/projects?page=${ctx.state.projectsPage}`).then(response => {
+            ctx.commit('addProjects', response.data)
             ctx.commit("setLoading", false)
          }).catch( e => {
             ctx.commit("handleError", e)

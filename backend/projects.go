@@ -22,13 +22,6 @@ type containerType struct {
 	HasFolders bool   `json:"hasFolders"`
 }
 
-type staffMember struct {
-	ID          uint   `json:"id"`
-	ComputingID string `json:"computingID"`
-	FirstName   string `json:"firstName"`
-	LastName    string `json:"lastName"`
-}
-
 type step struct {
 	ID          uint `json:"id"`
 	StepType    uint
@@ -93,9 +86,12 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	}
 	offset := (page - 1) * pageSize
 	var out []project
-	resp := svc.GDB.Preload(clause.Associations).
+	resp := svc.DB.Preload(clause.Associations).
 		Preload("Unit.Metadata").Preload("Unit.IntendedUse"). // must preload nested explicitly
-		Offset(offset).Limit(pageSize).Find(&out)
+		Preload("Unit.Order").Preload("Unit.Order.Customer").
+		Offset(offset).Limit(pageSize).
+		Order("due_on asc").
+		Where("finished_at is null").Find(&out)
 	if resp.Error != nil {
 		log.Printf("ERROR: unable to get projects: %s", resp.Error.Error())
 		c.String(http.StatusInternalServerError, resp.Error.Error())

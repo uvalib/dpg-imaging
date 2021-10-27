@@ -31,7 +31,7 @@ func (svc *serviceContext) getComponent(c *gin.Context) {
 	log.Printf("INFO: lookup component %s", cid)
 
 	var cmp component
-	resp := svc.GDB.Preload(clause.Associations).First(&cmp, cid)
+	resp := svc.DB.Preload(clause.Associations).First(&cmp, cid)
 	if resp.Error != nil {
 		if errors.Is(resp.Error, gorm.ErrRecordNotFound) {
 			log.Printf("INFO: component %s not found", cid)

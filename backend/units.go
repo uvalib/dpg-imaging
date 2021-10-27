@@ -25,9 +25,23 @@ type intendedUse struct {
 	DeliverableResolution string `json:"deliverableResolution"`
 }
 
+type customer struct {
+	ID        uint   `json:"id"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Email     string `json:"email"`
+}
+
+type order struct {
+	ID         uint     `json:"id"`
+	CustomerID uint     `json:"customerID"`
+	Customer   customer `gorm:"foreignKey:CustomerID" json:"customer"`
+}
+
 type unit struct {
 	ID            uint        `json:"id"`
 	OrderID       uint        `json:"orderID"`
+	Order         order       `gorm:"foreignKey:OrderID" json:"order"`
 	MetadataID    uint        `json:"-"`
 	Metadata      metadata    `gorm:"foreignKey:MetadataID" json:"metadata"`
 	IntendedUseID uint        `json:"-"`
@@ -58,7 +72,7 @@ func (svc *serviceContext) getQAUnits(c *gin.Context) {
 func (svc *serviceContext) getUnitMetadata(uid string) (*metadata, error) {
 	log.Printf("INFO: get metadata for unit %s", uid)
 	var md metadata
-	resp := svc.GDB.Preload(clause.Associations).Joins("inner join units on units.metadata_id = metadata.id").Where("units.id=?", uid).First(&md)
+	resp := svc.DB.Preload(clause.Associations).Joins("inner join units on units.metadata_id = metadata.id").Where("units.id=?", uid).First(&md)
 	if resp.Error != nil {
 		return nil, fmt.Errorf("unable to get metadata for unit %s: %s", uid, resp.Error.Error())
 	}

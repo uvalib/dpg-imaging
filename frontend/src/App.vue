@@ -7,9 +7,12 @@
             </a>
          </div>
          <div class="site-link">
-           <router-link to="/">DPG Imaging</router-link>
-           <p class="version">v{{version}}</p>
+            <router-link to="/">DPG Imaging</router-link>
+            <p class="version">v{{ version }}</p>
          </div>
+      </div>
+      <div class="user-banner" v-if="jwt">
+         <label>Signed in as:</label><span class="user">{{ signedInUser }}</span>
       </div>
       <router-view />
       <ErrorMessage v-if="hasError" />
@@ -18,22 +21,25 @@
 </template>
 
 <script>
-import UvaLibraryLogo from "@/components/UvaLibraryLogo"
-import ScrollToTop from "@/components/ScrollToTop"
-import { mapState } from "vuex"
+import UvaLibraryLogo from "@/components/UvaLibraryLogo";
+import ScrollToTop from "@/components/ScrollToTop";
+import { mapState, mapGetters } from "vuex";
 export default {
    components: {
-      UvaLibraryLogo,ScrollToTop
+      UvaLibraryLogo,
+      ScrollToTop,
    },
    computed: {
       ...mapState({
-         hasError: state => state.error,
-         version: state => state.version
+         hasError: (state) => state.error,
+         version: (state) => state.version,
+         jwt: (state) => state.user.jwt,
       }),
+      ...mapGetters(["signedInUser"]),
    },
-   created: function() {
-      this.$store.dispatch("getVersion")
-   }
+   created: function () {
+      this.$store.dispatch("getVersion");
+   },
 };
 </script>
 
@@ -85,16 +91,48 @@ export default {
 }
 
 #app {
-    font-family: "franklin-gothic-urw", arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-align: center;
-    color: var(--color-primary-text);
-    margin: 0;
-    padding: 0;
-    background: white;
- }
-input, select {
+   font-family: "franklin-gothic-urw", arial, sans-serif;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+   text-align: center;
+   color: var(--color-primary-text);
+   margin: 0;
+   padding: 0;
+   background: white;
+
+   a {
+      color: var(--uvalib-blue-alt-dark);
+      font-weight: 500;
+      text-decoration: none;
+      &:hover {
+         text-decoration: underline;
+      }
+   }
+   p.version {
+      margin: 5px 0 0 0;
+      font-size: 0.5em;
+      text-align: right;
+   }
+   div.library-link {
+      width: 220px;
+      order: 0;
+      flex: 0 1 auto;
+      align-self: flex-start;
+   }
+   div.site-link {
+      order: 0;
+      font-size: 1.5em;
+      a {
+         color: white;
+         text-decoration: none;
+         &:hover {
+            text-decoration: underline;
+         }
+      }
+   }
+}
+input,
+select {
    box-sizing: border-box;
    border-radius: 4px;
    padding: 3px 5px;
@@ -102,7 +140,7 @@ input, select {
    width: 100%;
 }
 body {
-   margin:0;
+   margin: 0;
    padding: 0;
 }
 div.header {
@@ -119,26 +157,17 @@ div.header {
    align-content: stretch;
    align-items: center;
 }
-p.version {
-   margin: 5px 0 0 0;
-   font-size: 0.5em;
-   text-align: right;
-}
-div.library-link {
-   width: 220px;
-   order: 0;
-   flex: 0 1 auto;
-   align-self: flex-start;
-}
-div.site-link {
-   order: 0;
-   font-size: 1.5em;
-   a {
-      color: white;
-      text-decoration: none;
-      &:hover {
-         text-decoration: underline;
-      }
+.user-banner {
+   float: right;
+   padding: 5px 5px 0 0;
+   font-size: 0.9em;
+   label {
+      font-weight: bold;
+      margin-right: 5px;
+   }
+   .user {
+      font-weight: 100;
    }
 }
+
 </style>

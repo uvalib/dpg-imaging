@@ -11,20 +11,40 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type staffMember struct {
+	ID          uint   `json:"id"`
+	ComputingID string `json:"computingID"`
+	FirstName   string `json:"firstName"`
+	LastName    string `json:"lastName"`
+	Role        uint   `json:"role"`
+}
+
+func (sm *staffMember) roleString() string {
+	roles := []string{"admin", "supervisor", "student", "viewer"}
+	if sm.Role < 0 || sm.Role > uint(len(roles)-1) {
+		return "viewer"
+	}
+	return roles[sm.Role]
+}
+
 type jwtClaims struct {
-	UserID string `json:"userId"`
+	UserID    string `json:"userID"`
+	Role      string `json:"role"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	AdminURL  string `json:"adminURL"`
 	jwt.StandardClaims
 }
 
 func (svc *serviceContext) authenticate(c *gin.Context) {
 	log.Printf("Checking authentication headers...")
-	log.Printf("Dump all request headers ==================================")
-	for name, values := range c.Request.Header {
-		for _, value := range values {
-			log.Printf("%s=%s\n", name, value)
-		}
-	}
-	log.Printf("END header dump ===========================================")
+	// log.Printf("Dump all request headers ==================================")
+	// for name, values := range c.Request.Header {
+	// 	for _, value := range values {
+	// 		log.Printf("%s=%s\n", name, value)
+	// 	}
+	// }
+	// log.Printf("END header dump ===========================================")
 
 	computingID := c.GetHeader("remote_user")
 	if svc.DevAuthUser != "" {
@@ -48,10 +68,23 @@ func (svc *serviceContext) authenticate(c *gin.Context) {
 		}
 	}
 
+	log.Printf("INFO: lookup staff member %s", computingID)
+	var sm staffMember
+	resp := svc.DB.Where("computing_id=?", computingID).First(&sm)
+	if resp.Error != nil {
+		log.Printf("ERROR: could not fond staff mamber %s: %s", computingID, resp.Error.Error())
+		c.Redirect(http.StatusFound, "/forbidden")
+		return
+	}
+
 	log.Printf("Generate JWT for %s", computingID)
 	expirationTime := time.Now().Add(8 * time.Hour)
 	claims := jwtClaims{
-		UserID: computingID,
+		UserID:    computingID,
+		FirstName: sm.FirstName,
+		LastName:  sm.LastName,
+		Role:      sm.roleString(),
+		AdminURL:  svc.TrackSysURL,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 			Issuer:    "dpgimaging",

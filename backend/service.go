@@ -25,7 +25,7 @@ type serviceContext struct {
 	IIIFURL     string
 	TrackSysURL string
 	HTTPClient  *http.Client
-	GDB         *gorm.DB
+	DB          *gorm.DB
 	DevAuthUser string
 	JWTKey      string
 }
@@ -47,8 +47,8 @@ func initializeService(version string, cfg *configData) *serviceContext {
 	if err != nil {
 		log.Fatal(err)
 	}
-	ctx.GDB = gdb
-	log.Printf("INFO: DB Connections established")
+	ctx.DB = gdb
+	log.Printf("INFO: DB Connection established")
 
 	log.Printf("INFO: create tmp directory for working files...")
 	tmpDir := path.Join(ctx.ImagesDir, "tmp")

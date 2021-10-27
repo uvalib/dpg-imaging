@@ -10,7 +10,7 @@ import (
 )
 
 // Version of the service
-const Version = "1.1.2"
+const Version = "2.0.0"
 
 func main() {
 	// Load cfg
@@ -31,7 +31,7 @@ func main() {
 	api := router.Group("/api")
 	{
 		api.GET("/components/:id", svc.authMiddleware, svc.getComponent)
-		api.GET("/projects", svc.getProjects)
+		api.GET("/projects", svc.authMiddleware, svc.getProjects)
 		api.GET("/units", svc.authMiddleware, svc.getQAUnits)
 		api.GET("/units/:uid", svc.authMiddleware, svc.getUnitDetails)
 		api.POST("/units/:uid/finalize", svc.finalizeUnit)
