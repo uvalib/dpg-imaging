@@ -52,6 +52,12 @@ export default createStore({
    },
    getters: {
       getField,
+      isAdmin: state => {
+         return state.user.role == "admin"
+      },
+      isSupervisor: state => {
+         return state.user.role == "supervisor"
+      },
       pageInfoURLs: state => {
          let out = []
          state.masterFiles.forEach( mf => out.push(mf.infoURL) )

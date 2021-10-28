@@ -5,20 +5,40 @@
       <ul v-else class="projects">
           <li class="card" v-for="p in projects" :key="`p${p.id}`">
              <div class="top">
-                <div class="title">{{p.unit.metadata.title}}</div>
-                <div class="due"><label>Date Due:</label><span>{{p.dueOn.split("T")[0]}}</span></div>
+               <div class="due">
+                  <span>
+                     <label>Date Due:</label><span>{{p.dueOn.split("T")[0]}}</span>
+                  </span>
+                  <span class="status-msg overdue" v-if="isOverdue(p)">OVERDUE</span>
+               </div>
+               <div class="title">{{p.unit.metadata.title}}</div>
             </div>
              <div class="data">
                 <dl>
                   <dt>Order:</dt>
                   <dd><a target="_blank" :href="`${adminURL}/${p.unit.order.id}`">{{p.unit.order.id}}</a></dd>
+                  <dt>Unit:</dt>
+                  <dd><a target="_blank" :href="`${adminURL}/${p.unit.id}`">{{p.unit.id}}</a></dd>
+                  <dt>Workflow:</dt>
+                  <dd>{{p.workflow.name}}</dd>
+                  <dt>Category:</dt>
+                  <dd>{{p.category.name}}</dd>
+                  <dt>Intended Use:</dt>
+                  <dd>{{p.unit.intendedUse.description}}</dd>
                 </dl>
                 <dl>
                   <dt>Customer:</dt>
                   <dd>{{p.unit.order.customer.firstName}} {{p.unit.order.customer.lastName}}</dd>
+                  <dt>Call Number:</dt>
+                  <dd>{{p.unit.metadata.callNumber}}</dd>
+                  <dt>ViU Number:</dt>
+                  <dd>
+                     <span v-if="p.viuNumber">{{p.viuNumber}}</span>
+                     <span v-else class="na">N/A</span>
+                  </dd>
                 </dl>
              </div>
-             <div class="status">
+             <div class="status" v-if="isFinished(p) == false">
                 <span class="assignment">
                    <i class="user fas fa-user"></i>
                    <span v-if="p.owner.id == 0" class="unassigned">Unassigned</span>
@@ -31,7 +51,7 @@
 </template>
 
 <script>
-import { mapState } from "vuex"
+import { mapState, mapGetters } from "vuex"
 export default {
    name: "Home",
    components: {
@@ -42,12 +62,23 @@ export default {
          projects : state => state.projects,
          jwt : state => state.user.jwt,
          adminURL: state => state.adminURL
-
-      })
+      }),
+      ...mapGetters([
+         'isAdmin',
+         'isSupervisor',
+      ])
    },
    methods: {
       ownerInfo(p) {
          return `${p.owner.firstName} ${p.owner.lastName} (${p.owner.computingID})`
+      },
+      isFinished(p) {
+         return p.finishedAt != null
+      },
+      isOverdue(p) {
+         let due =  new Date(p.dueOn)
+         let now = new Date()
+         return now > due
       }
    },
    created() {
@@ -73,7 +104,6 @@ export default {
       flex-flow: row wrap;
       justify-content: center;
       .card {
-         border-radius: 5px;
          flex: 0 1 calc(25% - 1em);
          border: 1px solid var(--uvalib-grey);
          padding: 0;
@@ -83,19 +113,36 @@ export default {
          box-sizing: border-box;
          min-width: 45%;
          color: var(--uvalib-text);
+         font-size: 0.9em;
          .top {
-            border-radius: 5px 5px 0 0;
             background: var(--uvalib-grey-lightest);
-            padding: 5px 10px;
             border-bottom: 1px solid var(--uvalib-grey);
             color: var(--uvalib-text);
             .title {
-               margin-bottom: 10px;
+               padding: 10px;
             }
             .due {
+               padding: 5px 5px 5px 10px;
+               border-bottom: 1px solid var(--uvalib-grey);
+               background: var(--uvalib-grey-light);
+               display: flex;
+               flex-flow: row nowrap;
+               justify-content: space-between;
+               align-items: center;
                label {
                   font-weight: bold;
                   margin-right: 5px;
+               }
+               .status-msg {
+                  background: white;
+                  padding: 2px 10px;
+                  border: 1px solid var(--uvalib-grey);
+               }
+               .overdue {
+                  font-weight: bold;
+                  background: firebrick;
+                  color: white;
+                  border: 0;
                }
             }
          }
@@ -104,6 +151,7 @@ export default {
             display: flex;
             flex-flow: row nowrap;
             justify-content: flex-start;
+            align-items: flex-start;
             font-size: 0.9em;
             dl {
                margin-left: 25px;
@@ -120,6 +168,9 @@ export default {
                   -webkit-hyphens: auto;
                   -moz-hyphens: auto;
                   hyphens: auto;
+                  .na {
+                     color: #999;
+                  }
                }
             }
          }

@@ -23,24 +23,24 @@ type containerType struct {
 }
 
 type step struct {
-	ID          uint `json:"id"`
-	StepType    uint
-	Name        string
-	Description string
-	NextStepID  uint
-	FailStepID  uint
-	OwnerType   uint
+	ID          uint   `json:"id"`
+	StepType    uint   `json:"stepType"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	NextStepID  uint   `json:"nextStepID"`
+	FailStepID  uint   `json:"failStepID"`
+	OwnerType   uint   `json:"ownerType"`
 }
 
 type category struct {
-	ID   uint `json:"id"`
-	Name string
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
 }
 
 type workstation struct {
-	ID     uint `json:"id"`
-	Name   string
-	Statis uint
+	ID     uint   `json:"id"`
+	Name   string `json:"name"`
+	Status uint   `json:"status"`
 }
 
 type project struct {
@@ -53,7 +53,7 @@ type project struct {
 	Owner             staffMember   `gorm:"foreignKey:OwnerID" json:"owner"`
 	CurrentStepID     uint          `json:"-"`
 	Step              containerType `gorm:"foreignKey:CurrentStepID" json:"step"`
-	Priority          uint
+	Priority          uint          `json:"priority"`
 	DueOn             *time.Time    `json:"dueOn,omitempty"`
 	ItemCondition     uint          `json:"itemCOndition,omitempty"`
 	AddedAt           *time.Time    `json:"addedAt,omitempty"`
