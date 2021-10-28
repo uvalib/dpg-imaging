@@ -85,17 +85,33 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		page = 1
 	}
 	offset := (page - 1) * pageSize
-	var out []project
+
+	type projResp struct {
+		Total    int64     `json:"total"`
+		Page     uint      `json:"page"`
+		PageSize uint      `json:"pageSize"`
+		Projects []project `json:"projects"`
+	}
+	out := projResp{Page: uint(page), PageSize: uint(pageSize)}
+
+	cr := svc.DB.Model(&project{}).Where("finished_at is null").Count(&out.Total)
+	if cr.Error != nil {
+		log.Printf("ERROR: unable to get count of projects: %s", cr.Error.Error())
+		c.String(http.StatusInternalServerError, cr.Error.Error())
+		return
+	}
+
 	resp := svc.DB.Preload(clause.Associations).
 		Preload("Unit.Metadata").Preload("Unit.IntendedUse"). // must preload nested explicitly
 		Preload("Unit.Order").Preload("Unit.Order.Customer").
 		Offset(offset).Limit(pageSize).
 		Order("due_on asc").
-		Where("finished_at is null").Find(&out)
+		Where("finished_at is null").Find(&out.Projects)
 	if resp.Error != nil {
 		log.Printf("ERROR: unable to get projects: %s", resp.Error.Error())
 		c.String(http.StatusInternalServerError, resp.Error.Error())
 		return
 	}
+
 	c.JSON(http.StatusOK, out)
 }

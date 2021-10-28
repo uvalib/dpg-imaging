@@ -1,18 +1,20 @@
 <template>
    <div id="app">
       <div class="header" role="banner" id="uva-header">
-         <div class="library-link">
-            <a target="_blank" href="https://library.virginia.edu">
-               <UvaLibraryLogo />
-            </a>
+         <div class="main-header">
+            <div class="library-link">
+               <a target="_blank" href="https://library.virginia.edu">
+                  <UvaLibraryLogo />
+               </a>
+            </div>
+            <div class="site-link">
+               <router-link to="/">DPG Imaging</router-link>
+               <p class="version">v{{ version }}</p>
+            </div>
          </div>
-         <div class="site-link">
-            <router-link to="/">DPG Imaging</router-link>
-            <p class="version">v{{ version }}</p>
+         <div class="user-banner" v-if="jwt">
+            <label>Signed in as:</label><span class="user">{{ signedInUser }}</span>
          </div>
-      </div>
-      <div class="user-banner" v-if="jwt">
-         <label>Signed in as:</label><span class="user">{{ signedInUser }}</span>
       </div>
       <router-view />
       <ErrorMessage v-if="hasError" />
@@ -150,23 +152,26 @@ div.header {
    text-align: left;
    position: relative;
    box-sizing: border-box;
-   display: flex;
-   flex-direction: row;
-   flex-wrap: nowrap;
-   justify-content: space-between;
-   align-content: stretch;
-   align-items: center;
-}
-.user-banner {
-   float: right;
-   padding: 5px 5px 0 0;
-   font-size: 0.9em;
-   label {
-      font-weight: bold;
-      margin-right: 5px;
+   .main-header {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      justify-content: space-between;
+      align-content: stretch;
+      align-items: center;
    }
-   .user {
-      font-weight: 100;
+   .user-banner {
+      text-align: right;
+      padding: 10px 0 0 0;
+      font-size: 0.8em;
+      margin: 0;
+      label {
+         font-weight: bold;
+         margin-right: 5px;
+      }
+      .user {
+         font-weight: 100;
+      }
    }
 }
 

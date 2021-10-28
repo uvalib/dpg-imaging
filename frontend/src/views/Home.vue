@@ -1,6 +1,9 @@
 <template>
    <div class="home">
-      <h2>Digitization Projects</h2>
+      <h2>
+         <span>Digitization Projects</span>
+         <router-link class="old-units" to="/units">Old Units Page</router-link>
+      </h2>
       <WaitSpinner v-if="loading" :overlay="true" message="Loading projects..." />
       <ul v-else class="projects">
           <li class="card" v-for="p in projects" :key="`p${p.id}`">
@@ -14,18 +17,7 @@
                <div class="title">{{p.unit.metadata.title}}</div>
             </div>
              <div class="data">
-                <dl>
-                  <dt>Order:</dt>
-                  <dd><a target="_blank" :href="`${adminURL}/${p.unit.order.id}`">{{p.unit.order.id}}</a></dd>
-                  <dt>Unit:</dt>
-                  <dd><a target="_blank" :href="`${adminURL}/${p.unit.id}`">{{p.unit.id}}</a></dd>
-                  <dt>Workflow:</dt>
-                  <dd>{{p.workflow.name}}</dd>
-                  <dt>Category:</dt>
-                  <dd>{{p.category.name}}</dd>
-                  <dt>Intended Use:</dt>
-                  <dd>{{p.unit.intendedUse.description}}</dd>
-                </dl>
+
                 <dl>
                   <dt>Customer:</dt>
                   <dd>{{p.unit.order.customer.firstName}} {{p.unit.order.customer.lastName}}</dd>
@@ -36,6 +28,18 @@
                      <span v-if="p.viuNumber">{{p.viuNumber}}</span>
                      <span v-else class="na">N/A</span>
                   </dd>
+                  <dt>Intended Use:</dt>
+                  <dd>{{p.unit.intendedUse.description}}</dd>
+                </dl>
+                <dl class="right">
+                  <dt>Order:</dt>
+                  <dd><a target="_blank" :href="`${adminURL}/${p.unit.order.id}`">{{p.unit.order.id}}</a></dd>
+                  <dt>Unit:</dt>
+                  <dd><a target="_blank" :href="`${adminURL}/${p.unit.id}`">{{p.unit.id}}</a></dd>
+                  <dt>Workflow:</dt>
+                  <dd>{{p.workflow.name}}</dd>
+                  <dt>Category:</dt>
+                  <dd>{{p.category.name}}</dd>
                 </dl>
              </div>
              <div class="status" v-if="isFinished(p) == false">
@@ -59,7 +63,7 @@ export default {
    computed: {
       ...mapState({
          loading : state => state.loading,
-         projects : state => state.projects,
+         projects : state => state.projects.projects,
          jwt : state => state.user.jwt,
          adminURL: state => state.adminURL
       }),
@@ -83,7 +87,7 @@ export default {
    },
    created() {
       if (this.jwt != "") {
-         this.$store.dispatch("getProjects")
+         this.$store.dispatch("projects/getProjects")
       }
    },
 };
@@ -91,10 +95,17 @@ export default {
 
 <style scoped lang="scss">
 .home {
+   position: relative;
    padding: 25px;
    h2 {
       color: var(--uvalib-brand-orange);
       margin-bottom: 50px;
+      .old-units {
+         font-size: 14px;
+         position: absolute;
+         top: 5px;
+         left: 8px;
+      }
    }
    .projects {
       list-style: none;
@@ -153,6 +164,9 @@ export default {
             justify-content: flex-start;
             align-items: flex-start;
             font-size: 0.9em;
+            dl.right {
+               margin-left: 50px;
+            }
             dl {
                margin-left: 25px;
                display: inline-grid;

@@ -1,6 +1,7 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
+import Units from '../views/Units.vue'    // old list of units in dpg-imaging dir. to be removed
 import Unit from '../views/Unit.vue'
 import Page from '../views/Page.vue'
 import NotFound from '../views/NotFound.vue'
@@ -12,6 +13,11 @@ const routes = [
       path: '/',
       name: 'Home',
       component: Home
+   },
+   {  // old list of units in dpg-imaging dir. to be removed
+      path: '/units',
+      name: 'units',
+      component: Units
    },
    {
       path: '/unit/:unit',

@@ -2,6 +2,9 @@ import { createStore } from 'vuex'
 import axios from 'axios'
 import { getField, updateField } from 'vuex-map-fields'
 
+import projects from './modules/projects'
+import old from './modules/old'
+
 function parseJwt(token) {
    var base64Url = token.split('.')[1]
    var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
@@ -26,8 +29,6 @@ export default createStore({
       updating: false,
       error: false,
       errorMessage: "",
-      projects: [],
-      projectsPage: 1,
       currUnit: "",
       masterFiles: [],
       pageMasterFiles: [],
@@ -155,9 +156,6 @@ export default createStore({
             state.error = false
          }
       },
-      addProjects(state, data) {
-         data.forEach( p => state.projects.push(p))
-      },
       setUnitMetadata(state, data) {
          state.callNumber = data.callNumber
          state.title = data.title
@@ -248,9 +246,6 @@ export default createStore({
          ctx.currPage = 0
          ctx.viewMode = "list"
       },
-      clearProjects(ctx) {
-         ctx.projects.splice(0, ctx.projects.length)
-      },
       handleError(state, err) {
          if ( !(err.response && err.response.status == 401) ) {
             state.error = true
@@ -275,17 +270,6 @@ export default createStore({
          } else {
             ctx.commit('setPage', ctx.state.currPage)
          }
-      },
-      getProjects(ctx) {
-         ctx.commit("setLoading", true)
-         ctx.commit("clearUnitDetails")
-         ctx.commit("clearProjects")
-         axios.get(`/api/projects?page=${ctx.state.projectsPage}`).then(response => {
-            ctx.commit('addProjects', response.data)
-            ctx.commit("setLoading", false)
-         }).catch( e => {
-            ctx.commit("handleError", e)
-         })
       },
       async getUnitDetails(ctx, unit) {
          // dont try to reload a unit if the data is already present - unless an update is in process
@@ -416,7 +400,6 @@ export default createStore({
          })
       },
 
-
       renameAll( ctx ) {
          ctx.commit("setUpdating", true)
          let data = []
@@ -470,5 +453,7 @@ export default createStore({
       }
    },
    modules: {
+      old: old,
+      projects: projects,
    }
 })
