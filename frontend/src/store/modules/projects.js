@@ -9,24 +9,36 @@ const projects = {
       currPage: 1,
    },
    getters: {
+      totalPages: state => {
+         return Math.ceil(state.total/state.pageSize)
+      }
    },
    mutations: {
-      clearProjects(ctx) {
-         ctx.projects.splice(0, ctx.projects.length)
+      clearProjects(state) {
+         state.projects.splice(0, state.projects.length)
       },
       setProjects(state, data) {
          state.total = data.total
          state.pageSize = data.pageSize
          data.currPage = data.page
+         state.projects.splice(0, state.projects.length)
          data.projects.forEach( p => state.projects.push(p))
       },
+      setPage(state, pg) {
+         let maxPg = Math.ceil(state.total/state.pageSize)
+         if (pg > 0 && pg <= maxPg) {
+            state.currPage = pg
+         }
+      }
    },
    actions: {
+      setCurrentPage(ctx, pg) {
+         ctx.commit("setPage", pg)
+         ctx.dispatch("getProjects")
+      },
       getProjects(ctx) {
          ctx.commit("setLoading", true, {root: true})
-         ctx.commit("clearProjects")
-         ctx.commit("clearUnitDetails", null, {root: true})
-         axios.get(`/api/projects?page=${ctx.state.projectsPage}`).then(response => {
+         axios.get(`/api/projects?page=${ctx.state.currPage}`).then(response => {
             ctx.commit('setProjects', response.data)
             ctx.commit("setLoading", false, {root: true})
          }).catch( e => {

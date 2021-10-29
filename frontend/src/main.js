@@ -17,10 +17,12 @@ app.use(router)
 import WaitSpinner from "@/components/WaitSpinner"
 import ErrorMessage from "@/components/ErrorMessage"
 import DPGButton from "@/components/DPGButton"
+import DPGPagination from '@/components/DPGPagination.vue'
 import ConfirmModal from "@/components/ConfirmModal"
 app.component("WaitSpinner", WaitSpinner)
 app.component("ErrorMessage", ErrorMessage)
 app.component("DPGButton", DPGButton)
+app.component("DPGPagination", DPGPagination)
 app.component("ConfirmModal", ConfirmModal)
 
 import '@fortawesome/fontawesome-free/css/all.css'

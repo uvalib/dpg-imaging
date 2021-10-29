@@ -5,52 +5,61 @@
          <router-link class="old-units" to="/units">Old Units Page</router-link>
       </h2>
       <WaitSpinner v-if="loading" :overlay="true" message="Loading projects..." />
-      <ul v-else class="projects">
-          <li class="card" v-for="p in projects" :key="`p${p.id}`">
-             <div class="top">
-               <div class="due">
-                  <span>
-                     <label>Date Due:</label><span>{{p.dueOn.split("T")[0]}}</span>
-                  </span>
-                  <span class="status-msg overdue" v-if="isOverdue(p)">OVERDUE</span>
-               </div>
-               <div class="title">{{p.unit.metadata.title}}</div>
+      <div class="projects-content" v-if="totalPages > 0">
+         <div class="toolbar">
+            <div class="page-ctl">
+               <DPGPagination :currPage="currPage" :pageSize="pageSize" :totalPages="totalPages"
+                  @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
+                  @jump="pageJumpClicked"
+               />
             </div>
-             <div class="data">
-
-                <dl>
-                  <dt>Customer:</dt>
-                  <dd>{{p.unit.order.customer.firstName}} {{p.unit.order.customer.lastName}}</dd>
-                  <dt>Call Number:</dt>
-                  <dd>{{p.unit.metadata.callNumber}}</dd>
-                  <dt>ViU Number:</dt>
-                  <dd>
-                     <span v-if="p.viuNumber">{{p.viuNumber}}</span>
-                     <span v-else class="na">N/A</span>
-                  </dd>
-                  <dt>Intended Use:</dt>
-                  <dd>{{p.unit.intendedUse.description}}</dd>
-                </dl>
-                <dl class="right">
-                  <dt>Order:</dt>
-                  <dd><a target="_blank" :href="`${adminURL}/${p.unit.order.id}`">{{p.unit.order.id}}</a></dd>
-                  <dt>Unit:</dt>
-                  <dd><a target="_blank" :href="`${adminURL}/${p.unit.id}`">{{p.unit.id}}</a></dd>
-                  <dt>Workflow:</dt>
-                  <dd>{{p.workflow.name}}</dd>
-                  <dt>Category:</dt>
-                  <dd>{{p.category.name}}</dd>
-                </dl>
-             </div>
-             <div class="status" v-if="isFinished(p) == false">
-                <span class="assignment">
-                   <i class="user fas fa-user"></i>
-                   <span v-if="p.owner.id == 0" class="unassigned">Unassigned</span>
-                   <span v-else class="assigned">{{ownerInfo(p)}}</span>
-                </span>
-             </div>
-          </li>
-      </ul>
+         </div>
+         <ul class="projects">
+            <li class="card" v-for="p in projects" :key="`p${p.id}`">
+               <div class="top">
+                  <div class="due">
+                     <span>
+                        <label>Date Due:</label><span>{{p.dueOn.split("T")[0]}}</span>
+                     </span>
+                     <span class="status-msg overdue" v-if="isOverdue(p)">OVERDUE</span>
+                  </div>
+                  <div class="title">{{p.unit.metadata.title}}</div>
+               </div>
+               <div class="data">
+                  <dl>
+                     <dt>Customer:</dt>
+                     <dd>{{p.unit.order.customer.firstName}} {{p.unit.order.customer.lastName}}</dd>
+                     <dt>Call Number:</dt>
+                     <dd>{{p.unit.metadata.callNumber}}</dd>
+                     <dt>ViU Number:</dt>
+                     <dd>
+                        <span v-if="p.viuNumber">{{p.viuNumber}}</span>
+                        <span v-else class="na">N/A</span>
+                     </dd>
+                     <dt>Intended Use:</dt>
+                     <dd>{{p.unit.intendedUse.description}}</dd>
+                  </dl>
+                  <dl class="right">
+                     <dt>Order:</dt>
+                     <dd><a target="_blank" :href="`${adminURL}/${p.unit.order.id}`">{{p.unit.order.id}}</a></dd>
+                     <dt>Unit:</dt>
+                     <dd><a target="_blank" :href="`${adminURL}/${p.unit.id}`">{{p.unit.id}}</a></dd>
+                     <dt>Workflow:</dt>
+                     <dd>{{p.workflow.name}}</dd>
+                     <dt>Category:</dt>
+                     <dd>{{p.category.name}}</dd>
+                  </dl>
+               </div>
+               <div class="status" v-if="isFinished(p) == false">
+                  <span class="assignment">
+                     <i class="user fas fa-user"></i>
+                     <span v-if="p.owner.id == 0" class="unassigned">Unassigned</span>
+                     <span v-else class="assigned">{{ownerInfo(p)}}</span>
+                  </span>
+               </div>
+            </li>
+         </ul>
+      </div>
    </div>
 </template>
 
@@ -64,15 +73,33 @@ export default {
       ...mapState({
          loading : state => state.loading,
          projects : state => state.projects.projects,
+         currPage : state => state.projects.currPage,
+         pageSize : state => state.projects.pageSize,
          jwt : state => state.user.jwt,
          adminURL: state => state.adminURL
       }),
-      ...mapGetters([
-         'isAdmin',
-         'isSupervisor',
-      ])
+      ...mapGetters({
+         totalPages: 'projects/totalPages',
+         isAdmin: 'isAdmin',
+         isSupervisor: 'isSupervisor',
+      })
    },
    methods: {
+      nextClicked() {
+         this.$store.dispatch("projects/setCurrentPage", this.currPage+1 )
+      },
+      priorClicked() {
+         this.$store.dispatch("projects/setCurrentPage", this.currPage-1 )
+      },
+      firstClicked() {
+         this.$store.dispatch("projects/setCurrentPage", 1 )
+      },
+      lastClicked() {
+         this.$store.dispatch("projects/setCurrentPage", this.totalPages )
+      },
+      pageJumpClicked(p) {
+         this.$store.dispatch("projects/setCurrentPage", p )
+      },
       ownerInfo(p) {
          return `${p.owner.firstName} ${p.owner.lastName} (${p.owner.computingID})`
       },
@@ -105,6 +132,17 @@ export default {
          position: absolute;
          top: 5px;
          left: 8px;
+      }
+   }
+   .toolbar {
+      padding: 5px 10px;
+      text-align: right;
+      background: var(--uvalib-grey-lightest);
+      margin-bottom: 20px;
+      border-top: 1px solid var(--uvalib-grey-light);
+      border-bottom: 1px solid var(--uvalib-grey-light);
+      .page-ctl {
+         display: inline-block;
       }
    }
    .projects {

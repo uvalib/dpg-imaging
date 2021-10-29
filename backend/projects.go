@@ -74,7 +74,7 @@ type project struct {
 
 func (svc *serviceContext) getProjects(c *gin.Context) {
 	log.Printf("INFO: get projects")
-	pageSize := 10
+	pageSize := 25
 	pageQ := c.Query("page")
 	if pageQ == "" {
 		pageQ = "1"

@@ -21,7 +21,10 @@
             </span>
          </div>
          <div class="toolbar">
-            <ImagePagination />
+            <DPGPagination :currPage="currPage" :pageSize="pageSize" :totalPages="totalPages" :sizePicker="true"
+               @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
+               @jump="pageJumpClicked" @size="pageSizeChanged"
+            />
 
             <span class="actions">
                <span class="view-mode">
@@ -32,7 +35,6 @@
                      <option value="large">Gallery (large)</option>
                   </select>
                </span>
-               <!-- <DPGButton id="sort" class="right-pad" @clicked="resetSort">File Name Sort</DPGButton> -->
                <ConfirmModal label="Batch Rename" class="right-pad" @confirmed="renameAll">
                   <div>All files will be renamed to match the following format:</div>
                   <code>{{currUnit}}_0001.tif - {{currUnit}}_nnnn.tif</code>
@@ -189,11 +191,10 @@ import ComponentPanel from '../components/ComponentPanel.vue'
 import PageNumPanel from '../components/PageNumPanel.vue'
 import TagPicker from '../components/TagPicker.vue'
 import TitleInput from '../components/TitleInput.vue'
-import ImagePagination from '../components/ImagePagination.vue'
 import ProblemsDisplay from '../components/ProblemsDisplay.vue'
 import draggable from 'vuedraggable'
 export default {
-   components: {PageNumPanel, draggable, ProblemsDisplay, ComponentPanel, ImagePagination, TagPicker, TitleInput },
+   components: {PageNumPanel, draggable, ProblemsDisplay, ComponentPanel, TagPicker, TitleInput },
    name: "unit",
    computed: {
       ...mapState({
@@ -202,9 +203,12 @@ export default {
          currUnit: state => state.currUnit,
          title: state => state.title,
          callNumber: state => state.callNumber,
+         currPage : state => state.currPage,
+         pageSize : state => state.pageSize,
       }),
       ...mapGetters([
         'pageStartIdx',
+        'totalPages',
       ]),
       ...mapFields([
          'viewMode', "rangeStartIdx", "rangeEndIdx", "editMode", "masterFiles", "pageMasterFiles"
@@ -222,6 +226,38 @@ export default {
       }
    },
    methods: {
+      priorClicked() {
+         this.$store.commit("setPage", this.currPage-1)
+         this.pageChanged()
+      },
+      nextClicked() {
+         this.$store.commit("setPage", this.currPage+1)
+         this.pageChanged()
+      },
+      lastClicked() {
+         this.$store.commit("setPage", this.totalPages)
+         this.pageChanged()
+      },
+      firstClicked() {
+         this.$store.commit("setPage", 1)
+         this.pageChanged()
+      },
+      pageJumpClicked(pg) {
+         this.$store.commit("setPage", pg)
+         this.pageChanged()
+      },
+      pageSizeChanged(sz) {
+         this.$store.dispatch("setPageSize", sz)
+         let query = Object.assign({}, this.$route.query)
+         query.pagesize = this.currPageSize
+         query.page = this.currPage
+         this.$router.push({query})
+      },
+      pageChanged() {
+         let query = Object.assign({}, this.$route.query)
+         query.page = this.currPage
+         this.$router.push({query})
+      },
       viewModeChanged() {
          let query = Object.assign({}, this.$route.query)
          query.view = this.viewMode
@@ -241,9 +277,6 @@ export default {
       },
       deleteSelected() {
          this.$store.dispatch("deleteMasterFile", this.rightClickedMF)
-      },
-      resetSort() {
-         this.$store.commit("filenameSort")
       },
       showContextMenu(fileName, e) {
          this.rightClickedMF = fileName
@@ -386,7 +419,7 @@ export default {
          this.$store.dispatch("setPageSize", ps)
       }
       if ( this.$route.query.page ) {
-         let pg = parseInt(this.$route.query.page, 10)-1
+         let pg = parseInt(this.$route.query.page, 10)
          this.$store.commit("setPage", pg)
       }
    },

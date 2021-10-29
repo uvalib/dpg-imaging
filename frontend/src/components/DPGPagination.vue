@@ -1,28 +1,34 @@
 <template>
    <span class=pager>
       <span class="pages">
-         <DPGButton mode="icon" :disabled="!prevAvailable" @clicked="firstClicked" aria-label="first page">
+         <DPGButton mode="icon" :disabled="!prevAvailable" @clicked="$emit('first')" aria-label="first page">
             <i class="fas fa-angle-double-left"></i>
          </DPGButton>
-         <DPGButton mode="icon" :disabled="!prevAvailable"  @clicked="priorClicked" aria-label="previous page">
+         <DPGButton mode="icon" :disabled="!prevAvailable"  @clicked="$emit('prior')" aria-label="previous page">
             <i class="fas fa-angle-left"></i>
          </DPGButton>
          <span class="page-info" @click="showPageJump">
-            {{currPage+1}} of {{totalPages}}
+            {{currPage}} of {{totalPages}}
          </span>
-         <DPGButton mode="icon"  :disabled="!nextAvailable" @clicked="nextClicked" aria-label="next page">
+         <DPGButton mode="icon"  :disabled="!nextAvailable" @clicked="$emit('next')" aria-label="next page">
             <i class="fas fa-angle-right"></i>
          </DPGButton>
-         <DPGButton mode="icon" :disabled="!nextAvailable" @clicked="lastClicked" aria-label="last page">
+         <DPGButton mode="icon" :disabled="!nextAvailable" @clicked="$emit('last')" aria-label="last page">
             <i class="fas fa-angle-double-right"></i>
          </DPGButton>
          <div class="page-jump" v-if="pageJumpOpen">
             <label>Jump to page</label>
-            <input id="page-jump" type="number" v-model="pageJump" :min="1" :max="totalPages"
-               @keydown.stop.prevent.enter="pageJumpSelected" @keydown.stop.prevent.esc="pageJumpCanceled"/>
+            <div class="jump-body">
+               <input id="page-jump" type="number" v-model="pageJump" :min="1" :max="totalPages"
+                  @keydown.stop.prevent.enter="pageJumpSelected" @keydown.stop.prevent.esc="pageJumpCanceled"/>
+            </div>
+            <div class="button-bar">
+               <DPGButton class="right-margin" @click="pageJumpCanceled">Cancel</DPGButton>
+               <DPGButton  @click="pageJumpSelected">OK</DPGButton>
+            </div>
          </div>
       </span>
-      <span class="setup">
+      <span class="setup" v-if="sizePicker">
          <label>per page:</label>
          <select v-model="currPageSize" @change="pageSizeChanged">
             <option :value="20">20</option>
@@ -34,23 +40,32 @@
 </template>
 
 <script>
-import { mapGetters, mapState } from "vuex"
 export default {
+   emits: ['next', 'prior', 'first', 'last', 'jump', 'size' ],
+   props: {
+      totalPages: {
+         type: Number,
+         required: true
+      },
+      sizePicker: {
+         type: Boolean,
+         default: false
+      },
+      currPage: {
+         type: Number,
+         required: true
+      },
+      pageSize: {
+         type: Number,
+         default: 20
+      },
+   },
    computed: {
-      ...mapGetters([
-        'pageStartIdx',
-        'totalPages',
-        'totalFiles'
-      ]),
-      ...mapState({
-         currPage : state => state.currPage,
-         pageSize : state => state.pageSize,
-      }),
       prevAvailable() {
-         return this.currPage > 0
+         return this.currPage >1
       },
       nextAvailable() {
-         return this.currPage < (this.totalPages-1)
+         return this.currPage < this.totalPages
       }
    },
    data() {
@@ -62,11 +77,7 @@ export default {
    },
    methods: {
       pageSizeChanged() {
-         this.$store.dispatch("setPageSize", this.currPageSize)
-         let query = Object.assign({}, this.$route.query)
-         query.pagesize = this.currPageSize
-         query.page = this.currPage+1
-         this.$router.push({query})
+         this.$emit("size", this.currPageSize)
       },
       pageJumpCanceled() {
          this.pageJumpOpen = false
@@ -74,9 +85,8 @@ export default {
       pageJumpSelected() {
          if (this.pageJump <= 0 || this.pageJump > this.totalPages) return
          let tgtPage = (this.pageJump-1)
-         this.$store.commit("setPage", tgtPage)
-         this.pageChanged()
          this.pageJumpOpen = false
+         this.$emit("jump", tgtPage)
        },
       showPageJump() {
          this.pageJumpOpen = true
@@ -86,35 +96,7 @@ export default {
             ele.select()
          })
       },
-      priorClicked() {
-         this.$store.commit("setPage", this.currPage-1)
-         this.pageChanged()
-      },
-      nextClicked() {
-         this.$store.commit("setPage", this.currPage+1)
-         this.pageChanged()
-      },
-      lastClicked() {
-         this.$store.commit("setPage", this.totalPages-1)
-         this.pageChanged()
-      },
-      firstClicked() {
-         this.$store.commit("setPage", 0)
-         this.pageChanged()
-      },
-      pageChanged() {
-         let query = Object.assign({}, this.$route.query)
-         query.page = this.currPage+1
-         this.$router.push({query})
-      }
    },
-   mounted() {
-      this.currPageSize = this.pageSize
-      if ( this.$route.query.pagesize ) {
-         let ps = parseInt(this.$route.query.pagesize, 10)
-         this.currPageSize = ps
-      }
-   }
 }
 </script>
 
@@ -124,6 +106,8 @@ export default {
    flex-flow: row nowrap;
    justify-content: space-evenly;
    position: relative;
+   width: 145px;
+
    .pages {
       display: flex;
       flex-flow: row nowrap;
@@ -141,18 +125,40 @@ export default {
    }
    .page-jump {
       background: white;
-      padding: 10px;
-      border-radius: 4px;
+      padding: 0;
       border: 1px solid var(--uvalib-grey);
       box-shadow: var(--box-shadow);
       font-size: 0.9em;
       position: absolute;
-      top: 0px;
-      left: 45px;
-      input {
-         width: 95px;
-         margin: 5px 0 0 0;
+      top: 20px;
+      left: 15px;
+      z-index: 10000;
+      text-align: left;
+      .jump-body {
+         margin: 10px;
+      }
+      label {
+         padding: 5px;
+         background: var(--uvalib-blue-alt-light);
+         width: 100%;
          display: block;
+         box-sizing: border-box;
+         border-bottom: 1px solid  var(--uvalib-blue-alt);
+      }
+      input {
+         width: 100%;
+         margin: 10px 0 0 0;
+         display: block;
+         box-sizing: border-box;
+      }
+      .button-bar {
+         font-size: 0.85em;
+         text-align: right;
+         background: white;
+         padding: 0 10px 10px 10px;
+         .right-margin {
+            margin-right: 5px;
+         }
       }
    }
    .setup {

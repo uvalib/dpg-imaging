@@ -49,7 +49,7 @@ export default createStore({
          type: "",
       },
       pageSize: 20,
-      currPage: 0,
+      currPage: 1,
    },
    getters: {
       getField,
@@ -68,7 +68,7 @@ export default createStore({
          return state.masterFiles[page]
       },
       pageStartIdx: state => {
-         return state.currPage*state.pageSize
+         return (state.currPage-1)*state.pageSize
       },
       signedInUser: state => {
          return `${state.user.firstName} ${state.user.lastName} (${state.user.computeID})`
@@ -129,13 +129,6 @@ export default createStore({
          state.rangeStartIdx = 0
          state.rangeEndIdx = state.masterFiles.length - 1
       },
-      filenameSort(state) {
-         state.masterFiles.sort( (a,b) => {
-            if (a.fileName < b.fileName) return -1
-            if (a.fileName > b.fileName) return 1
-            return 0
-         })
-      },
       setError(state, msg) {
          state.error = true
          state.errorMessage = msg
@@ -167,7 +160,7 @@ export default createStore({
       setPage(state, startPageNum) {
          state.pageMasterFiles.splice(0, state.pageMasterFiles.length)
          for (let idx = 0; idx<state.pageSize; idx++) {
-            let mfIdx = startPageNum*state.pageSize + idx
+            let mfIdx = (startPageNum-1)*state.pageSize + idx
             if (mfIdx < state.masterFiles.length ) {
                state.pageMasterFiles.push( state.masterFiles[mfIdx])
             }
@@ -243,7 +236,7 @@ export default createStore({
          ctx.callNumber = "Unknown"
          ctx.title = "Unknown"
          ctx.problems.splice(0, ctx.problems.length)
-         ctx.currPage = 0
+         ctx.currPage = 1
          ctx.viewMode = "list"
       },
       handleError(state, err) {
@@ -265,11 +258,7 @@ export default createStore({
       },
       setPageSize(ctx, newSize) {
          ctx.commit("setPageSize", newSize)
-         if (ctx.state.currPage*ctx.state.pageSize > ctx.state.masterFiles.length-1 && ctx.state.currPage > 0) {
-            ctx.commit('setPage', ctx.state.currPage-1)
-         } else {
-            ctx.commit('setPage', ctx.state.currPage)
-         }
+         ctx.commit('setPage', 1)
       },
       async getUnitDetails(ctx, unit) {
          // dont try to reload a unit if the data is already present - unless an update is in process
@@ -279,7 +268,7 @@ export default createStore({
          ctx.commit("clearUnitDetails")
          return axios.get(`/api/units/${unit}`).then(response => {
             ctx.commit('setMasterFiles', {unit: unit, masterFiles: response.data.masterFiles})
-            ctx.commit('setPage', 0)
+            ctx.commit('setPage', 1)
             ctx.commit('setUnitMetadata', response.data.metadata)
             ctx.commit('setUnitProblems', response.data.problems)
             ctx.commit("setLoading", false)
@@ -403,7 +392,7 @@ export default createStore({
       renameAll( ctx ) {
          ctx.commit("setUpdating", true)
          let data = []
-         let pStartIdx = ctx.state.currPage*ctx.state.pageSize
+         let pStartIdx = ctx.getters.pageStartIdx
          let pEndIdx = pStartIdx + ctx.state.pageSize-1
          let numRegex = /^\d{4}$/
          ctx.state.masterFiles.forEach( (mf,idx) => {
