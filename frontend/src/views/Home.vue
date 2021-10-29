@@ -51,11 +51,21 @@
                   </dl>
                </div>
                <div class="status" v-if="isFinished(p) == false">
-                  <span class="assignment">
-                     <i class="user fas fa-user"></i>
-                     <span v-if="p.owner.id == 0" class="unassigned">Unassigned</span>
-                     <span v-else class="assigned">{{ownerInfo(p)}}</span>
-                  </span>
+                  <div class="progress-panel">
+                     <span>{{statusText(p.id)}}</span>
+                     <div class="progress-bar"></div>
+                  </div>
+                  <div class="owner-panel">
+                     <span class="assignment">
+                        <i class="user fas fa-user"></i>
+                        <span v-if="p.owner.id == 0" class="unassigned">Unassigned</span>
+                        <span v-else class="assigned">{{ownerInfo(p)}}</span>
+                     </span>
+                     <span class="owner-buttons">
+                        <DPGButton v-if="canClaim(p)">Claim</DPGButton>
+                        <DPGButton  v-if="canAssign">Assign</DPGButton>
+                     </span>
+                  </div>
                </div>
             </li>
          </ul>
@@ -76,15 +86,26 @@ export default {
          currPage : state => state.projects.currPage,
          pageSize : state => state.projects.pageSize,
          jwt : state => state.user.jwt,
+         userComputingID : state => state.user.computeID,
          adminURL: state => state.adminURL
       }),
       ...mapGetters({
          totalPages: 'projects/totalPages',
          isAdmin: 'isAdmin',
          isSupervisor: 'isSupervisor',
-      })
+         statusText: 'projects/statusText',
+         percentComplete: 'projects/percentComplete'
+      }),
    },
    methods: {
+      canClaim(p) {
+         if (p.owner.id == 0) return true
+         if ( (this.isAdmin || this.isSupervisor ) && p.owner.computingID != this.userComputingID) return true
+         return false
+      },
+      canAssign() {
+         return (this.isAdmin || this.isSupervisor)
+      },
       nextClicked() {
          this.$store.dispatch("projects/setCurrentPage", this.currPage+1 )
       },
@@ -152,17 +173,21 @@ export default {
       display: flex;
       flex-flow: row wrap;
       justify-content: center;
+      align-items: flex-start;
+
       .card {
          flex: 0 1 calc(25% - 1em);
          border: 1px solid var(--uvalib-grey);
          padding: 0;
-         margin: 5px;
+         margin: 10px;
          position: relative;
          text-align: left;
          box-sizing: border-box;
          min-width: 45%;
          color: var(--uvalib-text);
          font-size: 0.9em;
+         box-shadow: rgba(0, 0, 0, 0.14) 0px 2px 2px 0px;;
+
          .top {
             background: var(--uvalib-grey-lightest);
             border-bottom: 1px solid var(--uvalib-grey);
@@ -229,14 +254,37 @@ export default {
          .status {
             padding: 10px;
             border-top: 1px solid var(--uvalib-grey-lightest);
-            font-size: 0.9em;
-            .assignment {
-               .user {
-                  margin-right: 10px;
+
+            .progress-panel {
+               margin: 5px 0 15px 0;
+               display: flex;
+               flex-flow: row nowrap;
+               justify-content: space-between;
+               align-items: center;
+
+               .progress-bar {
+                  border: 1px solid var(--uvalib-grey-light);
+                  background: white;
+                  height: 20px;
+                  margin-left: 15px;
+                  flex-grow: 1;
                }
-               .unassigned {
-                  font-weight: 100;
-                  color: #999;
+            }
+            .owner-panel {
+               display: flex;
+               flex-flow: row nowrap;
+               justify-content: space-between;
+               .dpg-button {
+                  margin-left: 5px;
+               }
+               .assignment {
+                  .user {
+                     margin-right: 10px;
+                  }
+                  .unassigned {
+                     font-weight: 100;
+                     color: #999;
+                  }
                }
             }
          }
