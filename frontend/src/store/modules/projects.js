@@ -31,30 +31,38 @@ const projects = {
          return out
       },
       percentComplete: state => pID => {
+         // NOTE: enum values...
+         //    assign status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing]
+         //    step types [:start, :end, :error, :normal]
          let p = state.projects.find( p => p.id == pID)
-         num_steps = p.workflow.length*3 // each step has 3 parts, assigned, in-process and done
+         let nonErrSteps =  p.workflow.steps.filter( s => s.stepType != 2)
+         let numSteps = nonErrSteps.length*3 // each non-error step has 3 parts, assigned, in-process and done
 
-         // curr_step = 0
-         // step_ids = []
-         // self.assignments.joins(:step).each do |a|
-         //    if !a.step.error? && !step_ids.include?(a.step.id) && !a.reassigned? && !a.error?
-         //       # Rejections generally count as a completion as they finish the step. Per team, reject moves to a rescan.
-         //       # When rescan is done, the workflow proceeds to the step AFTER the one that was rejected.
-         //       # The exception to this is the last step. If rejected, completing the rescan returns
-         //       # to that step, not the next. This is the case we need to skip when computing percentage complete.
-         //       next if a.rejected? && a.step.fail_step.next_step == a.step
+         let stepCount = 0
+         let stepIDs = []
+         p.assignments.forEach( a => {
+            if ( stepIDs.includes(a.stepID) ) return
 
-         //       step_ids << a.step.id
-         //       curr_step +=1  # if an assignment is here, that is the first count: Assigned
-         //       curr_step +=1 if !a.started_at.nil?    # Started
-         //       curr_step +=1 if !a.finished_at.nil?   # Finished
-         //    end
-         // end
-         // percent =  (curr_step.to_f/num_steps.to_f*100).to_i
-         // if finished? && percent != 100
-         //    Rails.logger.error("Project #{self.id} is finished, but percentage reported as #{percent}")
-         //    percent = 100
-         // end
+            let step = p.workflow.steps.find( s => s.id == a.stepID )
+            if (!step) return
+
+            if (step.stepType != 2 && a.status != 4 && a.status != 5) {
+               // Rejections generally count as a completion as they finish the step. Per team, reject moves to a rescan.
+               // When rescan is done, the workflow proceeds to the step AFTER the one that was rejected.
+               // The exception to this is the last step. If rejected, completing the rescan returns
+               // to that step, not the next. This is the case we need to skip when computing percentage complete.
+               let failStep =  p.workflow.steps.find( s => s.id == step.failStepID )
+               if (a.status == 3 && failStep.nextStepID == a.stepID) return
+
+               stepIDs.push(a.stepID)           // make sure each step only gets counted once
+               stepCount++                      // if an assignment is here, that is the first count: Assigned
+               if (a.startedAt) stepCount++     // Started
+               if (a.finishedAt) stepCount++    // Finished
+            }
+         })
+         let percent = Math.round((stepCount/numSteps)*100.0)
+         console.log("PROJECT "+pID+" PERCENT: "+percent)
+         return percent+"%"
       }
    },
    mutations: {

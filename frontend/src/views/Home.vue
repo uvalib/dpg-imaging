@@ -53,7 +53,9 @@
                <div class="status" v-if="isFinished(p) == false">
                   <div class="progress-panel">
                      <span>{{statusText(p.id)}}</span>
-                     <div class="progress-bar"></div>
+                     <div class="progress-bar">
+                         <div class="percentage" :style="{width: percentComplete(p.id) }"></div>
+                     </div>
                   </div>
                   <div class="owner-panel">
                      <span class="assignment">
@@ -268,6 +270,10 @@ export default {
                   height: 20px;
                   margin-left: 15px;
                   flex-grow: 1;
+                  .percentage {
+                     background: var(--uvalib-green);
+                     height: 100%;
+                  }
                }
             }
             .owner-panel {

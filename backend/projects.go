@@ -30,7 +30,7 @@ type assignment struct {
 	StaffMemberID uint        `json:"-"`
 	StaffMember   staffMember `gorm:"foreignKey:StaffMemberID" json:"staffMember"`
 	AssignedAt    *time.Time  `json:"assignedAt,omitempty"`
-	StarteddAt    *time.Time  `json:"startedAt,omitempty"`
+	StartedAt     *time.Time  `json:"startedAt,omitempty"`
 	FinishedAt    *time.Time  `json:"finishedAt,omitempty"`
 	Status        uint        `json:"status,omitempty"`
 }
