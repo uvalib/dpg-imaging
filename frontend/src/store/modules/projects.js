@@ -61,7 +61,6 @@ const projects = {
             }
          })
          let percent = Math.round((stepCount/numSteps)*100.0)
-         console.log("PROJECT "+pID+" PERCENT: "+percent)
          return percent+"%"
       }
    },
