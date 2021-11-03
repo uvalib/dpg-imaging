@@ -64,7 +64,7 @@
                         <span v-else class="assigned">{{ownerInfo(p)}}</span>
                      </span>
                      <span class="owner-buttons">
-                        <DPGButton v-if="canClaim(p)">Claim</DPGButton>
+                        <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)">Claim</DPGButton>
                         <DPGButton  v-if="canAssign">Assign</DPGButton>
                      </span>
                   </div>
@@ -104,6 +104,9 @@ export default {
          if (p.owner.id == 0) return true
          if ( (this.isAdmin || this.isSupervisor ) && p.owner.computingID != this.userComputingID) return true
          return false
+      },
+      claimClicked(projID) {
+         this.$store.dispatch("projects/claimProject", projID )
       },
       canAssign() {
          return (this.isAdmin || this.isSupervisor)

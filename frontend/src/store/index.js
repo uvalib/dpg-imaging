@@ -23,6 +23,7 @@ export default createStore({
          lastName: "",
          role: "",
          computeID: "",
+         ID: 0
       },
       adminURL: "",
       loading: false,
@@ -92,7 +93,8 @@ export default createStore({
 
             let parsed = parseJwt(jwt)
             state.adminURL = parsed.adminURL
-            state.user.computeID = parsed.userID
+            state.user.ID = parsed.userID
+            state.user.computeID = parsed.computeID
             state.user.firstName = parsed.firstName
             state.user.lastName = parsed.lastName
             state.user.role = parsed.role

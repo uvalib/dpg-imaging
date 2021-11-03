@@ -75,6 +75,12 @@ const projects = {
          state.projects.splice(0, state.projects.length)
          data.projects.forEach( p => state.projects.push(p))
       },
+      updateProject(state, data) {
+         let pIdx = state.projects.findIndex( p => p.id == data.id)
+         if (pIdx > -1) {
+            state.projects.splice(pIdx, 1, data)
+         }
+      },
       setPage(state, pg) {
          let maxPg = Math.ceil(state.total/state.pageSize)
          if (pg > 0 && pg <= maxPg) {
@@ -96,6 +102,16 @@ const projects = {
             ctx.commit("handleError", e, {root: true})
          })
       },
+      claimProject(ctx, projID) {
+         ctx.commit("setLoading", true, {root: true})
+         let newOwnerID = ctx.rootState.user.ID
+         axios.post(`/api/projects/${projID}/claim`, {ownerID: newOwnerID}).then(response => {
+            ctx.commit('updateProject', response.data)
+            ctx.commit("setLoading", false, {root: true})
+         }).catch( e => {
+            ctx.commit("handleError", e, {root: true})
+         })
+      }
    }
 }
 export default projects
