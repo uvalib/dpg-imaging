@@ -32,7 +32,7 @@ func main() {
 	{
 		api.GET("/components/:id", svc.authMiddleware, svc.getComponent)
 		api.GET("/projects", svc.authMiddleware, svc.getProjects)
-		api.POST("/projects/:id/claim", svc.authMiddleware, svc.claimProject)
+		api.POST("/projects/:id/assign/:uid", svc.authMiddleware, svc.assignProject)
 		api.GET("/projects/:id/candidates", svc.authMiddleware, svc.getProjectCandidates)
 
 		api.GET("/units", svc.authMiddleware, svc.getQAUnits)

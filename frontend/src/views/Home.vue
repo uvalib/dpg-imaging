@@ -65,7 +65,7 @@
                      </span>
                      <span class="owner-buttons">
                         <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)">Claim</DPGButton>
-                        <DPGButton  v-if="canAssign">Assign</DPGButton>
+                        <assign-modal  v-if="canAssign" :projectID="p.id" @assign="assignClicked"/>
                      </span>
                   </div>
                </div>
@@ -77,9 +77,11 @@
 
 <script>
 import { mapState, mapGetters } from "vuex"
+import AssignModal from "@/components/AssignModal"
 export default {
    name: "Home",
    components: {
+      AssignModal
    },
    computed: {
       ...mapState({
@@ -89,6 +91,7 @@ export default {
          pageSize : state => state.projects.pageSize,
          jwt : state => state.user.jwt,
          userComputingID : state => state.user.computeID,
+         userID : state => state.user.ID,
          adminURL: state => state.adminURL
       }),
       ...mapGetters({
@@ -106,10 +109,13 @@ export default {
          return false
       },
       claimClicked(projID) {
-         this.$store.dispatch("projects/claimProject", projID )
+         this.$store.dispatch("projects/assignProject", {projectID: projID, ownerID: this.userID} )
       },
       canAssign() {
          return (this.isAdmin || this.isSupervisor)
+      },
+      assignClicked( info ) {
+         this.$store.dispatch("projects/assignProject", {projectID: info.projectID, ownerID: info.ownerID} )
       },
       nextClicked() {
          this.$store.dispatch("projects/setCurrentPage", this.currPage+1 )
@@ -260,6 +266,14 @@ export default {
             padding: 10px;
             border-top: 1px solid var(--uvalib-grey-lightest);
 
+            .owner-buttons {
+               display: flex;
+               flex-flow: row nowrap;
+               .dpg-button {
+                  margin-right: 10px;
+               }
+            }
+
             .progress-panel {
                margin: 5px 0 15px 0;
                display: flex;
@@ -283,9 +297,7 @@ export default {
                display: flex;
                flex-flow: row nowrap;
                justify-content: space-between;
-               .dpg-button {
-                  margin-left: 5px;
-               }
+
                .assignment {
                   .user {
                      margin-right: 10px;

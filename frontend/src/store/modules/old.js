@@ -24,7 +24,7 @@ const old = {
             ctx.commit('setUnits', response.data)
             ctx.commit("setLoading", false, {root: true})
          }).catch( e => {
-            ctx.commit("handleError", e, {root: true})
+            ctx.commit("setError", e, {root: true})
          })
       },
    }

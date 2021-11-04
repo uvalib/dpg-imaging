@@ -134,15 +134,13 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-func (svc *serviceContext) claimProject(c *gin.Context) {
+func (svc *serviceContext) assignProject(c *gin.Context) {
 	projID := c.Param("id")
-	claims, err := getJWTClaims(c)
-	if err != nil {
-		log.Printf("ERROR: request to claim project with invalid JWT: %s", err.Error())
-		c.String(http.StatusUnauthorized, "unauthorized claim request")
-		return
-	}
-	log.Printf("INFO: user %s is claiming project %s", claims.ComputeID, projID)
+	userID := c.Param("uid")
+	claims := getJWTClaims(c)
+	log.Printf("INFO: user %s is assigning project %s to user ID %s", claims.ComputeID, projID, userID)
+
+	log.Printf("INFO: looking up project %s", projID)
 	var proj project
 	pTx := svc.DB.Preload(clause.Associations).
 		Preload("Unit.Metadata").Preload("Unit.IntendedUse"). // must preload nested explicitly
@@ -157,13 +155,29 @@ func (svc *serviceContext) claimProject(c *gin.Context) {
 		return
 	}
 
-	err = svc.canClaimProject(claims, &proj)
+	log.Printf("INFO: looking up new project %s owner %s", projID, userID)
+	var owner staffMember
+	resp = svc.DB.First(&owner, userID)
+	if resp.Error != nil {
+		log.Printf("ERROR: unable to get new owner %s for project %s: %s", userID, projID, resp.Error.Error())
+		c.String(http.StatusBadRequest, resp.Error.Error())
+		return
+	}
+
+	if proj.OwnerID == owner.ID {
+		log.Printf("INFO: project %d owner is already %d, no change needed", proj.ID, proj.OwnerID)
+		c.JSON(http.StatusOK, proj)
+		return
+	}
+
+	err := svc.canClaimProject(&owner, claims, &proj)
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	log.Printf("INFO: user %s can claim project %d; updating data", claims.ComputeID, proj.ID)
+	log.Printf("INFO: user %s can assign project %d to %s; updating data", claims.ComputeID, proj.ID, owner.ComputingID)
+
 	// If someone else has this assignment, flag it as reassigned. Do not mark the finished time as it was never actually finished
 	if proj.OwnerID > 0 {
 		activeAssign := proj.Assignments[len(proj.Assignments)-1]
@@ -177,7 +191,7 @@ func (svc *serviceContext) claimProject(c *gin.Context) {
 	}
 
 	now := time.Now()
-	newA := assignment{ProjectID: proj.ID, StepID: proj.CurrentStepID, StaffMemberID: claims.UserID, AssignedAt: &now}
+	newA := assignment{ProjectID: proj.ID, StepID: proj.CurrentStepID, StaffMemberID: owner.ID, AssignedAt: &now}
 	resp = svc.DB.Create(&newA)
 	if resp.Error != nil {
 		log.Printf("ERROR: unable to create new assignment for project %d step %d: %s", proj.ID, proj.CurrentStepID, resp.Error.Error())
@@ -185,9 +199,9 @@ func (svc *serviceContext) claimProject(c *gin.Context) {
 		return
 	}
 
-	resp = svc.DB.Exec("UPDATE projects set owner_id=? where id=?", claims.UserID, proj.ID)
+	resp = svc.DB.Exec("UPDATE projects set owner_id=? where id=?", owner.ID, proj.ID)
 	if resp.Error != nil {
-		log.Printf("ERROR: unable set project %d owner to %d: %s", proj.ID, claims.UserID, resp.Error.Error())
+		log.Printf("ERROR: unable set project %d owner to %d: %s", proj.ID, owner.ID, resp.Error.Error())
 		c.String(http.StatusInternalServerError, resp.Error.Error())
 		return
 	}
@@ -200,7 +214,7 @@ func (svc *serviceContext) claimProject(c *gin.Context) {
 		return
 	}
 
-	log.Printf("INFO: project %d claimed by user %s", proj.ID, claims.ComputeID)
+	log.Printf("INFO: project %d claimed by user %d", proj.ID, owner.ID)
 	c.JSON(http.StatusOK, proj)
 }
 
@@ -236,17 +250,14 @@ func (svc *serviceContext) projectCandidates(proj *project) ([]staffMember, erro
 	return out, nil
 }
 
-func (svc *serviceContext) canClaimProject(userClaims *jwtClaims, proj *project) error {
-	// Admins can caim anything
-	if userClaims.Role == "supervisor" || userClaims.Role == "admin" {
+func (svc *serviceContext) canClaimProject(assignee *staffMember, assigner *jwtClaims, proj *project) error {
+	// admin/supervisor can caim or assign anything
+	assigneeRole := assignee.roleString()
+	if assigneeRole == "supervisor" || assigneeRole == "admin" || assigner.Role == "supervisor" || assigner.Role == "admin" {
 		return nil
 	}
 
-	if proj.OwnerID != 0 && !(userClaims.Role == "supervisor" || userClaims.Role == "admin") {
-		log.Printf("INFO: user %s has already claimed project %d", proj.Owner.ComputingID, proj.ID)
-		return fmt.Errorf(fmt.Sprintf("%s has already claimed this project", proj.Owner.ComputingID))
-	}
-
+	// ensure the assignee is a candidate for this type of project
 	candidates, err := svc.projectCandidates(proj)
 	if err != nil {
 		log.Printf("ERROR: unable to get candidates for project category %d: %s", proj.CategoryID, err.Error())
@@ -254,58 +265,65 @@ func (svc *serviceContext) canClaimProject(userClaims *jwtClaims, proj *project)
 	}
 	canClaim := false
 	for _, sm := range candidates {
-		if sm.ComputingID == userClaims.ComputeID {
+		if sm.ComputingID == assignee.ComputingID {
 			canClaim = true
 			break
 		}
 	}
 	if canClaim == false {
-		log.Printf("INFO: user %s does not have the skills to claim project %d", userClaims.ComputeID, proj.ID)
+		log.Printf("INFO: user %s does not have the skills to claim project %d", assignee.ComputingID, proj.ID)
 		return fmt.Errorf("%s does not have the required skills to claim this project", proj.Owner.ComputingID)
 	}
 
 	// OwnerType: [:any_owner, :prior_owner, :unique_owner, :original_owner, :supervisor_owner]
+
+	// Any owner
 	if proj.CurrentStep.OwnerType == 0 {
-		// any owner
 		return nil
 	}
-	if proj.CurrentStep.OwnerType == 4 && !(userClaims.Role == "supervisor" || userClaims.Role == "admin") {
-		log.Printf("INFO: project %d requries a supervisor owner, and %s is not a supervisor", proj.ID, userClaims.ComputeID)
-		return fmt.Errorf("This project requires a supervisor to claim")
+
+	// Prior owner
+	if proj.CurrentStep.OwnerType == 1 {
+		lastAssign := proj.Assignments[len(proj.Assignments)-1]
+		if lastAssign.StaffMember.ComputingID != assignee.ComputingID {
+			log.Printf("INFO: project %d requires prior owner %s to claim, not %s",
+				proj.ID, lastAssign.StaffMember.ComputingID, assignee.ComputingID)
+			return fmt.Errorf("This project requires prior owner %s, not %s", lastAssign.StaffMember.ComputingID, assignee.ComputingID)
+		}
+		return nil
 	}
 
-	// unique owner?
+	// Unique owner
 	if proj.CurrentStep.OwnerType == 2 {
 		for _, a := range proj.Assignments {
-			if a.StaffMember.ComputingID == userClaims.ComputeID {
-				log.Printf("INFO: project %d requires a unique owner, but %s has previously claimed it", proj.ID, userClaims.ComputeID)
-				return fmt.Errorf("This project requires a unique owner")
+			if a.StaffMember.ComputingID == assignee.ComputingID {
+				log.Printf("INFO: project %d requires a unique owner, but %s has previously claimed it", proj.ID, assignee.ComputingID)
+				return fmt.Errorf("This project requires a unique owner, and %s has previously owned it", assignee.ComputingID)
 			}
 		}
 		return nil
 	}
 
-	// prior owner?
-	if proj.CurrentStep.OwnerType == 1 {
-		lastAssign := proj.Assignments[len(proj.Assignments)-1]
-		if lastAssign.StaffMember.ComputingID != userClaims.ComputeID {
-			log.Printf("INFO: project %d requires prior owner %s to claim, not %s",
-				proj.ID, lastAssign.StaffMember.ComputingID, userClaims.ComputeID)
-			return fmt.Errorf("This project requires a unique owner")
-		}
-		return nil
-	}
-
-	// original owner?
+	// Priginal owner
 	if proj.CurrentStep.OwnerType == 3 {
 		origAssign := proj.Assignments[0]
-		if origAssign.StaffMember.ComputingID != userClaims.ComputeID {
+		if origAssign.StaffMember.ComputingID != assignee.ComputingID {
 			log.Printf("INFO: project %d requires original owner %s to claim, not %s",
-				proj.ID, origAssign.StaffMember.ComputingID, userClaims.ComputeID)
-			return fmt.Errorf("This project can only be cleimed by the original owner %s", origAssign.StaffMember.ComputingID)
+				proj.ID, origAssign.StaffMember.ComputingID, assignee.ComputingID)
+			return fmt.Errorf("This project can only be claimed by the original owner %s", origAssign.StaffMember.ComputingID)
 		}
 		return nil
 	}
 
-	return fmt.Errorf("You cannot claim this project")
+	// Supervisor owner
+	if proj.CurrentStep.OwnerType == 4 {
+		if assigneeRole == "supervisor" || assigneeRole == "admin" {
+			return nil
+		}
+		log.Printf("INFO: project %d requries a supervisor owner, and %s is not a supervisor", proj.ID, assignee.ComputingID)
+		return fmt.Errorf("This project requires a supervisor to claim, and %s is not one", assignee.ComputingID)
+	}
+
+	log.Printf("ERROR: unrecognized owner type: %d", proj.CurrentStep.OwnerType)
+	return fmt.Errorf("%s cannot claim this project (internal error)", assignee.ComputingID)
 }

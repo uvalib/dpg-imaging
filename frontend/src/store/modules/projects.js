@@ -7,6 +7,8 @@ const projects = {
       total: 0,
       pageSize: 10,
       currPage: 1,
+      candidates: [],
+      working: false,
    },
    getters: {
       totalPages: state => {
@@ -65,6 +67,13 @@ const projects = {
       }
    },
    mutations: {
+      setWorking( state, flag) {
+         state.working = flag
+      },
+      setCandidates( state, data) {
+         state.candidates.splice(0, state.candidates.length)
+         data.forEach( a => state.candidates.push(a) )
+      },
       clearProjects(state) {
          state.projects.splice(0, state.projects.length)
       },
@@ -93,23 +102,34 @@ const projects = {
          ctx.commit("setPage", pg)
          ctx.dispatch("getProjects")
       },
+      getCandidates(ctx, projecdID) {
+         ctx.commit("setWorking", true)
+         axios.get(`/api/projects/${projecdID}/candidates`).then(response => {
+            ctx.commit('setCandidates', response.data)
+            ctx.commit("setWorking", false)
+         }).catch( e => {
+            ctx.commit("setWorking", false)
+            ctx.commit("setError", e, {root: true})
+         })
+      },
       getProjects(ctx) {
          ctx.commit("setLoading", true, {root: true})
          axios.get(`/api/projects?page=${ctx.state.currPage}`).then(response => {
             ctx.commit('setProjects', response.data)
             ctx.commit("setLoading", false, {root: true})
          }).catch( e => {
-            ctx.commit("handleError", e, {root: true})
+            ctx.commit("setLoading", false, {root: true})
+            ctx.commit("setError", e, {root: true})
          })
       },
-      claimProject(ctx, projID) {
+      assignProject(ctx, {projectID, ownerID}) {
          ctx.commit("setLoading", true, {root: true})
-         let newOwnerID = ctx.rootState.user.ID
-         axios.post(`/api/projects/${projID}/claim`, {ownerID: newOwnerID}).then(response => {
+         axios.post(`/api/projects/${projectID}/assign/${ownerID}`).then(response => {
             ctx.commit('updateProject', response.data)
             ctx.commit("setLoading", false, {root: true})
          }).catch( e => {
-            ctx.commit("handleError", e, {root: true})
+            ctx.commit("setLoading", false, {root: true})
+            ctx.commit("setError", e, {root: true})
          })
       }
    }

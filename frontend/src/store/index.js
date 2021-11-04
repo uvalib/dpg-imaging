@@ -131,9 +131,15 @@ export default createStore({
          state.rangeStartIdx = 0
          state.rangeEndIdx = state.masterFiles.length - 1
       },
-      setError(state, msg) {
+      setError(state, err) {
          state.error = true
-         state.errorMessage = msg
+         state.updating = false
+         state.loading = false
+         if (err.response && err.response.data) {
+            state.errorMessage = err.response.data
+         } else {
+            state.errorMessage = err
+         }
       },
       clearError(state) {
          state.error = false
@@ -241,21 +247,13 @@ export default createStore({
          ctx.currPage = 1
          ctx.viewMode = "list"
       },
-      handleError(state, err) {
-         if ( !(err.response && err.response.status == 401) ) {
-            state.error = true
-            state.errorMessage = err
-            state.updating = false
-            state.loading = false
-         }
-      }
    },
    actions: {
       getVersion(ctx) {
          axios.get("/version").then(response => {
             ctx.commit('setVersion', response.data)
          }).catch( e => {
-            ctx.commit("handleError", e)
+            ctx.commit("setError", e)
          })
       },
       setPageSize(ctx, newSize) {
@@ -276,7 +274,7 @@ export default createStore({
             ctx.commit("setLoading", false)
             ctx.commit("setUpdating", false)
          }).catch( e => {
-            ctx.commit("handleError", e)
+            ctx.commit("setError", e)
          })
       },
 
@@ -310,7 +308,7 @@ export default createStore({
                ctx.commit('setMasterFileProblems', resp.data.problems)
             }
          }).catch( e => {
-            ctx.commit("handleError", e)
+            ctx.commit("setError", e)
          })
       },
 
@@ -329,7 +327,7 @@ export default createStore({
                ctx.commit('setMasterFileProblems', resp.data.problems)
             }
          }).catch( e => {
-            ctx.commit("handleError", e)
+            ctx.commit("setError", e)
          })
       },
 
@@ -344,7 +342,7 @@ export default createStore({
                ctx.commit('setMasterFileProblems', resp.data.problems)
             }
          }).catch( e => {
-            ctx.commit("handleError", e)
+            ctx.commit("setError", e)
          })
       },
 
@@ -364,7 +362,7 @@ export default createStore({
                ctx.commit('setMasterFileProblems', resp.data.problems)
             }
          }).catch( e => {
-            ctx.commit("handleError", e)
+            ctx.commit("setError", e)
          })
       },
 
@@ -375,7 +373,7 @@ export default createStore({
             ctx.commit("setUpdating", false)
             window.location.reload()
          }).catch( e => {
-            ctx.commit("handleError", e)
+            ctx.commit("setError", e)
          })
       },
 
@@ -387,7 +385,7 @@ export default createStore({
                window.location.reload()
             }, 250)
          }).catch( e => {
-            ctx.commit("handleError", e)
+            ctx.commit("setError", e)
          })
       },
 
@@ -429,7 +427,7 @@ export default createStore({
          axios.post(`/api/units/${ctx.state.currUnit}/rename`, data).then(() => {
             window.location.reload()
          }).catch( e => {
-            ctx.commit("handleError", e)
+            ctx.commit("setError", e)
          })
       },
 
@@ -439,7 +437,7 @@ export default createStore({
             ctx.commit('setComponentInfo', response.data)
             ctx.commit("setUpdating", false)
          }).catch( e => {
-            ctx.commit("handleError", e)
+            ctx.commit("setError", e)
          })
       }
    },

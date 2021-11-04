@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -142,16 +141,16 @@ func (svc *serviceContext) authMiddleware(c *gin.Context) {
 	c.Next()
 }
 
-func getJWTClaims(c *gin.Context) (*jwtClaims, error) {
+func getJWTClaims(c *gin.Context) *jwtClaims {
 	claims, signedIn := c.Get("claims")
 	if signedIn == false {
-		return nil, errors.New("No JWT claims found")
+		return nil
 	}
 	jwtClaims, ok := claims.(*jwtClaims)
 	if !ok {
-		return nil, errors.New("Invalid JWT claims found")
+		return nil
 	}
-	return jwtClaims, nil
+	return jwtClaims
 }
 
 // getBearerToken is a helper to extract the token from headers

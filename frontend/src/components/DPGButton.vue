@@ -9,6 +9,7 @@
 
 <script>
 export default {
+   emits: ['clicked', 'tabback', 'tabnext' ],
    props: {
       focusNextOverride: {
          type: Boolean,
@@ -52,7 +53,7 @@ export default {
    border-radius: 5px;
    font-weight: normal;
    border: 1px solid var(--uvalib-grey);
-   padding: 2px 12px;
+   padding: 2px 12px 3px 12px;
    background: var(--uvalib-grey-lightest);
    cursor: pointer;
    font-size: 0.9em;
