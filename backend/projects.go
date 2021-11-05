@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -58,6 +59,22 @@ type workstation struct {
 	Status uint   `json:"status"`
 }
 
+type problem struct {
+	ID    uint   `json:"id"`
+	Name  string `json:"name"`
+	Label string `json:"label"`
+}
+
+type note struct {
+	ID        uint       `json:"id"`
+	ProjectID uint       `json:"-"`
+	StepID    uint       `json:"stepID"`
+	NoteType  uint       `json:"type"`
+	Note      string     `json:"text"`
+	CreatedAt *time.Time `json:"createdAt,omitempty"`
+	Problems  []problem  `gorm:"many2many:notes_problems"`
+}
+
 type project struct {
 	ID                uint          `json:"id"`
 	WorkflowID        uint          `json:"-"`
@@ -69,27 +86,40 @@ type project struct {
 	Assignments       []assignment  `gorm:"foreignKey:ProjectID" json:"assignments"`
 	CurrentStepID     uint          `json:"-"`
 	CurrentStep       step          `gorm:"foreignKey:CurrentStepID" json:"currentStep"`
-	Priority          uint          `json:"priority"`
 	DueOn             *time.Time    `json:"dueOn,omitempty"`
-	ItemCondition     uint          `json:"itemCOndition,omitempty"`
-	AddedAt           *time.Time    `json:"addedAt,omitempty"`
-	StartedAt         *time.Time    `json:"startedAt,omitempty"`
 	FinishedAt        *time.Time    `json:"finishedAt,omitempty"`
 	CategoryID        uint          `json:"-"`
 	Category          category      `gorm:"foreignKey:CategoryID" json:"category"`
-	VIUNumber         string        `json:"viuNumner"`
 	CaptureResolution uint          `json:"captureResolution"`
 	ResizedResolution uint          `json:"resizedResolution"`
 	ResolutionNote    string        `json:"resolutionNote"`
 	WorkstationID     uint          `json:"-"`
 	Workstation       workstation   `json:"workstation"`
-	ConditionNote     string        `json:"conditionNote"`
+	ItemCondition     uint          `json:"itemCondition,omitempty"`
+	ConditionNote     string        `json:"conditionNote,omitempty"`
 	ContainerTypeID   uint          `json:"-"`
-	ContainerType     containerType `gorm:"foreignKey:ContainerTypeID" json:"containerType"`
+	ContainerType     containerType `gorm:"foreignKey:ContainerTypeID" json:"containerType,omitempty"`
+	Notes             []note        `gorm:"foreignKey:ProjectID" json:"notes,omitempty"`
+}
+
+func (svc *serviceContext) getProject(c *gin.Context) {
+	projID := c.Param("id")
+	claims := getJWTClaims(c)
+	log.Printf("INFO: user %s is requesting project %s details", claims.ComputeID, projID)
+
+	var proj project
+	dbReq := svc.getBaseProjectQuery().Where("id=?", projID)
+	resp := dbReq.First(&proj)
+	if resp.Error != nil {
+		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
+		c.String(http.StatusInternalServerError, resp.Error.Error())
+		return
+	}
+	c.JSON(http.StatusOK, proj)
 }
 
 func (svc *serviceContext) getProjects(c *gin.Context) {
-	log.Printf("INFO: get projects")
+	claims := getJWTClaims(c)
 	pageSize := 20
 	pageQ := c.Query("page")
 	if pageQ == "" {
@@ -101,6 +131,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		page = 1
 	}
 	offset := (page - 1) * pageSize
+	log.Printf("INFO: user %s requests projects page %d", claims.ComputeID, page)
 
 	type projResp struct {
 		Total    int64     `json:"total"`
@@ -117,13 +148,8 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		return
 	}
 
-	resp := svc.DB.Preload(clause.Associations).
-		Preload("Unit.Metadata").Preload("Unit.IntendedUse"). // must preload nested explicitly
-		Preload("Unit.Order").Preload("Unit.Order.Customer").
-		Preload("Assignments.StaffMember").
-		Preload("Workflow.Steps").
-		Offset(offset).Limit(pageSize).
-		Order("due_on asc").
+	resp := svc.getBaseProjectQuery().
+		Offset(offset).Limit(pageSize).Order("due_on asc").
 		Where("finished_at is null").Find(&out.Projects)
 	if resp.Error != nil {
 		log.Printf("ERROR: unable to get projects: %s", resp.Error.Error())
@@ -142,12 +168,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 
 	log.Printf("INFO: looking up project %s", projID)
 	var proj project
-	pTx := svc.DB.Preload(clause.Associations).
-		Preload("Unit.Metadata").Preload("Unit.IntendedUse"). // must preload nested explicitly
-		Preload("Unit.Order").Preload("Unit.Order.Customer").
-		Preload("Assignments.StaffMember").
-		Preload("Workflow.Steps").
-		Where("id=?", projID)
+	pTx := svc.getBaseProjectQuery().Where("id=?", projID)
 	resp := pTx.First(&proj)
 	if resp.Error != nil {
 		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
@@ -170,7 +191,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 		return
 	}
 
-	err := svc.canClaimProject(&owner, claims, &proj)
+	err := svc.canAssignProject(&owner, claims, &proj)
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
@@ -227,52 +248,23 @@ func (svc *serviceContext) getProjectCandidates(c *gin.Context) {
 		c.String(http.StatusInternalServerError, resp.Error.Error())
 		return
 	}
-	candidates, err := svc.projectCandidates(&proj)
-	if err != nil {
-		log.Printf("ERROR: unable to get candidates for prokect %s: %s", projID, err.Error())
-		c.String(http.StatusInternalServerError, err.Error())
+
+	var candidates []staffMember
+	resp = svc.DB.Where("role<=2 and is_active=1", projID).Find(&candidates)
+	if resp.Error != nil {
+		log.Printf("ERROR: unable to get candidates for project %s: %s", projID, resp.Error.Error())
+		c.String(http.StatusInternalServerError, resp.Error.Error())
 		return
 	}
+
 	c.JSON(http.StatusOK, candidates)
 }
 
-func (svc *serviceContext) projectCandidates(proj *project) ([]staffMember, error) {
-	out := make([]staffMember, 0)
-	resp := svc.DB.
-		Distinct("staff_members.id", "computing_id", "first_name", "last_name", "role").
-		Joins("inner join staff_skills on staff_member_id=staff_members.id").
-		Where("(role <= 1 and is_active=1) or (category_id=? and role=2 and is_active=1)", proj.CategoryID).
-		Order("last_name asc").
-		Find(&out)
-	if resp.Error != nil {
-		return nil, resp.Error
-	}
-	return out, nil
-}
-
-func (svc *serviceContext) canClaimProject(assignee *staffMember, assigner *jwtClaims, proj *project) error {
+func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwtClaims, proj *project) error {
 	// admin/supervisor can caim or assign anything
 	assigneeRole := assignee.roleString()
 	if assigneeRole == "supervisor" || assigneeRole == "admin" || assigner.Role == "supervisor" || assigner.Role == "admin" {
 		return nil
-	}
-
-	// ensure the assignee is a candidate for this type of project
-	candidates, err := svc.projectCandidates(proj)
-	if err != nil {
-		log.Printf("ERROR: unable to get candidates for project category %d: %s", proj.CategoryID, err.Error())
-		candidates = make([]staffMember, 0)
-	}
-	canClaim := false
-	for _, sm := range candidates {
-		if sm.ComputingID == assignee.ComputingID {
-			canClaim = true
-			break
-		}
-	}
-	if canClaim == false {
-		log.Printf("INFO: user %s does not have the skills to claim project %d", assignee.ComputingID, proj.ID)
-		return fmt.Errorf("%s does not have the required skills to claim this project", proj.Owner.ComputingID)
 	}
 
 	// OwnerType: [:any_owner, :prior_owner, :unique_owner, :original_owner, :supervisor_owner]
@@ -326,4 +318,13 @@ func (svc *serviceContext) canClaimProject(assignee *staffMember, assigner *jwtC
 
 	log.Printf("ERROR: unrecognized owner type: %d", proj.CurrentStep.OwnerType)
 	return fmt.Errorf("%s cannot claim this project (internal error)", assignee.ComputingID)
+}
+
+func (svc *serviceContext) getBaseProjectQuery() (tx *gorm.DB) {
+	return svc.DB.Preload(clause.Associations).
+		Preload("Unit.Metadata").Preload("Unit.IntendedUse").
+		Preload("Unit.Order").Preload("Unit.Order.Customer").
+		Preload("Assignments.StaffMember").
+		Preload("Workflow.Steps").
+		Preload("Notes.Problems")
 }

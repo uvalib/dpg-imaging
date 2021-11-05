@@ -23,17 +23,17 @@
                      </span>
                      <span class="status-msg overdue" v-if="isOverdue(p)">OVERDUE</span>
                   </div>
-                  <div class="title">{{p.unit.metadata.title}}</div>
+                  <div class="title">
+                     <router-link @click="selectProject(p.id)" :to="`/projects/${p.id}`">{{p.unit.metadata.title}}</router-link>
+                  </div>
                </div>
                <div class="data">
                   <dl>
                      <dt>Customer:</dt>
                      <dd>{{p.unit.order.customer.firstName}} {{p.unit.order.customer.lastName}}</dd>
                      <dt>Call Number:</dt>
-                     <dd>{{p.unit.metadata.callNumber}}</dd>
-                     <dt>ViU Number:</dt>
                      <dd>
-                        <span v-if="p.viuNumber">{{p.viuNumber}}</span>
+                        <span v-if="p.unit.metadata.callNumber">{{p.unit.metadata.callNumber}}</span>
                         <span v-else class="na">N/A</span>
                      </dd>
                      <dt>Intended Use:</dt>
@@ -79,7 +79,7 @@
 import { mapState, mapGetters } from "vuex"
 import AssignModal from "@/components/AssignModal"
 export default {
-   name: "Home",
+   name: "home",
    components: {
       AssignModal
    },
@@ -103,6 +103,9 @@ export default {
       }),
    },
    methods: {
+      selectProject(id) {
+         this.$store.commit("selectProject", id)
+      },
       canClaim(p) {
          if (p.owner.id == 0) return true
          if ( (this.isAdmin || this.isSupervisor ) && p.owner.computingID != this.userComputingID) return true
@@ -205,6 +208,9 @@ export default {
             color: var(--uvalib-text);
             .title {
                padding: 10px;
+               a {
+                  color: var(--uvalib-text) !important;
+               }
             }
             .due {
                padding: 5px 5px 5px 10px;

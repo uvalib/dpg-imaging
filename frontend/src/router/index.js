@@ -1,6 +1,7 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
+import Project from '../views/Project.vue'
 import Units from '../views/Units.vue'    // old list of units in dpg-imaging dir. to be removed
 import Unit from '../views/Unit.vue'
 import Page from '../views/Page.vue'
@@ -11,8 +12,13 @@ import VueCookies from 'vue-cookies'
 const routes = [
    {
       path: '/',
-      name: 'Home',
+      name: 'home',
       component: Home
+   },
+   {
+      path: '/projects/:id',
+      name: 'project',
+      component: Project
    },
    {  // old list of units in dpg-imaging dir. to be removed
       path: '/units',

@@ -4,6 +4,7 @@ const projects = {
    namespaced: true,
    state: {
       projects: [],
+      selectedProjectIdx: -1,
       total: 0,
       pageSize: 10,
       currPage: 1,
@@ -13,6 +14,12 @@ const projects = {
    getters: {
       totalPages: state => {
          return Math.ceil(state.total/state.pageSize)
+      },
+      currProject: state => {
+         if (state.selectedProjectIdx == -1) {
+            return {}
+         }
+         return state.projects[state.selectedProjectIdx]
       },
       statusText: state => pID => {
          let p = state.projects.find( p => p.id == pID)
@@ -84,6 +91,9 @@ const projects = {
          state.projects.splice(0, state.projects.length)
          data.projects.forEach( p => state.projects.push(p))
       },
+      selectProject(state, projID) {
+         state.selectedProjectIdx = state.projects.findIndex( p => p.id = projID)
+      },
       updateProject(state, data) {
          let pIdx = state.projects.findIndex( p => p.id == data.id)
          if (pIdx > -1) {
@@ -116,6 +126,20 @@ const projects = {
          ctx.commit("setLoading", true, {root: true})
          axios.get(`/api/projects?page=${ctx.state.currPage}`).then(response => {
             ctx.commit('setProjects', response.data)
+            ctx.commit("setLoading", false, {root: true})
+         }).catch( e => {
+            ctx.commit("setLoading", false, {root: true})
+            ctx.commit("setError", e, {root: true})
+         })
+      },
+      // this is only used when the project details page is loaded without a list of project data
+      getProject(ctx, projectID) {
+         ctx.commit("setLoading", true, {root: true})
+         axios.get(`/api/projects/${projectID}`).then(response => {
+            // set a fake list of projects containing only 1 project
+            let projects = {total: 1, pageSize: 1, currPage: 1, projects: [response.data]}
+            ctx.commit('setProjects', projects)
+            ctx.commit('selectProject', projectID)
             ctx.commit("setLoading", false, {root: true})
          }).catch( e => {
             ctx.commit("setLoading", false, {root: true})
