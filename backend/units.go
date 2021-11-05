@@ -16,6 +16,7 @@ type metadata struct {
 	PID        string `gorm:"column:pid" json:"pid"`
 	CallNumber string `json:"callNumber,omitempty"`
 	Title      string `json:"title"`
+	Type       string `json:"type"`
 }
 
 type intendedUse struct {

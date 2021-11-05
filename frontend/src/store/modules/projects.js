@@ -92,7 +92,7 @@ const projects = {
          data.projects.forEach( p => state.projects.push(p))
       },
       selectProject(state, projID) {
-         state.selectedProjectIdx = state.projects.findIndex( p => p.id = projID)
+         state.selectedProjectIdx = state.projects.findIndex( p => p.id == projID)
       },
       updateProject(state, data) {
          let pIdx = state.projects.findIndex( p => p.id == data.id)

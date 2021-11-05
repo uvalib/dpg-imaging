@@ -104,7 +104,7 @@ export default {
    },
    methods: {
       selectProject(id) {
-         this.$store.commit("selectProject", id)
+         this.$store.commit("projects/selectProject", id)
       },
       canClaim(p) {
          if (p.owner.id == 0) return true

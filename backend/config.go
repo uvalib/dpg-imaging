@@ -30,7 +30,7 @@ func getConfiguration() *configData {
 	flag.StringVar(&config.imagesDir, "images", "", "Images directory")
 	flag.StringVar(&config.iiifURL, "iiif", "", "IIIF server URL")
 	flag.StringVar(&config.serviceURL, "url", "", "Base URL for DPG Imaging service")
-	flag.StringVar(&config.tracksysURL, "tsurl", "https://tracksys.lib.virginia.edu", "URL for TrackSys")
+	flag.StringVar(&config.tracksysURL, "tsurl", "https://tracksys.lib.virginia.edu/admin", "URL for TrackSys")
 	flag.StringVar(&config.jwtKey, "jwtkey", "", "JWT signature key")
 
 	// DB connection params
@@ -74,6 +74,7 @@ func getConfiguration() *configData {
 	log.Printf("[CONFIG] imagesDir     = [%s]", config.imagesDir)
 	log.Printf("[CONFIG] iiifURL       = [%s]", config.iiifURL)
 	log.Printf("[CONFIG] serviceURL    = [%s]", config.serviceURL)
+	log.Printf("[CONFIG] tracksysURL   = [%s]", config.tracksysURL)
 	log.Printf("[CONFIG] dbhost        = [%s]", config.db.Host)
 	log.Printf("[CONFIG] dbport        = [%d]", config.db.Port)
 	log.Printf("[CONFIG] dbname        = [%s]", config.db.Name)
