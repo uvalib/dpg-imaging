@@ -1,24 +1,37 @@
 <template>
    <div class="project">
-      <h2>Digitization Project #{{$route.params.id}}</h2>
+      <h2>
+         <span>Digitization Project #{{$route.params.id}}</span>
+         <span v-if="!loading" class="due"><label>Due:</label><span>{{currProject.dueOn.split("T")[0]}}</span></span>
+      </h2>
       <WaitSpinner v-if="loading" :overlay="true" message="Loading projects..." />
       <template v-else>
          <div class="project-head">
-            <h3><a target="_blank" :href="metadataLink">{{currProject.unit.metadata.title}}</a></h3>
-            <h4>
-               <div>
-                  <label>Unit:</label>
-                  <a target="_blank" :href="`${adminURL}/units/${currProject.unit.id}`">{{currProject.unit.id}}</a>
+            <h3>
+               <a target="_blank" :href="metadataLink">{{currProject.unit.metadata.title}}</a>
+            </h3>
+            <h4 class="proj-data">
+               <div class="column right-pad">
+                  <div>
+                     <label>Unit:</label>
+                     <a target="_blank" :href="`${adminURL}/units/${currProject.unit.id}`">{{currProject.unit.id}}</a>
+                  </div>
+                  <div>
+                     <label>Order:</label>
+                     <a target="_blank" :href="`${adminURL}/orders/${currProject.unit.orderID}`">{{currProject.unit.orderID}}</a>
+                  </div>
                </div>
-               <div>
-                  <label>Order:</label>
-                  <a target="_blank" :href="`${adminURL}/orders/${currProject.unit.orderID}`">{{currProject.unit.orderID}}</a>
-               </div>
-               <div>
-                  <label>Customer:</label>
-                  <a target="_blank" :href="`${adminURL}/customers/${currProject.unit.order.customer.id}`">
-                     {{currProject.unit.order.customer.firstName}} {{currProject.unit.order.customer.lastName}}
-                  </a>
+               <div class="column">
+                  <div>
+                     <label>Customer:</label>
+                     <a target="_blank" :href="`${adminURL}/customers/${currProject.unit.order.customer.id}`">
+                        {{currProject.unit.order.customer.firstName}} {{currProject.unit.order.customer.lastName}}
+                     </a>
+                  </div>
+                  <div>
+                     <label>Intended Use:</label>
+                     <span class="data">{{currProject.unit.intendedUse.description}}</span>
+                  </div>
                </div>
             </h4>
             <span class="back">
@@ -73,6 +86,21 @@ export default {
    h2 {
       color: var(--uvalib-brand-orange);
       margin-bottom: 15px;
+      position: relative;
+      .due {
+         position: absolute;
+         right: 0;
+         color: var(--uvalib-text);
+         font-size: 16px;
+         font-weight: 500;
+         background: var(--uvalib-blue-alt-light);
+         border: 1px solid var(--uvalib-blue-alt);
+         padding: 5px 15px;
+         label {
+            font-weight: bold;
+            margin-right: 5px;
+         }
+      }
    }
    .project-head {
       color: var(--uvalib-text);
@@ -84,7 +112,7 @@ export default {
          text-align: center;
          font-weight: 500;
          font-size: 1.25em;
-         margin: 5px auto 15px auto;
+         margin: 5px auto 10px auto;
          .icon {
             display: inline-block;
             margin-left: 10px;
@@ -92,8 +120,23 @@ export default {
       }
       h4 {
          font-size: 0.9em;
+         display: flex;
+         flex-flow: row nowrap;
+         justify-content: center;
+         .column {
+            text-align: left;
+         }
+         .column.right-pad {
+             margin-right: 25px;
+         }
          label {
-            margin-right: 5px;
+            margin-right: 10px;
+            width: 100px;
+            display: inline-block;
+            text-align: right;
+         }
+         .data {
+            font-weight: 500;
          }
          margin: 5px 0;
          div {

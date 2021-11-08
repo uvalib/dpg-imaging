@@ -250,7 +250,7 @@ func (svc *serviceContext) getProjectCandidates(c *gin.Context) {
 	}
 
 	var candidates []staffMember
-	resp = svc.DB.Where("role<=2 and is_active=1", projID).Find(&candidates)
+	resp = svc.DB.Where("role<=? and is_active=?", 2, 1).Order("last_name asc").Find(&candidates)
 	if resp.Error != nil {
 		log.Printf("ERROR: unable to get candidates for project %s: %s", projID, resp.Error.Error())
 		c.String(http.StatusInternalServerError, resp.Error.Error())
