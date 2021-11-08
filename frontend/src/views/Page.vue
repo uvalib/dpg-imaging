@@ -151,7 +151,7 @@ export default {
             constrainDuringPan: true,
             imageSmoothingEnabled: false,
             maxZoomPixelRatio: 2.0,
-            placeholderFillStyle: '#333333',
+            placeholderFillStyle: '#555555',
             navigatorPosition: "BOTTOM_RIGHT",
             zoomInButton:   "zoom-in",
             zoomOutButton:  "zoom-out",
@@ -182,6 +182,9 @@ export default {
 
 <style scoped lang="scss">
 .viewer {
+   :deep(.openseadragon-container) {
+      background: #555555 !important;
+   }
    background: black;
    .toolbar {
       padding: 10px;

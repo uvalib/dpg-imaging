@@ -106,7 +106,6 @@ export default {
    flex-flow: row nowrap;
    justify-content: space-evenly;
    position: relative;
-   width: 145px;
 
    .pages {
       display: flex;

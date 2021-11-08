@@ -317,7 +317,7 @@ export default createStore({
          let data = []
          for (let i=ctx.state.rangeStartIdx; i<=ctx.state.rangeEndIdx; i++) {
             let mf = ctx.state.masterFiles[i]
-            data.push( {file: mf.path, title: mf.title, description: mf.description, status: mf.status, componentID: componentID})
+            data.push( {file: mf.path, title: mf.title.trim(), description: mf.description.trim(), status: mf.status, componentID: componentID})
          }
          return axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then( resp => {
             ctx.commit('updateMasterFileMetadata', data )
@@ -333,7 +333,7 @@ export default createStore({
 
       async updateMasterFileMetadata(ctx, {file, title, description, status, componentID}) {
          ctx.commit("setUpdating", true)
-         let data = [{file: file, title: title, description: description, status: status, componentID: componentID}]
+         let data = [{file: file, title: title.trim(), description: description.trim(), status: status, componentID: componentID}]
          return axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then( resp => {
             ctx.commit('updateMasterFileMetadata', data )
             ctx.commit("setUpdating", false)
@@ -353,7 +353,7 @@ export default createStore({
          if (tag == "none") {
             status = ""
          }
-         let data = [{file: file, title: mf.title, description: mf.description, status: status}]
+         let data = [{file: file, title: mf.title.trim(), description: mf.description.trim(), status: status}]
          return axios.post(`/api/units/${ctx.state.currUnit}/update`, data).then( resp => {
             ctx.commit('updateMasterFileMetadata', data )
             ctx.commit("setUpdating", false)
