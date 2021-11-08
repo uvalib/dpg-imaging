@@ -40,13 +40,14 @@ type order struct {
 }
 
 type unit struct {
-	ID            uint        `json:"id"`
-	OrderID       uint        `json:"orderID"`
-	Order         order       `gorm:"foreignKey:OrderID" json:"order"`
-	MetadataID    uint        `json:"-"`
-	Metadata      metadata    `gorm:"foreignKey:MetadataID" json:"metadata"`
-	IntendedUseID uint        `json:"-"`
-	IntendedUse   intendedUse `gorm:"foreignKey:IntendedUseID" json:"intendedUse"`
+	ID                  uint        `json:"id"`
+	OrderID             uint        `json:"orderID"`
+	Order               order       `gorm:"foreignKey:OrderID" json:"order"`
+	MetadataID          uint        `json:"-"`
+	Metadata            metadata    `gorm:"foreignKey:MetadataID" json:"metadata"`
+	IntendedUseID       uint        `json:"-"`
+	IntendedUse         intendedUse `gorm:"foreignKey:IntendedUseID" json:"intendedUse"`
+	SpecialInstructions string      `json:"specialInstructions,omitempty"`
 }
 
 func (svc *serviceContext) getQAUnits(c *gin.Context) {

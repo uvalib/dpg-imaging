@@ -39,6 +39,42 @@
                <router-link to="/">Back to Projects</router-link>
             </span>
          </div>
+         <div class="project-main">
+            <div class="info-block">
+               <h4>Item Information</h4>
+               <dl>
+                  <dt>Category:</dt>
+                  <dd>{{currProject.category.name}}
+                  </dd>
+                  <dt>Call Number:</dt>
+                  <dd>{{currProject.unit.metadata.callNumber}}</dd>
+                  <dt>Special Instructions:</dt>
+                  <dd>
+                     <span v-if="currProject.unit.specialInstructions">{{currProject.unit.specialInstructions}}</span>
+                     <span v-else class="na">N/A</span>
+                  </dd>
+                  <dt>Condition:</dt>
+                  <dd>{{conditionText(currProject.ItemCondition)}}</dd>
+                  <dt>Condition Notes:</dt>
+                  <dd>
+                     <span v-if="currProject.conditionNote">{{currProject.conditionNote}}</span>
+                     <span v-else class="na">N/A</span>
+                  </dd>
+               </dl>
+            </div>
+            <div class="info-block">
+               <h4>Equipment</h4>
+            </div>
+            <div class="info-block workflow">
+               <h4>Workflow</h4>
+            </div>
+            <div class="info-block">
+               <h4>History</h4>
+            </div>
+            <div class="info-block">
+               <h4>Notes</h4>
+            </div>
+         </div>
       </template>
    </div>
 </template>
@@ -71,6 +107,12 @@ export default {
          return `${this.adminURL}/${mdType}/${this.currProject.unit.metadata.id}`
       }
    },
+   methods: {
+      conditionText(condID) {
+         if (condID == 0) return "Good"
+         return "Bad"
+      }
+   },
    created() {
       if (this.selectedProjectIdx == -1) {
          this.$store.dispatch("projects/getProject", this.$route.params.id)
@@ -85,7 +127,7 @@ export default {
    padding: 25px;
    h2 {
       color: var(--uvalib-brand-orange);
-      margin-bottom: 15px;
+      margin-bottom: 25px;
       position: relative;
       .due {
          position: absolute;
@@ -155,6 +197,56 @@ export default {
             margin-left: 5px;
             &:hover {
                text-decoration: underline ;
+            }
+         }
+      }
+   }
+   .project-main {
+      display: flex;
+      flex-flow: row wrap;
+      justify-content: center;
+
+      .info-block.workflow {
+         width: 95%;
+      }
+      .info-block {
+         width: 46%;
+         min-width: 600px;
+         border: 1px solid var(--uvalib-grey-light);
+         margin: 15px;
+         display: inline-block;
+         min-height: 100px;
+          box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.12);
+
+         h4 {
+            color: var(--uvalib-text);
+            font-size: 1em;
+            margin: 0;
+            padding: 5px;
+            background: var(--uvalib-grey-lightest);
+            border-bottom: 1px solid var(--uvalib-grey-light);
+         }
+         dl {
+            margin: 10px 30px;
+            display: inline-grid;
+            grid-template-columns: max-content 2fr;
+            grid-column-gap: 10px;
+            font-size: 0.9em;
+            text-align: left;
+
+            dt {
+               font-weight: bold;
+               text-align: right;
+            }
+            dd {
+               margin: 0 0 10px 0;
+               word-break: break-word;
+               -webkit-hyphens: auto;
+               -moz-hyphens: auto;
+               hyphens: auto;
+               .na {
+                  color: #999;
+               }
             }
          }
       }
