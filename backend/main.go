@@ -25,6 +25,7 @@ func main() {
 
 	// Set routes and start server
 	router.Use(cors.Default())
+	router.GET("/config", svc.getConfig)
 	router.GET("/version", svc.getVersion)
 	router.GET("/healthcheck", svc.healthCheck)
 	router.GET("/authenticate", svc.authenticate)

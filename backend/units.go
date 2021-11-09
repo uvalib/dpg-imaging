@@ -11,12 +11,21 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+type ocrHint struct {
+	ID           uint   `json:"id"`
+	Name         string `json:"name"`
+	OCRCandidate bool   `json:"ocrCandidate"`
+}
+
 type metadata struct {
-	ID         uint   `json:"id"`
-	PID        string `gorm:"column:pid" json:"pid"`
-	CallNumber string `json:"callNumber,omitempty"`
-	Title      string `json:"title"`
-	Type       string `json:"type"`
+	ID              uint    `json:"id"`
+	PID             string  `gorm:"column:pid" json:"pid"`
+	CallNumber      string  `json:"callNumber,omitempty"`
+	Title           string  `json:"title"`
+	Type            string  `json:"type"`
+	OCRHintID       uint    `json:"-"`
+	OCRHint         ocrHint `gorm:"foreignKey:OCRHintID" json:"ocrHint"`
+	OCRLanguageHint string  `json:"ocrLanguageHint"`
 }
 
 type intendedUse struct {
@@ -48,6 +57,7 @@ type unit struct {
 	IntendedUseID       uint        `json:"-"`
 	IntendedUse         intendedUse `gorm:"foreignKey:IntendedUseID" json:"intendedUse"`
 	SpecialInstructions string      `json:"specialInstructions,omitempty"`
+	OCRMasterFiles      bool        `json:"ocrMasterFiles"`
 }
 
 func (svc *serviceContext) getQAUnits(c *gin.Context) {

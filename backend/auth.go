@@ -86,7 +86,6 @@ func (svc *serviceContext) authenticate(c *gin.Context) {
 		FirstName: sm.FirstName,
 		LastName:  sm.LastName,
 		Role:      sm.roleString(),
-		AdminURL:  svc.TrackSysURL,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 			Issuer:    "dpgimaging",

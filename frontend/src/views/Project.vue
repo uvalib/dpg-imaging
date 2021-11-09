@@ -2,9 +2,11 @@
    <div class="project">
       <h2>
          <span>Digitization Project #{{$route.params.id}}</span>
-         <span v-if="!loading" class="due"><label>Due:</label><span>{{currProject.dueOn.split("T")[0]}}</span></span>
+         <span v-if="working == false" class="due">
+            <label>Due:</label><span>{{currProject.dueOn.split("T")[0]}}</span>
+         </span>
       </h2>
-      <WaitSpinner v-if="loading" :overlay="true" message="Loading projects..." />
+      <WaitSpinner v-if="working" :overlay="true" :message="`Loading project ${$route.params.id}...`" />
       <template v-else>
          <div class="project-head">
             <h3>
@@ -51,22 +53,42 @@
                   <dt>Special Instructions:</dt>
                   <dd>
                      <span v-if="currProject.unit.specialInstructions">{{currProject.unit.specialInstructions}}</span>
-                     <span v-else class="na">N/A</span>
+                     <span v-else class="na">EMPTY</span>
                   </dd>
                   <dt>Condition:</dt>
                   <dd>{{conditionText(currProject.ItemCondition)}}</dd>
                   <dt>Condition Notes:</dt>
                   <dd>
                      <span v-if="currProject.conditionNote">{{currProject.conditionNote}}</span>
-                     <span v-else class="na">N/A</span>
+                     <span v-else class="na">EMPTY</span>
                   </dd>
                </dl>
             </div>
             <div class="info-block">
                <h4>Equipment</h4>
             </div>
-            <div class="info-block workflow">
-               <h4>Workflow</h4>
+            <div class="info-block">
+               <h4>OCR Settings</h4>
+               <dl>
+                  <dt>OCR Hint:</dt>
+                  <dd>
+                     <span v-if="currProject.unit.metadata.ocrHint.id > 0">{{currProject.unit.metadata.ocrHint.name}}</span>
+                     <span v-else class="na">EMPTY</span>
+                  </dd>
+                  <dt>OCR Language Hint:</dt>
+                  <dd>
+                     <span v-if="currProject.unit.metadata.ocrLanguageHint">{{currProject.unit.metadata.ocrLanguageHint}}</span>
+                     <span v-else class="na">EMPTY</span>
+                  </dd>
+                  <dt>OCR Master Files:</dt>
+                  <dd>
+                     <span v-if="currProject.unit.ocrMasterFiles" class="yes-no">Yes</span>
+                     <span v-else class="yes-no">No</span>
+                  </dd>
+               </dl>
+            </div>
+            <div class="info-block">
+               <Workflow />
             </div>
             <div class="info-block">
                <h4>History</h4>
@@ -81,23 +103,26 @@
 
 <script>
 import { mapState, mapGetters } from "vuex"
+import Workflow from "@/components/project/Workflow"
 export default {
    name: "project",
    components: {
+      Workflow
    },
    computed: {
       ...mapState({
-         loading : state => state.loading,
-         projects : state => state.projects.projects,
+         working : state => state.projects.working,
          adminURL: state => state.adminURL,
+         scanDir: state => state.scanDir,
+         qaDir: state => state.qaDir,
          selectedProjectIdx: state => state.projects.selectedProjectIdx,
+         computingID: state => state.user.computeID
       }),
       ...mapGetters({
          currProject: 'projects/currProject',
+         isOwner: 'projects/isOwner',
          isAdmin: 'isAdmin',
          isSupervisor: 'isSupervisor',
-         statusText: 'projects/statusText',
-         percentComplete: 'projects/percentComplete'
       }),
       metadataLink() {
          let mdType = "sirsi_metadata"
@@ -105,17 +130,48 @@ export default {
             mdType = "xml_metadata"
          }
          return `${this.adminURL}/${mdType}/${this.currProject.unit.metadata.id}`
+      },
+      workingDir() {
+         let unitDir =  this.unitDirectory(this.currProject.unit.id)
+         if (this.currProject.currentStep.name == "Process" || this.currProject.currentStep.name == "Scan") {
+            return `${this.scanDir}/${unitDir}`
+         }
+         return `${this.qaDir}/${unitDir}`
+      },
+      assignedAt() {
+         let stepID = this.currProject.currentStep.id
+         let a = this.currProject.assignments.find( a => a.stepID == stepID)
+         return this.formatDate(new Date(a.assignedAt))
+      },
+      startedAt() {
+         let stepID = this.currProject.currentStep.id
+         let a = this.currProject.assignments.find( a => a.stepID == stepID)
+         if ( a.startedAt) return this.formatDate(new Date(a.startedAt))
+         return ""
       }
    },
    methods: {
+      formatDate( date ) {
+         return date.getUTCFullYear() + "/" +
+            ("0" + (date.getUTCMonth()+1)).slice(-2) + "/" +
+            ("0" + date.getUTCDate()).slice(-2) + " " +
+            ("0" + date.getUTCHours()).slice(-2) + ":" +
+            ("0" + date.getUTCMinutes()).slice(-2)
+      },
+      unitDirectory(unitID) {
+         let ud = ""+unitID
+         return ud.padStart(9, "0")
+      },
       conditionText(condID) {
          if (condID == 0) return "Good"
          return "Bad"
       }
    },
-   created() {
+  async beforeMount() {
       if (this.selectedProjectIdx == -1) {
-         this.$store.dispatch("projects/getProject", this.$route.params.id)
+         console.log("REQ PROJ")
+         await this.$store.dispatch("projects/getProject", this.$route.params.id)
+         console.log("DONE PROJ")
       }
    },
 };
@@ -149,6 +205,7 @@ export default {
       padding-bottom: 15px;
       border-bottom: 1px solid var(--uvalib-grey-light);
       position: relative;
+      margin-bottom: 20px;
       h3  {
          max-width: 90%;
          text-align: center;
@@ -206,9 +263,6 @@ export default {
       flex-flow: row wrap;
       justify-content: center;
 
-      .info-block.workflow {
-         width: 95%;
-      }
       .info-block {
          width: 46%;
          min-width: 600px;
@@ -216,9 +270,17 @@ export default {
          margin: 15px;
          display: inline-block;
          min-height: 100px;
-          box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.12);
-
+         box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.12);
+         text-align: left;
+         .workflow-btns {
+            padding: 10px;
+            border-top: 1px solid var(--uvalib-grey-light);
+            .dpg-button {
+               margin-right: 10px;
+            }
+         }
          h4 {
+            text-align: center;
             color: var(--uvalib-text);
             font-size: 1em;
             margin: 0;
@@ -227,12 +289,13 @@ export default {
             border-bottom: 1px solid var(--uvalib-grey-light);
          }
          dl {
-            margin: 10px 30px;
+            margin: 10px 30px 0 30px;
             display: inline-grid;
             grid-template-columns: max-content 2fr;
             grid-column-gap: 10px;
             font-size: 0.9em;
             text-align: left;
+            box-sizing: border-box;
 
             dt {
                font-weight: bold;

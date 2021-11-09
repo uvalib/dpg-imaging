@@ -26,6 +26,8 @@ export default createStore({
          ID: 0
       },
       adminURL: "",
+      qaDir: "",
+      scanDir: "",
       loading: false,
       updating: false,
       error: false,
@@ -83,6 +85,11 @@ export default createStore({
    },
    mutations: {
       updateField,
+      setConfig(state, data) {
+         state.adminURL = data.tracksysURL
+         state.qaDir =  data.qaImageDir
+         state.scanDir =  data.scanDir
+      },
       setVersion(state, data) {
          state.version = `${data.version}-${data.build}`
       },
@@ -92,7 +99,6 @@ export default createStore({
             localStorage.setItem("dpg_jwt", jwt)
 
             let parsed = parseJwt(jwt)
-            state.adminURL = parsed.adminURL
             state.user.ID = parsed.userID
             state.user.computeID = parsed.computeID
             state.user.firstName = parsed.firstName
@@ -254,6 +260,16 @@ export default createStore({
             ctx.commit('setVersion', response.data)
          }).catch( e => {
             ctx.commit("setError", e)
+         })
+      },
+      getConfig(ctx) {
+         ctx.commit("setLoading", true)
+         axios.get("/config").then(response => {
+            ctx.commit('setConfig', response.data)
+            ctx.commit("setLoading", false)
+         }).catch( e => {
+            ctx.commit("setError", e)
+            ctx.commit("setLoading", false)
          })
       },
       setPageSize(ctx, newSize) {

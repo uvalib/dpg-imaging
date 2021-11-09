@@ -39,8 +39,9 @@ export default {
       }),
       ...mapGetters(["signedInUser"]),
    },
-   created: function () {
-      this.$store.dispatch("getVersion");
+   async beforeCreate() {
+      this.$store.dispatch("getVersion")
+      await this.$store.dispatch("getConfig")
    },
 };
 </script>

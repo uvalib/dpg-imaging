@@ -22,6 +22,7 @@ type serviceContext struct {
 	Version     string
 	ServiceURL  string
 	ImagesDir   string
+	ScanDir     string
 	IIIFURL     string
 	TrackSysURL string
 	HTTPClient  *http.Client
@@ -35,6 +36,7 @@ func initializeService(version string, cfg *configData) *serviceContext {
 	ctx := serviceContext{Version: version,
 		ImagesDir:   cfg.imagesDir,
 		IIIFURL:     cfg.iiifURL,
+		ScanDir:     cfg.scanDir,
 		JWTKey:      cfg.jwtKey,
 		ServiceURL:  cfg.serviceURL,
 		TrackSysURL: cfg.tracksysURL,
@@ -109,4 +111,19 @@ func (svc *serviceContext) getVersion(c *gin.Context) {
 	vMap["version"] = Version
 	vMap["build"] = build
 	c.JSON(http.StatusOK, vMap)
+}
+
+func (svc *serviceContext) getConfig(c *gin.Context) {
+	log.Printf("INFO: get service configuration")
+	type cfgData struct {
+		TrackSysURL string `json:"tracksysURL"`
+		QAImageDir  string `json:"qaImageDir"`
+		ScanDir     string `json:"scanDir"`
+	}
+	resp := cfgData{TrackSysURL: svc.TrackSysURL,
+		QAImageDir: svc.ImagesDir,
+		ScanDir:    svc.ScanDir,
+	}
+	c.JSON(http.StatusOK, resp)
+
 }

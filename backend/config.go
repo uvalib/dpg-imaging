@@ -17,6 +17,7 @@ type configData struct {
 	port        int
 	db          dbConfig
 	imagesDir   string
+	scanDir     string
 	iiifURL     string
 	serviceURL  string
 	tracksysURL string
@@ -28,6 +29,7 @@ func getConfiguration() *configData {
 	var config configData
 	flag.IntVar(&config.port, "port", 8080, "Port to offer service on (default 8085)")
 	flag.StringVar(&config.imagesDir, "images", "", "Images directory")
+	flag.StringVar(&config.scanDir, "scan", " /digiserv-production/scan", "Scanning directory")
 	flag.StringVar(&config.iiifURL, "iiif", "", "IIIF server URL")
 	flag.StringVar(&config.serviceURL, "url", "", "Base URL for DPG Imaging service")
 	flag.StringVar(&config.tracksysURL, "tsurl", "https://tracksys.lib.virginia.edu/admin", "URL for TrackSys")
@@ -72,6 +74,7 @@ func getConfiguration() *configData {
 
 	log.Printf("[CONFIG] port          = [%d]", config.port)
 	log.Printf("[CONFIG] imagesDir     = [%s]", config.imagesDir)
+	log.Printf("[CONFIG] scanDir       = [%s]", config.scanDir)
 	log.Printf("[CONFIG] iiifURL       = [%s]", config.iiifURL)
 	log.Printf("[CONFIG] serviceURL    = [%s]", config.serviceURL)
 	log.Printf("[CONFIG] tracksysURL   = [%s]", config.tracksysURL)

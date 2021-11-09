@@ -34,7 +34,7 @@ type assignment struct {
 	AssignedAt    *time.Time  `json:"assignedAt,omitempty"`
 	StartedAt     *time.Time  `json:"startedAt,omitempty"`
 	FinishedAt    *time.Time  `json:"finishedAt,omitempty"`
-	Status        uint        `json:"status,omitempty"`
+	Status        uint        `json:"status"`
 }
 
 type step struct {

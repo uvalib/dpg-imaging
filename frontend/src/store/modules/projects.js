@@ -11,7 +11,51 @@ const projects = {
       candidates: [],
       working: false,
    },
+   // NOTES : enums from tracksys models
+   // assignment status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing]
    getters: {
+      canReject: state => projIdx => {
+         if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
+         let p = state.projects[projIdx]
+         let lastA = p.assignments[p.assignments.length-1]
+         let step = p.workflow.steps.find( s => s.id = lastA.stepID)
+         return step.failStepID > 0 && lastA.status == 1
+      },
+      onFinalizeStep: state => projIdx => {
+         if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
+         let p = state.projects[projIdx]
+         let lastA = p.assignments[p.assignments.length-1]
+         let step = p.workflow.steps.find( s => s.id = lastA.stepID)
+         return step.name == "Finalize"
+      },
+      isFinalizing: state => projIdx => {
+         if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
+         let p = state.projects[projIdx]
+         let lastA = p.assignments[p.assignments.length-1]
+         return lastA.status == 6
+      },
+      hasError: state => projIdx => {
+         if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
+         let p = state.projects[projIdx]
+         let lastA = p.assignments[p.assignments.length-1]
+         return lastA.status == 4
+      },
+      hasOwner: state => projIdx => {
+         if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
+         let p = state.projects[projIdx]
+         return p.owner.id > 0
+      },
+      inProgress: state => projIdx => {
+         if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
+         let p = state.projects[projIdx]
+         let lastA = p.assignments[p.assignments.length-1]
+         return  lastA.status == 1 ||  lastA.status == 4 ||  lastA.status == 6
+      },
+      isOwner: state => (computeID) => {
+         if (state.selectedProjectIdx == -1) return false
+         if (state.projects[state.selectedProjectIdx].owner.id == 0) return false
+         return (state.projects[state.selectedProjectIdx].owner.computingID == computeID)
+      },
       totalPages: state => {
          return Math.ceil(state.total/state.pageSize)
       },
@@ -133,17 +177,17 @@ const projects = {
          })
       },
       // this is only used when the project details page is loaded without a list of project data
-      getProject(ctx, projectID) {
-         ctx.commit("setLoading", true, {root: true})
-         axios.get(`/api/projects/${projectID}`).then(response => {
+      async getProject(ctx, projectID) {
+         ctx.commit("setWorking", true)
+         return axios.get(`/api/projects/${projectID}`).then(response => {
             // set a fake list of projects containing only 1 project
             let projects = {total: 1, pageSize: 1, currPage: 1, projects: [response.data]}
             ctx.commit('setProjects', projects)
             ctx.commit('selectProject', projectID)
-            ctx.commit("setLoading", false, {root: true})
+            ctx.commit("setWorking", false)
          }).catch( e => {
-            ctx.commit("setLoading", false, {root: true})
             ctx.commit("setError", e, {root: true})
+            ctx.commit("setWorking", false)
          })
       },
       assignProject(ctx, {projectID, ownerID}) {
