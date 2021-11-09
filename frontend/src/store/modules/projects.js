@@ -17,6 +17,7 @@ const projects = {
       canReject: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]
+         if (p.assignments.length == 0) return false
          let lastA = p.assignments[p.assignments.length-1]
          let step = p.workflow.steps.find( s => s.id = lastA.stepID)
          return step.failStepID > 0 && lastA.status == 1
@@ -24,6 +25,7 @@ const projects = {
       onFinalizeStep: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]
+         if (p.assignments.length == 0) return false
          let lastA = p.assignments[p.assignments.length-1]
          let step = p.workflow.steps.find( s => s.id = lastA.stepID)
          return step.name == "Finalize"
@@ -31,12 +33,14 @@ const projects = {
       isFinalizing: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]
+         if (p.assignments.length == 0) return false
          let lastA = p.assignments[p.assignments.length-1]
          return lastA.status == 6
       },
       hasError: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]
+         if (p.assignments.length == 0) return false
          let lastA = p.assignments[p.assignments.length-1]
          return lastA.status == 4
       },
@@ -48,6 +52,7 @@ const projects = {
       inProgress: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]
+         if (p.assignments.length == 0) return false
          let lastA = p.assignments[p.assignments.length-1]
          return  lastA.status == 1 ||  lastA.status == 4 ||  lastA.status == 6
       },
