@@ -67,13 +67,15 @@ type problem struct {
 }
 
 type note struct {
-	ID        uint       `json:"id"`
-	ProjectID uint       `json:"-"`
-	StepID    uint       `json:"stepID"`
-	NoteType  uint       `json:"type"`
-	Note      string     `json:"text"`
-	CreatedAt *time.Time `json:"createdAt,omitempty"`
-	Problems  []problem  `gorm:"many2many:notes_problems"`
+	ID            uint        `json:"id"`
+	ProjectID     uint        `json:"-"`
+	StepID        uint        `json:"stepID"`
+	NoteType      uint        `json:"type"`
+	Note          string      `json:"text"`
+	CreatedAt     *time.Time  `json:"createdAt,omitempty"`
+	Problems      []problem   `gorm:"many2many:notes_problems"`
+	StaffMemberID uint        `json:"-"`
+	StaffMember   staffMember `gorm:"foreignKey:StaffMemberID" json:"staffMember"`
 }
 
 type project struct {
@@ -328,9 +330,13 @@ func (svc *serviceContext) getBaseProjectQuery() (tx *gorm.DB) {
 		Preload("Assignments", func(db *gorm.DB) *gorm.DB {
 			return db.Order("assignments.assigned_at DESC")
 		}).
+		Preload("Notes", func(db *gorm.DB) *gorm.DB {
+			return db.Order("notes.created_at DESC")
+		}).
 		Preload("Unit.Metadata").Preload("Unit.IntendedUse").
 		Preload("Unit.Order").Preload("Unit.Order.Customer").
 		Preload("Assignments.StaffMember").
+		Preload("Notes.StaffMember").
 		Preload("Workflow.Steps").
 		Preload("Notes.Problems")
 }

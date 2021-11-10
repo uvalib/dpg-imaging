@@ -1,6 +1,5 @@
 <template>
    <div class="panel">
-      <h4>Workflow</h4>
       <dl>
          <dt>Name:</dt>
          <dd>{{currProject.workflow.name}}</dd>
@@ -104,15 +103,6 @@ export default {
 
 <style scoped lang="scss">
 .panel {
-   h4 {
-      text-align: center;
-      color: var(--uvalib-text);
-      font-size: 1em;
-      margin: 0;
-      padding: 5px;
-      background: var(--uvalib-grey-lightest);
-      border-bottom: 1px solid var(--uvalib-grey-light);
-   }
    dl {
       margin: 10px 30px 0 30px;
       display: inline-grid;
