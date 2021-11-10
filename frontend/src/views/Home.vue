@@ -148,7 +148,7 @@ export default {
       }
    },
    created() {
-      if (this.jwt != "") {
+      if (this.jwt != "" && this.projects.length <= 1) {
          this.$store.dispatch("projects/getProjects")
       }
    },
