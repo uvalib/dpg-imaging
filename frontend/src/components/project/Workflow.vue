@@ -43,6 +43,7 @@
 
 <script>
 import { mapState, mapGetters } from "vuex"
+import date from 'date-and-time'
 export default {
    components: {
    },
@@ -76,12 +77,12 @@ export default {
       assignedAt() {
          let stepID = this.currProject.currentStep.id
          let a = this.currProject.assignments.find( a => a.stepID == stepID)
-         return this.formatDate(new Date(a.assignedAt))
+         return date.format(new Date(a.assignedAt), "YYYY-MM-DD hh:mm A")
       },
       startedAt() {
          let stepID = this.currProject.currentStep.id
          let a = this.currProject.assignments.find( a => a.stepID == stepID)
-         if ( a.startedAt) return this.formatDate(new Date(a.startedAt))
+         if ( a.startedAt) return date.format(new Date(a.startedAt), "YYYY-MM-DD hh:mm A")
          return ""
       }
    },

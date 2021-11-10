@@ -92,6 +92,70 @@
             </div>
             <div class="info-block">
                <h4>History</h4>
+               <div class="timing">
+                  <span>
+                     <label>Date started:</label>
+                     <span v-if="currProject.startedAt">{{formatDate(currProject.startedAt)}}</span>
+                     <span v-else class="na">N/A</span>
+                  </span>
+                  <span>
+                     <label>Total work time:</label>
+                     <span v-if="currProject.startedAt">{{totalWorkTime}}</span>
+                     <span v-else class="na">N/A</span>
+                  </span>
+               </div>
+               <div class="history-wrap">
+                  <table class="history">
+                     <tr>
+                        <th>Date</th><th>Step</th><th>Activity</th><th>Owner</th>
+                     </tr>
+                     <template v-for="a in currProject.assignments" :key="`a${a.id}`">
+                        <template v-if="lookupStepName(a.stepID) != 'Unknown'">
+                           <template v-if="a.finishedAt">
+                              <!-- status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing] -->
+                              <tr :class="{success: a.status != 3, reject: a.status==3}">
+                                 <td>{{formatDate(a.finishedAt)}}</td>
+                                 <td>{{lookupStepName(a.stepID)}}</td>
+                                 <td>
+                                    <span>
+                                       <template v-if="a.status==3">Rejected</template>
+                                       <template v-else>Finished</template>
+                                       <template v-if="a.status != 5"> <!-- not reassigned -->
+                                          <br/>{{a.durationMinutes}} mins
+                                       </template>
+                                    </span>
+                                 </td>
+                                 <td>{{a.staffMember.firstName}} {{a.staffMember.lastName}}</td>
+                              </tr>
+                           </template>
+                           <template v-if="a.startedAt">
+                              <tr :class="{error: a.status == 4, finalize: a.status == 6}">
+                                 <td>{{formatDate(a.startedAt)}}</td>
+                                 <td>{{lookupStepName(a.stepID)}}</td>
+                                 <td v-if="a.status == 4">Error</td>
+                                 <td v-else-if="a.status == 6">Finalizing...</td>
+                                 <td v-else>Started</td>
+                                 <td>{{a.staffMember.firstName}} {{a.staffMember.lastName}}</td>
+                              </tr>
+                           </template>
+
+                           <tr>
+                              <td>{{formatDate(a.assignedAt)}}</td>
+                              <td>{{lookupStepName(a.stepID)}}</td>
+                              <td>Assigned</td>
+                              <td>{{a.staffMember.firstName}} {{a.staffMember.lastName}}</td>
+                           </tr>
+
+                        </template>
+                     </template>
+                     <tr class="create">
+                        <td>{{formatDate(currProject.addedAt)}}</td>
+                        <td>Project #{{currProject.id}}</td>
+                        <td>Created</td>
+                        <td></td>
+                     </tr>
+                  </table>
+               </div>
             </div>
             <div class="info-block">
                <h4>Notes</h4>
@@ -104,6 +168,7 @@
 <script>
 import { mapState, mapGetters } from "vuex"
 import Workflow from "@/components/project/Workflow"
+import date from 'date-and-time'
 export default {
    name: "project",
    components: {
@@ -131,36 +196,28 @@ export default {
          }
          return `${this.adminURL}/${mdType}/${this.currProject.unit.metadata.id}`
       },
-      workingDir() {
-         let unitDir =  this.unitDirectory(this.currProject.unit.id)
-         if (this.currProject.currentStep.name == "Process" || this.currProject.currentStep.name == "Scan") {
-            return `${this.scanDir}/${unitDir}`
-         }
-         return `${this.qaDir}/${unitDir}`
-      },
-      assignedAt() {
-         let stepID = this.currProject.currentStep.id
-         let a = this.currProject.assignments.find( a => a.stepID == stepID)
-         return this.formatDate(new Date(a.assignedAt))
-      },
-      startedAt() {
-         let stepID = this.currProject.currentStep.id
-         let a = this.currProject.assignments.find( a => a.stepID == stepID)
-         if ( a.startedAt) return this.formatDate(new Date(a.startedAt))
-         return ""
+      totalWorkTime() {
+         let mins = 0
+         this.currProject.assignments.forEach( a => {
+            console.log(a.durationMinutes)
+            mins += a.durationMinutes
+         })
+         console.log("totalMins "+mins)
+         let h = mins/60
+         mins -= (h*60)
+         return `${(""+h).padStart(2,"0")}:${(""+mins).padStart(2,"0")}`
       }
    },
    methods: {
-      formatDate( date ) {
-         return date.getUTCFullYear() + "/" +
-            ("0" + (date.getUTCMonth()+1)).slice(-2) + "/" +
-            ("0" + date.getUTCDate()).slice(-2) + " " +
-            ("0" + date.getUTCHours()).slice(-2) + ":" +
-            ("0" + date.getUTCMinutes()).slice(-2)
+      lookupStepName( stepID) {
+         let s = this.currProject.workflow.steps.find( s => s.id == stepID)
+         if (s) {
+            return s.name
+         }
+         return "Unknown"
       },
-      unitDirectory(unitID) {
-         let ud = ""+unitID
-         return ud.padStart(9, "0")
+      formatDate( d ) {
+         return date.format(new Date(d), "YYYY-MM-DD hh:mm A")
       },
       conditionText(condID) {
          if (condID == 0) return "Good"
@@ -194,12 +251,13 @@ export default {
          background: var(--uvalib-blue-alt-light);
          border: 1px solid var(--uvalib-blue-alt);
          padding: 5px 15px;
-         label {
-            font-weight: bold;
-            margin-right: 5px;
-         }
       }
    }
+   label {
+      font-weight: bold;
+      margin-right: 5px;
+   }
+
    .project-head {
       color: var(--uvalib-text);
       padding-bottom: 15px;
@@ -272,11 +330,55 @@ export default {
          min-height: 100px;
          box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.12);
          text-align: left;
-         .workflow-btns {
+         .na {
+            color: #999;
+         }
+
+         .timing {
+            display: flex;
+            flex-flow: row nowrap;
+            justify-content: space-between;
+            padding: 10px 10px 0 10px;
+            font-size: 0.8em;
+            border: none;
+         }
+         .history-wrap {
             padding: 10px;
-            border-top: 1px solid var(--uvalib-grey-light);
-            .dpg-button {
-               margin-right: 10px;
+         }
+         .history {
+            font-size: 0.8em;
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid var(--uvalib-grey-light);
+            td, th {
+               padding:4px 10px;
+            }
+            th {
+               border-bottom: 1px solid var(--uvalib-grey-light);
+               border-top: 1px solid var(--uvalib-grey-light);
+               background: var(--uvalib-grey-lightest);
+               padding: 10px;
+            }
+
+            tr.create td {
+               background: var(--uvalib-blue-alt-light);
+            }
+            tr.success td {
+               background: #C3F3CF;
+            }
+            tr.reject td {
+               background: #F3CFCF;
+            }
+            tr.error td{
+               background: #a33;
+               color: white;
+            }
+            tr.reassign td {
+               background: lightgoldenrodyellow;
+            }
+            tr.finalize {
+               background-color: #5a5;
+               color: white;
             }
          }
          h4 {
@@ -307,9 +409,6 @@ export default {
                -webkit-hyphens: auto;
                -moz-hyphens: auto;
                hyphens: auto;
-               .na {
-                  color: #999;
-               }
             }
          }
       }

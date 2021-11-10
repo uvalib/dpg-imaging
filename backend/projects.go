@@ -26,15 +26,16 @@ type containerType struct {
 }
 
 type assignment struct {
-	ID            uint        `json:"id"`
-	ProjectID     uint        `json:"projectID"`
-	StepID        uint        `json:"stepID"`
-	StaffMemberID uint        `json:"-"`
-	StaffMember   staffMember `gorm:"foreignKey:StaffMemberID" json:"staffMember"`
-	AssignedAt    *time.Time  `json:"assignedAt,omitempty"`
-	StartedAt     *time.Time  `json:"startedAt,omitempty"`
-	FinishedAt    *time.Time  `json:"finishedAt,omitempty"`
-	Status        uint        `json:"status"`
+	ID              uint        `json:"id"`
+	ProjectID       uint        `json:"projectID"`
+	StepID          uint        `json:"stepID"`
+	StaffMemberID   uint        `json:"-"`
+	StaffMember     staffMember `gorm:"foreignKey:StaffMemberID" json:"staffMember"`
+	AssignedAt      *time.Time  `json:"assignedAt,omitempty"`
+	StartedAt       *time.Time  `json:"startedAt,omitempty"`
+	FinishedAt      *time.Time  `json:"finishedAt,omitempty"`
+	DurationMinutes uint        `json:"durationMinutes"`
+	Status          uint        `json:"status"`
 }
 
 type step struct {
@@ -87,6 +88,8 @@ type project struct {
 	CurrentStepID     uint          `json:"-"`
 	CurrentStep       step          `gorm:"foreignKey:CurrentStepID" json:"currentStep"`
 	DueOn             *time.Time    `json:"dueOn,omitempty"`
+	AddedAt           *time.Time    `json:"addedAt,omitempty"`
+	StartedAt         *time.Time    `json:"startedAt,omitempty"`
 	FinishedAt        *time.Time    `json:"finishedAt,omitempty"`
 	CategoryID        uint          `json:"-"`
 	Category          category      `gorm:"foreignKey:CategoryID" json:"category"`
@@ -322,6 +325,9 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 
 func (svc *serviceContext) getBaseProjectQuery() (tx *gorm.DB) {
 	return svc.DB.Preload(clause.Associations).
+		Preload("Assignments", func(db *gorm.DB) *gorm.DB {
+			return db.Order("assignments.assigned_at DESC")
+		}).
 		Preload("Unit.Metadata").Preload("Unit.IntendedUse").
 		Preload("Unit.Order").Preload("Unit.Order.Customer").
 		Preload("Assignments.StaffMember").
