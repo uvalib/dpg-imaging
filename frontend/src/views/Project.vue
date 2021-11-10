@@ -62,14 +62,6 @@
                      <span v-if="currProject.conditionNote">{{currProject.conditionNote}}</span>
                      <span v-else class="na">EMPTY</span>
                   </dd>
-               </dl>
-            </div>
-            <div class="info-block">
-               <h4>Equipment</h4>
-            </div>
-            <div class="info-block">
-               <h4>OCR Settings</h4>
-               <dl>
                   <dt>OCR Hint:</dt>
                   <dd>
                      <span v-if="currProject.unit.metadata.ocrHint.id > 0">{{currProject.unit.metadata.ocrHint.name}}</span>
@@ -88,13 +80,20 @@
                </dl>
             </div>
             <div class="info-block">
-               <h4>Workflow</h4>
-               <Workflow />
+               <h4>Equipment</h4>
+               <Equipment />
             </div>
-            <div class="info-block">
-               <h4>History</h4>
-               <History />
+            <div class="double">
+               <div class="info-block nested">
+                  <h4>Workflow</h4>
+                  <Workflow />
+               </div>
+               <div class="info-block nested">
+                  <h4>History</h4>
+                  <History />
+               </div>
             </div>
+
             <div class="info-block">
                <h4>Notes</h4>
                <Notes />
@@ -109,10 +108,11 @@ import { mapState, mapGetters } from "vuex"
 import Workflow from "@/components/project/Workflow"
 import History from "@/components/project/History"
 import Notes from "@/components/project/Notes"
+import Equipment from "@/components/project/Equipment"
 export default {
    name: "project",
    components: {
-      Workflow, History, Notes
+      Workflow, History, Notes, Equipment
    },
    computed: {
       ...mapState({
@@ -231,7 +231,17 @@ export default {
       display: flex;
       flex-flow: row wrap;
       justify-content: center;
+      align-items: flex-start;
 
+      .double {
+         width: 46%;
+         min-width: 600px;
+      }
+      .info-block.nested {
+         width: 100%;
+         box-sizing: border-box;
+         margin: 15px 0;
+      }
       .info-block {
          width: 46%;
          min-width: 600px;

@@ -54,6 +54,13 @@ type category struct {
 	Name string `json:"name"`
 }
 
+type equipment struct {
+	ID           uint   `json:"id"`
+	Name         string `json:"name"`
+	Type         string `json:"type"`
+	SerialNumber string `json:"serialNumber"`
+}
+
 type workstation struct {
 	ID     uint   `json:"id"`
 	Name   string `json:"name"`
@@ -105,6 +112,7 @@ type project struct {
 	ContainerTypeID   uint          `json:"-"`
 	ContainerType     containerType `gorm:"foreignKey:ContainerTypeID" json:"containerType,omitempty"`
 	Notes             []note        `gorm:"foreignKey:ProjectID" json:"notes,omitempty"`
+	Equipment         []equipment   `gorm:"many2many:project_equipment" json:"equipment,omitempty"`
 }
 
 func (svc *serviceContext) getProject(c *gin.Context) {
