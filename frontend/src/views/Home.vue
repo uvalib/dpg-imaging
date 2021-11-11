@@ -7,6 +7,24 @@
       <WaitSpinner v-if="loading" :overlay="true" message="Loading projects..." />
       <div class="projects-content" v-if="totalPages > 0">
          <div class="toolbar">
+            <div class="filter">
+               <label for="me">
+                  <input id="me" type="radio" value="me" name="filter" v-model="filter" @change="filterChanged">
+                  <span>Assigned to me</span>
+               </label>
+               <label for="active">
+                  <input id="active" type="radio" value="active" name="filter" v-model="filter" @change="filterChanged">
+                  <span>Active</span>
+               </label>
+               <label for="unassigned">
+                  <input id="unassigned" type="radio" value="unassigned" name="filter" v-model="filter" @change="filterChanged">
+                  <span>Unassigned</span>
+               </label>
+               <label for="finished">
+                  <input id="finished" type="radio" value="finished" name="filter" v-model="filter" @change="filterChanged">
+                  <span>Finished</span>
+               </label>
+            </div>
             <div class="page-ctl">
                <DPGPagination :currPage="currPage" :pageSize="pageSize" :totalPages="totalPages"
                   @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
@@ -21,7 +39,8 @@
                      <span>
                         <label>Date Due:</label><span>{{p.dueOn.split("T")[0]}}</span>
                      </span>
-                     <span class="status-msg overdue" v-if="isOverdue(p)">OVERDUE</span>
+                     <span class="status-msg overdue" v-if="isOverdue(p) && !p.finishedAt">OVERDUE</span>
+                     <span v-if="p.finishedAt"><label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span></span>
                   </div>
                   <div class="title">
                      <router-link @click="selectProject(p.id)" :to="`/projects/${p.id}`">{{p.unit.metadata.title}}</router-link>
@@ -77,6 +96,7 @@
 
 <script>
 import { mapState, mapGetters } from "vuex"
+import { mapFields } from 'vuex-map-fields'
 import AssignModal from "@/components/AssignModal"
 export default {
    name: "home",
@@ -101,8 +121,14 @@ export default {
          statusText: 'projects/statusText',
          percentComplete: 'projects/percentComplete'
       }),
+      ...mapFields({
+        filter: 'projects.filter',
+      })
    },
    methods: {
+      filterChanged() {
+         this.$store.dispatch("projects/getProjects")
+      },
       selectProject(id) {
          this.$store.commit("projects/selectProject", id)
       },
@@ -176,7 +202,45 @@ export default {
       margin-bottom: 20px;
       border-top: 1px solid var(--uvalib-grey-light);
       border-bottom: 1px solid var(--uvalib-grey-light);
+      display: flex;
+      flex-flow: row;
+      justify-content: flex-start;
+      align-content: center;
+      .filter {
+         display: flex;
+         flex-flow: row nowrap;
+         justify-content: flex-start;
+         align-items: center;
+
+         label {
+            display: flex;
+            flex-flow: row nowrap;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+            margin-right: 25px;
+            cursor: pointer;
+            span {
+               display: inline-block;
+               font-size: 0.9em;
+               position: relative;
+               top: 2px;
+            }
+            &:hover {
+               text-decoration: underline;
+            }
+         }
+         input {
+            cursor: pointer;
+            margin-right: 8px;
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+         }
+      }
+
       .page-ctl {
+         margin-left: auto;
          display: inline-block;
       }
    }
@@ -187,7 +251,6 @@ export default {
       display: flex;
       flex-flow: row wrap;
       justify-content: center;
-      align-items: flex-start;
 
       .card {
          flex: 0 1 calc(25% - 1em);

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { getField, updateField } from 'vuex-map-fields'
 
 const projects = {
    namespaced: true,
@@ -10,10 +11,12 @@ const projects = {
       currPage: 1,
       candidates: [],
       working: false,
+      filter: "active",
    },
    // NOTES : enums from tracksys models
    // assignment status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing]
    getters: {
+      getField,
       canReject: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]
@@ -123,6 +126,7 @@ const projects = {
       }
    },
    mutations: {
+      updateField,
       setWorking( state, flag) {
          state.working = flag
       },
@@ -173,7 +177,7 @@ const projects = {
       },
       getProjects(ctx) {
          ctx.commit("setLoading", true, {root: true})
-         axios.get(`/api/projects?page=${ctx.state.currPage}`).then(response => {
+         axios.get(`/api/projects?page=${ctx.state.currPage}&filter=${ctx.state.filter}`).then(response => {
             ctx.commit('setProjects', response.data)
             ctx.commit("setLoading", false, {root: true})
          }).catch( e => {

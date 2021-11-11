@@ -144,6 +144,30 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		page = 1
 	}
 	offset := (page - 1) * pageSize
+
+	filters := []string{"me", "active", "unassigned", "finished"}
+	filterQ := []string{
+		fmt.Sprintf("owner_id=%d and finished_at is null", claims.UserID),
+		"finished_at is null",
+		"finished_at is null and owner_id is null",
+		"finished_at is not null",
+	}
+	filter := c.Query("filter")
+	if filter == "" {
+		filter = "active"
+	}
+	filterIdx := -1
+	for idx, f := range filters {
+		if f == filter {
+			filterIdx = idx
+			break
+		}
+	}
+	if filterIdx == -1 {
+		log.Printf("ERROR: invalid filter %s specified", filter)
+		c.String(http.StatusBadRequest, fmt.Sprintf("%s is an invalid filter", filter))
+		return
+	}
 	log.Printf("INFO: user %s requests projects page %d", claims.ComputeID, page)
 
 	type projResp struct {
@@ -154,7 +178,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	}
 	out := projResp{Page: uint(page), PageSize: uint(pageSize)}
 
-	cr := svc.DB.Model(&project{}).Where("finished_at is null").Count(&out.Total)
+	cr := svc.DB.Model(&project{}).Where(filterQ[filterIdx]).Count(&out.Total)
 	if cr.Error != nil {
 		log.Printf("ERROR: unable to get count of projects: %s", cr.Error.Error())
 		c.String(http.StatusInternalServerError, cr.Error.Error())
@@ -163,7 +187,8 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 
 	resp := svc.getBaseProjectQuery().
 		Offset(offset).Limit(pageSize).Order("due_on asc").
-		Where("finished_at is null").Find(&out.Projects)
+		Where(filterQ[filterIdx]).
+		Find(&out.Projects)
 	if resp.Error != nil {
 		log.Printf("ERROR: unable to get projects: %s", resp.Error.Error())
 		c.String(http.StatusInternalServerError, resp.Error.Error())
