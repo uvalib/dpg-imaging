@@ -17,6 +17,10 @@ function parseJwt(token) {
 
 export default createStore({
    state: {
+      version: "unknown",
+      staffMembers: [],
+      workstations: [],
+      workflows: [],
       user: {
          jwt: "",
          firstName: "",
@@ -42,7 +46,6 @@ export default createStore({
       callNumber: "",
       title: "",
       problems: [],
-      version: "unknown",
       component: {
          valid: false,
          title: "",
@@ -89,6 +92,12 @@ export default createStore({
          state.adminURL = data.tracksysURL
          state.qaDir =  data.qaImageDir
          state.scanDir =  data.scanDir
+         state.staffMembers.splice(0, state.staffMembers.length)
+         data.staff.forEach( s=> state.staffMembers.push(s))
+         state.workflows.splice(0, state.workflows.length)
+         data.workflows.forEach( w=> state.workflows.push(w))
+         state.workstations.splice(0, state.workstations.length)
+         data.workstations.forEach( w=> state.workstations.push(w))
       },
       setVersion(state, data) {
          state.version = `${data.version}-${data.build}`

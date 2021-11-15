@@ -116,14 +116,41 @@ func (svc *serviceContext) getVersion(c *gin.Context) {
 func (svc *serviceContext) getConfig(c *gin.Context) {
 	log.Printf("INFO: get service configuration")
 	type cfgData struct {
-		TrackSysURL string `json:"tracksysURL"`
-		QAImageDir  string `json:"qaImageDir"`
-		ScanDir     string `json:"scanDir"`
+		TrackSysURL  string        `json:"tracksysURL"`
+		QAImageDir   string        `json:"qaImageDir"`
+		ScanDir      string        `json:"scanDir"`
+		Staff        []staffMember `json:"staff"`
+		Workstations []workstation `json:"workstations"`
+		Workflows    []workflow    `json:"workflows"`
 	}
 	resp := cfgData{TrackSysURL: svc.TrackSysURL,
 		QAImageDir: svc.ImagesDir,
 		ScanDir:    svc.ScanDir,
 	}
-	c.JSON(http.StatusOK, resp)
 
+	log.Printf("UNFO: load staff members")
+	dbResp := svc.DB.Where("role<=? and is_active=?", 2, 1).Order("last_name asc").Find(&resp.Staff)
+	if dbResp.Error != nil {
+		log.Printf("ERROR: unable to get staff members: %s", dbResp.Error.Error())
+		c.String(http.StatusInternalServerError, dbResp.Error.Error())
+		return
+	}
+
+	log.Printf("INFO: load workstations")
+	dbResp = svc.DB.Order("name asc").Find(&resp.Workstations)
+	if dbResp.Error != nil {
+		log.Printf("ERROR: unable to load workstations: %s", dbResp.Error.Error())
+		c.String(http.StatusInternalServerError, dbResp.Error.Error())
+		return
+	}
+
+	log.Printf("INFO: load workflows")
+	dbResp = svc.DB.Order("name asc").Where("active=1").Find(&resp.Workflows)
+	if dbResp.Error != nil {
+		log.Printf("ERROR: unable to load workflows: %s", dbResp.Error.Error())
+		c.String(http.StatusInternalServerError, dbResp.Error.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
 }

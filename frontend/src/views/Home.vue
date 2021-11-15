@@ -32,64 +32,67 @@
                />
             </div>
          </div>
-         <ul class="projects">
-            <li class="card" v-for="p in projects" :key="`p${p.id}`">
-               <div class="top">
-                  <div class="due">
-                     <span>
-                        <label>Date Due:</label><span>{{p.dueOn.split("T")[0]}}</span>
-                     </span>
-                     <span class="status-msg overdue" v-if="isOverdue(p) && !p.finishedAt">OVERDUE</span>
-                     <span v-if="p.finishedAt"><label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span></span>
-                  </div>
-                  <div class="title">
-                     <router-link @click="selectProject(p.id)" :to="`/projects/${p.id}`">{{p.unit.metadata.title}}</router-link>
-                  </div>
-               </div>
-               <div class="data">
-                  <dl>
-                     <dt>Customer:</dt>
-                     <dd>{{p.unit.order.customer.firstName}} {{p.unit.order.customer.lastName}}</dd>
-                     <dt>Call Number:</dt>
-                     <dd>
-                        <span v-if="p.unit.metadata.callNumber">{{p.unit.metadata.callNumber}}</span>
-                        <span v-else class="na">N/A</span>
-                     </dd>
-                     <dt>Intended Use:</dt>
-                     <dd>{{p.unit.intendedUse.description}}</dd>
-                  </dl>
-                  <dl class="right">
-                     <dt>Order:</dt>
-                     <dd><a target="_blank" :href="`${adminURL}/${p.unit.order.id}`">{{p.unit.order.id}}</a></dd>
-                     <dt>Unit:</dt>
-                     <dd><a target="_blank" :href="`${adminURL}/${p.unit.id}`">{{p.unit.id}}</a></dd>
-                     <dt>Workflow:</dt>
-                     <dd>{{p.workflow.name}}</dd>
-                     <dt>Category:</dt>
-                     <dd>{{p.category.name}}</dd>
-                  </dl>
-               </div>
-               <div class="status" v-if="isFinished(p) == false">
-                  <div class="progress-panel">
-                     <span>{{statusText(p.id)}}</span>
-                     <div class="progress-bar">
-                         <div class="percentage" :style="{width: percentComplete(p.id) }"></div>
+         <div class="project-board">
+            <SearchPanel />
+            <ul class="projects">
+               <li class="card" v-for="p in projects" :key="`p${p.id}`">
+                  <div class="top">
+                     <div class="due">
+                        <span>
+                           <label>Date Due:</label><span>{{p.dueOn.split("T")[0]}}</span>
+                        </span>
+                        <span class="status-msg overdue" v-if="isOverdue(p) && !p.finishedAt">OVERDUE</span>
+                        <span v-if="p.finishedAt"><label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span></span>
+                     </div>
+                     <div class="title">
+                        <router-link @click="selectProject(p.id)" :to="`/projects/${p.id}`">{{p.unit.metadata.title}}</router-link>
                      </div>
                   </div>
-                  <div class="owner-panel">
-                     <span class="assignment">
-                        <i class="user fas fa-user"></i>
-                        <span v-if="p.owner.id == 0" class="unassigned">Unassigned</span>
-                        <span v-else class="assigned">{{ownerInfo(p)}}</span>
-                     </span>
-                     <span class="owner-buttons">
-                        <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)">Claim</DPGButton>
-                        <assign-modal  v-if="canAssign" :projectID="p.id" @assign="assignClicked"/>
-                     </span>
+                 <div class="data">
+                     <dl>
+                        <dt>Customer:</dt>
+                        <dd>{{p.unit.order.customer.firstName}} {{p.unit.order.customer.lastName}}</dd>
+                        <dt>Call Number:</dt>
+                        <dd>
+                           <span v-if="p.unit.metadata.callNumber">{{p.unit.metadata.callNumber}}</span>
+                           <span v-else class="na">N/A</span>
+                        </dd>
+                        <dt>Intended Use:</dt>
+                        <dd>{{p.unit.intendedUse.description}}</dd>
+                     </dl>
+                     <dl class="right">
+                        <dt>Order:</dt>
+                        <dd><a target="_blank" :href="`${adminURL}/${p.unit.order.id}`">{{p.unit.order.id}}</a></dd>
+                        <dt>Unit:</dt>
+                        <dd><a target="_blank" :href="`${adminURL}/${p.unit.id}`">{{p.unit.id}}</a></dd>
+                        <dt>Workflow:</dt>
+                        <dd>{{p.workflow.name}}</dd>
+                        <dt>Category:</dt>
+                        <dd>{{p.category.name}}</dd>
+                     </dl>
                   </div>
-               </div>
-            </li>
-         </ul>
+                  <div class="status" v-if="isFinished(p) == false">
+                     <div class="progress-panel">
+                        <span>{{statusText(p.id)}}</span>
+                        <div class="progress-bar">
+                           <div class="percentage" :style="{width: percentComplete(p.id) }"></div>
+                        </div>
+                     </div>
+                     <div class="owner-panel">
+                        <span class="assignment">
+                           <i class="user fas fa-user"></i>
+                           <span v-if="p.owner.id == 0" class="unassigned">Unassigned</span>
+                           <span v-else class="assigned">{{ownerInfo(p)}}</span>
+                        </span>
+                        <span class="owner-buttons">
+                           <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)">Claim</DPGButton>
+                           <assign-modal  v-if="canAssign" :projectID="p.id" @assign="assignClicked"/>
+                        </span>
+                     </div>
+                  </div>
+               </li>
+            </ul>
+         </div>
       </div>
    </div>
 </template>
@@ -98,10 +101,11 @@
 import { mapState, mapGetters } from "vuex"
 import { mapFields } from 'vuex-map-fields'
 import AssignModal from "@/components/AssignModal"
+import SearchPanel from "@/components/SearchPanel"
 export default {
    name: "home",
    components: {
-      AssignModal
+      AssignModal, SearchPanel
    },
    computed: {
       ...mapState({
@@ -112,7 +116,7 @@ export default {
          jwt : state => state.user.jwt,
          userComputingID : state => state.user.computeID,
          userID : state => state.user.ID,
-         adminURL: state => state.adminURL
+         adminURL: state => state.adminURL,
       }),
       ...mapGetters({
          totalPages: 'projects/totalPages',
@@ -244,6 +248,14 @@ export default {
          display: inline-block;
       }
    }
+   .project-board {
+      display: flex;
+      flex-flow: row nowrap;
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: flex-start;
+      align-items: flex-start;
+   }
    .projects {
       list-style: none;
       margin: 0;
@@ -251,19 +263,22 @@ export default {
       display: flex;
       flex-flow: row wrap;
       justify-content: center;
+      flex-grow: 1;
+      background: transparent;
 
       .card {
          flex: 0 1 calc(25% - 1em);
          border: 1px solid var(--uvalib-grey);
          padding: 0;
-         margin: 10px;
+         margin: 0px 10px 20px 10px;
          position: relative;
          text-align: left;
          box-sizing: border-box;
-         min-width: 45%;
+         min-width: 48%;
          color: var(--uvalib-text);
          font-size: 0.9em;
-         box-shadow: rgba(0, 0, 0, 0.14) 0px 2px 2px 0px;;
+         box-shadow: rgba(0, 0, 0, 0.14) 0px 2px 2px 0px;
+         background: white;
 
          .top {
             background: var(--uvalib-grey-lightest);

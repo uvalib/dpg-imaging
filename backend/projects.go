@@ -277,27 +277,6 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 	c.JSON(http.StatusOK, proj)
 }
 
-func (svc *serviceContext) getProjectCandidates(c *gin.Context) {
-	projID := c.Param("id")
-	var proj project
-	resp := svc.DB.Preload(clause.Associations).Where("id=?", projID).First(&proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: project %s not found", projID)
-		c.String(http.StatusInternalServerError, resp.Error.Error())
-		return
-	}
-
-	var candidates []staffMember
-	resp = svc.DB.Where("role<=? and is_active=?", 2, 1).Order("last_name asc").Find(&candidates)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get candidates for project %s: %s", projID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
-		return
-	}
-
-	c.JSON(http.StatusOK, candidates)
-}
-
 func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwtClaims, proj *project) error {
 	// admin/supervisor can caim or assign anything
 	assigneeRole := assignee.roleString()

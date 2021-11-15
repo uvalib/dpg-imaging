@@ -12,6 +12,14 @@ const projects = {
       candidates: [],
       working: false,
       filter: "active",
+      search: {
+         workflow: 0,
+         workstation: 0,
+         assignedTo: 0,
+         agency: "",
+         customer: "",
+         callNumber: "",
+      }
    },
    // NOTES : enums from tracksys models
    // assignment status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing]
@@ -137,6 +145,14 @@ const projects = {
       clearProjects(state) {
          state.projects.splice(0, state.projects.length)
       },
+      resetSearch(state) {
+         state.search.workflow = 0
+         state.search.workstation = 0
+         state.search.assignedTo = 0
+         state.search.agency = ""
+         state.search.customer = ""
+         state.search.callNumber = ""
+      },
       setProjects(state, data) {
          state.total = data.total
          state.pageSize = data.pageSize
@@ -174,6 +190,10 @@ const projects = {
             ctx.commit("setWorking", false)
             ctx.commit("setError", e, {root: true})
          })
+      },
+      resetSearch(ctx) {
+         ctx.commit("resetSearch")
+         ctx.dispatch("getProjects")
       },
       getProjects(ctx) {
          ctx.commit("setLoading", true, {root: true})
