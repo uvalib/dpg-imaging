@@ -235,7 +235,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 
 	log.Printf("INFO: looking up project %s", projID)
 	var proj project
-	pTx := svc.getBaseProjectQuery().Where("id=?", projID)
+	pTx := svc.getBaseProjectQuery().Where("projects.id=?", projID)
 	resp := pTx.First(&proj)
 	if resp.Error != nil {
 		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())

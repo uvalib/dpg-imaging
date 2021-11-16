@@ -182,16 +182,6 @@ const projects = {
          ctx.commit("setPage", pg)
          ctx.dispatch("getProjects")
       },
-      getCandidates(ctx, projecdID) {
-         ctx.commit("setWorking", true)
-         axios.get(`/api/projects/${projecdID}/candidates`).then(response => {
-            ctx.commit('setCandidates', response.data)
-            ctx.commit("setWorking", false)
-         }).catch( e => {
-            ctx.commit("setWorking", false)
-            ctx.commit("setError", e, {root: true})
-         })
-      },
       resetSearch(ctx) {
          ctx.commit("resetSearch")
          ctx.dispatch("getProjects")

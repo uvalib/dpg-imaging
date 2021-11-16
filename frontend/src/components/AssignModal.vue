@@ -49,7 +49,7 @@ export default {
    computed: {
       ...mapState({
          working: state => state.projects.working,
-         candidates: state => state.projects.candidates,
+         candidates: state => state.staffMembers,
       })
    },
    methods: {
@@ -81,7 +81,6 @@ export default {
          }, 150)
          this.error = ""
          this.selectedIdx = -1
-         this.$store.dispatch("projects/getCandidates", this.projectID)
       },
       setFocus(id) {
          let ele = document.getElementById(id)
