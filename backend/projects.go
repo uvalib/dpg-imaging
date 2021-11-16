@@ -121,7 +121,7 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 	log.Printf("INFO: user %s is requesting project %s details", claims.ComputeID, projID)
 
 	var proj project
-	dbReq := svc.getBaseProjectQuery().Where("id=?", projID)
+	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
 	resp := dbReq.First(&proj)
 	if resp.Error != nil {
 		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
@@ -147,10 +147,10 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 
 	filters := []string{"me", "active", "unassigned", "finished"}
 	filterQ := []string{
-		fmt.Sprintf("owner_id=%d and finished_at is null", claims.UserID),
-		"finished_at is null",
-		"finished_at is null and owner_id is null",
-		"finished_at is not null",
+		fmt.Sprintf("owner_id=%d and projects.finished_at is null", claims.UserID),
+		"projects.finished_at is null",
+		"projects.finished_at is null and owner_id is null",
+		"projects.finished_at is not null",
 	}
 	filter := c.Query("filter")
 	if filter == "" {
@@ -168,7 +168,36 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		c.String(http.StatusBadRequest, fmt.Sprintf("%s is an invalid filter", filter))
 		return
 	}
+	whereQ := filterQ[filterIdx]
 	log.Printf("INFO: user %s requests projects page %d", claims.ComputeID, page)
+
+	qWorkflow := c.Query("workflow")
+	if qWorkflow != "" {
+		id, _ := strconv.Atoi(qWorkflow)
+		whereQ += fmt.Sprintf(" AND workflow_id=%d", id)
+	}
+	qWorkstation := c.Query("workstation")
+	if qWorkstation != "" {
+		id, _ := strconv.Atoi(qWorkstation)
+		whereQ += fmt.Sprintf(" AND workstation_id=%d", id)
+	}
+	qAssigned := c.Query("assigned")
+	if qAssigned != "" {
+		id, _ := strconv.Atoi(qAssigned)
+		whereQ += fmt.Sprintf(" AND owner_id=%d", id)
+	}
+	qCallNum := c.Query("callnum")
+	if qCallNum != "" {
+		whereQ += fmt.Sprintf(" AND metadata.call_number like \"%%%s%%\"", qCallNum)
+	}
+	qCustomer := c.Query("customer")
+	if qCustomer != "" {
+		whereQ += fmt.Sprintf(" AND customers.last_name like \"%%%s%%\"", qCustomer)
+	}
+	qAgency := c.Query("agency")
+	if qAgency != "" {
+		whereQ += fmt.Sprintf(" AND agencies.name like \"%%%s%%\"", qAgency)
+	}
 
 	type projResp struct {
 		Total    int64     `json:"total"`
@@ -178,16 +207,16 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	}
 	out := projResp{Page: uint(page), PageSize: uint(pageSize)}
 
-	cr := svc.DB.Model(&project{}).Where(filterQ[filterIdx]).Count(&out.Total)
+	cr := svc.getBaseProjectQuery().Model(&project{}).Distinct("projects.id").Where(whereQ).Count(&out.Total)
 	if cr.Error != nil {
 		log.Printf("ERROR: unable to get count of projects: %s", cr.Error.Error())
 		c.String(http.StatusInternalServerError, cr.Error.Error())
 		return
 	}
 
-	resp := svc.getBaseProjectQuery().
+	resp := svc.getBaseProjectQuery().Distinct().
 		Offset(offset).Limit(pageSize).Order("due_on asc").
-		Where(filterQ[filterIdx]).
+		Where(whereQ).
 		Find(&out.Projects)
 	if resp.Error != nil {
 		log.Printf("ERROR: unable to get projects: %s", resp.Error.Error())
@@ -338,17 +367,26 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 }
 
 func (svc *serviceContext) getBaseProjectQuery() (tx *gorm.DB) {
+	// NOTES:
+	//  The Joins() calls all allow association table names to be used in nested where clauses by the caller.
+	//  The Preload() calls preload all models with DB data
+	//  LEFT OUTER joins are for data that is optional
 	return svc.DB.Preload(clause.Associations).
-		Preload("Assignments", func(db *gorm.DB) *gorm.DB {
+		Joins("LEFT OUTER JOIN assignments on assignments.project_id=projects.id", func(db *gorm.DB) *gorm.DB {
 			return db.Order("assignments.assigned_at DESC")
 		}).
-		Preload("Notes", func(db *gorm.DB) *gorm.DB {
+		Joins("LEFT OUTER JOIN staff_members on assignments.staff_member_id=staff_members.id").
+		Joins("INNER JOIN units on units.id=projects.unit_id").
+		Joins("INNER JOIN metadata on metadata.id=units.metadata_id").
+		Joins("INNER JOIN orders on orders.id=units.order_id").
+		Joins("INNER JOIN customers on customers.id=orders.customer_id").
+		Joins("LEFT OUTER JOIN agencies on agencies.id=orders.agency_id").
+		Joins("LEFT OUTER JOIN notes on notes.project_id = projects.id", func(db *gorm.DB) *gorm.DB {
 			return db.Order("notes.created_at DESC")
 		}).
-		Preload("Unit.Metadata").Preload("Unit.IntendedUse").
-		Preload("Unit.Order").Preload("Unit.Order.Customer").
 		Preload("Assignments.StaffMember").
-		Preload("Notes.StaffMember").
-		Preload("Workflow.Steps").
-		Preload("Notes.Problems")
+		Preload("Unit." + clause.Associations).
+		Preload("Unit.Order.Customer").
+		Preload("Notes." + clause.Associations).
+		Preload("Workflow.Steps")
 }

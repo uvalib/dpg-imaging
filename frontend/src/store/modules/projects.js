@@ -197,7 +197,34 @@ const projects = {
       },
       getProjects(ctx) {
          ctx.commit("setLoading", true, {root: true})
-         axios.get(`/api/projects?page=${ctx.state.currPage}&filter=${ctx.state.filter}`).then(response => {
+
+         let qParam = []
+         let s = ctx.state.search
+         if (s.workflow != 0) {
+            qParam.push(`workflow=${s.workflow}`)
+         }
+         if (s.workstation != 0) {
+            qParam.push(`workstation=${s.workstation}`)
+         }
+         if (s.assignedTo != 0) {
+            qParam.push(`assigned=${s.assignedTo}`)
+         }
+         if (s.agency != "") {
+            qParam.push(`agency=${encodeURIComponent(s.agency)}`)
+         }
+         if (s.customer != "") {
+            qParam.push(`customer=${encodeURIComponent(s.customer)}`)
+         }
+         if (s.callNumber != "") {
+            qParam.push(`callnum=${encodeURIComponent(s.callNumber)}`)
+         }
+
+         let q = `/api/projects?page=${ctx.state.currPage}&filter=${ctx.state.filter}`
+         if (qParam.length > 0 ) {
+            q += `&${qParam.join("&")}`
+         }
+
+         axios.get(q).then(response => {
             ctx.commit('setProjects', response.data)
             ctx.commit("setLoading", false, {root: true})
          }).catch( e => {

@@ -4,20 +4,20 @@
       <div class="form">
          <label for="workflow">Workflow</label>
          <select id="workflow"  v-model="tgtWorkflow">
-            <option value="0">Any</option>
+            <option :value="0">Any</option>
             <option v-for="w in workflows" :key="`wf${w.id}`" :value="w.id">{{w.name}}</option>
          </select>
 
          <label for="assigned">Assigned To</label>
          <select id="assigned" v-model="tgtAssignedTo">
-            <option value="0">Any</option>
+            <option :value="0">Any</option>
             <option v-for="sm in staff" :key="`sm${sm.id}`" :value="sm.id">{{sm.lastName}}, {{sm.firstName}}</option>
          </select>
 
          <label for="call">Call Number</label>
          <input id="call" v-model="tgtCallNumber">
 
-         <label for="customer">Customer</label>
+         <label for="customer">Customer Last Name</label>
          <input id="customer" v-model="tgtCustomer">
 
          <label for="agency">Agency</label>
@@ -25,7 +25,7 @@
 
          <label for="workstation">Workstation</label>
          <select id="workstation" v-model="tgtWorkstation">
-            <option value="0">Any</option>
+            <option :value="0">Any</option>
             <option v-for="ws in workstations" :key="`ws${ws.id}`" :value="ws.id">{{ws.name}}</option>
          </select>
       </div>

@@ -5,7 +5,7 @@
          <router-link class="old-units" to="/units">Old Units Page</router-link>
       </h2>
       <WaitSpinner v-if="loading" :overlay="true" message="Loading projects..." />
-      <div class="projects-content" v-if="totalPages > 0">
+      <div class="projects-content">
          <div class="toolbar">
             <div class="filter">
                <label for="me">
@@ -25,7 +25,7 @@
                   <span>Finished</span>
                </label>
             </div>
-            <div class="page-ctl">
+            <div class="page-ctl" v-if="projects.length>0">
                <DPGPagination :currPage="currPage" :pageSize="pageSize" :totalPages="totalPages"
                   @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
                   @jump="pageJumpClicked"
@@ -34,7 +34,10 @@
          </div>
          <div class="project-board">
             <SearchPanel />
-            <ul class="projects">
+            <div class="none" v-if="projects.length == 0">
+               No projects match your search criteria
+            </div>
+            <ul v-else class="projects">
                <li class="card" v-for="p in projects" :key="`p${p.id}`">
                   <div class="top">
                      <div class="due">
@@ -48,7 +51,7 @@
                         <router-link @click="selectProject(p.id)" :to="`/projects/${p.id}`">{{p.unit.metadata.title}}</router-link>
                      </div>
                   </div>
-                 <div class="data">
+                  <div class="data">
                      <dl>
                         <dt>Customer:</dt>
                         <dd>{{p.unit.order.customer.firstName}} {{p.unit.order.customer.lastName}}</dd>
@@ -62,9 +65,9 @@
                      </dl>
                      <dl class="right">
                         <dt>Order:</dt>
-                        <dd><a target="_blank" :href="`${adminURL}/${p.unit.order.id}`">{{p.unit.order.id}}</a></dd>
+                        <dd><a target="_blank" :href="`${adminURL}/orders/${p.unit.order.id}`">{{p.unit.order.id}}</a></dd>
                         <dt>Unit:</dt>
-                        <dd><a target="_blank" :href="`${adminURL}/${p.unit.id}`">{{p.unit.id}}</a></dd>
+                        <dd><a target="_blank" :href="`${adminURL}/units/${p.unit.id}`">{{p.unit.id}}</a></dd>
                         <dt>Workflow:</dt>
                         <dd>{{p.workflow.name}}</dd>
                         <dt>Category:</dt>
@@ -198,6 +201,12 @@ export default {
          top: 5px;
          left: 8px;
       }
+   }
+   .none {
+      font-size: 1.25em;
+      text-align: center;
+      margin-top: 50px;
+      flex-grow: 1;
    }
    .toolbar {
       padding: 5px 10px;
