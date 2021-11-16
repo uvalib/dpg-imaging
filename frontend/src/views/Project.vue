@@ -7,7 +7,7 @@
          </span>
       </h2>
       <WaitSpinner v-if="working" :overlay="true" message="Working..." />
-      <template v-else>
+      <template v-if="selectedProjectIdx >=0">
          <div class="project-head">
             <h3>
                <a target="_blank" :href="metadataLink">{{currProject.unit.metadata.title}}</a>

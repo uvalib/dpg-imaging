@@ -81,6 +81,13 @@ const projects = {
          }
          return state.projects[state.selectedProjectIdx]
       },
+      currentStepName: state => pID => {
+         let p = state.projects.find( p => p.id == pID)
+         if ( p ) {
+            return p.currentStep.name
+         }
+         return "Unknown"
+      },
       statusText: state => pID => {
          let p = state.projects.find( p => p.id == pID)
          if (p.finishedAt != null) {
@@ -231,6 +238,17 @@ const projects = {
             let projects = {total: 1, pageSize: 1, currPage: 1, projects: [response.data]}
             ctx.commit('setProjects', projects)
             ctx.commit('selectProject', projectID)
+            ctx.commit("setWorking", false)
+         }).catch( e => {
+            ctx.commit("setError", e, {root: true})
+            ctx.commit("setWorking", false)
+         })
+      },
+      startStep(ctx) {
+         ctx.commit("setWorking", true)
+         let p = ctx.getters.currProject
+         axios.post(`/api/projects/${p.id}/start`).then(response => {
+            ctx.commit('updateProject', response.data)
             ctx.commit("setWorking", false)
          }).catch( e => {
             ctx.commit("setError", e, {root: true})

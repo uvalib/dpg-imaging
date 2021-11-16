@@ -1,5 +1,5 @@
 <template>
-   <button tabindex="0" class="dpg-button" :class="{icon: mode=='icon'}"
+   <button tabindex="0" class="dpg-button" :class="{icon: mode=='icon', disabled: disabled}"
       @keydown.exact.tab="tabNext($event)"
       @keydown.shift.tab="tabBack($event)"
       @click.prevent.stop="clicked" @keydown.prevent.stop.enter="clicked" @keydown.space.prevent.stop="clicked">
@@ -22,10 +22,17 @@ export default {
       mode: {
          type: String,
          default: "button"
+      },
+      disabled: {
+         type: Boolean,
+         default: false
       }
    },
    methods: {
       clicked() {
+         if ( this.disabled) {
+            return
+         }
          this.$nextTick( () => {
             this.$emit('clicked')
          })
@@ -66,6 +73,10 @@ export default {
       background: #f0f0ff;
       border: 1px solid var(--uvalib-blue-alt);
    }
+}
+.dpg-button.disabled {
+   cursor: default !important;
+   opacity: 0.5;
 }
 .dpg-button.icon {
    border: none;

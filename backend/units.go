@@ -58,6 +58,7 @@ type unit struct {
 	IntendedUse         intendedUse `gorm:"foreignKey:IntendedUseID" json:"intendedUse"`
 	SpecialInstructions string      `json:"specialInstructions,omitempty"`
 	OCRMasterFiles      bool        `json:"ocrMasterFiles"`
+	UnitStatus          string      `json:"status"`
 }
 
 func (svc *serviceContext) getQAUnits(c *gin.Context) {

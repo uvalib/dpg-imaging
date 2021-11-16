@@ -35,6 +35,7 @@ func main() {
 		api.GET("/projects", svc.authMiddleware, svc.getProjects)
 		api.GET("/projects/:id", svc.authMiddleware, svc.getProject)
 		api.POST("/projects/:id/assign/:uid", svc.authMiddleware, svc.assignProject)
+		api.POST("/projects/:id/start", svc.authMiddleware, svc.startProjectStep)
 
 		api.GET("/units", svc.authMiddleware, svc.getQAUnits)
 		api.GET("/units/:uid", svc.authMiddleware, svc.getUnitDetails)

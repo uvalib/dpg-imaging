@@ -27,15 +27,18 @@
          <template v-if="isOwner(computingID)">
             <DPGButton >Open QA Viewer</DPGButton>
             <DPGButton v-if="(isOwner(computingID) || isSupervisor || isAdmin) && isFinalizing(projectIdx) == false">Reassign</DPGButton>
-            <DPGButton v-if="inProgress(projectIdx) == false">Start</DPGButton>
+            <DPGButton v-if="inProgress(projectIdx) == false" @click="startStep">Start</DPGButton>
             <DPGButton v-if="canReject(projectIdx)" class="reject">Reject</DPGButton>
-            <DPGButton v-if="hasError(projectIdx) == false && inProgress(projectIdx) == true">Finish</DPGButton>
+            <DPGButton v-if="inProgress(projectIdx) == true" :disabled="!isFinishEnabled">Finish</DPGButton>
             <DPGButton v-if="onFinalizeStep(projectIdx) &&  hasError(projectIdx) == true">Retry Finalize</DPGButton>
          </template>
          <template v-else>
             <DPGButton v-if="hasOwner(projectIdx) == false">Claim</DPGButton>
             <DPGButton v-if="(isAdmin || isSupervisor) && isFinalizing(projectIdx) == false">Assign</DPGButton>
          </template>
+      </div>
+      <div class="workflow-message" v-if="isOwner(computingID)">
+         {{workflowNote}}
       </div>
    </div>
 </template>
@@ -56,6 +59,7 @@ export default {
       }),
       ...mapGetters({
          currProject: 'projects/currProject',
+         currentStepName: 'projects/currentStepName',
          isOwner: 'projects/isOwner',
          isAdmin: 'isAdmin',
          isSupervisor: 'isSupervisor',
@@ -66,6 +70,10 @@ export default {
          hasError: 'projects/hasError',
          hasOwner: 'projects/hasOwner',
       }),
+      isFinishEnabled() {
+         if ( this.hasError(this.projectIdx) ) return false
+         return false
+      },
       workingDir() {
          let unitDir =  this.unitDirectory(this.currProject.unit.id)
          if (this.currProject.currentStep.name == "Process" || this.currProject.currentStep.name == "Scan") {
@@ -83,9 +91,31 @@ export default {
          let a = this.currProject.assignments.find( a => a.stepID == stepID)
          if ( a.startedAt) return date.format(new Date(a.startedAt), "YYYY-MM-DD hh:mm A")
          return ""
+      },
+      workflowNote() {
+         let projID = this.currProject.id
+         if ( this.currentStepName(projID) == "Scan" && this.currProject.workstation.id == 0) {
+            return "Assignment cannot be finished until the workstation has been set."
+         }
+         if ( this.currentStepName(projID) == "Finalize" && this.currProject.unit.metadata.ocrHint.id == 0) {
+            return "Assignment cannot be finished until the OCR hint has been set."
+         }
+         if ( this.currProject.unit.metadata.ocrHint.id > 1 && this.currProject.unit.ocrMasterFiles == true) {
+            return "Cannot OCR items that are not regular text."
+         }
+         if ( this.currProject.unit.metadata.ocrHint.id == 1 && this.currProject.unit.metadata.ocrLanguageHint == "") {
+            return "Assignment cannot be finished until the OCR Language Hint has been set."
+         }
+         if ( this.currProject.unit.status == "error" ) {
+            return "Finalization has failed. Correct the problem then click 'Retry Finalization'."
+         }
+         return ""
       }
    },
    methods: {
+      startStep() {
+         this.$store.dispatch("projects/startStep")
+      },
       formatDate( date ) {
          return date.getUTCFullYear() + "/" +
             ("0" + (date.getUTCMonth()+1)).slice(-2) + "/" +
@@ -134,6 +164,11 @@ export default {
       .dpg-button {
          margin-left: 10px;
       }
+   }
+   .workflow-message {
+      padding: 10px;
+      border-top: 1px solid var(--uvalib-grey-light);
+      text-align: center;
    }
 }
 </style>

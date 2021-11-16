@@ -93,7 +93,7 @@ type project struct {
 	Unit              unit          `gorm:"foreignKey:UnitID" json:"unit"`
 	OwnerID           uint          `json:"-"`
 	Owner             staffMember   `gorm:"foreignKey:OwnerID" json:"owner"`
-	Assignments       []assignment  `gorm:"foreignKey:ProjectID" json:"assignments"`
+	Assignments       []*assignment `gorm:"foreignKey:ProjectID" json:"assignments"`
 	CurrentStepID     uint          `json:"-"`
 	CurrentStep       step          `gorm:"foreignKey:CurrentStepID" json:"currentStep"`
 	DueOn             *time.Time    `json:"dueOn,omitempty"`
@@ -111,8 +111,8 @@ type project struct {
 	ConditionNote     string        `json:"conditionNote,omitempty"`
 	ContainerTypeID   uint          `json:"-"`
 	ContainerType     containerType `gorm:"foreignKey:ContainerTypeID" json:"containerType,omitempty"`
-	Notes             []note        `gorm:"foreignKey:ProjectID" json:"notes,omitempty"`
-	Equipment         []equipment   `gorm:"many2many:project_equipment" json:"equipment,omitempty"`
+	Notes             []*note       `gorm:"foreignKey:ProjectID" json:"notes,omitempty"`
+	Equipment         []*equipment  `gorm:"many2many:project_equipment" json:"equipment,omitempty"`
 }
 
 func (svc *serviceContext) getProject(c *gin.Context) {
@@ -306,6 +306,45 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 	c.JSON(http.StatusOK, proj)
 }
 
+func (svc *serviceContext) startProjectStep(c *gin.Context) {
+	projID := c.Param("id")
+	claims := getJWTClaims(c)
+	log.Printf("INFO: user %s is starting active step in project %s", claims.ComputeID, projID)
+	var proj project
+	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
+	resp := dbReq.First(&proj)
+	if resp.Error != nil {
+		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
+		c.String(http.StatusInternalServerError, resp.Error.Error())
+		return
+	}
+
+	startTime := time.Now()
+	if proj.StartedAt == nil {
+		log.Printf("INFO: setting project start time to %v", startTime)
+		proj.StartedAt = &startTime
+		r := svc.DB.Model(&proj).Update("started_at", startTime)
+		if r.Error != nil {
+			log.Printf("ERROR: unable to update project %d start time: %s", proj.ID, r.Error.Error())
+			c.String(http.StatusInternalServerError, r.Error.Error())
+			return
+		}
+	}
+
+	currA := proj.Assignments[0]
+	log.Printf("INFO: start project %d assignment %d", proj.ID, currA.ID)
+	currA.StartedAt = &startTime
+	currA.Status = 1 // started
+	r := svc.DB.Debug().Model(&currA).Select("StartedAt", "Status").Updates(currA)
+	if r.Error != nil {
+		log.Printf("ERROR: unable to update project %d step %d start time: %s", proj.ID, currA.StepID, r.Error.Error())
+		c.String(http.StatusInternalServerError, r.Error.Error())
+		return
+	}
+	log.Printf("%+v", proj.Assignments)
+	c.JSON(http.StatusOK, proj)
+}
+
 func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwtClaims, proj *project) error {
 	// admin/supervisor can caim or assign anything
 	assigneeRole := assignee.roleString()
@@ -342,7 +381,7 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 		return nil
 	}
 
-	// Priginal owner
+	// Original owner
 	if proj.CurrentStep.OwnerType == 3 {
 		origAssign := proj.Assignments[0]
 		if origAssign.StaffMember.ComputingID != assignee.ComputingID {
