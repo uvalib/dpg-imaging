@@ -384,9 +384,9 @@ func (svc *serviceContext) getBaseProjectQuery() (tx *gorm.DB) {
 		Joins("LEFT OUTER JOIN notes on notes.project_id = projects.id", func(db *gorm.DB) *gorm.DB {
 			return db.Order("notes.created_at DESC")
 		}).
-		Preload("Assignments.StaffMember").
-		Preload("Unit." + clause.Associations).
-		Preload("Unit.Order.Customer").
-		Preload("Notes." + clause.Associations).
-		Preload("Workflow.Steps")
+		Preload("Assignments.StaffMember").      // explicitly preload nested assignment owner
+		Preload("Unit." + clause.Associations).  // this is a shorthand to load all associations directy under unit
+		Preload("Unit.Order.Customer").          // customer is deeply nested, so need to preload explicitly
+		Preload("Notes." + clause.Associations). // preload all associations under notes
+		Preload("Workflow.Steps")                // explicitly preload nested workflow steps
 }

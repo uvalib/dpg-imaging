@@ -6,7 +6,7 @@
             <label>Due:</label><span>{{currProject.dueOn.split("T")[0]}}</span>
          </span>
       </h2>
-      <WaitSpinner v-if="working" :overlay="true" :message="`Loading project ${$route.params.id}...`" />
+      <WaitSpinner v-if="working" :overlay="true" message="Working..." />
       <template v-else>
          <div class="project-head">
             <h3>

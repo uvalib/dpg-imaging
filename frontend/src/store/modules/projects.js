@@ -152,6 +152,7 @@ const projects = {
          state.search.agency = ""
          state.search.customer = ""
          state.search.callNumber = ""
+         state.currPage = 1
       },
       setProjects(state, data) {
          state.total = data.total
@@ -196,7 +197,7 @@ const projects = {
          ctx.dispatch("getProjects")
       },
       getProjects(ctx) {
-         ctx.commit("setLoading", true, {root: true})
+         ctx.commit("setWorking", true)
 
          let qParam = []
          let s = ctx.state.search
@@ -226,10 +227,10 @@ const projects = {
 
          axios.get(q).then(response => {
             ctx.commit('setProjects', response.data)
-            ctx.commit("setLoading", false, {root: true})
+            ctx.commit("setWorking", false)
          }).catch( e => {
-            ctx.commit("setLoading", false, {root: true})
             ctx.commit("setError", e, {root: true})
+            ctx.commit("setWorking", true)
          })
       },
       // this is only used when the project details page is loaded without a list of project data
@@ -247,13 +248,13 @@ const projects = {
          })
       },
       assignProject(ctx, {projectID, ownerID}) {
-         ctx.commit("setLoading", true, {root: true})
+         ctx.commit("setWorking", true)
          axios.post(`/api/projects/${projectID}/assign/${ownerID}`).then(response => {
             ctx.commit('updateProject', response.data)
-            ctx.commit("setLoading", false, {root: true})
+            ctx.commit("setWorking", false)
          }).catch( e => {
-            ctx.commit("setLoading", false, {root: true})
             ctx.commit("setError", e, {root: true})
+            ctx.commit("setWorking", false)
          })
       }
    }

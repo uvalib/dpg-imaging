@@ -4,7 +4,7 @@
          <span>Digitization Projects</span>
          <router-link class="old-units" to="/units">Old Units Page</router-link>
       </h2>
-      <WaitSpinner v-if="loading" :overlay="true" message="Loading projects..." />
+      <WaitSpinner v-if="working" :overlay="true" message="Loading projects..." />
       <div class="projects-content">
          <div class="toolbar">
             <div class="filter">
@@ -25,7 +25,7 @@
                   <span>Finished</span>
                </label>
             </div>
-            <div class="page-ctl" v-if="projects.length>0">
+            <div class="page-ctl" v-if="!working && projects.length>0">
                <DPGPagination :currPage="currPage" :pageSize="pageSize" :totalPages="totalPages"
                   @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
                   @jump="pageJumpClicked"
@@ -34,7 +34,7 @@
          </div>
          <div class="project-board">
             <SearchPanel />
-            <div class="none" v-if="projects.length == 0">
+            <div class="none" v-if="!working && projects.length == 0">
                No projects match your search criteria
             </div>
             <ul v-else class="projects">
@@ -112,7 +112,7 @@ export default {
    },
    computed: {
       ...mapState({
-         loading : state => state.loading,
+         working : state => state.projects.working,
          projects : state => state.projects.projects,
          currPage : state => state.projects.currPage,
          pageSize : state => state.projects.pageSize,
