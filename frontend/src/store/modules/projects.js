@@ -244,6 +244,18 @@ const projects = {
             ctx.commit("setWorking", false)
          })
       },
+      async setEquipment(ctx, data) {
+         // data contains { workstationID, captureResolution, resizeResolution, resolutionNote }
+         ctx.commit("setWorking", true)
+         let p = ctx.getters.currProject
+         return axios.post(`/api/projects/${p.id}/equipment`, data).then(response => {
+            ctx.commit('updateProject', response.data)
+            ctx.commit("setWorking", false)
+         }).catch( e => {
+            ctx.commit("setError", e, {root: true})
+            ctx.commit("setWorking", false)
+         })
+      },
       startStep(ctx) {
          ctx.commit("setWorking", true)
          let p = ctx.getters.currProject

@@ -30,7 +30,7 @@
          </dd>
          <dt>Resolution note:</dt>
          <dd>
-            <span v-if="currProject.resoltionNote">{{currProject.resoltionNote}}</span>
+            <span v-if="currProject.resolutionNote">{{currProject.resolutionNote}}</span>
             <span v-else class="na">EMPTY</span>
          </dd>
       </dl>
@@ -54,7 +54,7 @@
          </tr>
          <tr class="row">
             <td class="label"><label for="res-note">Resolution Note:</label></td>
-            <td class="data"><textarea id="res-note" v-model="resizedResolution"></textarea></td>
+            <td class="data"><textarea id="res-note" v-model="resolutionNote"></textarea></td>
          </tr>
       </table>
       <div class="buttons">
@@ -74,7 +74,7 @@ export default {
       return {
          editing: false,
          workstationID: 0,
-         captureRssolution: "",
+         captureResolution: "",
          resizedResolution: "",
          resolutionNote: ""
       }
@@ -89,12 +89,23 @@ export default {
    },
    methods: {
       editClicked() {
+         this.workstationID = 0
+         this.captureResolution = ""
+         this.resizedResolution = ""
+         this.resolutionNote = ""
          this.editing = true
       },
       cancelClicked() {
          this.editing = false
       },
-      saveClicked() {
+      async saveClicked() {
+         let data = {
+            workstationID: this.workstationID,
+            captureResolution: parseInt(this.captureResolution, 10),
+            resizeResolution: parseInt(this.resizedResolution, 10),
+            resolutionNote: this.resolutionNote
+         }
+         await this.$store.dispatch("projects/setEquipment", data)
          this.editing = false
       }
    },
