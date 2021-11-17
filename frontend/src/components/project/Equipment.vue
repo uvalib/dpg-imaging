@@ -57,7 +57,7 @@
             <td class="data"><textarea id="res-note" v-model="resolutionNote"></textarea></td>
          </tr>
       </table>
-      <div class="buttons">
+      <div class="buttons" v-if="isOwner(computingID)">
          <DPGButton v-if="!editing" @click="editClicked">Edit</DPGButton>
          <template v-else>
             <DPGButton @click="cancelClicked">Cancel</DPGButton>
@@ -82,9 +82,11 @@ export default {
    computed: {
       ...mapState({
          workstations: state => state.workstations,
+         computingID: state => state.user.computeID,
       }),
       ...mapGetters({
          currProject: "projects/currProject",
+         isOwner: "projects/isOwner"
       }),
    },
    methods: {
@@ -133,17 +135,22 @@ export default {
       }
       td.data {
          width: 100%;
+         input, select {
+            border-color: var(--uvalib-grey-light);
+         }
       }
       td.label {
          font-weight: bold;
          margin-right: 10px;
          text-align: right;
-
+         vertical-align: top;
          white-space: nowrap;
       }
       textarea {
          width: 100%;
          box-sizing: border-box;
+         border-color: var(--uvalib-grey-light);
+         border-radius: 5px;;
       }
    }
    dl {

@@ -44,40 +44,7 @@
          <div class="project-main">
             <div class="info-block">
                <h4>Item Information</h4>
-               <dl>
-                  <dt>Category:</dt>
-                  <dd>{{currProject.category.name}}
-                  </dd>
-                  <dt>Call Number:</dt>
-                  <dd>{{currProject.unit.metadata.callNumber}}</dd>
-                  <dt>Special Instructions:</dt>
-                  <dd>
-                     <span v-if="currProject.unit.specialInstructions">{{currProject.unit.specialInstructions}}</span>
-                     <span v-else class="na">EMPTY</span>
-                  </dd>
-                  <dt>Condition:</dt>
-                  <dd>{{conditionText(currProject.ItemCondition)}}</dd>
-                  <dt>Condition Notes:</dt>
-                  <dd>
-                     <span v-if="currProject.conditionNote">{{currProject.conditionNote}}</span>
-                     <span v-else class="na">EMPTY</span>
-                  </dd>
-                  <dt>OCR Hint:</dt>
-                  <dd>
-                     <span v-if="currProject.unit.metadata.ocrHint.id > 0">{{currProject.unit.metadata.ocrHint.name}}</span>
-                     <span v-else class="na">EMPTY</span>
-                  </dd>
-                  <dt>OCR Language Hint:</dt>
-                  <dd>
-                     <span v-if="currProject.unit.metadata.ocrLanguageHint">{{currProject.unit.metadata.ocrLanguageHint}}</span>
-                     <span v-else class="na">EMPTY</span>
-                  </dd>
-                  <dt>OCR Master Files:</dt>
-                  <dd>
-                     <span v-if="currProject.unit.ocrMasterFiles" class="yes-no">Yes</span>
-                     <span v-else class="yes-no">No</span>
-                  </dd>
-               </dl>
+               <ItemInfo />
             </div>
             <div class="info-block">
                <h4>Equipment</h4>
@@ -105,6 +72,7 @@
 
 <script>
 import { mapState, mapGetters } from "vuex"
+import ItemInfo from "@/components/project/ItemInfo"
 import Workflow from "@/components/project/Workflow"
 import History from "@/components/project/History"
 import Notes from "@/components/project/Notes"
@@ -112,7 +80,7 @@ import Equipment from "@/components/project/Equipment"
 export default {
    name: "project",
    components: {
-      Workflow, History, Notes, Equipment
+      ItemInfo, Workflow, History, Notes, Equipment
    },
    computed: {
       ...mapState({
@@ -132,10 +100,6 @@ export default {
       },
    },
    methods: {
-      conditionText(condID) {
-         if (condID == 0) return "Good"
-         return "Bad"
-      }
    },
   async beforeMount() {
       if (this.selectedProjectIdx == -1) {

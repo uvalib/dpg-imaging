@@ -122,6 +122,8 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 		Staff        []staffMember `json:"staff"`
 		Workstations []workstation `json:"workstations"`
 		Workflows    []workflow    `json:"workflows"`
+		Categories   []category    `json:"categories"`
+		OCRHints     []ocrHint     `json:"ocrHints"`
 	}
 	resp := cfgData{TrackSysURL: svc.TrackSysURL,
 		QAImageDir: svc.ImagesDir,
@@ -132,6 +134,14 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 	dbResp := svc.DB.Where("role<=? and is_active=?", 2, 1).Order("last_name asc").Find(&resp.Staff)
 	if dbResp.Error != nil {
 		log.Printf("ERROR: unable to get staff members: %s", dbResp.Error.Error())
+		c.String(http.StatusInternalServerError, dbResp.Error.Error())
+		return
+	}
+
+	log.Printf("INFO: load categories")
+	dbResp = svc.DB.Order("name asc").Find(&resp.Categories)
+	if dbResp.Error != nil {
+		log.Printf("ERROR: unable to load categories: %s", dbResp.Error.Error())
 		c.String(http.StatusInternalServerError, dbResp.Error.Error())
 		return
 	}
@@ -148,6 +158,14 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 	dbResp = svc.DB.Order("name asc").Where("active=1").Find(&resp.Workflows)
 	if dbResp.Error != nil {
 		log.Printf("ERROR: unable to load workflows: %s", dbResp.Error.Error())
+		c.String(http.StatusInternalServerError, dbResp.Error.Error())
+		return
+	}
+
+	log.Printf("INFO: load ocr hints")
+	dbResp = svc.DB.Order("name asc").Find(&resp.OCRHints)
+	if dbResp.Error != nil {
+		log.Printf("ERROR: unable to load ocr hints: %s", dbResp.Error.Error())
 		c.String(http.StatusInternalServerError, dbResp.Error.Error())
 		return
 	}

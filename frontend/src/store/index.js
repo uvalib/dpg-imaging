@@ -21,6 +21,8 @@ export default createStore({
       staffMembers: [],
       workstations: [],
       workflows: [],
+      categories: [],
+      ocrHints: [],
       user: {
          jwt: "",
          firstName: "",
@@ -98,6 +100,10 @@ export default createStore({
          data.workflows.forEach( w=> state.workflows.push(w))
          state.workstations.splice(0, state.workstations.length)
          data.workstations.forEach( w=> state.workstations.push(w))
+         state.categories.splice(0, state.categories.length)
+         data.categories.forEach( w=> state.categories.push(w))
+         state.ocrHints.splice(0, state.ocrHints.length)
+         data.ocrHints.forEach( w=> state.ocrHints.push(w))
       },
       setVersion(state, data) {
          state.version = `${data.version}-${data.build}`

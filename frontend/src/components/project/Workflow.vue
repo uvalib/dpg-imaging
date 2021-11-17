@@ -25,7 +25,7 @@
       </dl>
       <div class="workflow-btns">
          <template v-if="isOwner(computingID)">
-            <DPGButton >Open QA Viewer</DPGButton>
+            <DPGButton @click="viewerClicked">Open QA Viewer</DPGButton>
             <DPGButton v-if="(isOwner(computingID) || isSupervisor || isAdmin) && isFinalizing(projectIdx) == false">Reassign</DPGButton>
             <DPGButton v-if="inProgress(projectIdx) == false" @click="startStep">Start</DPGButton>
             <DPGButton v-if="canReject(projectIdx)" class="reject">Reject</DPGButton>
@@ -120,6 +120,9 @@ export default {
       }
    },
    methods: {
+      viewerClicked() {
+         this.$router.push("/unit/"+this.currProject.unit.id)
+      },
       startStep() {
          this.$store.dispatch("projects/startStep")
       },

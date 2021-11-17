@@ -108,7 +108,7 @@ type project struct {
 	ResolutionNote    string        `json:"resolutionNote"`
 	WorkstationID     uint          `json:"-"`
 	Workstation       workstation   `json:"workstation"`
-	ItemCondition     uint          `json:"itemCondition,omitempty"`
+	ItemCondition     uint          `json:"itemCondition"`
 	ConditionNote     string        `json:"conditionNote,omitempty"`
 	ContainerTypeID   uint          `json:"-"`
 	ContainerType     containerType `gorm:"foreignKey:ContainerTypeID" json:"containerType,omitempty"`
