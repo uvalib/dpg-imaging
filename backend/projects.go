@@ -411,16 +411,18 @@ func (svc *serviceContext) getBaseProjectQuery() (tx *gorm.DB) {
 	//  The Preload() calls preload all models with DB data
 	//  LEFT OUTER joins are for data that is optional
 	return svc.DB.Preload(clause.Associations).
-		Joins("LEFT OUTER JOIN assignments on assignments.project_id=projects.id", func(db *gorm.DB) *gorm.DB {
-			return db.Order("assignments.assigned_at DESC")
-		}).
+		Joins("LEFT OUTER JOIN assignments on assignments.project_id=projects.id").
 		Joins("LEFT OUTER JOIN staff_members on assignments.staff_member_id=staff_members.id").
 		Joins("INNER JOIN units on units.id=projects.unit_id").
 		Joins("INNER JOIN metadata on metadata.id=units.metadata_id").
 		Joins("INNER JOIN orders on orders.id=units.order_id").
 		Joins("INNER JOIN customers on customers.id=orders.customer_id").
 		Joins("LEFT OUTER JOIN agencies on agencies.id=orders.agency_id").
-		Joins("LEFT OUTER JOIN notes on notes.project_id = projects.id", func(db *gorm.DB) *gorm.DB {
+		Joins("LEFT OUTER JOIN notes on notes.project_id = projects.id").
+		Preload("Assignments", func(db *gorm.DB) *gorm.DB { // specify the order of the associations in  Preload, not Joins
+			return db.Order("assignments.assigned_at DESC")
+		}).
+		Preload("Notes", func(db *gorm.DB) *gorm.DB { // specify the order of the associations in  Preload, not Joins
 			return db.Order("notes.created_at DESC")
 		}).
 		Preload("Assignments.StaffMember").      // explicitly preload nested assignment owner
