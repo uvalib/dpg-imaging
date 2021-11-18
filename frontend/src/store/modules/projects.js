@@ -256,6 +256,18 @@ const projects = {
             ctx.commit("setWorking", false)
          })
       },
+      async updateProject(ctx, data) {
+         // data contains { categoryID, condition, note, ocrHintID, ocrLangage, ocrMasterFiles }
+         ctx.commit("setWorking", true)
+         let p = ctx.getters.currProject
+         return axios.put(`/api/projects/${p.id}`, data).then(response => {
+            ctx.commit('updateProject', response.data)
+            ctx.commit("setWorking", false)
+         }).catch( e => {
+            ctx.commit("setError", e, {root: true})
+            ctx.commit("setWorking", false)
+         })
+      },
       startStep(ctx) {
          ctx.commit("setWorking", true)
          let p = ctx.getters.currProject

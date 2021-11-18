@@ -307,6 +307,29 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 	c.JSON(http.StatusOK, proj)
 }
 
+func (svc *serviceContext) updateProject(c *gin.Context) {
+	projID := c.Param("id")
+	claims := getJWTClaims(c)
+	var updateData struct {
+		CategoryID      uint   `json:"categoryID"`
+		Condition       uint   `json:"condition"`
+		Note            string `json:"note"`
+		OCRHintID       uint   `json:"ocrHintID"`
+		OCRLanguageHint string `json:"ocrLangage"`
+		OCRMasterFiles  bool   `json:"ocrMasterFiles"`
+	}
+
+	qpErr := c.ShouldBindJSON(&updateData)
+	if qpErr != nil {
+		log.Printf("ERROR: invalid update project %s payload: %v", projID, qpErr)
+		c.String(http.StatusBadRequest, "Invalid request")
+		return
+	}
+	log.Printf("INFO: user %s is updating project %s: %+v", claims.ComputeID, projID, updateData)
+
+	c.String(http.StatusNotImplemented, "not implemented yet")
+}
+
 func (svc *serviceContext) setProjectEquipment(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)

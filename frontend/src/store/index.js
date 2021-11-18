@@ -23,6 +23,7 @@ export default createStore({
       workflows: [],
       categories: [],
       ocrHints: [],
+      ocrLanguageHints: [],
       user: {
          jwt: "",
          firstName: "",
@@ -104,6 +105,8 @@ export default createStore({
          data.categories.forEach( w=> state.categories.push(w))
          state.ocrHints.splice(0, state.ocrHints.length)
          data.ocrHints.forEach( w=> state.ocrHints.push(w))
+         state.ocrLanguageHints.splice(0, state.ocrLanguageHints.length)
+         data.ocrLanguageHints.forEach( w=> state.ocrLanguageHints.push(w))
       },
       setVersion(state, data) {
          state.version = `${data.version}-${data.build}`

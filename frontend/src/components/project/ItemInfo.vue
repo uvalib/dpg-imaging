@@ -80,9 +80,16 @@
          </tr>
          <tr class="row">
             <td class="label"><label for="ocr-language">OCR Language Hint:</label></td>
+            <td class="data">
+               <select id="ocr-language" v-model="ocrLangage">
+                  <option value="" disabled>Select an OCR language hint</option>
+                  <option v-for="h in ocrLanguageHints" :key="`lang${h.code}`" :value="h.code">{{h.language}}</option>
+               </select>
+            </td>
          </tr>
          <tr class="row">
             <td class="label"><label for="do-ocr">OCR Master Files:</label></td>
+            <td class="data"><input type="checkbox" id="do-ocr" v-model="ocrMasterFiles"></td>
          </tr>
       </table>
       <div class="buttons" v-if="isOwner(computingID)">
@@ -105,6 +112,8 @@ export default {
          condition: 0,
          note: "",
          ocrHintID: 0,
+         ocrLangage: "",
+         ocrMasterFiles: false
       }
    },
    computed: {
@@ -112,6 +121,7 @@ export default {
          computingID: state => state.user.computeID,
          categories: state => state.categories,
          ocrHints: state => state.ocrHints,
+         ocrLanguageHints: state => state.ocrLanguageHints,
       }),
       ...mapGetters({
          currProject: 'projects/currProject',
@@ -129,11 +139,21 @@ export default {
          this.condition = this.currProject.itemCondition
          this.note = this.currProject.conditionNote
          this.ocrHintID = this.currProject.unit.metadata.ocrHint.id
+         this.ocrLangage = this.currProject.unit.metadata.ocrLanguageHint
       },
       cancelClicked() {
          this.editing = false
       },
       async saveClicked() {
+         let data = {
+            categoryID: this.categoryID,
+            condition: this.condition,
+            note: this.note,
+            ocrHintID: this.ocrHintID,
+            ocrLangage: this.ocrLangage,
+            ocrMasterFiles: this.ocrMasterFiles
+         }
+         await this.$store.dispatch("projects/updateProject", data)
          this.editing = false
       }
    },
@@ -180,6 +200,10 @@ export default {
          width: 100%;
          input, select {
             border-color: var(--uvalib-grey-light);
+         }
+         input[type=checkbox] {
+            width: 15px;
+            height: 15px;
          }
       }
       td.label {

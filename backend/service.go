@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"log"
 	"net"
@@ -116,14 +117,15 @@ func (svc *serviceContext) getVersion(c *gin.Context) {
 func (svc *serviceContext) getConfig(c *gin.Context) {
 	log.Printf("INFO: get service configuration")
 	type cfgData struct {
-		TrackSysURL  string        `json:"tracksysURL"`
-		QAImageDir   string        `json:"qaImageDir"`
-		ScanDir      string        `json:"scanDir"`
-		Staff        []staffMember `json:"staff"`
-		Workstations []workstation `json:"workstations"`
-		Workflows    []workflow    `json:"workflows"`
-		Categories   []category    `json:"categories"`
-		OCRHints     []ocrHint     `json:"ocrHints"`
+		TrackSysURL      string            `json:"tracksysURL"`
+		QAImageDir       string            `json:"qaImageDir"`
+		ScanDir          string            `json:"scanDir"`
+		Staff            []staffMember     `json:"staff"`
+		Workstations     []workstation     `json:"workstations"`
+		Workflows        []workflow        `json:"workflows"`
+		Categories       []category        `json:"categories"`
+		OCRHints         []ocrHint         `json:"ocrHints"`
+		OCRLanguageHints []ocrLanguageHint `json:"ocrLanguageHints"`
 	}
 	resp := cfgData{TrackSysURL: svc.TrackSysURL,
 		QAImageDir: svc.ImagesDir,
@@ -168,6 +170,24 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 		log.Printf("ERROR: unable to load ocr hints: %s", dbResp.Error.Error())
 		c.String(http.StatusInternalServerError, dbResp.Error.Error())
 		return
+	}
+
+	log.Printf("INFO: load ocr language hints")
+	resp.OCRLanguageHints = make([]ocrLanguageHint, 0)
+	f, err := os.Open("./data/languages.csv")
+	if err != nil {
+		log.Printf("ERROR: unable to load ocr language hints: %s", dbResp.Error.Error())
+	} else {
+		defer f.Close()
+		csvReader := csv.NewReader(f)
+		langRecs, err := csvReader.ReadAll()
+		if err != nil {
+			log.Printf("ERROR: unable to parse languages file: %s", err.Error())
+		} else {
+			for _, rec := range langRecs {
+				resp.OCRLanguageHints = append(resp.OCRLanguageHints, ocrLanguageHint{Code: rec[0], Language: rec[1]})
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, resp)

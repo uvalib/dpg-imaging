@@ -17,6 +17,11 @@ type ocrHint struct {
 	OCRCandidate bool   `json:"ocrCandidate"`
 }
 
+type ocrLanguageHint struct {
+	Code     string `json:"code"`
+	Language string `json:"language"`
+}
+
 type metadata struct {
 	ID              uint    `json:"id"`
 	PID             string  `gorm:"column:pid" json:"pid"`
