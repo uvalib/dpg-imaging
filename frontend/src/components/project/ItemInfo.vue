@@ -71,7 +71,7 @@
          <tr class="row">
             <td class="label"><label for="ocr-hint">OCR Hint:</label></td>
             <td class="data">
-               <select id="ocr-hint" v-model="ocrHintID">
+               <select id="ocr-hint" v-model="ocrHintID" @change="hintChanged">
                   <option :value="0" disabled>Select an OCR hint</option>
                   <option v-for="h in ocrHints" :key="`ocr${h.id}`" :value="h.id">{{h.name}}</option>
                </select>
@@ -79,17 +79,17 @@
 
          </tr>
          <tr class="row">
-            <td class="label"><label for="ocr-language">OCR Language Hint:</label></td>
+            <td class="label"><label :class="{disabled: !ocrCandidate}" for="ocr-language">OCR Language Hint:</label></td>
             <td class="data">
-               <select id="ocr-language" v-model="ocrLangage">
+               <select id="ocr-language" v-model="ocrLangage" :class="{disabled: !ocrCandidate}" :disabled="!ocrCandidate">
                   <option value="" disabled>Select an OCR language hint</option>
                   <option v-for="h in ocrLanguageHints" :key="`lang${h.code}`" :value="h.code">{{h.language}}</option>
                </select>
             </td>
          </tr>
          <tr class="row">
-            <td class="label"><label for="do-ocr">OCR Master Files:</label></td>
-            <td class="data"><input type="checkbox" id="do-ocr" v-model="ocrMasterFiles"></td>
+            <td class="label"><label for="do-ocr" :class="{disabled: !ocrCandidate}">OCR Master Files:</label></td>
+            <td class="data"><input type="checkbox" :class="{disabled: !ocrCandidate}" id="do-ocr" v-model="ocrMasterFiles" :disabled="!ocrCandidate"></td>
          </tr>
       </table>
       <div class="buttons" v-if="isOwner(computingID)">
@@ -113,7 +113,8 @@ export default {
          note: "",
          ocrHintID: 0,
          ocrLangage: "",
-         ocrMasterFiles: false
+         ocrMasterFiles: false,
+         ocrCandidate: true
       }
    },
    computed: {
@@ -129,6 +130,14 @@ export default {
       }),
    },
    methods: {
+      hintChanged() {
+         this.ocrLangage = ""
+         let hint = this.ocrHints.find(h => h.id == this.ocrHintID)
+         this.ocrCandidate =  hint.ocrCandidate
+         if ( !this.ocrCandidate) {
+            this.ocrMasterFiles = false
+         }
+      },
       conditionText(condID) {
          if (condID == 0) return "Good"
          return "Bad"
@@ -212,6 +221,9 @@ export default {
          text-align: right;
          white-space: nowrap;
          vertical-align: top;
+      }
+      .disabled {
+         opacity: 0.5;
       }
       textarea {
          width: 100%;

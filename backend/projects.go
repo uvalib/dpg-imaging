@@ -327,7 +327,44 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	}
 	log.Printf("INFO: user %s is updating project %s: %+v", claims.ComputeID, projID, updateData)
 
-	c.String(http.StatusNotImplemented, "not implemented yet")
+	var proj project
+	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
+	resp := dbReq.First(&proj)
+	if resp.Error != nil {
+		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
+		c.String(http.StatusInternalServerError, resp.Error.Error())
+		return
+	}
+
+	log.Printf("INFO: update data for project %s", projID)
+	proj.CategoryID = updateData.CategoryID
+	proj.ItemCondition = updateData.Condition
+	proj.ConditionNote = updateData.Note
+	r := svc.DB.Debug().Model(&proj).Select("CategoryID", "ItemCondition", "ConditionNote").Updates(proj)
+	if r.Error != nil {
+		log.Printf("ERROR: unable to update data for project %s: %s", projID, r.Error.Error())
+		c.String(http.StatusInternalServerError, r.Error.Error())
+		return
+	}
+
+	log.Printf("INFO: update OCR settings for project %s", projID)
+	proj.Unit.OCRMasterFiles = updateData.OCRMasterFiles
+	r = svc.DB.Debug().Model(&proj.Unit).Select("OCRMasterFiles").Updates(proj.Unit)
+	if r.Error != nil {
+		log.Printf("ERROR: unable to update unit OCR settings for project %s: %s", projID, r.Error.Error())
+		c.String(http.StatusInternalServerError, r.Error.Error())
+		return
+	}
+	proj.Unit.Metadata.OCRHintID = updateData.OCRHintID
+	proj.Unit.Metadata.OCRLanguageHint = updateData.OCRLanguageHint
+	r = svc.DB.Debug().Model(&proj.Unit.Metadata).Select("OCRHintID", "OCRLanguageHint").Updates(proj.Unit.Metadata)
+	if r.Error != nil {
+		log.Printf("ERROR: unable to update OCR settings for project %s: %s", projID, r.Error.Error())
+		c.String(http.StatusInternalServerError, r.Error.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, proj)
 }
 
 func (svc *serviceContext) setProjectEquipment(c *gin.Context) {
@@ -518,6 +555,7 @@ func (svc *serviceContext) getBaseProjectQuery() (tx *gorm.DB) {
 		}).
 		Preload("Assignments.StaffMember").      // explicitly preload nested assignment owner
 		Preload("Unit." + clause.Associations).  // this is a shorthand to load all associations directy under unit
+		Preload("Unit.Metadata.OCRHint").        // OCRHint is deeply nested, so need to preload explicitly
 		Preload("Unit.Order.Customer").          // customer is deeply nested, so need to preload explicitly
 		Preload("Notes." + clause.Associations). // preload all associations under notes
 		Preload("Workflow.Steps")                // explicitly preload nested workflow steps
