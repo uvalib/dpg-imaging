@@ -24,6 +24,7 @@ export default createStore({
       categories: [],
       ocrHints: [],
       ocrLanguageHints: [],
+      problemTypes: [],
       user: {
          jwt: "",
          firstName: "",
@@ -107,6 +108,8 @@ export default createStore({
          data.ocrHints.forEach( w=> state.ocrHints.push(w))
          state.ocrLanguageHints.splice(0, state.ocrLanguageHints.length)
          data.ocrLanguageHints.forEach( w=> state.ocrLanguageHints.push(w))
+         state.problemTypes.splice(0, state.problemTypes.length)
+         data.problems.forEach( p=> state.problemTypes.push(p))
       },
       setVersion(state, data) {
          state.version = `${data.version}-${data.build}`

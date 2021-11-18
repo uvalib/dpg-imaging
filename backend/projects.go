@@ -68,24 +68,6 @@ type workstation struct {
 	Equipment []equipment `gorm:"many2many:workstation_equipment" json:"equipment,omitempty"`
 }
 
-type problem struct {
-	ID    uint   `json:"id"`
-	Name  string `json:"name"`
-	Label string `json:"label"`
-}
-
-type note struct {
-	ID            uint        `json:"id"`
-	ProjectID     uint        `json:"-"`
-	StepID        uint        `json:"stepID"`
-	NoteType      uint        `json:"type"`
-	Note          string      `json:"text"`
-	CreatedAt     *time.Time  `json:"createdAt,omitempty"`
-	Problems      []problem   `gorm:"many2many:notes_problems"`
-	StaffMemberID uint        `json:"-"`
-	StaffMember   staffMember `gorm:"foreignKey:StaffMemberID" json:"staffMember"`
-}
-
 type project struct {
 	ID                uint          `json:"id"`
 	WorkflowID        uint          `json:"-"`

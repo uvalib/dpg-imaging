@@ -38,6 +38,7 @@ func main() {
 		api.PUT("/projects/:id", svc.authMiddleware, svc.updateProject)
 		api.POST("/projects/:id/assign/:uid", svc.authMiddleware, svc.assignProject)
 		api.POST("/projects/:id/equipment", svc.authMiddleware, svc.setProjectEquipment)
+		api.POST("/projects/:id/note", svc.authMiddleware, svc.addNote)
 		api.POST("/projects/:id/start", svc.authMiddleware, svc.startProjectStep)
 
 		api.GET("/units", svc.authMiddleware, svc.getQAUnits)

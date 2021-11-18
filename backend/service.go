@@ -124,6 +124,7 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 		Workstations     []workstation     `json:"workstations"`
 		Workflows        []workflow        `json:"workflows"`
 		Categories       []category        `json:"categories"`
+		Problems         []problem         `json:"problems"`
 		OCRHints         []ocrHint         `json:"ocrHints"`
 		OCRLanguageHints []ocrLanguageHint `json:"ocrLanguageHints"`
 	}
@@ -160,6 +161,14 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 	dbResp = svc.DB.Order("name asc").Where("active=1").Find(&resp.Workflows)
 	if dbResp.Error != nil {
 		log.Printf("ERROR: unable to load workflows: %s", dbResp.Error.Error())
+		c.String(http.StatusInternalServerError, dbResp.Error.Error())
+		return
+	}
+
+	log.Printf("INFO: load problems")
+	dbResp = svc.DB.Where("not(id >= 5 and id <= 7) and id < 11").Order("name asc").Find(&resp.Problems)
+	if dbResp.Error != nil {
+		log.Printf("ERROR: unable to load problems: %s", dbResp.Error.Error())
 		c.String(http.StatusInternalServerError, dbResp.Error.Error())
 		return
 	}

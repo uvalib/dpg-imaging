@@ -62,7 +62,10 @@
             </div>
 
             <div class="info-block">
-               <h4>Notes</h4>
+               <h4 class="notes">
+                  <span>Notes</span>
+                  <NoteModal />
+               </h4>
                <Notes />
             </div>
          </div>
@@ -77,10 +80,11 @@ import Workflow from "@/components/project/Workflow"
 import History from "@/components/project/History"
 import Notes from "@/components/project/Notes"
 import Equipment from "@/components/project/Equipment"
+import NoteModal from '@/components/project/NoteModal.vue'
 export default {
    name: "project",
    components: {
-      ItemInfo, Workflow, History, Notes, Equipment
+      ItemInfo, Workflow, History, Notes, Equipment, NoteModal
    },
    computed: {
       ...mapState({
@@ -226,6 +230,15 @@ export default {
             padding: 5px;
             background: var(--uvalib-grey-lightest);
             border-bottom: 1px solid var(--uvalib-grey-light);
+         }
+         h4.notes {
+            display: flex;
+            flex-flow: row nowrap;
+            justify-content: center;
+            align-items: center;
+            span {
+               flex-grow: 1;
+            }
          }
          dl {
             margin: 10px 30px 0 30px;

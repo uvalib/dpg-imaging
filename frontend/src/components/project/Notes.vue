@@ -15,7 +15,7 @@
             </div>
          </div>
          <div class="note-text">
-
+            <div class="problems" v-if="n.problems && n.problems.length > 0">{{problemsString(n.problems)}}</div>
             <div v-html="n.text"></div>
          </div>
       </div>
@@ -32,6 +32,11 @@ export default {
       }),
     },
    methods: {
+      problemsString(probs) {
+         let out = []
+         probs.forEach(p => out.push(p.label) )
+         return out.join(", ")
+      },
       noteTypeString(typeID) {
          let types = ["COMMENT", "SUGGESTION", "PROBLEM", "ITEM CONDITION"]
          if ( typeID < 0 || typeID > types.length-1) return "COMMENT"
@@ -85,6 +90,10 @@ export default {
          .right {
             text-align: right;
          }
+      }
+      .problems {
+         font-weight: bold;
+         margin-bottom: 5px;
       }
       .note-text {
          font-size: 0.85em;

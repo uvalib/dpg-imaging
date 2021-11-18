@@ -268,6 +268,19 @@ const projects = {
             ctx.commit("setWorking", false)
          })
       },
+      async addNote(ctx, data) {
+         // data contains { noteTypeID, note, problemIDs}
+         ctx.commit("setWorking", true)
+         let p = ctx.getters.currProject
+         data.stepID = p.currentStep.id
+         return axios.post(`/api/projects/${p.id}/note`, data).then(response => {
+            ctx.commit('updateProject', response.data)
+            ctx.commit("setWorking", false)
+         }).catch( e => {
+            ctx.commit("setError", e, {root: true})
+            ctx.commit("setWorking", false)
+         })
+      },
       startStep(ctx) {
          ctx.commit("setWorking", true)
          let p = ctx.getters.currProject
