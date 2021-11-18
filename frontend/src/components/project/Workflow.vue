@@ -23,13 +23,23 @@
          <dt>Directory:</dt>
          <dd>{{workingDir}}</dd>
       </dl>
-      <div class="workflow-btns">
+      <div class="workflow-btns time" v-if="timeEntry">
+         <div class="time-form">
+            <label for="time">Approximately how many minutes did you spend on this assignment?</label>
+            <input id="time" type="number" v-model="stepMinutes">
+         </div>
+         <div class="ok-cancel">
+             <DPGButton @click="cancelFinish">Cancel</DPGButton>
+             <DPGButton @click="finshTimeEntered">OK</DPGButton>
+         </div>
+      </div>
+      <div class="workflow-btns" v-else>
          <template v-if="isOwner(computingID)">
             <DPGButton @click="viewerClicked">Open QA Viewer</DPGButton>
             <DPGButton v-if="(isOwner(computingID) || isSupervisor || isAdmin) && isFinalizing(projectIdx) == false">Reassign</DPGButton>
             <DPGButton v-if="inProgress(projectIdx) == false" @click="startStep">Start</DPGButton>
             <DPGButton v-if="canReject(projectIdx)" class="reject">Reject</DPGButton>
-            <DPGButton v-if="inProgress(projectIdx) == true" :disabled="!isFinishEnabled">Finish</DPGButton>
+            <DPGButton v-if="inProgress(projectIdx) == true" :disabled="!isFinishEnabled" @click="finishClicked">Finish</DPGButton>
             <DPGButton v-if="onFinalizeStep(projectIdx) &&  hasError(projectIdx) == true">Retry Finalize</DPGButton>
          </template>
          <template v-else>
@@ -47,8 +57,12 @@
 import { mapState, mapGetters } from "vuex"
 import date from 'date-and-time'
 export default {
-   components: {
-   },
+   data: function()  {
+      return {
+         timeEntry: false,
+         stepMinutes: 0
+      }
+    },
    computed: {
       ...mapState({
          adminURL: state => state.adminURL,
@@ -120,6 +134,21 @@ export default {
       }
    },
    methods: {
+      finishClicked() {
+         if ( this.currProject.assignments[0].durationMinutes == 0) {
+            this.timeEntry = true
+            this.stepMinutes = 0
+         } else {
+            this.$store.dispatch("projects/finishStep", this.currProject.assignments[0].durationMinutes)
+         }
+      },
+      finshTimeEntered() {
+         this.$store.dispatch("projects/finishStep", this.currProject.assignments[0].durationMinutes)
+         this.timeEntry = false
+      },
+      cancelFinish() {
+         this.timeEntry = false
+      },
       viewerClicked() {
          this.$router.push("/unit/"+this.currProject.unit.id)
       },
@@ -173,6 +202,29 @@ export default {
       border-top: 1px solid var(--uvalib-grey-light);
       .dpg-button {
          margin-left: 10px;
+      }
+   }
+   .workflow-btns.time {
+      text-align: left;
+      .time-form {
+         display: flex;
+         flex-flow: flex nowrap;
+         justify-content: flex-start;
+         margin-bottom: 10px;
+         align-items: center;
+         font-size: 0.9em;
+         label {
+            white-space: nowrap;
+
+         }
+         input {
+            flex-grow: 1;
+            margin-left: 10px;
+            border-color: var(--uvalib-grey-light);
+         }
+      }
+      .ok-cancel {
+         text-align: right;
       }
    }
    .workflow-message {

@@ -455,6 +455,22 @@ func (svc *serviceContext) startProjectStep(c *gin.Context) {
 	c.JSON(http.StatusOK, proj)
 }
 
+func (svc *serviceContext) finishProjectStep(c *gin.Context) {
+	projID := c.Param("id")
+	claims := getJWTClaims(c)
+	log.Printf("INFO: user %s is finishin active step in project %s", claims.ComputeID, projID)
+	var proj project
+	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
+	resp := dbReq.First(&proj)
+	if resp.Error != nil {
+		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
+		c.String(http.StatusInternalServerError, resp.Error.Error())
+		return
+	}
+
+	c.String(http.StatusNotImplemented, "not yet")
+}
+
 func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwtClaims, proj *project) error {
 	// admin/supervisor can caim or assign anything
 	assigneeRole := assignee.roleString()

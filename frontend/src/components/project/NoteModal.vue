@@ -44,12 +44,6 @@
 <script>
 import { mapState } from "vuex"
 export default {
-   // props: {
-   //    projectID: {
-   //       type: Number,
-   //       required: true,
-   //    },
-   // },
    data: function()  {
       return {
          isOpen: false,
