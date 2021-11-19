@@ -150,7 +150,8 @@ export default {
          width: 100%;
          box-sizing: border-box;
          border-color: var(--uvalib-grey-light);
-         border-radius: 5px;;
+         border-radius: 5px;
+         padding: 5px;
       }
    }
    dl {

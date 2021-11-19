@@ -1,6 +1,6 @@
 <template>
    <div class="panel">
-      <div v-if="currProject.notes.length == 0" class="none">
+      <div v-if="!currProject.notes" class="none">
          There are no notes associated with this project
       </div>
       <div v-else class="note-card" v-for="n in currProject.notes" :key="`n${n.id}`" :class="noteTypeString(n.type).toLowerCase()">
@@ -67,7 +67,7 @@ export default {
    .none {
       font-size: 1.15em;
       text-align: center;
-      margin-top: 25px;
+      margin: 25px;
    }
    .note-card {
       background-color: white;

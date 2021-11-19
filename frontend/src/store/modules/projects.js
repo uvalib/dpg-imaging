@@ -29,31 +29,31 @@ const projects = {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]
          if (p.assignments.length == 0) return false
-         let lastA = p.assignments[p.assignments.length-1]
-         let step = p.workflow.steps.find( s => s.id = lastA.stepID)
-         return step.failStepID > 0 && lastA.status == 1
+         let currA = p.assignments[0]
+         let step = p.workflow.steps.find( s => s.id = currA.stepID)
+         return step.failStepID > 0 && currA.status == 1
       },
       onFinalizeStep: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]
          if (p.assignments.length == 0) return false
-         let lastA = p.assignments[p.assignments.length-1]
-         let step = p.workflow.steps.find( s => s.id = lastA.stepID)
+         let currA = p.assignments[0]
+         let step = p.workflow.steps.find( s => s.id = currA.stepID)
          return step.name == "Finalize"
       },
       isFinalizing: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]
          if (p.assignments.length == 0) return false
-         let lastA = p.assignments[p.assignments.length-1]
-         return lastA.status == 6
+         let currA = p.assignments[0]
+         return currA.status == 6
       },
       hasError: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]
          if (p.assignments.length == 0) return false
-         let lastA = p.assignments[p.assignments.length-1]
-         return lastA.status == 4
+         let currA = p.assignments[0]
+         return currA.status == 4
       },
       hasOwner: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
@@ -64,8 +64,8 @@ const projects = {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]
          if (p.assignments.length == 0) return false
-         let lastA = p.assignments[p.assignments.length-1]
-         return  lastA.status == 1 ||  lastA.status == 4 ||  lastA.status == 6
+         let currA = p.assignments[0]
+         return  currA.status == 1 ||  currA.status == 4 ||  currA.status == 6
       },
       isOwner: state => (computeID) => {
          if ( state.selectedProjectIdx == -1 ) return false

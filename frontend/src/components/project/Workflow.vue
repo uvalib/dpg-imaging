@@ -47,7 +47,7 @@
             <DPGButton v-if="(isAdmin || isSupervisor) && isFinalizing(projectIdx) == false">Assign</DPGButton>
          </template>
       </div>
-      <div class="workflow-message" v-if="isOwner(computingID)">
+      <div class="workflow-message" v-if="isOwner(computingID) && workflowNote">
          {{workflowNote}}
       </div>
    </div>
