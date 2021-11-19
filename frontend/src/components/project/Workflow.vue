@@ -7,17 +7,17 @@
          <dd>{{currProject.currentStep.description}}</dd>
          <dt>Owner:</dt>
          <dd>
-            <span v-if="currProject.owner.id > 0">{{currProject.owner.firstName}} {{currProject.owner.lastName}}</span>
+            <span v-if="hasOwner(projectIdx)">{{currProject.owner.firstName}} {{currProject.owner.lastName}}</span>
             <span v-else class="na">Unassigned</span>
          </dd>
          <dt>Assigned:</dt>
          <dd>
-            <span v-if="currProject.owner.id > 0">{{assignedAt}}</span>
+            <span v-if="hasOwner(projectIdx)">{{assignedAt}}</span>
             <span v-else class="na">N/A</span>
          </dd>
          <dt>Started:</dt>
          <dd>
-            <span v-if="currProject.owner.id > 0 && startedAt">{{startedAt}}</span>
+            <span v-if="hasOwner(projectIdx) && startedAt">{{startedAt}}</span>
             <span v-else class="na">N/A</span>
          </dd>
          <dt>Directory:</dt>
@@ -139,7 +139,8 @@ export default {
             this.timeEntry = true
             this.stepMinutes = 0
          } else {
-            this.$store.dispatch("projects/finishStep", this.currProject.assignments[0].durationMinutes)
+            // send a 0 time to indicate that time has already been recorded
+            this.$store.dispatch("projects/finishStep", 0)
          }
       },
       finshTimeEntered() {

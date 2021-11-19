@@ -84,7 +84,7 @@
                      <div class="owner-panel">
                         <span class="assignment">
                            <i class="user fas fa-user"></i>
-                           <span v-if="p.owner.id == 0" class="unassigned">Unassigned</span>
+                           <span v-if="!p.owner" class="unassigned">Unassigned</span>
                            <span v-else class="assigned">{{ownerInfo(p)}}</span>
                         </span>
                         <span class="owner-buttons">
@@ -140,7 +140,7 @@ export default {
          this.$store.commit("projects/selectProject", id)
       },
       canClaim(p) {
-         if (p.owner.id == 0) return true
+         if ( !p.owner ) return true
          if ( (this.isAdmin || this.isSupervisor ) && p.owner.computingID != this.userComputingID) return true
          return false
       },

@@ -74,8 +74,8 @@ type project struct {
 	Workflow          workflow      `json:"workflow"`
 	UnitID            uint          `json:"-"`
 	Unit              unit          `gorm:"foreignKey:UnitID" json:"unit"`
-	OwnerID           uint          `json:"-"`
-	Owner             staffMember   `gorm:"foreignKey:OwnerID" json:"owner"`
+	OwnerID           *uint         `json:"-"`
+	Owner             *staffMember  `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
 	Assignments       []*assignment `gorm:"foreignKey:ProjectID" json:"assignments"`
 	CurrentStepID     uint          `json:"-"`
 	CurrentStep       step          `gorm:"foreignKey:CurrentStepID" json:"currentStep"`
@@ -235,7 +235,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 		return
 	}
 
-	if proj.OwnerID == owner.ID {
+	if proj.OwnerID != nil && *proj.OwnerID == owner.ID {
 		log.Printf("INFO: project %d owner is already %d, no change needed", proj.ID, proj.OwnerID)
 		c.JSON(http.StatusOK, proj)
 		return
@@ -250,7 +250,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 	log.Printf("INFO: user %s can assign project %d to %s; updating data", claims.ComputeID, proj.ID, owner.ComputingID)
 
 	// If someone else has this assignment, flag it as reassigned. Do not mark the finished time as it was never actually finished
-	if proj.OwnerID > 0 {
+	if proj.OwnerID != nil {
 		activeAssign := proj.Assignments[len(proj.Assignments)-1]
 		activeAssign.Status = 5
 		r := svc.DB.Save(&activeAssign)
@@ -415,60 +415,6 @@ func (svc *serviceContext) setProjectEquipment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, proj)
-}
-
-func (svc *serviceContext) startProjectStep(c *gin.Context) {
-	projID := c.Param("id")
-	claims := getJWTClaims(c)
-	log.Printf("INFO: user %s is starting active step in project %s", claims.ComputeID, projID)
-	var proj project
-	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
-	resp := dbReq.First(&proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
-		return
-	}
-
-	startTime := time.Now()
-	if proj.StartedAt == nil {
-		log.Printf("INFO: setting project start time to %v", startTime)
-		proj.StartedAt = &startTime
-		r := svc.DB.Model(&proj).Update("started_at", startTime)
-		if r.Error != nil {
-			log.Printf("ERROR: unable to update project %d start time: %s", proj.ID, r.Error.Error())
-			c.String(http.StatusInternalServerError, r.Error.Error())
-			return
-		}
-	}
-
-	currA := proj.Assignments[0]
-	log.Printf("INFO: start project %d assignment %d", proj.ID, currA.ID)
-	currA.StartedAt = &startTime
-	currA.Status = 1 // started
-	r := svc.DB.Model(&currA).Select("StartedAt", "Status").Updates(currA)
-	if r.Error != nil {
-		log.Printf("ERROR: unable to update project %d step %d start time: %s", proj.ID, currA.StepID, r.Error.Error())
-		c.String(http.StatusInternalServerError, r.Error.Error())
-		return
-	}
-	c.JSON(http.StatusOK, proj)
-}
-
-func (svc *serviceContext) finishProjectStep(c *gin.Context) {
-	projID := c.Param("id")
-	claims := getJWTClaims(c)
-	log.Printf("INFO: user %s is finishin active step in project %s", claims.ComputeID, projID)
-	var proj project
-	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
-	resp := dbReq.First(&proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
-		return
-	}
-
-	c.String(http.StatusNotImplemented, "not yet")
 }
 
 func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwtClaims, proj *project) error {

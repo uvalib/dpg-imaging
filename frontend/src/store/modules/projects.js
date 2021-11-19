@@ -58,7 +58,7 @@ const projects = {
       hasOwner: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]
-         return p.owner.id > 0
+         return p.owner
       },
       inProgress: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
@@ -68,8 +68,8 @@ const projects = {
          return  lastA.status == 1 ||  lastA.status == 4 ||  lastA.status == 6
       },
       isOwner: state => (computeID) => {
-         if (state.selectedProjectIdx == -1) return false
-         if (state.projects[state.selectedProjectIdx].owner.id == 0) return false
+         if ( state.selectedProjectIdx == -1 ) return false
+         if ( !state.projects[state.selectedProjectIdx].owner ) return false
          return (state.projects[state.selectedProjectIdx].owner.computingID == computeID)
       },
       totalPages: state => {
@@ -292,7 +292,7 @@ const projects = {
             ctx.commit("setWorking", false)
          })
       },
-      startStep(ctx, durationMins) {
+      finishStep(ctx, durationMins) {
          ctx.commit("setWorking", true)
          let p = ctx.getters.currProject
          axios.post(`/api/projects/${p.id}/finish`, {durationMins: durationMins} ).then(response => {
