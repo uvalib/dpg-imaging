@@ -3,8 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
+	"os"
+	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -203,27 +207,87 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 		log.Printf("INFO: unit %d data has been finalized", proj.UnitID)
 	}
 
-	// TODO
-	// # Make sure  directory is clean and in proper structure
-	// tgt_dir = File.join(Settings.image_qa_dir, project.unit.directory)
-	// if self.name == "Scan" || self.name == "Process"
-	//    tgt_dir = File.join(Settings.production_mount, "scan", project.unit.directory)
-	// end
-	// return false if !validate_directory(project, tgt_dir)
+	// Make sure  directory is clean and in proper structure
+	unitDir := padLeft(fmt.Sprintf("%d", proj.UnitID), 9)
+	tgtDir := path.Join(svc.ImagesDir, unitDir)
+	if proj.CurrentStep.Name == "Scan" || proj.CurrentStep.Name == "Process" {
+		tgtDir = path.Join(svc.ScanDir, unitDir)
+	}
+	err := svc.validateDirectory(proj, tgtDir)
+	if err != nil {
+		return err
+	}
 
-	// # Files get moved in two places; after Process and Finalization
-	// if self.name == "Process"
-	//    src_dir =  File.join(Settings.production_mount, "scan", project.unit.directory)
-	//    tgt_dir = File.join(Settings.image_qa_dir, project.unit.directory)
-	//    return move_files( project, src_dir, tgt_dir )
-	// end
-	// if self.name == "Finalize"
-	//    src_dir = File.join(Settings.image_qa_dir, project.unit.directory)
-	//    tgt_dir =  File.join(Settings.production_mount, "finalization", project.unit.directory)
-	//    return move_files( project, src_dir, tgt_dir )
-	// end
+	// Files get moved in two places; after Process and Finalization
+	var moveErr error
+	if proj.CurrentStep.Name == "Process" {
+		srcDir := path.Join(svc.ScanDir, unitDir)
+		tgtDir := path.Join(svc.ImagesDir, unitDir)
+		moveErr = svc.moveFiles(proj, srcDir, tgtDir)
+	}
+	if proj.CurrentStep.Name == "Finalize" {
+		srcDir := path.Join(svc.ImagesDir, unitDir)
+		tgtDir := path.Join(svc.FinalizeDir, unitDir)
+		moveErr = svc.moveFiles(proj, srcDir, tgtDir)
+	}
+	if moveErr != nil {
+		return moveErr
+	}
 
 	log.Printf("INFO: project %d step %s successfully finished", proj.ID, proj.CurrentStep.Name)
+	return nil
+}
+
+func (svc *serviceContext) validateDirectory(proj *project, tgtDir string) error {
+	log.Printf("INFO: validate project %d directory %s", proj.ID, tgtDir)
+
+	if dirExist(tgtDir) == false {
+		svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Directory %s does not exist</p>", tgtDir))
+		return fmt.Errorf("%s does not exist", tgtDir)
+	}
+
+	// Scan and Process and Error steps have no checks other than directory existance
+	if proj.CurrentStep.Name == "Scan" || proj.CurrentStep.Name == "Process" || proj.CurrentStep.StepType == 2 {
+		return nil
+	}
+
+	return nil
+}
+
+func (svc *serviceContext) moveFiles(proj *project, srcDir string, destDir string) error {
+	log.Printf("INFO: move project %d files from %s to %s", proj.ID, srcDir, destDir)
+	if dirExist(srcDir) == false && dirExist(destDir) == false {
+		svc.failStep(proj, "Filesystem", "<p>Neither start nor finsh directory exists</p>")
+		return fmt.Errorf("neither source %s or destination %s exists", srcDir, destDir)
+	}
+
+	// Both exist without DELETE.ME; something is wrong. Fail
+	if dirExist(srcDir) && dirExist(destDir) {
+		svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Both source %s and destination %s exist</p>", srcDir, destDir))
+		return fmt.Errorf("both source %s and destination %s exists", srcDir, destDir)
+	}
+
+	// Source is gone but dest exists. No move needed
+	if dirExist(srcDir) == false && dirExist(destDir) {
+		log.Printf("source %s is missing (of has DELETE.ME) and destination %s already exists; no meve needed", srcDir, destDir)
+		return nil
+	}
+
+	// See if there is an 'Output' directory for special handling. This is the directory where CaptureOne
+	// places the generated .tif files. Treat it as the source location if it is present
+	outputDir := path.Join(srcDir, "Output")
+	if dirExist(outputDir) {
+		log.Printf("INFO: output directory %s found; moving it to %s", outputDir, destDir)
+		srcDir = outputDir
+	}
+
+	err := os.Rename(srcDir, destDir)
+	if err != nil {
+		svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Move %s to %s failed: %s</p>", srcDir, destDir, err.Error()))
+		return fmt.Errorf("unable to move source %s to destination %s: %s", srcDir, destDir, err.Error())
+	}
+
+	log.Printf("INFO: files successfully moved to %s", destDir)
 	return nil
 }
 
@@ -259,4 +323,22 @@ func (svc *serviceContext) failStep(proj *project, problemName string, message s
 		p.ID = 7 // other
 	}
 	svc.DB.Model(&newNote).Association("Problems").Append(&p)
+}
+
+func dirExist(tgtDir string) bool {
+	if _, err := os.Stat(tgtDir); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func fileExists(rootDir string, tgtFile string) bool {
+	exist := false
+	filepath.WalkDir(rootDir, func(path string, entry fs.DirEntry, err error) error {
+		if err == nil && entry.Name() == tgtFile {
+			exist = true
+		}
+		return nil
+	})
+	return exist
 }

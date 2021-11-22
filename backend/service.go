@@ -24,6 +24,7 @@ type serviceContext struct {
 	ServiceURL  string
 	ImagesDir   string
 	ScanDir     string
+	FinalizeDir string
 	IIIFURL     string
 	TrackSysURL string
 	HTTPClient  *http.Client
@@ -38,6 +39,7 @@ func initializeService(version string, cfg *configData) *serviceContext {
 		ImagesDir:   cfg.imagesDir,
 		IIIFURL:     cfg.iiifURL,
 		ScanDir:     cfg.scanDir,
+		FinalizeDir: cfg.finalizeDir,
 		JWTKey:      cfg.jwtKey,
 		ServiceURL:  cfg.serviceURL,
 		TrackSysURL: cfg.tracksysURL,

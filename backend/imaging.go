@@ -208,8 +208,7 @@ func (svc *serviceContext) getUnitDetails(c *gin.Context) {
 }
 
 func (svc *serviceContext) finalizeUnitRequest(c *gin.Context) {
-	uid := padLeft(c.Param("uid"), 9)
-
+	uid := c.Param("uid")
 	start := time.Now()
 	resp, err := svc.finalizeUnitData(uid)
 	if err != nil {
