@@ -23,6 +23,7 @@ type note struct {
 	NoteType      uint        `json:"type"`
 	Note          string      `json:"text"`
 	CreatedAt     *time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt     *time.Time  `json:"-"`
 	Problems      []problem   `gorm:"many2many:notes_problems"  json:"problems"`
 	StaffMemberID uint        `json:"-"`
 	StaffMember   staffMember `gorm:"foreignKey:StaffMemberID" json:"staffMember"`

@@ -44,7 +44,7 @@ func main() {
 
 		api.GET("/units", svc.authMiddleware, svc.getQAUnits)
 		api.GET("/units/:uid", svc.authMiddleware, svc.getUnitDetails)
-		api.POST("/units/:uid/finalize", svc.finalizeUnit)
+		api.POST("/units/:uid/finalize", svc.finalizeUnitRequest)
 		api.POST("/units/:uid/update", svc.authMiddleware, svc.updateMetadata)
 		api.POST("/units/:uid/rename", svc.authMiddleware, svc.renameFiles)
 		api.DELETE("/units/:uid/:file", svc.authMiddleware, svc.deleteFile)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -87,7 +88,8 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 			err := svc.validateFinishStep(&proj)
 			if err != nil {
 				log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, err.Error())
-				c.String(http.StatusBadRequest, err.Error())
+				dbReq.First(&proj)
+				c.JSON(http.StatusOK, proj)
 				return
 			}
 		}
@@ -95,7 +97,8 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		err := svc.validateFinishStep(&proj)
 		if err != nil {
 			log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, err.Error())
-			c.String(http.StatusBadRequest, err.Error())
+			dbReq.First(&proj)
+			c.JSON(http.StatusOK, proj)
 			return
 		}
 	}
@@ -176,10 +179,62 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 		return errors.New("manuscript is missing container type")
 	}
 
-	// TODO lots
+	//  When finishing the final QA step, call finalize on the viewer to cleanup up and apply final metadata to each image
+	if proj.CurrentStep.NextStepID > 0 && svc.nextStepName(proj) == "Finalize" {
+		log.Printf("INFO: finishing final qa step; prep images for finalization in unit %d", proj.UnitID)
+		resp, err := svc.finalizeUnitData(fmt.Sprintf("%d", proj.UnitID))
+		if err != nil {
+			log.Printf("ERROR: unable to prep unit [%d}] for finalization: %s", proj.UnitID, err.Error())
+			msg := "<p>Prep for finalization failed</p>"
+			msg += fmt.Sprintf("<p>DPG Imaging was unable to prep the unit for finalization: %s</p>", err.Error())
+			svc.failStep(proj, "Other", msg)
+			return fmt.Errorf("unable to prep unit for finalization: %s", err.Error())
+		}
+
+		if resp.Success == false {
+			log.Printf("INFO: unit %d has finalize errors: %v", proj.UnitID, resp.Problems)
+			msg := "<p>Prep for finalization failed</p>"
+			for _, p := range resp.Problems {
+				msg += fmt.Sprintf("<p>%s: %s</p>", p.File, p.Problem)
+			}
+			svc.failStep(proj, "Other", msg)
+			return fmt.Errorf("unit %d has finalization problems", proj.UnitID)
+		}
+		log.Printf("INFO: unit %d data has been finalized", proj.UnitID)
+	}
+
+	// TODO
+	// # Make sure  directory is clean and in proper structure
+	// tgt_dir = File.join(Settings.image_qa_dir, project.unit.directory)
+	// if self.name == "Scan" || self.name == "Process"
+	//    tgt_dir = File.join(Settings.production_mount, "scan", project.unit.directory)
+	// end
+	// return false if !validate_directory(project, tgt_dir)
+
+	// # Files get moved in two places; after Process and Finalization
+	// if self.name == "Process"
+	//    src_dir =  File.join(Settings.production_mount, "scan", project.unit.directory)
+	//    tgt_dir = File.join(Settings.image_qa_dir, project.unit.directory)
+	//    return move_files( project, src_dir, tgt_dir )
+	// end
+	// if self.name == "Finalize"
+	//    src_dir = File.join(Settings.image_qa_dir, project.unit.directory)
+	//    tgt_dir =  File.join(Settings.production_mount, "finalization", project.unit.directory)
+	//    return move_files( project, src_dir, tgt_dir )
+	// end
 
 	log.Printf("INFO: project %d step %s successfully finished", proj.ID, proj.CurrentStep.Name)
 	return nil
+}
+
+func (svc *serviceContext) nextStepName(proj *project) string {
+	nextStepID := proj.CurrentStep.NextStepID
+	var nextStep step
+	resp := svc.DB.Find(&nextStep, nextStepID)
+	if resp.Error != nil {
+		return "Unknown"
+	}
+	return nextStep.Name
 }
 
 func (svc *serviceContext) failStep(proj *project, problemName string, message string) {
@@ -189,7 +244,9 @@ func (svc *serviceContext) failStep(proj *project, problemName string, message s
 	svc.DB.Model(&currA).Select("Status").Updates(currA)
 
 	log.Printf("INFO: adding problem(%s) note to project %d step %s", problemName, proj.ID, proj.CurrentStep.Name)
-	newNote := note{ProjectID: proj.ID, StepID: proj.CurrentStepID, StaffMemberID: *proj.OwnerID, NoteType: 2, Note: message}
+	now := time.Now()
+	newNote := note{ProjectID: proj.ID, StepID: proj.CurrentStepID, StaffMemberID: *proj.OwnerID,
+		NoteType: 2, Note: message, CreatedAt: &now, UpdatedAt: &now}
 	err := svc.DB.Model(&proj).Association("Notes").Append(&newNote)
 	if err != nil {
 		log.Printf("ERROR: unable to add note to project %d: %s", proj.ID, err.Error())

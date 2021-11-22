@@ -91,14 +91,11 @@ export default {
          hasOwner: 'projects/hasOwner',
       }),
       isFinishEnabled() {
-         if ( this.hasError(this.projectIdx) ) return false
          if ( this.currentStepName.name == "Scan" && this.currProject.workstation.id == 0) return false
-         // if project.current_step.name == "Finalize" && (metadata.ocr_hint.nil? ||
-         //       metadata.ocr_hint_id==1 && metadata.ocr_language_hint.blank? ||
-         //       metadata.ocr_hint_id > 1 && project.unit.ocr_master_files )
-         //    # At finalize, OCR info must be set
-         //    clazz << " disabled locked"
-         // end
+         if ( this.currentStepName.name == "Finalize") {
+            if ( this.currProject.unit.metadata.ocrHint.id == 0) return false
+            if ( this.currProject.unit.metadata.ocrHint.id == 1 && this.currProject.unit.metadata.ocrLanguageHint == "") return false
+         }
          return true
       },
       workingDir() {

@@ -18,6 +18,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type finalizeResponse struct {
+	Success  bool            `json:"success"`
+	Problems []updateProblem `json:"problems"`
+}
+
 type masterFileInfo struct {
 	FileName     string `json:"fileName"`
 	Path         string `json:"path"`
@@ -202,12 +207,28 @@ func (svc *serviceContext) getUnitDetails(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-func (svc *serviceContext) finalizeUnit(c *gin.Context) {
+func (svc *serviceContext) finalizeUnitRequest(c *gin.Context) {
 	uid := padLeft(c.Param("uid"), 9)
+
+	start := time.Now()
+	resp, err := svc.finalizeUnitData(uid)
+	if err != nil {
+		log.Printf("ERROR: %s", err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	elapsed := time.Since(start)
+	elapsedMS := int64(elapsed / time.Millisecond)
+
+	log.Printf("INFO: finalized  unit %s in %dms", uid, elapsedMS)
+	c.JSON(http.StatusOK, resp)
+}
+
+func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse, error) {
+	uid := padLeft(rawUnitID, 9)
 	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
 	log.Printf("INFO: finalize unit %s", unitDir)
 
-	start := time.Now()
 	pendingFilesCnt := 0
 	chunkSize := 20
 	fileCommands := make(map[string][]string)
@@ -216,9 +237,7 @@ func (svc *serviceContext) finalizeUnit(c *gin.Context) {
 
 	unitMD, uErr := svc.getUnitMetadata(uid)
 	if uErr != nil {
-		log.Printf("ERROR: %s", uErr.Error())
-		c.String(http.StatusInternalServerError, uErr.Error())
-		return
+		return nil, uErr
 	}
 
 	// walk the unit directory and generate masterFile info for each .tif
@@ -261,9 +280,7 @@ func (svc *serviceContext) finalizeUnit(c *gin.Context) {
 	})
 
 	if err != nil {
-		log.Printf("ERROR: unable to walk contents of %s: %s", unitDir, err.Error())
-		c.String(http.StatusInternalServerError, "unable to find unit images")
-		return
+		return nil, err
 	}
 
 	if pendingFilesCnt > 0 {
@@ -273,10 +290,7 @@ func (svc *serviceContext) finalizeUnit(c *gin.Context) {
 	}
 
 	log.Printf("INFO: await all finalization updates")
-	var resp struct {
-		Success  bool            `json:"success"`
-		Problems []updateProblem `json:"problems"`
-	}
+	var resp finalizeResponse
 	resp.Success = true
 	resp.Problems = make([]updateProblem, 0)
 	for outstandingRequests > 0 {
@@ -289,11 +303,7 @@ func (svc *serviceContext) finalizeUnit(c *gin.Context) {
 		}
 	}
 
-	elapsed := time.Since(start)
-	elapsedMS := int64(elapsed / time.Millisecond)
-
-	log.Printf("INFO: finalized  unit %s in %dms", uid, elapsedMS)
-	c.JSON(http.StatusOK, resp)
+	return &resp, nil
 }
 
 func (svc *serviceContext) updateMetadata(c *gin.Context) {
