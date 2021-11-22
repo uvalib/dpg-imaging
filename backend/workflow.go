@@ -60,8 +60,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		c.String(http.StatusBadRequest, "Invalid request")
 		return
 	}
-	log.Printf("INFO: user %s is finishing active step in project %s", claims.ComputeID, projID)
-
+	log.Printf("INFO: user %s is finishing active step in project %s with duration %d", claims.ComputeID, projID, doneReq.DurationMins)
 	var proj project
 	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
 	resp := dbReq.First(&proj)
@@ -101,7 +100,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		}
 	}
 
-	log.Printf("INFO: advance to next step")
+	log.Printf("INFO: mark assignment %d finished", currA.ID)
 	nowTimeStamp := time.Now()
 	currA.FinishedAt = &nowTimeStamp
 	currA.Status = 2 // finished
@@ -114,6 +113,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 
 	var nextStep step
 	nextStepID := proj.CurrentStep.NextStepID
+	log.Printf("INFO: advance to next step: %d", nextStepID)
 	resp = svc.DB.Find(&nextStep, nextStepID)
 	if resp.Error != nil {
 		log.Printf("ERROR: unable to get project %d next step %d: %s", proj.ID, nextStepID, resp.Error.Error())
@@ -140,7 +140,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 
 	if err != nil {
 		log.Printf("ERROR: unable to advance step: %s", err.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 

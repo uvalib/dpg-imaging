@@ -1,6 +1,6 @@
 <template>
    <div class="assign-modal-wrapper">
-      <DPGButton id="assign-trigger" @clicked="show">Assign</DPGButton>
+      <DPGButton id="assign-trigger" @clicked="show">{{label}}</DPGButton>
       <div class="assign-modal-dimmer" v-if="isOpen">
          <div role="dialog" aria-labelledby="assign-modal-title" id="assign-modal" class="assign-modal">
             <div id="assign-modal-title" class="assign-modal-title">Assign Project</div>
@@ -38,6 +38,10 @@ export default {
          type: Number,
          required: true,
       },
+      label: {
+         type: String,
+         default: "Assign"
+      }
    },
    data: function()  {
       return {
@@ -94,6 +98,7 @@ export default {
 
 <style lang="scss" scoped>
 .assign-modal-wrapper {
+   display: inline-block;
    button {
       height: 100%;
    }

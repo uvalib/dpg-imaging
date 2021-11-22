@@ -30,7 +30,7 @@ const projects = {
          let p = state.projects[projIdx]
          if (p.assignments.length == 0) return false
          let currA = p.assignments[0]
-         let step = p.workflow.steps.find( s => s.id = currA.stepID)
+         let step = p.workflow.steps.find( s => s.id == currA.stepID)
          return step.failStepID > 0 && currA.status == 1
       },
       onFinalizeStep: state => projIdx => {
@@ -38,7 +38,7 @@ const projects = {
          let p = state.projects[projIdx]
          if (p.assignments.length == 0) return false
          let currA = p.assignments[0]
-         let step = p.workflow.steps.find( s => s.id = currA.stepID)
+         let step = p.workflow.steps.find( s => s.id == currA.stepID)
          return step.name == "Finalize"
       },
       isFinalizing: state => projIdx => {
@@ -58,7 +58,7 @@ const projects = {
       hasOwner: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]
-         return p.owner
+         return p.owner !== undefined
       },
       inProgress: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false

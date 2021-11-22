@@ -35,16 +35,17 @@
       </div>
       <div class="workflow-btns" v-else>
          <template v-if="isOwner(computingID)">
-            <DPGButton @click="viewerClicked">Open QA Viewer</DPGButton>
-            <DPGButton v-if="(isOwner(computingID) || isSupervisor || isAdmin) && isFinalizing(projectIdx) == false">Reassign</DPGButton>
+            <DPGButton @click="viewerClicked" class="pad-right">Open QA Viewer</DPGButton>
+            <AssignModal v-if="(isOwner(computingID) || isSupervisor || isAdmin) && isFinalizing(projectIdx) == false"
+               :projectID="currProject.id" @assign="assignClicked" label="Reassign"/>
             <DPGButton v-if="inProgress(projectIdx) == false" @click="startStep">Start</DPGButton>
             <DPGButton v-if="canReject(projectIdx)" class="reject">Reject</DPGButton>
             <DPGButton v-if="inProgress(projectIdx) == true" :disabled="!isFinishEnabled" @click="finishClicked">Finish</DPGButton>
             <DPGButton v-if="onFinalizeStep(projectIdx) &&  hasError(projectIdx) == true">Retry Finalize</DPGButton>
          </template>
          <template v-else>
-            <DPGButton v-if="hasOwner(projectIdx) == false">Claim</DPGButton>
-            <DPGButton v-if="(isAdmin || isSupervisor) && isFinalizing(projectIdx) == false">Assign</DPGButton>
+            <DPGButton v-if="hasOwner(projectIdx) == false" @click="claimClicked()">Claim</DPGButton>
+            <AssignModal v-if="(isAdmin || isSupervisor) && isFinalizing(projectIdx) == false" :projectID="currProject.id" @assign="assignClicked"/>
          </template>
       </div>
       <div class="workflow-message" v-if="isOwner(computingID) && workflowNote">
@@ -56,7 +57,11 @@
 <script>
 import { mapState, mapGetters } from "vuex"
 import date from 'date-and-time'
+import AssignModal from "@/components/AssignModal"
 export default {
+   components: {
+      AssignModal
+   },
    data: function()  {
       return {
          timeEntry: false,
@@ -69,7 +74,8 @@ export default {
          scanDir: state => state.scanDir,
          qaDir: state => state.qaDir,
          projectIdx: state => state.projects.selectedProjectIdx,
-         computingID: state => state.user.computeID
+         computingID: state => state.user.computeID,
+         userID : state => state.user.ID,
       }),
       ...mapGetters({
          currProject: 'projects/currProject',
@@ -134,6 +140,12 @@ export default {
       }
    },
    methods: {
+      assignClicked( info ) {
+         this.$store.dispatch("projects/assignProject", {projectID: this.currProject.id, ownerID: info.ownerID} )
+      },
+      claimClicked() {
+         this.$store.dispatch("projects/assignProject", {projectID: this.currProject.id, ownerID: this.userID} )
+      },
       finishClicked() {
          if ( this.currProject.assignments[0].durationMinutes == 0) {
             this.timeEntry = true
@@ -144,8 +156,9 @@ export default {
          }
       },
       finshTimeEntered() {
-         this.$store.dispatch("projects/finishStep", this.currProject.assignments[0].durationMinutes)
+         this.$store.dispatch("projects/finishStep", this.stepMinutes)
          this.timeEntry = false
+         this.stepMinutes = 0
       },
       cancelFinish() {
          this.timeEntry = false
@@ -196,6 +209,9 @@ export default {
             color: #999;
          }
       }
+   }
+   .pad-right {
+      margin-right: 10px;
    }
    .workflow-btns {
       text-align: right;
