@@ -44,7 +44,7 @@
             <DPGButton v-if="onFinalizeStep(projectIdx) &&  hasError(projectIdx) == true">Retry Finalize</DPGButton>
          </template>
          <template v-else>
-            <DPGButton v-if="hasOwner(projectIdx) == false" @click="claimClicked()">Claim</DPGButton>
+            <DPGButton v-if="hasOwner(projectIdx) == false" @click="claimClicked()"  class="pad-right">Claim</DPGButton>
             <AssignModal v-if="(isAdmin || isSupervisor) && isFinalizing(projectIdx) == false" :projectID="currProject.id" @assign="assignClicked"/>
          </template>
       </div>
@@ -114,12 +114,15 @@ export default {
       assignedAt() {
          let stepID = this.currProject.currentStep.id
          let a = this.currProject.assignments.find( a => a.stepID == stepID)
-         return date.format(new Date(a.assignedAt), "YYYY-MM-DD hh:mm A")
+         if (a && a.assignments)  {
+            return date.format(new Date(a.assignedAt), "YYYY-MM-DD hh:mm A")
+         }
+         return ""
       },
       startedAt() {
          let stepID = this.currProject.currentStep.id
          let a = this.currProject.assignments.find( a => a.stepID == stepID)
-         if ( a.startedAt) return date.format(new Date(a.startedAt), "YYYY-MM-DD hh:mm A")
+         if ( a && a.startedAt) return date.format(new Date(a.startedAt), "YYYY-MM-DD hh:mm A")
          return ""
       },
       workflowNote() {

@@ -80,7 +80,8 @@ export default {
          this.currProject.assignments.forEach( a => {
             mins += a.durationMinutes
          })
-         let h = Math.round(mins/60)
+         let h = 0
+         if (mins > 60) Math.round(mins/60)
          mins -= (h*60)
          return `${(""+h).padStart(2,"0")}:${(""+mins).padStart(2,"0")}`
       }

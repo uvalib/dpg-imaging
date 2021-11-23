@@ -300,6 +300,7 @@ func (svc *serviceContext) validateDirectory(proj *project, tgtDir string) error
 
 	// Scan and Process and Error steps have no checks other than directory existance
 	if proj.CurrentStep.Name == "Scan" || proj.CurrentStep.Name == "Process" || proj.CurrentStep.StepType == 2 {
+		log.Printf("INFO: scan, process and error steps have no validations")
 		return nil
 	}
 
@@ -388,28 +389,27 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 			return fmt.Errorf("invalid filename %s", fullPath)
 		}
 
-		// once finish is clicked on a unit with .tif images, all the images must have at least title metadata
-		// TODO this might have to be parallelized... maybe just do it on the METADATA step
-		cmdArray := []string{"-json", "-iptc:headline", fullPath}
-		log.Printf("INFO: exif command %+v", cmdArray)
-		stdout, err := exec.Command("exiftool", cmdArray...).Output()
-		if err != nil {
-			svc.failStep(proj, "Metadata", fmt.Sprintf("<p>Unable to extract metadata from %s.</p>", fullPath))
-			return fmt.Errorf("unable to extract metadata from %s: %s", fullPath, err.Error())
-		}
-		log.Printf("INFO: exif response %s", stdout)
-		var mfMD []exifData
-		err = json.Unmarshal(stdout, &mfMD)
-		if err != nil {
-			svc.failStep(proj, "Metadata", fmt.Sprintf("<p>Unable to extract metadata from %s.</p>", fullPath))
-			return fmt.Errorf("unable to extract metadata from %s: %s", fullPath, err.Error())
-		}
+		if proj.CurrentStep.Name == "Create Metadata" || proj.CurrentStep.Name == "Finalize" {
+			// Make sure metadata is present at completion of create metadata and again as a final check on finalize
+			cmdArray := []string{"-json", "-iptc:headline", fullPath}
+			log.Printf("INFO: exif command %+v", cmdArray)
+			stdout, err := exec.Command("exiftool", cmdArray...).Output()
+			if err != nil {
+				svc.failStep(proj, "Metadata", fmt.Sprintf("<p>Unable to extract metadata from %s.</p>", fullPath))
+				return fmt.Errorf("unable to extract metadata from %s: %s", fullPath, err.Error())
+			}
+			log.Printf("INFO: exif response %s", stdout)
+			var mfMD []exifData
+			err = json.Unmarshal(stdout, &mfMD)
+			if err != nil {
+				svc.failStep(proj, "Metadata", fmt.Sprintf("<p>Unable to extract metadata from %s.</p>", fullPath))
+				return fmt.Errorf("unable to extract metadata from %s: %s", fullPath, err.Error())
+			}
 
-		// TODO this didn't work
-		log.Printf("INFO: %s metadata: %+v", fullPath, mfMD)
-		if mfMD[0].Title == "" {
-			svc.failStep(proj, "Metadata", fmt.Sprintf("<p>Missing Tile metadata in %s.</p>", fullPath))
-			return fmt.Errorf("Missing Tile metadata in %s", fullPath)
+			if mfMD[0].Title == nil {
+				svc.failStep(proj, "Metadata", fmt.Sprintf("<p>Missing Tile metadata in %s.</p>", fullPath))
+				return fmt.Errorf("Missing Tile metadata in %s", fullPath)
+			}
 		}
 
 		return nil
