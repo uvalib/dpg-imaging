@@ -81,33 +81,33 @@ type workstation struct {
 }
 
 type project struct {
-	ID                uint          `json:"id"`
-	WorkflowID        uint          `json:"-"`
-	Workflow          workflow      `json:"workflow"`
-	UnitID            uint          `json:"-"`
-	Unit              unit          `gorm:"foreignKey:UnitID" json:"unit"`
-	OwnerID           *uint         `json:"-"`
-	Owner             *staffMember  `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
-	Assignments       []*assignment `gorm:"foreignKey:ProjectID" json:"assignments"`
-	CurrentStepID     uint          `json:"-"`
-	CurrentStep       step          `gorm:"foreignKey:CurrentStepID" json:"currentStep"`
-	DueOn             *time.Time    `json:"dueOn,omitempty"`
-	AddedAt           *time.Time    `json:"addedAt,omitempty"`
-	StartedAt         *time.Time    `json:"startedAt,omitempty"`
-	FinishedAt        *time.Time    `json:"finishedAt,omitempty"`
-	CategoryID        uint          `json:"-"`
-	Category          category      `gorm:"foreignKey:CategoryID" json:"category"`
-	CaptureResolution uint          `json:"captureResolution"`
-	ResizedResolution uint          `json:"resizedResolution"`
-	ResolutionNote    string        `json:"resolutionNote"`
-	WorkstationID     uint          `json:"-"`
-	Workstation       workstation   `json:"workstation"`
-	ItemCondition     uint          `json:"itemCondition"`
-	ConditionNote     string        `json:"conditionNote,omitempty"`
-	ContainerTypeID   uint          `json:"-"`
-	ContainerType     containerType `gorm:"foreignKey:ContainerTypeID" json:"containerType,omitempty"`
-	Notes             []*note       `gorm:"foreignKey:ProjectID" json:"notes,omitempty"`
-	Equipment         []*equipment  `gorm:"many2many:project_equipment" json:"equipment,omitempty"`
+	ID                uint           `json:"id"`
+	WorkflowID        uint           `json:"-"`
+	Workflow          workflow       `json:"workflow"`
+	UnitID            uint           `json:"-"`
+	Unit              unit           `gorm:"foreignKey:UnitID" json:"unit"`
+	OwnerID           *uint          `json:"-"`
+	Owner             *staffMember   `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
+	Assignments       []*assignment  `gorm:"foreignKey:ProjectID" json:"assignments"`
+	CurrentStepID     uint           `json:"-"`
+	CurrentStep       step           `gorm:"foreignKey:CurrentStepID" json:"currentStep"`
+	DueOn             *time.Time     `json:"dueOn,omitempty"`
+	AddedAt           *time.Time     `json:"addedAt,omitempty"`
+	StartedAt         *time.Time     `json:"startedAt,omitempty"`
+	FinishedAt        *time.Time     `json:"finishedAt,omitempty"`
+	CategoryID        uint           `json:"-"`
+	Category          category       `gorm:"foreignKey:CategoryID" json:"category"`
+	CaptureResolution uint           `json:"captureResolution"`
+	ResizedResolution uint           `json:"resizedResolution"`
+	ResolutionNote    string         `json:"resolutionNote"`
+	WorkstationID     uint           `json:"-"`
+	Workstation       workstation    `json:"workstation"`
+	ItemCondition     uint           `json:"itemCondition"`
+	ConditionNote     string         `json:"conditionNote,omitempty"`
+	ContainerTypeID   *uint          `json:"-"`
+	ContainerType     *containerType `gorm:"foreignKey:ContainerTypeID" json:"containerType,omitempty"`
+	Notes             []*note        `gorm:"foreignKey:ProjectID" json:"notes,omitempty"`
+	Equipment         []*equipment   `gorm:"many2many:project_equipment" json:"equipment,omitempty"`
 }
 
 func (svc *serviceContext) getProject(c *gin.Context) {
@@ -305,6 +305,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)
 	var updateData struct {
+		ContainerTypeID uint   `json:"containerTypeID"`
 		CategoryID      uint   `json:"categoryID"`
 		Condition       uint   `json:"condition"`
 		Note            string `json:"note"`
@@ -334,7 +335,10 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	proj.CategoryID = updateData.CategoryID
 	proj.ItemCondition = updateData.Condition
 	proj.ConditionNote = updateData.Note
-	r := svc.DB.Debug().Model(&proj).Select("CategoryID", "ItemCondition", "ConditionNote").Updates(proj)
+	if updateData.ContainerTypeID > 0 && proj.Workflow.Name == "Manuscript" {
+		proj.ContainerTypeID = &updateData.ContainerTypeID
+	}
+	r := svc.DB.Debug().Model(&proj).Select("ContainerTypeID", "CategoryID", "ItemCondition", "ConditionNote").Updates(proj)
 	if r.Error != nil {
 		log.Printf("ERROR: unable to update data for project %s: %s", projID, r.Error.Error())
 		c.String(http.StatusInternalServerError, r.Error.Error())

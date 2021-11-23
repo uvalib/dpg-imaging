@@ -126,6 +126,7 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 		Workstations     []workstation     `json:"workstations"`
 		Workflows        []workflow        `json:"workflows"`
 		Categories       []category        `json:"categories"`
+		ContainerTypes   []containerType   `json:"containerTypes"`
 		Problems         []problem         `json:"problems"`
 		OCRHints         []ocrHint         `json:"ocrHints"`
 		OCRLanguageHints []ocrLanguageHint `json:"ocrLanguageHints"`
@@ -147,6 +148,14 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 	dbResp = svc.DB.Order("name asc").Find(&resp.Categories)
 	if dbResp.Error != nil {
 		log.Printf("ERROR: unable to load categories: %s", dbResp.Error.Error())
+		c.String(http.StatusInternalServerError, dbResp.Error.Error())
+		return
+	}
+
+	log.Printf("INFO: load container types")
+	dbResp = svc.DB.Order("name asc").Find(&resp.ContainerTypes)
+	if dbResp.Error != nil {
+		log.Printf("ERROR: unable to load container types: %s", dbResp.Error.Error())
 		c.String(http.StatusInternalServerError, dbResp.Error.Error())
 		return
 	}

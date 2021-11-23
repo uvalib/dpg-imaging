@@ -22,6 +22,7 @@ export default createStore({
       workstations: [],
       workflows: [],
       categories: [],
+      containerTypes: [],
       ocrHints: [],
       ocrLanguageHints: [],
       problemTypes: [],
@@ -110,6 +111,8 @@ export default createStore({
          data.ocrLanguageHints.forEach( w=> state.ocrLanguageHints.push(w))
          state.problemTypes.splice(0, state.problemTypes.length)
          data.problems.forEach( p=> state.problemTypes.push(p))
+         state.containerTypes.splice(0, state.containerTypes.length)
+         data.containerTypes.forEach( w=> state.containerTypes.push(w))
       },
       setVersion(state, data) {
          state.version = `${data.version}-${data.build}`

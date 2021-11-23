@@ -1,11 +1,21 @@
 <template>
    <div class="panel">
       <dl v-if="!editing">
+         <template v-if="currProject.workflow.name == 'Manuscript'">
+            <dt>Container Type:</dt>
+            <dd>
+               <span v-if="currProject.containerType.id > 0">{{currProject.containerType.name}}</span>
+               <span v-else class="na">EMPTY</span>
+            </dd>
+         </template>
          <dt>Category:</dt>
          <dd>{{currProject.category.name}}
          </dd>
          <dt>Call Number:</dt>
-         <dd>{{currProject.unit.metadata.callNumber}}</dd>
+         <dd>
+            <span v-if="currProject.unit.metadata.callNumber">{{currProject.unit.metadata.callNumber}}</span>
+            <span v-else class="na">EMPTY</span>
+         </dd>
          <dt>Special Instructions:</dt>
          <dd>
             <span v-if="currProject.unit.specialInstructions">{{currProject.unit.specialInstructions}}</span>
@@ -35,6 +45,15 @@
          </dd>
       </dl>
       <table class="edit" v-else>
+         <tr v-if="currProject.workflow.name == 'Manuscript'">
+            <td class="label"><label for="container">Container Type:</label></td>
+            <td class="data">
+               <select id="container" v-model="containerTypeID">
+                  <option :value="0" disabled>Select a container type</option>
+                  <option v-for="c in containerTypes" :key="`container-${c.id}`" :value="c.id">{{c.name}}</option>
+               </select>
+            </td>
+         </tr>
          <tr class="row">
             <td class="label"><label for="category">Category:</label></td>
             <td class="data">
@@ -109,6 +128,7 @@ export default {
       return {
          editing: false,
          categoryID: 0,
+         containerTypeID: 0,
          condition: 0,
          note: "",
          ocrHintID: 0,
@@ -121,6 +141,7 @@ export default {
       ...mapState({
          computingID: state => state.user.computeID,
          categories: state => state.categories,
+         containerTypes: state => state.containerTypes,
          ocrHints: state => state.ocrHints,
          ocrLanguageHints: state => state.ocrLanguageHints,
       }),
@@ -145,6 +166,10 @@ export default {
       editClicked() {
          this.editing = true
          this.categoryID = this.currProject.category.id
+         this.containerTypeID = 0
+         if ( this.currProject.containerType ) {
+            this.containerTypeID = this.currProject.containerType.id
+         }
          this.condition = this.currProject.itemCondition
          this.note = this.currProject.conditionNote
          this.ocrHintID = this.currProject.unit.metadata.ocrHint.id
@@ -155,6 +180,7 @@ export default {
       },
       async saveClicked() {
          let data = {
+            containerTypeID: this.containerTypeID,
             categoryID: this.categoryID,
             condition: this.condition,
             note: this.note,
