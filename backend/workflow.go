@@ -1,14 +1,18 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -52,6 +56,54 @@ func (svc *serviceContext) startProjectStep(c *gin.Context) {
 	c.JSON(http.StatusOK, proj)
 }
 
+func (svc *serviceContext) rejectProjectStep(c *gin.Context) {
+	projID := c.Param("id")
+	claims := getJWTClaims(c)
+	var doneReq struct {
+		DurationMins uint `json:"durationMins"`
+	}
+
+	qpErr := c.ShouldBindJSON(&doneReq)
+	if qpErr != nil {
+		log.Printf("ERROR: invalid reject step payload: %v", qpErr)
+		c.String(http.StatusBadRequest, "Invalid request")
+		return
+	}
+	log.Printf("INFO: user %s is rejecting active step in project %s with duration %d", claims.ComputeID, projID, doneReq.DurationMins)
+	var proj project
+	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
+	resp := dbReq.First(&proj)
+	if resp.Error != nil {
+		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
+		c.String(http.StatusInternalServerError, resp.Error.Error())
+		return
+	}
+
+	currA := proj.Assignments[0]
+	now := time.Now()
+	currA.DurationMinutes = doneReq.DurationMins
+	currA.FinishedAt = &now
+	currA.Status = 3 // rejected
+	resp = svc.DB.Model(&currA).Select("DurationMinutes", "FinishedAt", "Status").Updates(currA)
+	if resp.Error != nil {
+		log.Printf("ERROR: unable to reject assignment: %s", resp.Error.Error())
+		c.String(http.StatusInternalServerError, resp.Error.Error())
+		return
+	}
+
+	// all errors go back to the scanner... the owner of the first step
+	failStepID := proj.CurrentStep.FailStepID
+	firstA := proj.Assignments[len(proj.Assignments)-1]
+	proj.OwnerID = &firstA.StaffMemberID
+	proj.CurrentStepID = failStepID
+	svc.DB.Model(proj).Select("CurrentStepID", "OwnerID").Updates(proj)
+	newAssign := assignment{ProjectID: proj.ID, StepID: failStepID, StaffMemberID: firstA.StaffMemberID, AssignedAt: &now}
+	svc.DB.Create(&newAssign)
+
+	dbReq.First(&proj)
+	c.JSON(http.StatusOK, proj)
+}
+
 func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)
@@ -61,7 +113,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 
 	qpErr := c.ShouldBindJSON(&doneReq)
 	if qpErr != nil {
-		log.Printf("ERROR: invalid finsih step payload: %v", qpErr)
+		log.Printf("ERROR: invalid finish step payload: %v", qpErr)
 		c.String(http.StatusBadRequest, "Invalid request")
 		return
 	}
@@ -251,6 +303,139 @@ func (svc *serviceContext) validateDirectory(proj *project, tgtDir string) error
 		return nil
 	}
 
+	err := svc.validateDirectoryContent(proj, tgtDir)
+	if err != nil {
+		return err
+	}
+	err = svc.validateTifSequence(proj, tgtDir)
+	if err != nil {
+		return err
+	}
+	if proj.Workflow.Name == "Manuscript" {
+		err = svc.validateDirectoryStructure(proj, tgtDir)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (svc *serviceContext) validateDirectoryContent(proj *project, tgtDir string) error {
+	log.Printf("INFO: validate contents of %s", tgtDir)
+	err := filepath.WalkDir(tgtDir, func(fullPath string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() {
+			// skip directories or errors
+			return nil
+		}
+
+		lcFN := strings.ToLower(entry.Name())
+		ext := filepath.Ext(lcFN)
+
+		if proj.Workflow.Name == "Manuscript" {
+			if lcFN == "notes.txt" {
+				log.Printf("INFO: found location notes file for manifest project %d", proj.ID)
+				return nil
+			}
+		}
+
+		if ext == ".noindex" {
+			log.Printf("INFO: deleting tmp file %s", lcFN)
+			os.Remove(fullPath)
+			return nil
+		}
+
+		if ext != ".tif" {
+			svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Unexpected file %s found</p>", fullPath))
+			return fmt.Errorf("found unexpected file %s", fullPath)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	log.Printf("INFO: %s content is valid", tgtDir)
+	return nil
+}
+
+func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) error {
+	log.Printf("INFO: validate count and tif sequence in %s", tgtDir)
+	highest := -1
+	cnt := 0
+	err := filepath.WalkDir(tgtDir, func(fullPath string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() {
+			// skip directories or errors
+			return nil
+		}
+
+		ext := filepath.Ext(entry.Name())
+		noExtFN := strings.TrimSuffix(entry.Name(), ext)
+		seqStr := strings.Split(noExtFN, "_")[1]
+		seq, _ := strconv.Atoi(seqStr)
+		cnt++
+		if seq > highest {
+			highest = seq
+		}
+
+		// make sure filename is well formed
+		unitDir := padLeft(fmt.Sprintf("%d", proj.UnitID), 9)
+		if unitDir != strings.Split(noExtFN, "_")[0] {
+			log.Printf("ERROR: invalid name %s", fullPath)
+			svc.failStep(proj, "Filename", fmt.Sprintf("<p>Found incorrectly named image file %s.</p>", fullPath))
+			return fmt.Errorf("invalid filename %s", fullPath)
+		}
+
+		// once finish is clicked on a unit with .tif images, all the images must have at least title metadata
+		// TODO this might have to be parallelized... maybe just do it on the METADATA step
+		cmdArray := []string{"-json", "-iptc:headline", fullPath}
+		log.Printf("INFO: exif command %+v", cmdArray)
+		stdout, err := exec.Command("exiftool", cmdArray...).Output()
+		if err != nil {
+			svc.failStep(proj, "Metadata", fmt.Sprintf("<p>Unable to extract metadata from %s.</p>", fullPath))
+			return fmt.Errorf("unable to extract metadata from %s: %s", fullPath, err.Error())
+		}
+		log.Printf("INFO: exif response %s", stdout)
+		var mfMD []exifData
+		err = json.Unmarshal(stdout, &mfMD)
+		if err != nil {
+			svc.failStep(proj, "Metadata", fmt.Sprintf("<p>Unable to extract metadata from %s.</p>", fullPath))
+			return fmt.Errorf("unable to extract metadata from %s: %s", fullPath, err.Error())
+		}
+
+		// TODO this didn't work
+		log.Printf("INFO: %s metadata: %+v", fullPath, mfMD)
+		if mfMD[0].Title == "" {
+			svc.failStep(proj, "Metadata", fmt.Sprintf("<p>Missing Tile metadata in %s.</p>", fullPath))
+			return fmt.Errorf("Missing Tile metadata in %s", fullPath)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Printf("INFO: got error checking sequence")
+		return err
+	}
+	if cnt == 0 {
+		svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>No image files found in %s.</p>", tgtDir))
+		return fmt.Errorf("no files found in %s", tgtDir)
+	}
+	if highest != cnt {
+		svc.failStep(proj, "Filename", fmt.Sprintf("<p>Number of image files does not match highest image sequence number %d.</p>", highest))
+		return fmt.Errorf("count/sequence mismatch in %s", tgtDir)
+	}
+
+	log.Printf("INFO: %s sequence is valid", tgtDir)
+	return nil
+}
+
+func (svc *serviceContext) validateDirectoryStructure(proj *project, tgtDir string) error {
+	log.Printf("INFO: validate structure %s", tgtDir)
+	// TODO
+	log.Printf("INFO: %s structure is valid", tgtDir)
 	return nil
 }
 
@@ -318,7 +503,7 @@ func (svc *serviceContext) failStep(proj *project, problemName string, message s
 	}
 
 	var p problem
-	resp := svc.DB.Where("name = ?", problemName).First(&p)
+	resp := svc.DB.Where("label = ?", problemName).First(&p)
 	if resp.Error != nil {
 		p.ID = 7 // other
 	}

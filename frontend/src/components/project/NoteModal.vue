@@ -1,13 +1,14 @@
 <template>
    <div class="note-modal-wrapper">
-      <DPGButton id="note-trigger" mode="icon" @clicked="show"><i class="fas fa-plus-circle"></i></DPGButton>
+      <DPGButton :id="`${id}-trigger`" v-if="!manual" mode="icon" @clicked="show"><i class="fas fa-plus-circle"></i></DPGButton>
       <div class="note-modal-dimmer" v-if="isOpen">
-         <div role="dialog" aria-labelledby="note-modal-title" id="note-modal" class="note-modal">
-            <div id="note-modal-title" class="note-modal-title">Create Note</div>
+         <div role="dialog" :aria-labelledby="`${id}-title`" :id="id" class="note-modal">
+            <div :id="`${id}-title`" class="note-modal-title">Create Note</div>
             <div class="note-modal-content">
+               <div class="instruct" v-if="instructions">{{instructions}}</div>
                <div class="row">
-                  <label for="note-type">Note Type</label>
-                  <select id="note-type" v-model="noteTypeID">
+                  <label>Note Type {{trigger}}</label>
+                  <select v-model="noteTypeID" :id="`${id}-type`">
                      <option :value="0">Comment</option>
                      <option :value="1">Suggestion</option>
                      <option :value="2">Problem</option>
@@ -28,11 +29,11 @@
             </div>
             <p class="error" v-if="error">{{error}}</p>
             <div class="note-modal-controls">
-               <DPGButton id="close-assign" @clicked="hide" @tabback="setFocus('ok-assign')" :focusBackOverride="true">
+               <DPGButton :id="`${id}-close`" @clicked="hide" :focusBackOverride="true">
                   Cancel
                </DPGButton>
                <span class="spacer"></span>
-               <DPGButton id="ok-assign" @clicked="createClicked" @tabnext="setFocus('close-assign')" :focusNextOverride="true">
+               <DPGButton :id="`${id}-ok`" @clicked="createClicked" @tabnext="okNextTab" :focusNextOverride="true">
                   Create
                </DPGButton>
             </div>
@@ -44,10 +45,44 @@
 <script>
 import { mapState } from "vuex"
 export default {
+    emits: ['opened', 'closed', 'submitted' ],
+   props: {
+      id: {
+         type: String,
+         required: true
+      },
+      trigger: {
+         type: Boolean,
+         default: false,
+      },
+      manual: {
+         type: Boolean,
+         default: false
+      },
+      noteType: {
+         type: Number,
+         default: 0
+      },
+      instructions: {
+         type: String,
+         default: ""
+      }
+   },
+   watch: {
+       trigger(newtrigger) {
+          if (this.manual && newtrigger) {
+            this.isOpen = true,
+            setTimeout(()=>{
+               this.setFocus(`${this.id}-close`)
+               this.$emit('opened')
+            }, 150)
+          }
+       }
+   },
    data: function()  {
       return {
          isOpen: false,
-         noteTypeID: 0, //[:comment, :suggestion, :problem, :item_condition]
+         noteTypeID: this.noteType, //[:comment, :suggestion, :problem, :item_condition]
          note: "",
          problemIDs: [],
          error: ""
@@ -59,6 +94,9 @@ export default {
       })
    },
    methods: {
+      okNextTab() {
+         this.setFocus(`${this.id}-type`)
+      },
       createClicked() {
          this.error = ""
          if ( this.note == "") {
@@ -71,11 +109,14 @@ export default {
          }
          let data = {noteTypeID: this.noteTypeID, note: this.note, problemIDs: this.problemIDs}
          this.$store.dispatch("projects/addNote", data)
-         this.hide()
+         this.isOpen=false
+         this.setFocus(`${this.id}-trigger`)
+         this.$emit('submitted')
       },
       hide() {
+         this.$emit('closed')
          this.isOpen=false
-         this.setFocus("note-trigger")
+         this.setFocus(`${this.id}-trigger`)
       },
       show() {
          this.isOpen=true
@@ -83,7 +124,7 @@ export default {
          this.note = ""
          this.problemIDs = []
          setTimeout(()=>{
-            this.setFocus("close-assign")
+            this.setFocus(`${this.id}-close`)
             this.$emit('opened')
          }, 150)
          this.error = ""
@@ -136,6 +177,7 @@ div.note-modal {
    box-shadow: var(--box-shadow);
    border-radius: 5px;
    min-width: 300px;
+   max-width: 400px;
    border: 1px solid var(--uvalib-grey);
 
    .spacer {
@@ -191,6 +233,12 @@ div.note-modal {
       display: flex;
       flex-flow: row wrap;
       justify-content: flex-end;
+   }
+   div.instruct {
+      margin: 10px 0 20px;
+      padding: 15px;
+      border: 1px solid var(--uvalib-blue-alt);
+      background: var(--uvalib-blue-alt-light);
    }
 }
 </style>

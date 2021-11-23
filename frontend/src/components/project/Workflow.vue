@@ -30,7 +30,7 @@
          </div>
          <div class="ok-cancel">
              <DPGButton @click="cancelFinish">Cancel</DPGButton>
-             <DPGButton @click="finshTimeEntered">OK</DPGButton>
+             <DPGButton @click="timeEntered">OK</DPGButton>
          </div>
       </div>
       <div class="workflow-btns" v-else>
@@ -39,8 +39,8 @@
             <AssignModal v-if="(isOwner(computingID) || isSupervisor || isAdmin) && isFinalizing(projectIdx) == false"
                :projectID="currProject.id" @assign="assignClicked" label="Reassign"/>
             <DPGButton v-if="inProgress(projectIdx) == false" @click="startStep">Start</DPGButton>
-            <DPGButton v-if="canReject(projectIdx)" class="reject">Reject</DPGButton>
             <DPGButton v-if="inProgress(projectIdx) == true" :disabled="!isFinishEnabled" @click="finishClicked">Finish</DPGButton>
+            <DPGButton v-if="canReject(projectIdx)" class="reject"  @click="rejectStepClicked">Reject</DPGButton>
             <DPGButton v-if="onFinalizeStep(projectIdx) &&  hasError(projectIdx) == true">Retry Finalize</DPGButton>
          </template>
          <template v-else>
@@ -51,6 +51,9 @@
       <div class="workflow-message" v-if="isOwner(computingID) && workflowNote">
          {{workflowNote}}
       </div>
+      <NoteModal id="problem-modal" :manual="true" :trigger="showRejectNote" :noteType="2"
+         @closed="rejectCanceled" @submitted="rejectSubmitted"
+         instructions="Rejection requires the addition of a problem note that details the reason why it occurred" />
    </div>
 </template>
 
@@ -58,14 +61,17 @@
 import { mapState, mapGetters } from "vuex"
 import date from 'date-and-time'
 import AssignModal from "@/components/AssignModal"
+import NoteModal from '@/components/project/NoteModal.vue'
 export default {
    components: {
-      AssignModal
+      AssignModal, NoteModal
    },
    data: function()  {
       return {
          timeEntry: false,
-         stepMinutes: 0
+         stepMinutes: 0,
+         action: "finish",
+         showRejectNote: false
       }
     },
    computed: {
@@ -137,6 +143,10 @@ export default {
       }
    },
    methods: {
+      rejectStepClicked() {
+         this.action = "reject"
+         this.showTimeEntry()
+      },
       assignClicked( info ) {
          this.$store.dispatch("projects/assignProject", {projectID: this.currProject.id, ownerID: info.ownerID} )
       },
@@ -144,16 +154,43 @@ export default {
          this.$store.dispatch("projects/assignProject", {projectID: this.currProject.id, ownerID: this.userID} )
       },
       finishClicked() {
+         this.action = "finish"
          if ( this.currProject.assignments[0].durationMinutes == 0) {
-            this.timeEntry = true
-            this.stepMinutes = 0
+            this.showTimeEntry()
          } else {
             // send a 0 time to indicate that time has already been recorded
             this.$store.dispatch("projects/finishStep", 0)
          }
       },
-      finshTimeEntered() {
-         this.$store.dispatch("projects/finishStep", this.stepMinutes)
+      showTimeEntry() {
+         this.timeEntry = true
+         this.stepMinutes = 0
+         this.$nextTick( () => {
+            let te = document.getElementById("time")
+            if (te) {
+               te.focus()
+               te.select()
+            }
+         })
+      },
+      timeEntered() {
+         if ( this.action == "finish")  {
+            this.$store.dispatch("projects/finishStep", this.stepMinutes)
+            this.timeEntry = false
+            this.stepMinutes = 0
+         } else {
+            this.showRejectNote = true
+            this.timeEntry = false
+         }
+      },
+      rejectCanceled() {
+         this.showRejectNote = false
+         this.timeEntry = false
+         this.stepMinutes = 0
+      },
+      rejectSubmitted() {
+         this.$store.dispatch("projects/rejectStep", this.stepMinutes)
+         this.showRejectNote = false
          this.timeEntry = false
          this.stepMinutes = 0
       },
@@ -217,6 +254,13 @@ export default {
       .dpg-button {
          margin-left: 10px;
       }
+       .dpg-button.reject {
+          background: rgb(178, 34, 34);
+          color: white;
+          &:hover {
+             background: rgb(210, 60, 60);
+          }
+       }
    }
    .workflow-btns.time {
       text-align: left;

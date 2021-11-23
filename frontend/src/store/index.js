@@ -453,10 +453,11 @@ export default createStore({
             }
 
             // detect either sequence issues, bad name, or unit prefix issues
-            if ( badName || mfPage !=  idx+1 || mfParts[0] != ctx.state.currUnit) {
+            let paddedUnit = ctx.state.currUnit.padStart(9,"0")
+            if ( badName || mfPage !=  idx+1 || mfParts[0] != paddedUnit) {
                let newPg = `${idx+1}`
                newPg = newPg.padStart(4,'0')
-               let newFN = `${ctx.state.currUnit}_${newPg}.tif`
+               let newFN = `${paddedUnit}_${newPg}.tif`
                data.push({original: originalPath, new: newFN })
             }
 

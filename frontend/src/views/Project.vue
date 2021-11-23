@@ -64,7 +64,7 @@
             <div class="info-block">
                <h4 class="notes">
                   <span>Notes</span>
-                  <NoteModal />
+                  <NoteModal id="note-modal" />
                </h4>
                <Notes />
             </div>
