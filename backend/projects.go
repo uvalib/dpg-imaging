@@ -61,11 +61,23 @@ type equipment struct {
 	SerialNumber string `json:"serialNumber"`
 }
 
+type projectEquipment struct {
+	ID          uint       `json:"id"`
+	ProjectID   uint       `json:"project_id"`
+	EquipmentID uint       `json:"equipment_id"`
+	CreatedAt   *time.Time `json:"created_at,omitempty"`
+	UpdatedAt   *time.Time `json:"updated_at,omitempty"`
+}
+
+func (projectEquipment) TableName() string {
+	return "project_equipment"
+}
+
 type workstation struct {
-	ID        uint        `json:"id"`
-	Name      string      `json:"name"`
-	Status    uint        `json:"status"`
-	Equipment []equipment `gorm:"many2many:workstation_equipment" json:"equipment,omitempty"`
+	ID        uint         `json:"id"`
+	Name      string       `json:"name"`
+	Status    uint         `json:"status"`
+	Equipment []*equipment `gorm:"many2many:workstation_equipment" json:"equipment,omitempty"`
 }
 
 type project struct {
@@ -395,10 +407,12 @@ func (svc *serviceContext) setProjectEquipment(c *gin.Context) {
 	}
 
 	log.Printf("INFO: add equipment to project %s", projID)
+	now := time.Now()
 	for _, e := range ws.Equipment {
-		err := svc.DB.Model(&proj).Association("Equipment").Append(&e)
-		if err != nil {
-			log.Printf("ERROR: unable to add equipment %s to project %s: %s", e.Name, projID, err.Error())
+		pe := projectEquipment{ProjectID: proj.ID, EquipmentID: e.ID, CreatedAt: &now, UpdatedAt: &now}
+		resp := svc.DB.Create(&pe)
+		if resp.Error != nil {
+			log.Printf("ERROR: unable to add equipment %s to project %s: %s", e.Name, projID, resp.Error.Error())
 		}
 	}
 
@@ -408,13 +422,14 @@ func (svc *serviceContext) setProjectEquipment(c *gin.Context) {
 	proj.CaptureResolution = equipPost.CaptureResolution
 	proj.ResizedResolution = equipPost.ResizeResolution
 	proj.ResolutionNote = equipPost.ResolutionNote
-	r := svc.DB.Debug().Model(&proj).Select("WorkstationID", "CaptureResolution", "ResizedResolution", "ResolutionNote").Updates(proj)
+	r := svc.DB.Model(&proj).Select("WorkstationID", "CaptureResolution", "ResizedResolution", "ResolutionNote").Updates(proj)
 	if r.Error != nil {
 		log.Printf("ERROR: unable to set workstation for project %s: %s", projID, r.Error.Error())
 		c.String(http.StatusInternalServerError, r.Error.Error())
 		return
 	}
 
+	dbReq.First(&proj)
 	c.JSON(http.StatusOK, proj)
 }
 
