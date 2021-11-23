@@ -93,10 +93,10 @@
          </tr>
       </table>
       <div class="buttons" v-if="isOwner(computingID)">
-         <DPGButton v-if="!editing" @click="editClicked">Edit</DPGButton>
+         <DPGButton v-if="!editing" @clicked="editClicked">Edit</DPGButton>
          <template v-else>
-            <DPGButton @click="cancelClicked">Cancel</DPGButton>
-            <DPGButton @click="saveClicked">Save</DPGButton>
+            <DPGButton @clicked="cancelClicked">Cancel</DPGButton>
+            <DPGButton @clicked="saveClicked">Save</DPGButton>
          </template>
       </div>
    </div>

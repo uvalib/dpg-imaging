@@ -81,13 +81,7 @@ const projects = {
          }
          return state.projects[state.selectedProjectIdx]
       },
-      currentStepName: state => pID => {
-         let p = state.projects.find( p => p.id == pID)
-         if ( p ) {
-            return p.currentStep.name
-         }
-         return "Unknown"
-      },
+
       statusText: state => pID => {
          let p = state.projects.find( p => p.id == pID)
          if (p.finishedAt != null) {

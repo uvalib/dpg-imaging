@@ -29,22 +29,22 @@
             <input id="time" type="number" v-model="stepMinutes">
          </div>
          <div class="ok-cancel">
-             <DPGButton @click="cancelFinish">Cancel</DPGButton>
-             <DPGButton @click="timeEntered">OK</DPGButton>
+             <DPGButton @clicked="cancelFinish">Cancel</DPGButton>
+             <DPGButton @clicked="timeEntered">OK</DPGButton>
          </div>
       </div>
       <div class="workflow-btns" v-else>
          <template v-if="isOwner(computingID)">
-            <DPGButton @click="viewerClicked" class="pad-right">Open QA Viewer</DPGButton>
+            <DPGButton @clicked="viewerClicked" class="pad-right">Open QA Viewer</DPGButton>
             <AssignModal v-if="(isOwner(computingID) || isSupervisor || isAdmin) && isFinalizing(projectIdx) == false"
                :projectID="currProject.id" @assign="assignClicked" label="Reassign"/>
-            <DPGButton v-if="inProgress(projectIdx) == false" @click="startStep">Start</DPGButton>
-            <DPGButton v-if="inProgress(projectIdx) == true" :disabled="!isFinishEnabled" @click="finishClicked">Finish</DPGButton>
-            <DPGButton v-if="canReject(projectIdx)" class="reject"  @click="rejectStepClicked">Reject</DPGButton>
+            <DPGButton v-if="inProgress(projectIdx) == false" @clicked="startStep">Start</DPGButton>
+            <DPGButton v-if="inProgress(projectIdx) == true" :disabled="!isFinishEnabled" @clicked="finishClicked">Finish</DPGButton>
+            <DPGButton v-if="canReject(projectIdx)" class="reject"  @clicked="rejectStepClicked">Reject</DPGButton>
             <DPGButton v-if="onFinalizeStep(projectIdx) &&  hasError(projectIdx) == true">Retry Finalize</DPGButton>
          </template>
          <template v-else>
-            <DPGButton v-if="hasOwner(projectIdx) == false" @click="claimClicked()"  class="pad-right">Claim</DPGButton>
+            <DPGButton v-if="hasOwner(projectIdx) == false" @clicked="claimClicked()"  class="pad-right">Claim</DPGButton>
             <AssignModal v-if="(isAdmin || isSupervisor) && isFinalizing(projectIdx) == false" :projectID="currProject.id" @assign="assignClicked"/>
          </template>
       </div>
@@ -85,7 +85,6 @@ export default {
       }),
       ...mapGetters({
          currProject: 'projects/currProject',
-         currentStepName: 'projects/currentStepName',
          isOwner: 'projects/isOwner',
          isAdmin: 'isAdmin',
          isSupervisor: 'isSupervisor',
@@ -96,9 +95,12 @@ export default {
          hasError: 'projects/hasError',
          hasOwner: 'projects/hasOwner',
       }),
+      currentStepName() {
+         return this.currProject.currentStep.name
+      },
       isFinishEnabled() {
-         if ( this.currentStepName.name == "Scan" && this.currProject.workstation.id == 0) return false
-         if ( this.currentStepName.name == "Finalize") {
+         if ( this.currentStepName == "Scan" && this.currProject.workstation.id == 0) return false
+         if ( this.currentStepName == "Finalize") {
             if ( this.currProject.unit.metadata.ocrHint.id == 0) return false
             if ( this.currProject.unit.metadata.ocrHint.id == 1 && this.currProject.unit.metadata.ocrLanguageHint == "") return false
          }
@@ -126,11 +128,10 @@ export default {
          return ""
       },
       workflowNote() {
-         let projID = this.currProject.id
-         if ( this.currentStepName(projID) == "Scan" && this.currProject.workstation.id == 0) {
+         if ( this.currentStepName == "Scan" && this.currProject.workstation.id == 0) {
             return "Assignment cannot be finished until the workstation has been set."
          }
-         if ( this.currentStepName(projID) == "Finalize" && this.currProject.unit.metadata.ocrHint.id == 0) {
+         if ( this.currentStepName == "Finalize" && this.currProject.unit.metadata.ocrHint.id == 0) {
             return "Assignment cannot be finished until the OCR hint has been set."
          }
          if ( this.currProject.unit.metadata.ocrHint.id > 1 && this.currProject.unit.ocrMasterFiles == true) {

@@ -88,7 +88,7 @@
                            <span v-else class="assigned">{{ownerInfo(p)}}</span>
                         </span>
                         <span class="owner-buttons">
-                           <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)">Claim</DPGButton>
+                           <DPGButton v-if="canClaim(p)" @clicked="claimClicked(p.id)">Claim</DPGButton>
                            <assign-modal  v-if="canAssign" :projectID="p.id" @assign="assignClicked"/>
                         </span>
                      </div>

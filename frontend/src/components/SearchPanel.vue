@@ -30,8 +30,8 @@
          </select>
       </div>
       <div class="buttons">
-         <DPGButton @click="resetSearch">Reset Search</DPGButton>
-         <DPGButton @click="doSearch">Search</DPGButton>
+         <DPGButton @clicked="resetSearch">set Search</DPGButton>
+         <DPGButton @clicked="doSearch">Search</DPGButton>
       </div>
    </div>
 </template>

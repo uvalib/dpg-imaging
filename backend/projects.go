@@ -346,6 +346,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 		return
 	}
 
+	dbReq.First(&proj)
 	c.JSON(http.StatusOK, proj)
 }
 
