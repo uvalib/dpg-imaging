@@ -194,6 +194,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 	} else {
 		// any, unique or supervisor for this step. Someone must claim it, so set owner nil.
 		log.Printf("INFO: project %s workflow %s advancing to new step %s with no owner set", projID, proj.Workflow.Name, nextStep.Name)
+		proj.Owner = nil
 		err = svc.nextStep(&proj, nextStepID, nil)
 	}
 
