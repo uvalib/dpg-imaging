@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -31,6 +34,12 @@ type serviceContext struct {
 	DB          *gorm.DB
 	DevAuthUser string
 	JWTKey      string
+}
+
+// RequestError contains http status code and message for a failed HTTP request
+type RequestError struct {
+	StatusCode int
+	Message    string
 }
 
 // InitializeService sets up the service context for all API handlers
@@ -131,7 +140,7 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 		OCRHints         []ocrHint         `json:"ocrHints"`
 		OCRLanguageHints []ocrLanguageHint `json:"ocrLanguageHints"`
 	}
-	resp := cfgData{TrackSysURL: svc.TrackSysURL,
+	resp := cfgData{TrackSysURL: fmt.Sprintf("%s/admin", svc.TrackSysURL),
 		QAImageDir: svc.ImagesDir,
 		ScanDir:    svc.ScanDir,
 	}
@@ -211,4 +220,50 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, resp)
+}
+
+func (svc *serviceContext) postRequest(url string, payload interface{}) ([]byte, *RequestError) {
+	log.Printf("POST request: %s", url)
+	startTime := time.Now()
+	b, _ := json.Marshal(payload)
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(b))
+	req.Header.Add("Content-type", "application/json")
+	httpClient := svc.HTTPClient
+	rawResp, rawErr := httpClient.Do(req)
+	resp, err := handleAPIResponse(url, rawResp, rawErr)
+	elapsedNanoSec := time.Since(startTime)
+	elapsedMS := int64(elapsedNanoSec / time.Millisecond)
+
+	if err != nil {
+		log.Printf("ERROR: Failed response from POST %s - %d:%s. Elapsed Time: %d (ms)",
+			url, err.StatusCode, err.Message, elapsedMS)
+	} else {
+		log.Printf("Successful response from POST %s. Elapsed Time: %d (ms)", url, elapsedMS)
+	}
+	return resp, err
+}
+
+func handleAPIResponse(logURL string, resp *http.Response, err error) ([]byte, *RequestError) {
+	if err != nil {
+		status := http.StatusBadRequest
+		errMsg := err.Error()
+		if strings.Contains(err.Error(), "Timeout") {
+			status = http.StatusRequestTimeout
+			errMsg = fmt.Sprintf("%s timed out", logURL)
+		} else if strings.Contains(err.Error(), "connection refused") {
+			status = http.StatusServiceUnavailable
+			errMsg = fmt.Sprintf("%s refused connection", logURL)
+		}
+		return nil, &RequestError{StatusCode: status, Message: errMsg}
+	} else if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		defer resp.Body.Close()
+		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		status := resp.StatusCode
+		errMsg := string(bodyBytes)
+		return nil, &RequestError{StatusCode: status, Message: errMsg}
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	return bodyBytes, nil
 }

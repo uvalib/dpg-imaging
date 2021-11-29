@@ -34,7 +34,7 @@ func getConfiguration() *configData {
 	flag.StringVar(&config.finalizeDir, "finalize", " /digiserv-production/finalization", "Finalization directory")
 	flag.StringVar(&config.iiifURL, "iiif", "", "IIIF server URL")
 	flag.StringVar(&config.serviceURL, "url", "", "Base URL for DPG Imaging service")
-	flag.StringVar(&config.tracksysURL, "tsurl", "https://tracksys.lib.virginia.edu/admin", "URL for TrackSys")
+	flag.StringVar(&config.tracksysURL, "tsurl", "https://tracksys.lib.virginia.edu", "URL for TrackSys")
 	flag.StringVar(&config.jwtKey, "jwtkey", "", "JWT signature key")
 
 	// DB connection params

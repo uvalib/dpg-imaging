@@ -139,7 +139,6 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 
 	// is this the last step of a workflow?
 	if proj.CurrentStep.StepType == 1 {
-		// first time, finish the step
 		if proj.Unit.UnitStatus != "error" {
 			err := svc.validateFinishStep(&proj)
 			if err != nil {
@@ -149,14 +148,33 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 				return
 			}
 		}
-	} else {
-		err := svc.validateFinishStep(&proj)
-		if err != nil {
-			log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, err.Error())
-			dbReq.First(&proj)
-			c.JSON(http.StatusOK, proj)
+
+		log.Printf("INFO: sending request to TrackSys to begin or restart finalization of unit %d", proj.UnitID)
+		var fr struct {
+			UnitID uint `json:"unit_id"`
+		}
+		fr.UnitID = proj.UnitID
+		_, httpErr := svc.postRequest(fmt.Sprintf("%s/api/finalize", svc.TrackSysURL), fr)
+		if httpErr != nil {
+			currA.Status = 4 // error
+			svc.DB.Model(&currA).Select("Status").Updates(currA)
+			log.Printf("ERROR: finalize request failed: %s", httpErr.Message)
+			c.String(http.StatusInternalServerError, httpErr.Message)
 			return
 		}
+
+		currA.Status = 6 // finalizing
+		svc.DB.Model(&currA).Select("Status").Updates(currA)
+		c.JSON(http.StatusOK, proj)
+		return
+	}
+
+	validateErr := svc.validateFinishStep(&proj)
+	if validateErr != nil {
+		log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, validateErr.Error())
+		dbReq.First(&proj)
+		c.JSON(http.StatusOK, proj)
+		return
 	}
 
 	log.Printf("INFO: mark assignment %d finished", currA.ID)
