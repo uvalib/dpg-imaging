@@ -15,9 +15,9 @@
                <div>Unit {{currUnit}}</div>
                <div class="small">{{masterFiles.length}} Images</div>
             </h3>
-            <span class="back">
+            <span class="back" @click="backClicked">
                <i class="fas fa-angle-double-left back-button"></i>
-               <router-link :to="`/`">Back to Units</router-link>
+               <span class="link">Back</span>
             </span>
          </div>
          <div class="toolbar">
@@ -226,6 +226,9 @@ export default {
       }
    },
    methods: {
+      backClicked() {
+         this.$router.go(-1)
+      },
       priorClicked() {
          this.$store.commit("setPage", this.currPage-1)
          this.pageChanged()
@@ -474,12 +477,13 @@ export default {
          position: absolute;
          left: 10px;
          bottom: 0;
-         a {
+         .link {
             font-weight: normal;
             text-decoration: none;
             color: var(--uvalib-text);
             display: inline-block;
             margin-left: 5px;
+            cursor: pointer;
             &:hover {
                text-decoration: underline ;
             }
