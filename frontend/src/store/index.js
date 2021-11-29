@@ -284,6 +284,7 @@ export default createStore({
             ctx.commit('setVersion', response.data)
          }).catch( e => {
             ctx.commit("setError", e)
+            ctx.commit("setLoading", false)
          })
       },
       getConfig(ctx) {

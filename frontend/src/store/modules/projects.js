@@ -221,7 +221,7 @@ const projects = {
             ctx.commit("setWorking", false)
          }).catch( e => {
             ctx.commit("setError", e, {root: true})
-            ctx.commit("setWorking", true)
+            ctx.commit("setWorking", false)
          })
       },
       // this is only used when the project details page is loaded without a list of project data

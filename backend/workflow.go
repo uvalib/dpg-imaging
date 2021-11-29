@@ -326,13 +326,10 @@ func (svc *serviceContext) validateDirectoryContent(proj *project, tgtDir string
 	log.Printf("INFO: validate contents of %s", tgtDir)
 	err := filepath.WalkDir(tgtDir, func(fullPath string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() {
-			// skip directories or errors
 			return nil
 		}
 
 		lcFN := strings.ToLower(entry.Name())
-		ext := filepath.Ext(lcFN)
-
 		if proj.Workflow.Name == "Manuscript" {
 			if lcFN == "notes.txt" {
 				log.Printf("INFO: found location notes file for manifest project %d", proj.ID)
@@ -340,15 +337,14 @@ func (svc *serviceContext) validateDirectoryContent(proj *project, tgtDir string
 			}
 		}
 
-		if ext == ".noindex" {
-			log.Printf("INFO: deleting tmp file %s", lcFN)
+		if entry.Name() == ".DS_Store" {
+			log.Printf("INFO: remove  %s", fullPath)
 			os.Remove(fullPath)
-			return nil
-		}
-
-		if ext != ".tif" {
-			svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Unexpected file %s found</p>", fullPath))
-			return fmt.Errorf("found unexpected file %s", fullPath)
+		} else {
+			if filepath.Ext(lcFN) != ".tif" {
+				svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Unexpected file %s found</p>", fullPath))
+				return fmt.Errorf("found unexpected file %s", fullPath)
+			}
 		}
 
 		return nil
@@ -368,7 +364,6 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 	cnt := 0
 	err := filepath.WalkDir(tgtDir, func(fullPath string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() {
-			// skip directories or errors
 			return nil
 		}
 
@@ -416,7 +411,6 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 	})
 
 	if err != nil {
-		log.Printf("INFO: got error checking sequence")
 		return err
 	}
 	if cnt == 0 {
@@ -434,7 +428,67 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 
 func (svc *serviceContext) validateDirectoryStructure(proj *project, tgtDir string) error {
 	log.Printf("INFO: validate structure %s", tgtDir)
-	// TODO
+	// All manuscripts have a top level directory with any name. If ContainerType is
+	// set to has_folders=true, this must contain folders only. all tif images reside in the folders.
+	// If not, the top-level directory containes the tif images
+	foundContainerDir := false
+	foundFolders := false
+	err := filepath.WalkDir(tgtDir, func(fullPath string, entry fs.DirEntry, err error) error {
+		if err != nil || tgtDir == fullPath {
+			return nil
+		}
+
+		// strip off base dir, leaving just the relative path (minus the starting /)
+		relPath := fullPath[len(tgtDir)+1:]
+		depth := len(strings.Split(relPath, "/"))
+		log.Printf("INFO: validate %s, depth %d", relPath, depth)
+		if entry.IsDir() {
+			if depth > 2 {
+				svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Too many subdirectories: %s</p>", relPath))
+				return fmt.Errorf("too many subdirectories %s", relPath)
+			}
+
+			if depth == 2 {
+				if proj.ContainerType.HasFolders == false {
+					svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Folder directories not allowed in '%s' containers</p>", proj.ContainerType.Name))
+					return fmt.Errorf("folders not allowed in %s", proj.ContainerType.Name)
+				}
+				foundFolders = true
+			}
+
+			if depth == 1 {
+				if foundContainerDir == true {
+					svc.failStep(proj, "Filesystem", "<p>There can only be one box directory</p>")
+					return fmt.Errorf("multiple box directories found in %s", tgtDir)
+				}
+				foundContainerDir = true
+			}
+		} else {
+			// Count slashes to figure out where in the directory tree this file resides.
+			// NOTE: use -1 becase the filename is part of the relative path; EX: box/sample.tif
+			// Validate based on folders flag in the container_type model
+			if depth-1 < 1 {
+				svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Files found in project root directory: %s</p>", fullPath))
+				return fmt.Errorf("files found in root directory %s", fullPath)
+			}
+			if depth-1 == 1 && proj.ContainerType.HasFolders {
+				svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Files found in box directory: %s</p>", relPath))
+				return fmt.Errorf("files found in box directory %s", relPath)
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	// Validate presence of folders based on container_type
+	if foundFolders == false && proj.ContainerType.HasFolders == true {
+		svc.failStep(proj, "Filesystem", "<p>No folder directories found</p>")
+		return fmt.Errorf("missing required folders within %s", tgtDir)
+	}
+
 	log.Printf("INFO: %s structure is valid", tgtDir)
 	return nil
 }
