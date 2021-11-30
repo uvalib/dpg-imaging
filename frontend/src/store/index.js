@@ -148,7 +148,7 @@ export default createStore({
                return Promise.reject(error)
             })
 
-            // Catch 401 errors and redirect to an expired auth page (unauth would have been caught el)
+            // Catch 401 errors and redirect to an expired auth page
             axios.interceptors.response.use(
                res => res,
                err => {
@@ -156,11 +156,15 @@ export default createStore({
                      router.push( "/forbidden" )
                   } else {
                      if (err.response && err.response.status == 401 ) {
-                        // just reload the page, forcing back thru netbadge
-                        // NOTE: the reload will go to authenticete -> granted, but granted
-                        // always redirects to / so place will be lost. Fix later
                         localStorage.removeItem("dpg_jwt")
-                        window.location.reload()
+                        state.user.jwt = ""
+                        state.user.firstName = ""
+                        state.user.lastName = ""
+                        state.user.role = ""
+                        state.user.computeID = ""
+                        state.user.ID = 0
+                        router.push( "/signedout?expired=1" )
+                        return new Promise(() => { })
                      }
                   }
                   return Promise.reject(err)

@@ -1,9 +1,17 @@
 <template>
-   <div class="notfound">
-      <h2>Signed Out</h2>
-      <div class="message">
-         <p>You have successfully signed out of your account.</p>
-      </div>
+   <div class="signedout">
+      <template v-if="$route.query.expired">
+         <h2>Session Expired</h2>
+         <div class="message">
+            <p>Your session has expired and you have been signed out.</p>
+         </div>
+      </template>
+      <template v-else>
+         <h2>Signed Out</h2>
+         <div class="message">
+            <p>You have successfully signed out of your account.</p>
+         </div>
+      </template>
       <div class="buttons"><DPGButton @click="signinClick">Sign in with NetBadge</DPGButton></div>
    </div>
 </template>
@@ -22,7 +30,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.notfound {
+.signedout {
    padding: 25px;
    h2 {
       color: var(--uvalib-brand-orange);
