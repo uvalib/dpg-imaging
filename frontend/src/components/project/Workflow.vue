@@ -293,6 +293,7 @@ export default {
       padding: 10px;
       border-top: 1px solid var(--uvalib-grey-light);
       text-align: center;
+      color: var(--uvalib-red-emergency);
    }
 }
 </style>
