@@ -5,6 +5,8 @@ import { getField, updateField } from 'vuex-map-fields'
 import projects from './modules/projects'
 import old from './modules/old'
 
+import router from '../router'
+
 function parseJwt(token) {
    var base64Url = token.split('.')[1]
    var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
@@ -117,6 +119,15 @@ export default createStore({
       setVersion(state, data) {
          state.version = `${data.version}-${data.build}`
       },
+      signout(state) {
+         localStorage.removeItem("dpg_jwt")
+         state.user.jwt = ""
+         state.user.firstName = ""
+         state.user.lastName = ""
+         state.user.role = ""
+         state.user.computeID = ""
+         state.user.ID = 0
+      },
       setJWT(state, jwt) {
          if (jwt != state.user.jwt) {
             state.user.jwt = jwt
@@ -142,7 +153,7 @@ export default createStore({
                res => res,
                err => {
                   if (err.config.url.match(/\/authenticate/) ) {
-                     this.router.push( "/forbidden" )
+                     router.push( "/forbidden" )
                   } else {
                      if (err.response && err.response.status == 401 ) {
                         // just reload the page, forcing back thru netbadge

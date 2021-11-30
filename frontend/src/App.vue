@@ -14,6 +14,7 @@
          </div>
          <div class="user-banner" v-if="jwt">
             <label>Signed in as:</label><span class="user">{{ signedInUser }}</span>
+            <span class="signout" @click="signout">Sign out</span>
          </div>
       </div>
       <router-view />
@@ -38,6 +39,12 @@ export default {
          jwt: (state) => state.user.jwt,
       }),
       ...mapGetters(["signedInUser"]),
+   },
+   methods: {
+      signout() {
+         this.$store.commit("signout")
+         this.$router.push("signedout")
+      }
    },
    async beforeCreate() {
       this.$store.dispatch("getVersion")
@@ -172,6 +179,18 @@ div.header {
       }
       .user {
          font-weight: 100;
+      }
+      .signout {
+         display: inline-block;
+         margin-left: 10px;
+         cursor: pointer;
+         border: 1px solid var(--uvalib-brand-blue-light);
+         padding: 2px 9px;
+         border-radius: 3px;
+         background: var(--uvalib-brand-blue-light);
+         &:hover {
+            background: var(--uvalib-brand-blue-lighter);
+         }
       }
    }
 }

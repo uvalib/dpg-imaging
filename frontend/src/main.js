@@ -5,10 +5,6 @@ import store from './store'
 
 const app = createApp(App)
 
-// provide store access to the router and router to store
-store.router = router
-router.store = store
-
 // bind store and router to all componens as $store and $router
 app.use(store)
 app.use(router)

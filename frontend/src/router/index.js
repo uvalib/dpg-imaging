@@ -7,7 +7,9 @@ import Unit from '../views/Unit.vue'
 import Page from '../views/Page.vue'
 import NotFound from '../views/NotFound.vue'
 import Forbidden from '../views/Forbidden.vue'
+import SignedOut from '../views/SignedOut.vue'
 import VueCookies from 'vue-cookies'
+import store from '../store'
 
 const routes = [
    {
@@ -41,6 +43,11 @@ const routes = [
       component: Forbidden
    },
    {
+      path: '/signedout',
+      name: 'signedout',
+      component: SignedOut
+   },
+   {
       path: '/:pathMatch(.*)*',
       name: "not_found",
       component: NotFound
@@ -55,12 +62,12 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
    if (to.path === '/granted') {
       let jwtStr = VueCookies.get("dpg_jwt")
-      router.store.commit("setJWT", jwtStr)
+      store.commit("setJWT", jwtStr)
       next( "/" )
-   } else if (to.name !== 'not_found' && to.name !== 'forbidden') {
+   } else if (to.name !== 'not_found' && to.name !== 'forbidden' && to.name !== "signedout") {
       let jwtStr = localStorage.getItem('dpg_jwt')
       if ( jwtStr) {
-         router.store.commit("setJWT", jwtStr)
+         store.commit("setJWT", jwtStr)
          next()
       } else {
          window.location.href = "/authenticate"
