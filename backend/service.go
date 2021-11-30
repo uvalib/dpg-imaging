@@ -131,6 +131,7 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 		TrackSysURL      string            `json:"tracksysURL"`
 		QAImageDir       string            `json:"qaImageDir"`
 		ScanDir          string            `json:"scanDir"`
+		Agencies         []agency          `json:"agencies"`
 		Staff            []staffMember     `json:"staff"`
 		Workstations     []workstation     `json:"workstations"`
 		Workflows        []workflow        `json:"workflows"`
@@ -145,10 +146,18 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 		ScanDir:    svc.ScanDir,
 	}
 
-	log.Printf("UNFO: load staff members")
+	log.Printf("INFO: load staff members")
 	dbResp := svc.DB.Where("role<=? and is_active=?", 2, 1).Order("last_name asc").Find(&resp.Staff)
 	if dbResp.Error != nil {
 		log.Printf("ERROR: unable to get staff members: %s", dbResp.Error.Error())
+		c.String(http.StatusInternalServerError, dbResp.Error.Error())
+		return
+	}
+
+	log.Printf("INFO: load agencies")
+	dbResp = svc.DB.Order("name asc").Find(&resp.Agencies)
+	if dbResp.Error != nil {
+		log.Printf("ERROR: unable to load agencies: %s", dbResp.Error.Error())
 		c.String(http.StatusInternalServerError, dbResp.Error.Error())
 		return
 	}

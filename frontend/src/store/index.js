@@ -21,6 +21,7 @@ export default createStore({
    state: {
       version: "unknown",
       staffMembers: [],
+      agencies: [],
       workstations: [],
       workflows: [],
       categories: [],
@@ -115,6 +116,8 @@ export default createStore({
          data.problems.forEach( p=> state.problemTypes.push(p))
          state.containerTypes.splice(0, state.containerTypes.length)
          data.containerTypes.forEach( w=> state.containerTypes.push(w))
+         state.agencies.splice(0, state.agencies.length)
+         data.agencies.forEach( w=> state.agencies.push(w))
       },
       setVersion(state, data) {
          state.version = `${data.version}-${data.build}`

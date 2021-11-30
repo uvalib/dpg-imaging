@@ -143,7 +143,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	filters := []string{"me", "active", "unassigned", "finished"}
 	filterQ := []string{
 		fmt.Sprintf("owner_id=%d and projects.finished_at is null", claims.UserID),
-		"projects.finished_at is null",
+		"projects.finished_at is null and owner_id is not null",
 		"projects.finished_at is null and owner_id is null",
 		"projects.finished_at is not null",
 	}

@@ -40,6 +40,12 @@ type intendedUse struct {
 	DeliverableResolution string `json:"deliverableResolution"`
 }
 
+type agency struct {
+	ID          uint   `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 type customer struct {
 	ID        uint   `json:"id"`
 	FirstName string `json:"firstName"`
