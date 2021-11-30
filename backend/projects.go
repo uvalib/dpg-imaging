@@ -264,8 +264,9 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 	// If someone else has this assignment, flag it as reassigned. Do not mark the finished time as it was never actually finished
 	if proj.OwnerID != nil {
 		activeAssign := proj.Assignments[len(proj.Assignments)-1]
+		log.Printf("INFO: marking assignment %d as reassigned", activeAssign.ID)
 		activeAssign.Status = 5
-		r := svc.DB.Save(&activeAssign)
+		r := svc.DB.Debug().Model(&activeAssign).Select("Status").Updates(activeAssign)
 		if r.Error != nil {
 			log.Printf("ERROR: unable to mark project %d active assignment as reassigned: %s", proj.ID, r.Error.Error())
 			c.String(http.StatusInternalServerError, r.Error.Error())
@@ -273,6 +274,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 		}
 	}
 
+	log.Printf("INFO: create assigmment for new owner %d", owner.ID)
 	now := time.Now()
 	newA := assignment{ProjectID: proj.ID, StepID: proj.CurrentStepID, StaffMemberID: owner.ID, AssignedAt: &now}
 	resp = svc.DB.Create(&newA)
@@ -282,22 +284,18 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 		return
 	}
 
-	resp = svc.DB.Exec("UPDATE projects set owner_id=? where id=?", owner.ID, proj.ID)
+	log.Printf("INFO: new owner %d for project %d", owner.ID, proj.ID)
+	proj.OwnerID = &owner.ID
+	proj.Owner = nil
+	resp = svc.DB.Debug().Model(&proj).Select("OwnerID").Updates(proj)
 	if resp.Error != nil {
 		log.Printf("ERROR: unable set project %d owner to %d: %s", proj.ID, owner.ID, resp.Error.Error())
 		c.String(http.StatusInternalServerError, resp.Error.Error())
 		return
 	}
 
-	// reload the project
+	log.Printf("INFO: project %d assigned to user %d", proj.ID, owner.ID)
 	resp = pTx.First(&proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to reload project %d: %s", proj.ID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
-		return
-	}
-
-	log.Printf("INFO: project %d claimed by user %d", proj.ID, owner.ID)
 	c.JSON(http.StatusOK, proj)
 }
 
