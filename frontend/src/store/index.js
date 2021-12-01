@@ -3,19 +3,7 @@ import axios from 'axios'
 import { getField, updateField } from 'vuex-map-fields'
 
 import projects from './modules/projects'
-import old from './modules/old'
-
-import router from '../router'
-
-function parseJwt(token) {
-   var base64Url = token.split('.')[1]
-   var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-   var jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-   }).join(''))
-
-   return JSON.parse(jsonPayload);
-}
+import user from './modules/user'
 
 export default createStore({
    state: {
@@ -29,14 +17,6 @@ export default createStore({
       ocrHints: [],
       ocrLanguageHints: [],
       problemTypes: [],
-      user: {
-         jwt: "",
-         firstName: "",
-         lastName: "",
-         role: "",
-         computeID: "",
-         ID: 0
-      },
       adminURL: "",
       qaDir: "",
       scanDir: "",
@@ -67,12 +47,6 @@ export default createStore({
    },
    getters: {
       getField,
-      isAdmin: state => {
-         return state.user.role == "admin"
-      },
-      isSupervisor: state => {
-         return state.user.role == "supervisor"
-      },
       pageInfoURLs: state => {
          let out = []
          state.masterFiles.forEach( mf => out.push(mf.infoURL) )
@@ -121,59 +95,6 @@ export default createStore({
       },
       setVersion(state, data) {
          state.version = `${data.version}-${data.build}`
-      },
-      signout(state) {
-         localStorage.removeItem("dpg_jwt")
-         state.user.jwt = ""
-         state.user.firstName = ""
-         state.user.lastName = ""
-         state.user.role = ""
-         state.user.computeID = ""
-         state.user.ID = 0
-      },
-      setJWT(state, jwt) {
-         if (jwt != state.user.jwt) {
-            state.user.jwt = jwt
-            localStorage.setItem("dpg_jwt", jwt)
-
-            let parsed = parseJwt(jwt)
-            state.user.ID = parsed.userID
-            state.user.computeID = parsed.computeID
-            state.user.firstName = parsed.firstName
-            state.user.lastName = parsed.lastName
-            state.user.role = parsed.role
-
-            // add interceptor to put bearer token in header
-            axios.interceptors.request.use( config => {
-               config.headers['Authorization'] = 'Bearer ' + jwt
-               return config
-            }, error => {
-               return Promise.reject(error)
-            })
-
-            // Catch 401 errors and redirect to an expired auth page
-            axios.interceptors.response.use(
-               res => res,
-               err => {
-                  if (err.config.url.match(/\/authenticate/) ) {
-                     router.push( "/forbidden" )
-                  } else {
-                     if (err.response && err.response.status == 401 ) {
-                        localStorage.removeItem("dpg_jwt")
-                        state.user.jwt = ""
-                        state.user.firstName = ""
-                        state.user.lastName = ""
-                        state.user.role = ""
-                        state.user.computeID = ""
-                        state.user.ID = 0
-                        router.push( "/signedout?expired=1" )
-                        return new Promise(() => { })
-                     }
-                  }
-                  return Promise.reject(err)
-               }
-            )
-         }
       },
       selectAll(state) {
          state.rangeStartIdx = 0
@@ -502,7 +423,7 @@ export default createStore({
       }
    },
    modules: {
-      old: old,
       projects: projects,
+      user: user,
    }
 })

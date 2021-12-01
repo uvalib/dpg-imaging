@@ -89,8 +89,8 @@ export default {
       ...mapGetters({
          currProject: 'projects/currProject',
          isOwner: 'projects/isOwner',
-         isAdmin: 'isAdmin',
-         isSupervisor: 'isSupervisor',
+         isAdmin: 'user/isAdmin',
+         isSupervisor: 'user/isSupervisor',
          isFinalizing: 'projects/isFinalizing',
          isFinished: 'projects/isFinished',
          inProgress: 'projects/inProgress',

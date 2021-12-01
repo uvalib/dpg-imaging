@@ -2,12 +2,8 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
-	"regexp"
 
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm/clause"
 )
 
@@ -70,27 +66,6 @@ type unit struct {
 	SpecialInstructions string      `json:"specialInstructions,omitempty"`
 	OCRMasterFiles      bool        `json:"ocrMasterFiles"`
 	UnitStatus          string      `json:"status"`
-}
-
-func (svc *serviceContext) getQAUnits(c *gin.Context) {
-	log.Printf("INFO: get available units from %s", svc.ImagesDir)
-	files, err := ioutil.ReadDir(svc.ImagesDir)
-	if err != nil {
-		log.Printf("ERROR: unable to list contents of images directory: %s", err.Error())
-		c.String(http.StatusInternalServerError, "unable to find units")
-		return
-	}
-
-	// get only directories that match naming requirements for a unit; 9 digits.
-	unitRegex := regexp.MustCompile(`^\d{9}$`)
-	out := make([]string, 0)
-	for _, f := range files {
-		fName := f.Name()
-		if unitRegex.Match([]byte(fName)) {
-			out = append(out, fName)
-		}
-	}
-	c.JSON(http.StatusOK, out)
 }
 
 func (svc *serviceContext) getUnitMetadata(uid string) (*metadata, error) {

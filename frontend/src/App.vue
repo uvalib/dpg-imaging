@@ -42,7 +42,7 @@ export default {
    },
    methods: {
       signout() {
-         this.$store.commit("signout")
+         this.$store.commit("user/signout")
          this.$router.push("signedout")
       }
    },
