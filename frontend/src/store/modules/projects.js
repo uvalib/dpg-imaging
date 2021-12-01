@@ -16,7 +16,7 @@ const projects = {
          workflow: 0,
          workstation: 0,
          assignedTo: 0,
-         agency: "",
+         agency: 0,
          customer: "",
          callNumber: "",
       }

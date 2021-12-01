@@ -191,7 +191,8 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	}
 	qAgency := c.Query("agency")
 	if qAgency != "" {
-		whereQ += fmt.Sprintf(" AND agencies.name like \"%%%s%%\"", qAgency)
+		id, _ := strconv.Atoi(qAgency)
+		whereQ += fmt.Sprintf(" AND agencies.id = %d", id)
 	}
 
 	type projResp struct {

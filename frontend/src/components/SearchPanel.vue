@@ -21,7 +21,10 @@
          <input id="customer" v-model="tgtCustomer">
 
          <label for="agency">Agency</label>
-         <input id="agency" v-model="tgtAgency">
+         <select id="agency" v-model="tgtAgency">
+            <option :value="0">Any</option>
+            <option v-for="a in agencies" :key="`agency${a.id}`" :value="a.id">{{a.name}}</option>
+         </select>
 
          <label for="workstation">Workstation</label>
          <select id="workstation" v-model="tgtWorkstation">
@@ -47,6 +50,7 @@ export default {
          workstations : state => state.workstations,
          workflows : state => state.workflows,
          staff : state => state.staffMembers,
+         agencies : state => state.agencies,
       }),
       ...mapFields({
          search: "projects.search",
