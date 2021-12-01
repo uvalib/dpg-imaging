@@ -48,6 +48,14 @@ const projects = {
          let currA = p.assignments[0]
          return currA.status == 6
       },
+      isFinished: state => projIdx => {
+         if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
+         let p = state.projects[projIdx]
+         if (p) {
+            return p.finishedAt
+         }
+         return false
+      },
       hasError: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]

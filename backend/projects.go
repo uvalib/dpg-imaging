@@ -267,7 +267,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 		activeAssign := proj.Assignments[len(proj.Assignments)-1]
 		log.Printf("INFO: marking assignment %d as reassigned", activeAssign.ID)
 		activeAssign.Status = 5
-		r := svc.DB.Debug().Model(&activeAssign).Select("Status").Updates(activeAssign)
+		r := svc.DB.Model(&activeAssign).Select("Status").Updates(activeAssign)
 		if r.Error != nil {
 			log.Printf("ERROR: unable to mark project %d active assignment as reassigned: %s", proj.ID, r.Error.Error())
 			c.String(http.StatusInternalServerError, r.Error.Error())
@@ -288,7 +288,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 	log.Printf("INFO: new owner %d for project %d", owner.ID, proj.ID)
 	proj.OwnerID = &owner.ID
 	proj.Owner = nil
-	resp = svc.DB.Debug().Model(&proj).Select("OwnerID").Updates(proj)
+	resp = svc.DB.Model(&proj).Select("OwnerID").Updates(proj)
 	if resp.Error != nil {
 		log.Printf("ERROR: unable set project %d owner to %d: %s", proj.ID, owner.ID, resp.Error.Error())
 		c.String(http.StatusInternalServerError, resp.Error.Error())
@@ -337,7 +337,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	if updateData.ContainerTypeID > 0 && proj.Workflow.Name == "Manuscript" {
 		proj.ContainerTypeID = &updateData.ContainerTypeID
 	}
-	r := svc.DB.Debug().Model(&proj).Select("ContainerTypeID", "CategoryID", "ItemCondition", "ConditionNote").Updates(proj)
+	r := svc.DB.Model(&proj).Select("ContainerTypeID", "CategoryID", "ItemCondition", "ConditionNote").Updates(proj)
 	if r.Error != nil {
 		log.Printf("ERROR: unable to update data for project %s: %s", projID, r.Error.Error())
 		c.String(http.StatusInternalServerError, r.Error.Error())
@@ -346,7 +346,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 
 	log.Printf("INFO: update OCR settings for project %s", projID)
 	proj.Unit.OCRMasterFiles = updateData.OCRMasterFiles
-	r = svc.DB.Debug().Model(&proj.Unit).Select("OCRMasterFiles").Updates(proj.Unit)
+	r = svc.DB.Model(&proj.Unit).Select("OCRMasterFiles").Updates(proj.Unit)
 	if r.Error != nil {
 		log.Printf("ERROR: unable to update unit OCR settings for project %s: %s", projID, r.Error.Error())
 		c.String(http.StatusInternalServerError, r.Error.Error())
@@ -354,7 +354,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	}
 	proj.Unit.Metadata.OCRHintID = updateData.OCRHintID
 	proj.Unit.Metadata.OCRLanguageHint = updateData.OCRLanguageHint
-	r = svc.DB.Debug().Model(&proj.Unit.Metadata).Select("OCRHintID", "OCRLanguageHint").Updates(proj.Unit.Metadata)
+	r = svc.DB.Model(&proj.Unit.Metadata).Select("OCRHintID", "OCRLanguageHint").Updates(proj.Unit.Metadata)
 	if r.Error != nil {
 		log.Printf("ERROR: unable to update OCR settings for project %s: %s", projID, r.Error.Error())
 		c.String(http.StatusInternalServerError, r.Error.Error())

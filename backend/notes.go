@@ -71,7 +71,7 @@ func (svc *serviceContext) addNote(c *gin.Context) {
 			vals = append(vals, fmt.Sprintf("(%d,%d)", newNote.ID, pid))
 		}
 		pq += strings.Join(vals, ",")
-		resp := svc.DB.Debug().Exec(pq)
+		resp := svc.DB.Exec(pq)
 		if resp.Error != nil {
 			log.Printf("ERROR: unable to add problems to note: %s", resp.Error.Error())
 		}

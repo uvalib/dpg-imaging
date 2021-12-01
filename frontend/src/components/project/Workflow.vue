@@ -26,22 +26,25 @@
       <div class="workflow-btns time" v-if="timeEntry">
          <div class="time-form">
             <label for="time">Approximately how many minutes did you spend on this assignment?</label>
-            <input id="time" type="number" v-model="stepMinutes">
+            <input id="time" type="number" v-model="stepMinutes"  @keyup.enter="timeEntered">
          </div>
          <div class="ok-cancel">
              <DPGButton @clicked="cancelFinish">Cancel</DPGButton>
              <DPGButton @clicked="timeEntered">OK</DPGButton>
          </div>
       </div>
-      <div class="workflow-btns" v-else-if="isFinalizing(projectIdx) == false">
+      <div class="workflow-btns" v-else-if="isFinalizing(projectIdx) == false && isFinished(projectIdx) == false">
          <template v-if="isOwner(computingID)">
             <DPGButton @clicked="viewerClicked" class="pad-right">Open QA Viewer</DPGButton>
             <AssignModal v-if="(isOwner(computingID) || isSupervisor || isAdmin) "
                :projectID="currProject.id" @assign="assignClicked" label="Reassign"/>
             <DPGButton v-if="inProgress(projectIdx) == false" @clicked="startStep">Start</DPGButton>
-            <DPGButton v-if=" hasError(projectIdx) == false && inProgress(projectIdx) == true" :disabled="!isFinishEnabled" @clicked="finishClicked">Finish</DPGButton>
+            <DPGButton v-if="inProgress(projectIdx) == true" :disabled="!isFinishEnabled" @clicked="finishClicked">
+               <template v-if="onFinalizeStep(projectIdx) &&  hasError(projectIdx) == true">Retry Finalize</template>
+               <template v-else>Finish</template>
+            </DPGButton>
             <DPGButton v-if="canReject(projectIdx)" class="reject"  @clicked="rejectStepClicked">Reject</DPGButton>
-            <DPGButton v-if="onFinalizeStep(projectIdx) &&  hasError(projectIdx) == true" @clicked="finishClicked">Retry Finalize</DPGButton>
+
          </template>
          <template v-else>
             <DPGButton v-if="hasOwner(projectIdx) == false" @clicked="claimClicked()"  class="pad-right">Claim</DPGButton>
@@ -89,6 +92,7 @@ export default {
          isAdmin: 'isAdmin',
          isSupervisor: 'isSupervisor',
          isFinalizing: 'projects/isFinalizing',
+         isFinished: 'projects/isFinished',
          inProgress: 'projects/inProgress',
          canReject: 'projects/canReject',
          onFinalizeStep: 'projects/onFinalizeStep',
