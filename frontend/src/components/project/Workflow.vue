@@ -33,14 +33,14 @@
              <DPGButton @clicked="timeEntered">OK</DPGButton>
          </div>
       </div>
-      <div class="workflow-btns" v-else-if="isFinalizing(projectIdx) == false && isFinished(projectIdx) == false">
+      <div class="workflow-btns" v-else-if="isFinalizing == false && isFinished(projectIdx) == false">
          <template v-if="isOwner(computingID)">
-            <DPGButton @clicked="viewerClicked" class="pad-right">Open QA Viewer</DPGButton>
+            <DPGButton @clicked="viewerClicked" class="pad-right" v-if="isScanning == false">Open QA Viewer</DPGButton>
             <AssignModal v-if="(isOwner(computingID) || isSupervisor || isAdmin) "
                :projectID="currProject.id" @assign="assignClicked" label="Reassign"/>
             <DPGButton v-if="inProgress(projectIdx) == false" @clicked="startStep">Start</DPGButton>
             <DPGButton v-if="inProgress(projectIdx) == true" :disabled="!isFinishEnabled" @clicked="finishClicked">
-               <template v-if="onFinalizeStep(projectIdx) &&  hasError(projectIdx) == true">Retry Finalize</template>
+               <template v-if="isFinalizing &&  hasError(projectIdx) == true">Retry Finalize</template>
                <template v-else>Finish</template>
             </DPGButton>
             <DPGButton v-if="canReject(projectIdx)" class="reject"  @clicked="rejectStepClicked">Reject</DPGButton>
@@ -95,16 +95,21 @@ export default {
          isFinished: 'projects/isFinished',
          inProgress: 'projects/inProgress',
          canReject: 'projects/canReject',
-         onFinalizeStep: 'projects/onFinalizeStep',
          hasError: 'projects/hasError',
          hasOwner: 'projects/hasOwner',
       }),
-      currentStepName() {
+      isFinalizing() {
+         return this.currStepName == 'Finalize'
+      },
+      isScanning() {
+         return (this.currStepName == 'Scan' || this.currStepName == 'Process')
+      },
+      currStepName() {
          return this.currProject.currentStep.name
       },
       isFinishEnabled() {
-         if ( this.currentStepName == "Scan" && this.currProject.workstation.id == 0) return false
-         if ( this.currentStepName == "Finalize") {
+         if ( this.currStepName == "Scan" && this.currProject.workstation.id == 0) return false
+         if ( this.currStepName == "Finalize") {
             if ( this.currProject.unit.metadata.ocrHint.id == 0) return false
             if ( this.currProject.unit.metadata.ocrHint.id == 1 && this.currProject.unit.metadata.ocrLanguageHint == "") return false
          }
@@ -132,10 +137,10 @@ export default {
          return ""
       },
       workflowNote() {
-         if ( this.currentStepName == "Scan" && this.currProject.workstation.id == 0) {
+         if ( this.currStepName == "Scan" && this.currProject.workstation.id == 0) {
             return "Assignment cannot be finished until the workstation has been set."
          }
-         if ( this.currentStepName == "Finalize" && this.currProject.unit.metadata.ocrHint.id == 0) {
+         if ( this.currStepName == "Finalize" && this.currProject.unit.metadata.ocrHint.id == 0) {
             return "Assignment cannot be finished until the OCR hint has been set."
          }
          if ( this.currProject.unit.metadata.ocrHint.id > 1 && this.currProject.unit.ocrMasterFiles == true) {
