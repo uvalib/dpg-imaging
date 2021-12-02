@@ -126,7 +126,8 @@ export default {
          isAdmin: 'isAdmin',
          isSupervisor: 'isSupervisor',
          statusText: 'projects/statusText',
-         percentComplete: 'projects/percentComplete'
+         percentComplete: 'projects/percentComplete',
+         isFinished: 'projects/isFinished'
       }),
       ...mapFields({
         filter: 'projects.filter',
@@ -170,9 +171,6 @@ export default {
       },
       ownerInfo(p) {
          return `${p.owner.firstName} ${p.owner.lastName} (${p.owner.computingID})`
-      },
-      isFinished(p) {
-         return p.finishedAt != null
       },
       isOverdue(p) {
          let due =  new Date(p.dueOn)

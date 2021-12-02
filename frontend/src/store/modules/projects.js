@@ -33,14 +33,6 @@ const projects = {
          let step = p.workflow.steps.find( s => s.id == currA.stepID)
          return step.failStepID > 0 && currA.status == 1
       },
-      onFinalizeStep: state => projIdx => {
-         if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
-         let p = state.projects[projIdx]
-         if (p.assignments.length == 0) return false
-         let currA = p.assignments[0]
-         let step = p.workflow.steps.find( s => s.id == currA.stepID)
-         return step.name == "Finalize"
-      },
       isFinalizing: state => projIdx => {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]
