@@ -19,7 +19,7 @@ import { mapState } from "vuex"
 export default {
    computed: {
       ...mapState({
-         problems: state => state.problems
+         problems: state => state.units.problems
       }),
    },
    data() {

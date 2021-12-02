@@ -37,7 +37,7 @@
                </span>
                <ConfirmModal label="Batch Rename" class="right-pad" @confirmed="renameAll">
                   <div>All files will be renamed to match the following format:</div>
-                  <code>{{currUnit.padStart(9,'0')}}_0001.tif - {{currUnit.padStart(9,'0')}}_nnnn.tif</code>
+                  <code>{{paddedUnit}}_0001.tif - {{paddedUnit}}_nnnn.tif</code>
                </ConfirmModal>
                <DPGButton id="set-titles" @clicked="setPageNumbersClicked" class="button right-pad">Set Page Numbers</DPGButton>
                <DPGButton id="set-titles" @clicked="componentLinkClicked" class="button">Component Link</DPGButton>
@@ -201,19 +201,24 @@ export default {
          loadingProject: state => state.projects.working,
          loadingUnit : state => state.loading,
          updating : state => state.updating,
-         currUnit: state => state.currUnit,
-         currPage : state => state.currPage,
-         pageSize : state => state.pageSize,
+         currUnit: state => state.units.currUnit,
+         currPage : state => state.units.currPage,
+         pageSize : state => state.units.pageSize,
          selectedProjectIdx: state => state.projects.selectedProjectIdx,
       }),
       ...mapGetters({
-         pageStartIdx: 'pageStartIdx',
-         totalPages: 'totalPages',
+         pageStartIdx: 'units/pageStartIdx',
+         totalPages: 'units/totalPages',
          currProject: 'projects/currProject',
       }),
-      ...mapFields([
-         'viewMode', "rangeStartIdx", "rangeEndIdx", "editMode", "masterFiles", "pageMasterFiles"
-      ]),
+      ...mapFields({
+         viewMode: 'units.viewMode',
+         rangeStartIdx: "units.rangeStartIdx",
+         rangeEndIdx: "units.rangeEndIdx",
+         editMode: "units.editMode",
+         masterFiles: "units.masterFiles",
+         pageMasterFiles: "units.pageMasterFiles"
+      }),
       title() {
          let t = this.currProject.unit.metadata.title
          if ( t == "") {
@@ -228,6 +233,10 @@ export default {
          }
          return t
       },
+      paddedUnit() {
+         let unitStr = ""+this.currUnit
+         return unitStr.padStart(9,'0')
+      }
    },
    data() {
       return {
@@ -245,27 +254,27 @@ export default {
          return `/projects/${this.currProject.id}/unit/images/${this.pageStartIdx+pgIndex+1}`
       },
       priorClicked() {
-         this.$store.commit("setPage", this.currPage-1)
+         this.$store.commit("units/setPage", this.currPage-1)
          this.pageChanged()
       },
       nextClicked() {
-         this.$store.commit("setPage", this.currPage+1)
+         this.$store.commit("units/setPage", this.currPage+1)
          this.pageChanged()
       },
       lastClicked() {
-         this.$store.commit("setPage", this.totalPages)
+         this.$store.commit("units/setPage", this.totalPages)
          this.pageChanged()
       },
       firstClicked() {
-         this.$store.commit("setPage", 1)
+         this.$store.commit("units/setPage", 1)
          this.pageChanged()
       },
       pageJumpClicked(pg) {
-         this.$store.commit("setPage", pg)
+         this.$store.commit("units/setPage", pg)
          this.pageChanged()
       },
       pageSizeChanged(sz) {
-         this.$store.dispatch("setPageSize", sz)
+         this.$store.dispatch("units/setPageSize", sz)
          let query = Object.assign({}, this.$route.query)
          query.pagesize = this.currPageSize
          query.page = this.currPage
@@ -294,7 +303,7 @@ export default {
           this.rangeEndIdx = -1
       },
       deleteSelected() {
-         this.$store.dispatch("deleteMasterFile", this.rightClickedMF)
+         this.$store.dispatch("units/deleteMasterFile", this.rightClickedMF)
       },
       showContextMenu(fileName, e) {
          this.rightClickedMF = fileName
@@ -330,7 +339,7 @@ export default {
             }
       },
       renameAll() {
-         this.$store.dispatch("renameAll")
+         this.$store.dispatch("units/renameAll")
       },
       componentLinkClicked() {
          this.editMode = "component"
@@ -421,7 +430,7 @@ export default {
          this.editMF = null
       },
       async submitEdit(mf) {
-         await this.$store.dispatch("updateMasterFileMetadata",
+         await this.$store.dispatch("units/updateMasterFileMetadata",
             { file: mf.path, title: this.newTitle, description: this.newDescription,
               status: mf.status, componentID: mf.componentID } )
          this.editMF = null
@@ -432,17 +441,17 @@ export default {
          await this.$store.dispatch("projects/getProject", this.$route.params.id)
       }
 
-      await this.$store.dispatch("getUnitMasterFiles", this.currProject.unit.id)
+      await this.$store.dispatch("units/getUnitMasterFiles", this.currProject.unit.id)
       if ( this.$route.query.view ) {
          this.viewMode = this.$route.query.view
       }
       if ( this.$route.query.pagesize ) {
          let ps = parseInt(this.$route.query.pagesize, 10)
-         this.$store.dispatch("setPageSize", ps)
+         this.$store.dispatch("units/setPageSize", ps)
       }
       if ( this.$route.query.page ) {
          let pg = parseInt(this.$route.query.page, 10)
-         this.$store.commit("setPage", pg)
+         this.$store.commit("units/setPage", pg)
       }
    },
 }

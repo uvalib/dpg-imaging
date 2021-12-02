@@ -69,7 +69,7 @@ export default {
          this.menuOpen = false
       },
       async selectTag( tag ) {
-         await this.$store.dispatch("setTag", {file: this.masterFile.path, tag: tag})
+         await this.$store.dispatch("units/setTag", {file: this.masterFile.path, tag: tag})
          this.hideMenu()
       }
    }

@@ -77,13 +77,13 @@ export default {
          loadingProject: state => state.projects.working,
          loadingUnit : state => state.loading,
          updating : state => state.updating,
-         currUnit: state => state.currUnit,
+         currUnit: state => state.units.currUnit,
          selectedProjectIdx: state  => state.projects.selectedProjectIdx,
-         masterFiles:  state => state.masterFiles
+         masterFiles:  state => state.units.masterFiles
       }),
       ...mapGetters({
-         pageInfoURLs: 'pageInfoURLs',
-         masterFileInfo: 'masterFileInfo',
+         pageInfoURLs: 'units/pageInfoURLs',
+         masterFileInfo: 'units/masterFileInfo',
          currProject: 'projects/currProject',
       }),
       hasMasterFiles() {
@@ -105,7 +105,7 @@ export default {
    },
    methods: {
       rotateImage(dir) {
-         this.$store.dispatch("rotateImage", {file: this.currMasterFile.fileName, dir: dir})
+         this.$store.dispatch("units/rotateImage", {file: this.currMasterFile.fileName, dir: dir})
       },
       viewActualSize() {
          this.viewer.viewport.zoomTo(this.viewer.viewport.imageToViewportZoom(1.0))
@@ -131,7 +131,7 @@ export default {
       },
       async submitEdit() {
          let mf = this.currMasterFile
-         await this.$store.dispatch("updateMasterFileMetadata",
+         await this.$store.dispatch("units/updateMasterFileMetadata",
             { file: mf.path, title: this.newTitle, description: this.newDescription,
               status: mf.status, componentID: mf.componentID } )
          this.editField = ""
@@ -141,7 +141,7 @@ export default {
    async beforeMount() {
       if (this.selectedProjectIdx == -1) {
          await this.$store.dispatch("projects/getProject", this.$route.params.id)
-         await this.$store.dispatch("getUnitMasterFiles", this.currProject.unit.id)
+         await this.$store.dispatch("units/getUnitMasterFiles", this.currProject.unit.id)
       }
       this.$nextTick(()=>{
          let hdr = document.getElementById("uva-header")
