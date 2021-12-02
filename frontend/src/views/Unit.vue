@@ -1,8 +1,8 @@
 <template>
    <div class="unit">
       <WaitSpinner v-if="updating" :overlay="true" message="Updating data..." />
-      <div class="load" v-if="loading">
-         <WaitSpinner v-if="loading" message="Loading master files..." />
+      <div class="load" v-if="loadingUnit || loadingProject">
+         <WaitSpinner message="Loading master files..." />
       </div>
       <template v-else>
          <div class="metadata">
@@ -15,9 +15,9 @@
                <div>Unit {{currUnit}}</div>
                <div class="small">{{masterFiles.length}} Images</div>
             </h3>
-            <span class="back" @click="backClicked">
+            <span class="back">
                <i class="fas fa-angle-double-left back-button"></i>
-               <span class="link">Back</span>
+               <router-link :to="`/projects/${currProject.id}`" class="link">Back to project</router-link>
             </span>
          </div>
          <div class="toolbar">
@@ -66,7 +66,7 @@
                      @contextmenu.prevent="showContextMenu(element.fileName, $event)"
                   >
                      <td class="thumb">
-                        <router-link :to="`/unit/${currUnit}/page/${pageStartIdx+index+1}`"><img :src="element.thumbURL"/></router-link>
+                        <router-link :to="imageViewerURL(index)"><img :src="element.thumbURL"/></router-link>
                      </td>
                      <td><TagPicker :masterFile="element" /></td>
                      <td class="hover-container">
@@ -110,7 +110,7 @@
                   @contextmenu.prevent="showContextMenu(element.fileName, $event)"
 
                >
-                  <router-link :to="`/unit/${currUnit}/page/${pageStartIdx+index+1}`">
+                  <router-link :to="imageViewerURL(index)">
                      <img :src="element.mediumURL" v-if="viewMode == 'medium'"/>
                      <img :src="element.largeURL" v-if="viewMode == 'large'"/>
                   </router-link>
@@ -198,11 +198,13 @@ export default {
    name: "unit",
    computed: {
       ...mapState({
-         loading : state => state.loading,
+         loadingProject: state => state.projects.working,
+         loadingUnit : state => state.loading,
          updating : state => state.updating,
          currUnit: state => state.currUnit,
          currPage : state => state.currPage,
          pageSize : state => state.pageSize,
+         selectedProjectIdx: state => state.projects.selectedProjectIdx,
       }),
       ...mapGetters({
          pageStartIdx: 'pageStartIdx',
@@ -225,7 +227,7 @@ export default {
             t = "Unknown"
          }
          return t
-      }
+      },
    },
    data() {
       return {
@@ -239,8 +241,8 @@ export default {
       }
    },
    methods: {
-      backClicked() {
-         this.$router.go(-1)
+      imageViewerURL(pgIndex) {
+         return `/projects/${this.currProject.id}/unit/images/${this.pageStartIdx+pgIndex+1}`
       },
       priorClicked() {
          this.$store.commit("setPage", this.currPage-1)
@@ -425,7 +427,11 @@ export default {
          this.editMF = null
       }
    },
-   async created() {
+   async beforeMount() {
+      if (this.selectedProjectIdx == -1) {
+         await this.$store.dispatch("projects/getProject", this.$route.params.id)
+      }
+
       await this.$store.dispatch("getUnitMasterFiles", this.currProject.unit.id)
       if ( this.$route.query.view ) {
          this.viewMode = this.$route.query.view
@@ -493,7 +499,7 @@ export default {
          .link {
             font-weight: normal;
             text-decoration: none;
-            color: var(--uvalib-text);
+            color: var(--uvalib-text) !important;
             display: inline-block;
             margin-left: 5px;
             cursor: pointer;

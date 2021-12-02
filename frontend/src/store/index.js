@@ -246,6 +246,8 @@ export default createStore({
             ctx.commit("setUpdating", false)
          }).catch( e => {
             ctx.commit("setError", e)
+            ctx.commit("setLoading", false)
+            ctx.commit("setUpdating", false)
          })
       },
 

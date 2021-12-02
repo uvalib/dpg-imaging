@@ -1,8 +1,8 @@
 <template>
    <div class="viewer">
       <WaitSpinner v-if="updating" :overlay="true" message="Updating data..." />
-       <div class="load" v-if="loading">
-         <WaitSpinner v-if="loading" message="Loading viewer..." />
+       <div class="load" v-if="loadingUnit || loadingProject || masterFiles == false">
+         <WaitSpinner message="Loading viewer..." />
       </div>
       <template v-else>
          <div id="iiif-toolbar" class="toolbar">
@@ -39,7 +39,7 @@
             </table>
             <span class="toolbar-button group back">
                <i class="fas fa-angle-double-left back-button"></i>
-               <span @click="$router.back()">Back to Unit</span>
+               <span @click="$router.back()">Back to unit</span>
             </span>
             <span class="paging group">
                <span id="previous" title="Previous" class="toolbar-button"><i class="fas fa-arrow-left"></i></span>
@@ -68,20 +68,27 @@ import OpenSeadragon from "openseadragon"
 import TagPicker from '../components/TagPicker.vue'
 import TitleInput from '../components/TitleInput.vue'
 export default {
-   name: "Page",
+   name: "Image",
    components: {
       TagPicker, TitleInput
    },
    computed: {
       ...mapState({
-         loading : state => state.loading,
+         loadingProject: state => state.projects.working,
+         loadingUnit : state => state.loading,
          updating : state => state.updating,
-         currUnit: state => state.currUnit
+         currUnit: state => state.currUnit,
+         selectedProjectIdx: state  => state.projects.selectedProjectIdx,
+         masterFiles:  state => state.masterFiles
       }),
-      ...mapGetters([
-        'pageInfoURLs',
-        'masterFileInfo'
-      ]),
+      ...mapGetters({
+         pageInfoURLs: 'pageInfoURLs',
+         masterFileInfo: 'masterFileInfo',
+         currProject: 'projects/currProject',
+      }),
+      hasMasterFiles() {
+         return this.masterFiles.length > 0
+      },
       currMasterFile() {
          return this.masterFileInfo( this.page-1)
       }
@@ -131,8 +138,11 @@ export default {
 
       }
    },
-   async created() {
-      await this.$store.dispatch("getUnitMasterFiles", this.$route.params.unit)
+   async beforeMount() {
+      if (this.selectedProjectIdx == -1) {
+         await this.$store.dispatch("projects/getProject", this.$route.params.id)
+         await this.$store.dispatch("getUnitMasterFiles", this.currProject.unit.id)
+      }
       this.$nextTick(()=>{
          let hdr = document.getElementById("uva-header")
          let toolbar = document.getElementById("iiif-toolbar")
@@ -164,7 +174,8 @@ export default {
          })
          this.viewer.addHandler("page", (data) => {
             this.page = data.page + 1
-            this.$router.replace(`/unit/${this.currUnit}/page/${this.page}`)
+            let url = `/projects/${this.currProject.id}/unit/images/${this.page}`
+            this.$router.replace(url)
          })
          this.viewer.addHandler("zoom", (data) => {
             this.zoom = this.viewer.viewport.viewportToImageZoom(data.zoom)
@@ -185,7 +196,9 @@ export default {
    :deep(.openseadragon-container) {
       background: #555555 !important;
    }
-   background: black;
+   .load {
+      margin-top: 5%;
+   }
    .toolbar {
       padding: 10px;
       background: var(--uvalib-grey-light);

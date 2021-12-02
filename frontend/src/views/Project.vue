@@ -38,7 +38,7 @@
             </h4>
             <span class="back">
                <i class="fas fa-angle-double-left back-button"></i>
-               <router-link to="/">Back to Projects</router-link>
+               <router-link to="/">Back to projects</router-link>
             </span>
          </div>
          <div class="project-main">
@@ -186,7 +186,7 @@ export default {
          a {
             font-weight: normal;
             text-decoration: none;
-            color: var(--uvalib-text);
+            color: var(--uvalib-text) !important;
             display: inline-block;
             margin-left: 5px;
             &:hover {

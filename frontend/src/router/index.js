@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import Project from '../views/Project.vue'
 import Unit from '../views/Unit.vue'
-import Page from '../views/Page.vue'
+import Image from '../views/Image.vue'
 import NotFound from '../views/NotFound.vue'
 import Forbidden from '../views/Forbidden.vue'
 import SignedOut from '../views/SignedOut.vue'
@@ -22,14 +22,14 @@ const routes = [
       component: Project
    },
    {
-      path: '/unit/:unit',
+      path: '/projects/:id/unit',
       name: 'unit',
       component: Unit
    },
    {
-      path: '/unit/:unit/page/:page',
-      name: 'page',
-      component: Page
+      path: '/projects/:id/unit/images/:page',
+      name: 'image',
+      component: Image
    },
    {
       path: '/forbidden',

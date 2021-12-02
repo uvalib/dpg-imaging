@@ -211,7 +211,7 @@ export default {
          this.timeEntry = false
       },
       viewerClicked() {
-         this.$router.push("/unit/"+this.currProject.unit.id)
+         this.$router.push(`/projects/${this.currProject.id}/unit`)
       },
       startStep() {
          this.$store.dispatch("projects/startStep")
