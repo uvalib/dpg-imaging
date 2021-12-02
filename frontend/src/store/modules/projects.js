@@ -52,7 +52,7 @@ const projects = {
          if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
          let p = state.projects[projIdx]
          if (p) {
-            return p.finishedAt
+            return Object.hasOwn(p, 'finishedAt') && p.finishedAt != ""
          }
          return false
       },
@@ -77,8 +77,10 @@ const projects = {
       },
       isOwner: state => (computeID) => {
          if ( state.selectedProjectIdx == -1 ) return false
-         if ( !state.projects[state.selectedProjectIdx].owner ) return false
-         return (state.projects[state.selectedProjectIdx].owner.computingID == computeID)
+         if ( state.projects[state.selectedProjectIdx].owner ) {
+            return (state.projects[state.selectedProjectIdx].owner.computingID == computeID)
+         }
+         return false
       },
       totalPages: state => {
          return Math.ceil(state.total/state.pageSize)
