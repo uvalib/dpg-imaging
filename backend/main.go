@@ -43,7 +43,7 @@ func main() {
 		api.POST("/projects/:id/finish", svc.authMiddleware, svc.finishProjectStep)
 		api.POST("/projects/:id/reject", svc.authMiddleware, svc.rejectProjectStep)
 
-		api.GET("/units/:uid", svc.authMiddleware, svc.getUnitDetails)
+		api.GET("/units/:uid/masterfiles", svc.authMiddleware, svc.getUnitMasterFiles)
 		api.POST("/units/:uid/finalize", svc.finalizeUnitRequest)
 		api.POST("/units/:uid/update", svc.authMiddleware, svc.updateMetadata)
 		api.POST("/units/:uid/rename", svc.authMiddleware, svc.renameFiles)

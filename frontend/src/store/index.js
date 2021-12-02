@@ -31,8 +31,6 @@ export default createStore({
       rangeStartIdx: -1,
       rangeEndIdx: -1,
       editMode: "",
-      callNumber: "",
-      title: "",
       problems: [],
       component: {
          valid: false,
@@ -126,10 +124,6 @@ export default createStore({
             state.error = false
          }
       },
-      setUnitMetadata(state, data) {
-         state.callNumber = data.callNumber
-         state.title = data.title
-      },
       setUnitProblems(state, problems) {
          state.problems.splice(0, state.problems.length)
          problems.forEach( p => state.problems.push(p) )
@@ -210,8 +204,6 @@ export default createStore({
          ctx.rangeStartIdx = -1
          ctx.rangeEndIdx = -1
          ctx.editMode = ""
-         ctx.callNumber = "Unknown"
-         ctx.title = "Unknown"
          ctx.problems.splice(0, ctx.problems.length)
          ctx.currPage = 1
          ctx.viewMode = "list"
@@ -240,16 +232,15 @@ export default createStore({
          ctx.commit("setPageSize", newSize)
          ctx.commit('setPage', 1)
       },
-      async getUnitDetails(ctx, unit) {
+      async getUnitMasterFiles(ctx, unit) {
          // dont try to reload a unit if the data is already present - unless an update is in process
          if (ctx.state.currUnit == unit && ctx.state.masterFiles.length > 0 && ctx.state.updating == false) return
 
          ctx.commit("setLoading", true)
          ctx.commit("clearUnitDetails")
-         return axios.get(`/api/units/${unit}`).then(response => {
+         return axios.get(`/api/units/${unit}/masterfiles`).then(response => {
             ctx.commit('setMasterFiles', {unit: unit, masterFiles: response.data.masterFiles})
             ctx.commit('setPage', 1)
-            ctx.commit('setUnitMetadata', response.data.metadata)
             ctx.commit('setUnitProblems', response.data.problems)
             ctx.commit("setLoading", false)
             ctx.commit("setUpdating", false)

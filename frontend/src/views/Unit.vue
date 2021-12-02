@@ -201,18 +201,31 @@ export default {
          loading : state => state.loading,
          updating : state => state.updating,
          currUnit: state => state.currUnit,
-         title: state => state.title,
-         callNumber: state => state.callNumber,
          currPage : state => state.currPage,
          pageSize : state => state.pageSize,
       }),
-      ...mapGetters([
-        'pageStartIdx',
-        'totalPages',
-      ]),
+      ...mapGetters({
+         pageStartIdx: 'pageStartIdx',
+         totalPages: 'totalPages',
+         currProject: 'projects/currProject',
+      }),
       ...mapFields([
          'viewMode', "rangeStartIdx", "rangeEndIdx", "editMode", "masterFiles", "pageMasterFiles"
       ]),
+      title() {
+         let t = this.currProject.unit.metadata.title
+         if ( t == "") {
+            t = "Unknown"
+         }
+         return t
+      },
+      callNumber() {
+         let t = this.currProject.unit.metadata.callNumber
+         if ( t == "") {
+            t = "Unknown"
+         }
+         return t
+      }
    },
    data() {
       return {
@@ -413,7 +426,7 @@ export default {
       }
    },
    async created() {
-      await this.$store.dispatch("getUnitDetails", this.$route.params.unit)
+      await this.$store.dispatch("getUnitMasterFiles", this.currProject.unit.id)
       if ( this.$route.query.view ) {
          this.viewMode = this.$route.query.view
       }
