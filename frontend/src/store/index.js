@@ -56,9 +56,6 @@ export default createStore({
       pageStartIdx: state => {
          return (state.currPage-1)*state.pageSize
       },
-      signedInUser: state => {
-         return `${state.user.firstName} ${state.user.lastName} (${state.user.computeID})`
-      },
       totalPages: state => {
          return Math.ceil(state.masterFiles.length / state.pageSize)
       },

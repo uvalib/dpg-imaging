@@ -29,6 +29,9 @@ const user = {
       isSupervisor: state => {
          return state.role == "supervisor"
       },
+      signedInUser: state => {
+         return `${state.firstName} ${state.lastName} (${state.computeID})`
+      },
    },
    mutations: {
       signout(state) {
