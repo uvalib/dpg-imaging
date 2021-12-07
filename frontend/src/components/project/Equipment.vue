@@ -91,10 +91,16 @@ export default {
    },
    methods: {
       editClicked() {
-         this.workstationID = 0
+         this.workstationID = this.currProject.workstation.id
          this.captureResolution = ""
-         this.resizedResolution = ""
-         this.resolutionNote = ""
+          this.resizedResolution = ""
+         if ( this.currProject.captureResolution) {
+            this.captureResolution = this.currProject.captureResolution
+         }
+         if (this.currProject.resizedResolution) {
+            this.resizedResolution = this.currProject.resizedResolution
+         }
+         this.resolutionNote = this.currProject.resolutionNote
          this.editing = true
       },
       cancelClicked() {

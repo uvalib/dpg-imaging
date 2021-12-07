@@ -580,12 +580,27 @@ func (svc *serviceContext) failStep(proj *project, problemName string, message s
 	if resp.Error != nil {
 		p.ID = 7 // other
 	}
-	svc.DB.Model(&newNote).Association("Problems").Append(&p)
+
+	pq := "insert into notes_problems (note_id, problem_id) values "
+	var vals []string
+	vals = append(vals, fmt.Sprintf("(%d,%d)", newNote.ID, p.ID))
+
+	pq += strings.Join(vals, ",")
+	resp = svc.DB.Exec(pq)
+	if resp.Error != nil {
+		log.Printf("ERROR: unable to add problems to note: %s", resp.Error.Error())
+	}
 }
 
 func dirExist(tgtDir string) bool {
-	if _, err := os.Stat(tgtDir); os.IsNotExist(err) {
-		return false
+	log.Printf("INFO: check existance of %s", tgtDir)
+	_, err := os.Stat(tgtDir)
+	if err != nil {
+		log.Printf("ERROR: check %s failed: %s", tgtDir, err.Error())
+		if os.IsNotExist(err) {
+			log.Printf("ERROR: %s does not exist", tgtDir)
+			return false
+		}
 	}
 	return true
 }
