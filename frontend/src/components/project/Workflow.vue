@@ -146,7 +146,7 @@ export default {
          if ( this.currProject.unit.metadata.ocrHint.id > 1 && this.currProject.unit.ocrMasterFiles == true) {
             return "Cannot OCR items that are not regular text."
          }
-         if ( this.currProject.unit.metadata.ocrHint.id == 1 && this.currProject.unit.metadata.ocrLanguageHint == "") {
+         if ( this.currProject.unit.metadata.ocrHint.id == 1 && this.currProject.unit.metadata.ocrLanguageHint == "" && this.currStepName == "Finalize") {
             return "Assignment cannot be finished until the OCR Language Hint has been set."
          }
          if ( this.currProject.unit.status == "error" ) {
