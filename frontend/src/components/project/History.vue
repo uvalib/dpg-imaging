@@ -81,8 +81,10 @@ export default {
             mins += a.durationMinutes
          })
          let h = 0
-         if (mins > 60) Math.round(mins/60)
-         mins -= (h*60)
+         if (mins > 60) {
+            h = Math.round(mins/60)
+            mins -= (h*60)
+         }
          return `${(""+h).padStart(2,"0")}:${(""+mins).padStart(2,"0")}`
       }
    },
