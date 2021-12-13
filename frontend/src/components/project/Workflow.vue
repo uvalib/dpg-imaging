@@ -33,7 +33,7 @@
              <DPGButton @clicked="timeEntered">OK</DPGButton>
          </div>
       </div>
-      <div class="workflow-btns" v-else-if="isFinalizing == false && isFinished(projectIdx) == false">
+      <div class="workflow-btns" v-else-if="isFinalizeRunning == false && isFinished(projectIdx) == false">
          <template v-if="isOwner(computingID)">
             <DPGButton @clicked="viewerClicked" class="pad-right" v-if="isScanning == false">Open QA Viewer</DPGButton>
             <AssignModal v-if="(isOwner(computingID) || isSupervisor || isAdmin) "
@@ -92,7 +92,7 @@ export default {
          isOwner: 'projects/isOwner',
          isAdmin: 'user/isAdmin',
          isSupervisor: 'user/isSupervisor',
-         isFinalizing: 'projects/isFinalizing',
+         isFinalizeRunning: 'projects/isFinalizeRunning',
          isFinished: 'projects/isFinished',
          inProgress: 'projects/inProgress',
          canReject: 'projects/canReject',
