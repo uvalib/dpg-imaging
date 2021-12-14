@@ -19,6 +19,7 @@ const projects = {
          agency: 0,
          customer: "",
          callNumber: "",
+         unitID: ""
       }
    },
    // NOTES : enums from tracksys models
@@ -155,6 +156,7 @@ const projects = {
          state.search.agency = ""
          state.search.customer = ""
          state.search.callNumber = ""
+         state.search.unitID = ""
          state.currPage = 1
       },
       setProjects(state, data) {
@@ -211,6 +213,9 @@ const projects = {
          }
          if (s.callNumber != "") {
             qParam.push(`callnum=${encodeURIComponent(s.callNumber)}`)
+         }
+         if (s.unitID != "") {
+            qParam.push(`unit=${s.unitID}`)
          }
 
          let q = `/api/projects?page=${ctx.state.currPage}&filter=${ctx.state.filter}`
