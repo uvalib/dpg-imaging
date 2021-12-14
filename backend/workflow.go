@@ -539,10 +539,19 @@ func (svc *serviceContext) moveFiles(proj *project, srcDir string, destDir strin
 		srcDir = outputDir
 	}
 
-	err := os.Rename(srcDir, destDir)
+	log.Printf("INFO: recursively copy %s to %s", srcDir, destDir)
+	cmdArray := []string{"-R", srcDir, destDir}
+	_, err := exec.Command("cp", cmdArray...).Output()
 	if err != nil {
 		svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Move %s to %s failed: %s</p>", srcDir, destDir, err.Error()))
-		return fmt.Errorf("unable to move source %s to destination %s: %s", srcDir, destDir, err.Error())
+		return fmt.Errorf("unable to copy source %s to destination %s: %s", srcDir, destDir, err.Error())
+	}
+
+	log.Printf("INFO: cleanup original %s", srcDir)
+	cmdArray = []string{"-r", srcDir}
+	_, err = exec.Command("rm", cmdArray...).Output()
+	if err != nil {
+		log.Printf("WARN: unable to remove %s after copy to %s", srcDir, destDir)
 	}
 
 	log.Printf("INFO: files successfully moved to %s", destDir)

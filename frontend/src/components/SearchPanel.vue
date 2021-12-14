@@ -14,6 +14,9 @@
             <option v-for="sm in staff" :key="`sm${sm.id}`" :value="sm.id">{{sm.lastName}}, {{sm.firstName}}</option>
          </select>
 
+         <label for="unit">Unit</label>
+         <input id="unit" v-model="tgtUnitID">
+
          <label for="call">Call Number</label>
          <input id="call" v-model="tgtCallNumber">
 
@@ -60,6 +63,7 @@ export default {
          tgtCallNumber: "projects.search.callNumber",
          tgtCustomer: "projects.search.customer",
          tgtAgency: "projects.search.agency",
+         tgtUnitID: "projects.search.unitID",
       })
    },
    methods: {

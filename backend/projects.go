@@ -194,6 +194,12 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		id, _ := strconv.Atoi(qAgency)
 		whereQ += fmt.Sprintf(" AND agencies.id = %d", id)
 	}
+	qUnitID := c.Query("unit")
+	if qUnitID != "" {
+		id, _ := strconv.Atoi(qUnitID)
+		whereQ += fmt.Sprintf(" AND units.id = %d", id)
+		log.Printf("INFO: query for unit %d", id)
+	}
 
 	type projResp struct {
 		Total    int64     `json:"total"`
