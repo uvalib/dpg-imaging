@@ -24,10 +24,11 @@ export default {
          editVal: this.modelValue,
          dropdownOpen: false,
          vocab: ["Spine", "Front Cover", "Front Cover verso", "Back Cover", "Back Cover recto",
-                 "Head", "Tail", "Fore-edge", "Front Paste-down Endpaper", "Front Free Endpaper page #",
-                 "Blank Page", "Half-title", "Frontispiece", "Printer’s Imprint", "Copyright",
+                 "Head", "Tail", "Fore-edge", "Front Paste-down Endpaper", "Front Free Endpaper",
+                 "Back Free Endpaper", "Plate",
+                 "Blank Page", "Half-title", "Frontispiece", "Printer's Imprint", "Copyright",
                  "Privilege", "Ad Lectorem",  "Table of Contents", "Titlepage", "Device",
-                 "Epigraph", "Prologue/Preface", "Dedication", "Errata"]
+                 "Epigraph", "Prologue/Preface", "Dedication", "Errata"].sort()
       }
    },
    methods: {
