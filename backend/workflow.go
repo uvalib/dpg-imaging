@@ -356,7 +356,7 @@ func (svc *serviceContext) validateDirectoryContent(proj *project, tgtDir string
 			}
 		}
 
-		if entry.Name() == ".DS_Store" {
+		if entry.Name() == ".DS_Store" || strings.Index(entry.Name(), ".smbdelete") == 0 {
 			log.Printf("INFO: remove  %s", fullPath)
 			os.Remove(fullPath)
 		} else {
