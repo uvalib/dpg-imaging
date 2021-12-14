@@ -8,7 +8,7 @@
          <div class="metadata">
             <h2>
                <ProblemsDisplay class="topleft" />
-               <span class="title">{{title}}</span>
+               <span class="title"><router-link :to="`/projects/${currProject.id}`">{{title}}</router-link></span>
             </h2>
             <h3>
                <div>{{callNumber}}</div>
@@ -480,6 +480,11 @@ export default {
          .title {
             display: inline-block;
             max-width: 60%;
+            a {
+               color: inherit !important;
+               font-weight: inherit !important;
+               font-size: inherit !important;
+            }
          }
       }
       h3 {
