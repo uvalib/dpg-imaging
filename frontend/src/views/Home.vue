@@ -2,7 +2,6 @@
    <div class="home">
       <h2>
          <span>Digitization Projects</span>
-         <router-link class="old-units" to="/units">Old Units Page</router-link>
       </h2>
       <WaitSpinner v-if="working" :overlay="true" message="Loading projects..." />
       <div class="projects-content">
@@ -123,8 +122,8 @@ export default {
       }),
       ...mapGetters({
          totalPages: 'projects/totalPages',
-         isAdmin: 'isAdmin',
-         isSupervisor: 'isSupervisor',
+         isAdmin: 'user/isAdmin',
+         isSupervisor: 'user/isSupervisor',
          statusText: 'projects/statusText',
          percentComplete: 'projects/percentComplete',
          isFinished: 'projects/isFinished'

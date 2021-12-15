@@ -36,12 +36,14 @@ import { mapFields } from 'vuex-map-fields'
 export default {
    computed: {
       ...mapState({
-         masterFiles : state => state.masterFiles,
-         currUnit: state => state.currUnit,
+         masterFiles : state => state.units.masterFiles,
+         currUnit: state => state.units.currUnit,
       }),
-      ...mapFields([
-         "rangeStartIdx", "rangeEndIdx", "editMode"
-      ]),
+      ...mapFields({
+        rangeStartIdx: 'units.rangeStartIdx',
+        rangeEndIdx: 'units.rangeEndIdx',
+        editMode: 'units.editMode',
+      }),
    },
    data() {
       return {
@@ -68,11 +70,11 @@ export default {
             this.$store.commit("setError", "An even number of pages is required for unnumbered verso")
             return
          }
-         this.$store.dispatch("updatePageNumbers", {start: this.startPage, verso: !this.unnumberVerso})
+         this.$store.dispatch("units/updatePageNumbers", {start: this.startPage, verso: !this.unnumberVerso})
          this.editMode = ""
       },
       selectAllClicked() {
-         this.$store.commit("selectAll")
+         this.$store.commit("units/selectAll")
       }
    }
 }

@@ -75,13 +75,15 @@ import { mapFields } from 'vuex-map-fields'
 export default {
    computed: {
       ...mapState({
-         masterFiles : state => state.masterFiles,
-         currUnit: state => state.currUnit,
-         component: state=>state.component
+         masterFiles : state => state.units.masterFiles,
+         currUnit: state => state.units.currUnit,
+         component: state => state.units.component
       }),
-      ...mapFields([
-         "rangeStartIdx", "rangeEndIdx", "editMode"
-      ]),
+      ...mapFields({
+        rangeStartIdx: 'units.rangeStartIdx',
+        rangeEndIdx: 'units.rangeEndIdx',
+        editMode: 'units.editMode',
+      }),
    },
    data() {
       return {
@@ -95,7 +97,7 @@ export default {
       },
       okClicked() {
          this.$store.commit("clearError")
-         this.$store.commit("clearComponent")
+         this.$store.commit("units/clearComponent")
          if ( this.rangeStartIdx == -1 || this.rangeEndIdx == -1) {
             this.$store.commit("setError", "Start and end image must be selected")
             return
@@ -104,33 +106,33 @@ export default {
             this.$store.commit("setError", "Component ID is required")
             return
          }
-         this.$store.dispatch("lookupComponentID", this.componentID)
+         this.$store.dispatch("units/lookupComponentID", this.componentID)
       },
       noLinkClicked() {
          this.$store.commit("clearError")
-         this.$store.commit("clearComponent")
+         this.$store.commit("units/clearComponent")
       },
       cancelEditClicked() {
          this.$store.commit("clearError")
-         this.$store.commit("clearComponent")
+         this.$store.commit("units/clearComponent")
          this.editMode = ""
       },
       async unlinkClicked() {
          this.$store.commit("clearError")
-         this.$store.commit("clearComponent")
+         this.$store.commit("units/clearComponent")
          if ( this.rangeStartIdx == -1 || this.rangeEndIdx == -1) {
             this.$store.commit("setError", "Start and end image must be selected")
             return
          }
-         await this.$store.dispatch("componentLink","")
+         await this.$store.dispatch("units/componentLink","")
          this.cancelEditClicked()
       },
       async linkConfirmed() {
-         await this.$store.dispatch("componentLink",this.componentID)
+         await this.$store.dispatch("units/componentLink",this.componentID)
          this.cancelEditClicked()
       },
       selectAllClicked() {
-         this.$store.commit("selectAll")
+         this.$store.commit("units/selectAll")
       }
    }
 }

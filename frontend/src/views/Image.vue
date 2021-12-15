@@ -1,8 +1,8 @@
 <template>
    <div class="viewer">
       <WaitSpinner v-if="updating" :overlay="true" message="Updating data..." />
-       <div class="load" v-if="loading">
-         <WaitSpinner v-if="loading" message="Loading viewer..." />
+       <div class="load" v-if="loadingUnit || loadingProject || masterFiles == false">
+         <WaitSpinner message="Loading viewer..." />
       </div>
       <template v-else>
          <div id="iiif-toolbar" class="toolbar">
@@ -39,7 +39,7 @@
             </table>
             <span class="toolbar-button group back">
                <i class="fas fa-angle-double-left back-button"></i>
-               <span @click="$router.back()">Back to Unit</span>
+               <span @click="$router.back()">Back to unit</span>
             </span>
             <span class="paging group">
                <span id="previous" title="Previous" class="toolbar-button"><i class="fas fa-arrow-left"></i></span>
@@ -68,20 +68,27 @@ import OpenSeadragon from "openseadragon"
 import TagPicker from '../components/TagPicker.vue'
 import TitleInput from '../components/TitleInput.vue'
 export default {
-   name: "Page",
+   name: "Image",
    components: {
       TagPicker, TitleInput
    },
    computed: {
       ...mapState({
-         loading : state => state.loading,
+         loadingProject: state => state.projects.working,
+         loadingUnit : state => state.loading,
          updating : state => state.updating,
-         currUnit: state => state.currUnit
+         currUnit: state => state.units.currUnit,
+         selectedProjectIdx: state  => state.projects.selectedProjectIdx,
+         masterFiles:  state => state.units.masterFiles
       }),
-      ...mapGetters([
-        'pageInfoURLs',
-        'masterFileInfo'
-      ]),
+      ...mapGetters({
+         pageInfoURLs: 'units/pageInfoURLs',
+         masterFileInfo: 'units/masterFileInfo',
+         currProject: 'projects/currProject',
+      }),
+      hasMasterFiles() {
+         return this.masterFiles.length > 0
+      },
       currMasterFile() {
          return this.masterFileInfo( this.page-1)
       }
@@ -98,7 +105,7 @@ export default {
    },
    methods: {
       rotateImage(dir) {
-         this.$store.dispatch("rotateImage", {file: this.currMasterFile.fileName, dir: dir})
+         this.$store.dispatch("units/rotateImage", {file: this.currMasterFile.fileName, dir: dir})
       },
       viewActualSize() {
          this.viewer.viewport.zoomTo(this.viewer.viewport.imageToViewportZoom(1.0))
@@ -124,15 +131,18 @@ export default {
       },
       async submitEdit() {
          let mf = this.currMasterFile
-         await this.$store.dispatch("updateMasterFileMetadata",
+         await this.$store.dispatch("units/updateMasterFileMetadata",
             { file: mf.path, title: this.newTitle, description: this.newDescription,
               status: mf.status, componentID: mf.componentID } )
          this.editField = ""
 
       }
    },
-   async created() {
-      await this.$store.dispatch("getUnitDetails", this.$route.params.unit)
+   async beforeMount() {
+      if (this.selectedProjectIdx == -1) {
+         await this.$store.dispatch("projects/getProject", this.$route.params.id)
+         await this.$store.dispatch("units/getUnitMasterFiles", this.currProject.unit.id)
+      }
       this.$nextTick(()=>{
          let hdr = document.getElementById("uva-header")
          let toolbar = document.getElementById("iiif-toolbar")
@@ -164,7 +174,8 @@ export default {
          })
          this.viewer.addHandler("page", (data) => {
             this.page = data.page + 1
-            this.$router.replace(`/unit/${this.currUnit}/page/${this.page}`)
+            let url = `/projects/${this.currProject.id}/unit/images/${this.page}`
+            this.$router.replace(url)
          })
          this.viewer.addHandler("zoom", (data) => {
             this.zoom = this.viewer.viewport.viewportToImageZoom(data.zoom)
@@ -185,7 +196,9 @@ export default {
    :deep(.openseadragon-container) {
       background: #555555 !important;
    }
-   background: black;
+   .load {
+      margin-top: 5%;
+   }
    .toolbar {
       padding: 10px;
       background: var(--uvalib-grey-light);

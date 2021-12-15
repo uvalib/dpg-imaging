@@ -47,6 +47,7 @@
 
          </template>
          <template v-else>
+            <DPGButton @clicked="viewerClicked" class="pad-right" v-if="isScanning == false && (isAdmin || isSupervisor)">Open QA Viewer</DPGButton>
             <DPGButton v-if="hasOwner(projectIdx) == false" @clicked="claimClicked()"  class="pad-right">Claim</DPGButton>
             <AssignModal v-if="(isAdmin || isSupervisor)" :projectID="currProject.id" @assign="assignClicked"/>
          </template>
@@ -89,8 +90,8 @@ export default {
       ...mapGetters({
          currProject: 'projects/currProject',
          isOwner: 'projects/isOwner',
-         isAdmin: 'isAdmin',
-         isSupervisor: 'isSupervisor',
+         isAdmin: 'user/isAdmin',
+         isSupervisor: 'user/isSupervisor',
          isFinalizeRunning: 'projects/isFinalizeRunning',
          isFinished: 'projects/isFinished',
          inProgress: 'projects/inProgress',
@@ -211,7 +212,7 @@ export default {
          this.timeEntry = false
       },
       viewerClicked() {
-         this.$router.push("/unit/"+this.currProject.unit.id)
+         this.$router.push(`/projects/${this.currProject.id}/unit`)
       },
       startStep() {
          this.$store.dispatch("projects/startStep")

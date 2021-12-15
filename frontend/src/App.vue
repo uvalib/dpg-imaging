@@ -38,11 +38,13 @@ export default {
          version: (state) => state.version,
          jwt: (state) => state.user.jwt,
       }),
-      ...mapGetters(["signedInUser"]),
+      ...mapGetters({
+         signedInUser: 'user/signedInUser',
+      })
    },
    methods: {
       signout() {
-         this.$store.commit("signout")
+         this.$store.commit("user/signout")
          this.$router.push("signedout")
       }
    },

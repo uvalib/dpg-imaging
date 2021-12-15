@@ -231,6 +231,15 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+func padLeft(str string, tgtLen int) string {
+	for {
+		if len(str) == tgtLen {
+			return str
+		}
+		str = "0" + str
+	}
+}
+
 func (svc *serviceContext) postRequest(url string, payload interface{}) ([]byte, *RequestError) {
 	log.Printf("POST request: %s", url)
 	startTime := time.Now()

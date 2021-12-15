@@ -1,23 +1,23 @@
 <template>
    <div class="unit">
       <WaitSpinner v-if="updating" :overlay="true" message="Updating data..." />
-      <div class="load" v-if="loading">
-         <WaitSpinner v-if="loading" message="Loading master files..." />
+      <div class="load" v-if="loadingUnit || loadingProject">
+         <WaitSpinner message="Loading master files..." />
       </div>
       <template v-else>
          <div class="metadata">
             <h2>
                <ProblemsDisplay class="topleft" />
-               <span class="title">{{title}}</span>
+               <span class="title"><router-link :to="`/projects/${currProject.id}`">{{title}}</router-link></span>
             </h2>
             <h3>
                <div>{{callNumber}}</div>
                <div>Unit {{currUnit}}</div>
                <div class="small">{{masterFiles.length}} Images</div>
             </h3>
-            <span class="back" @click="backClicked">
+            <span class="back">
                <i class="fas fa-angle-double-left back-button"></i>
-               <span class="link">Back</span>
+               <router-link :to="`/projects/${currProject.id}`" class="link">Back to project</router-link>
             </span>
          </div>
          <div class="toolbar">
@@ -37,7 +37,7 @@
                </span>
                <ConfirmModal label="Batch Rename" class="right-pad" @confirmed="renameAll">
                   <div>All files will be renamed to match the following format:</div>
-                  <code>{{currUnit.padStart(9,'0')}}_0001.tif - {{currUnit.padStart(9,'0')}}_nnnn.tif</code>
+                  <code>{{paddedUnit}}_0001.tif - {{paddedUnit}}_nnnn.tif</code>
                </ConfirmModal>
                <DPGButton id="set-titles" @clicked="setPageNumbersClicked" class="button right-pad">Set Page Numbers</DPGButton>
                <DPGButton id="set-titles" @clicked="componentLinkClicked" class="button">Component Link</DPGButton>
@@ -66,7 +66,7 @@
                      @contextmenu.prevent="showContextMenu(element.fileName, $event)"
                   >
                      <td class="thumb">
-                        <router-link :to="`/unit/${currUnit}/page/${pageStartIdx+index+1}`"><img :src="element.thumbURL"/></router-link>
+                        <router-link :to="imageViewerURL(index)"><img :src="element.thumbURL"/></router-link>
                      </td>
                      <td><TagPicker :masterFile="element" /></td>
                      <td class="hover-container">
@@ -110,7 +110,7 @@
                   @contextmenu.prevent="showContextMenu(element.fileName, $event)"
 
                >
-                  <router-link :to="`/unit/${currUnit}/page/${pageStartIdx+index+1}`">
+                  <router-link :to="imageViewerURL(index)">
                      <img :src="element.mediumURL" v-if="viewMode == 'medium'"/>
                      <img :src="element.largeURL" v-if="viewMode == 'large'"/>
                   </router-link>
@@ -198,21 +198,45 @@ export default {
    name: "unit",
    computed: {
       ...mapState({
-         loading : state => state.loading,
+         loadingProject: state => state.projects.working,
+         loadingUnit : state => state.loading,
          updating : state => state.updating,
-         currUnit: state => state.currUnit,
-         title: state => state.title,
-         callNumber: state => state.callNumber,
-         currPage : state => state.currPage,
-         pageSize : state => state.pageSize,
+         currUnit: state => state.units.currUnit,
+         currPage : state => state.units.currPage,
+         pageSize : state => state.units.pageSize,
+         selectedProjectIdx: state => state.projects.selectedProjectIdx,
       }),
-      ...mapGetters([
-        'pageStartIdx',
-        'totalPages',
-      ]),
-      ...mapFields([
-         'viewMode', "rangeStartIdx", "rangeEndIdx", "editMode", "masterFiles", "pageMasterFiles"
-      ]),
+      ...mapGetters({
+         pageStartIdx: 'units/pageStartIdx',
+         totalPages: 'units/totalPages',
+         currProject: 'projects/currProject',
+      }),
+      ...mapFields({
+         viewMode: 'units.viewMode',
+         rangeStartIdx: "units.rangeStartIdx",
+         rangeEndIdx: "units.rangeEndIdx",
+         editMode: "units.editMode",
+         masterFiles: "units.masterFiles",
+         pageMasterFiles: "units.pageMasterFiles"
+      }),
+      title() {
+         let t = this.currProject.unit.metadata.title
+         if ( t == "") {
+            t = "Unknown"
+         }
+         return t
+      },
+      callNumber() {
+         let t = this.currProject.unit.metadata.callNumber
+         if ( t == "") {
+            t = "Unknown"
+         }
+         return t
+      },
+      paddedUnit() {
+         let unitStr = ""+this.currUnit
+         return unitStr.padStart(9,'0')
+      }
    },
    data() {
       return {
@@ -226,31 +250,31 @@ export default {
       }
    },
    methods: {
-      backClicked() {
-         this.$router.go(-1)
+      imageViewerURL(pgIndex) {
+         return `/projects/${this.currProject.id}/unit/images/${this.pageStartIdx+pgIndex+1}`
       },
       priorClicked() {
-         this.$store.commit("setPage", this.currPage-1)
+         this.$store.commit("units/setPage", this.currPage-1)
          this.pageChanged()
       },
       nextClicked() {
-         this.$store.commit("setPage", this.currPage+1)
+         this.$store.commit("units/setPage", this.currPage+1)
          this.pageChanged()
       },
       lastClicked() {
-         this.$store.commit("setPage", this.totalPages)
+         this.$store.commit("units/setPage", this.totalPages)
          this.pageChanged()
       },
       firstClicked() {
-         this.$store.commit("setPage", 1)
+         this.$store.commit("units/setPage", 1)
          this.pageChanged()
       },
       pageJumpClicked(pg) {
-         this.$store.commit("setPage", pg)
+         this.$store.commit("units/setPage", pg)
          this.pageChanged()
       },
       pageSizeChanged(sz) {
-         this.$store.dispatch("setPageSize", sz)
+         this.$store.dispatch("units/setPageSize", sz)
          let query = Object.assign({}, this.$route.query)
          query.pagesize = this.currPageSize
          query.page = this.currPage
@@ -279,7 +303,7 @@ export default {
           this.rangeEndIdx = -1
       },
       deleteSelected() {
-         this.$store.dispatch("deleteMasterFile", this.rightClickedMF)
+         this.$store.dispatch("units/deleteMasterFile", this.rightClickedMF)
       },
       showContextMenu(fileName, e) {
          this.rightClickedMF = fileName
@@ -315,7 +339,7 @@ export default {
             }
       },
       renameAll() {
-         this.$store.dispatch("renameAll")
+         this.$store.dispatch("units/renameAll")
       },
       componentLinkClicked() {
          this.editMode = "component"
@@ -406,24 +430,28 @@ export default {
          this.editMF = null
       },
       async submitEdit(mf) {
-         await this.$store.dispatch("updateMasterFileMetadata",
+         await this.$store.dispatch("units/updateMasterFileMetadata",
             { file: mf.path, title: this.newTitle, description: this.newDescription,
               status: mf.status, componentID: mf.componentID } )
          this.editMF = null
       }
    },
-   async created() {
-      await this.$store.dispatch("getUnitDetails", this.$route.params.unit)
+   async beforeMount() {
+      if (this.selectedProjectIdx == -1) {
+         await this.$store.dispatch("projects/getProject", this.$route.params.id)
+      }
+
+      await this.$store.dispatch("units/getUnitMasterFiles", this.currProject.unit.id)
       if ( this.$route.query.view ) {
          this.viewMode = this.$route.query.view
       }
       if ( this.$route.query.pagesize ) {
          let ps = parseInt(this.$route.query.pagesize, 10)
-         this.$store.dispatch("setPageSize", ps)
+         this.$store.dispatch("units/setPageSize", ps)
       }
       if ( this.$route.query.page ) {
          let pg = parseInt(this.$route.query.page, 10)
-         this.$store.commit("setPage", pg)
+         this.$store.commit("units/setPage", pg)
       }
    },
 }
@@ -452,6 +480,11 @@ export default {
          .title {
             display: inline-block;
             max-width: 60%;
+            a {
+               color: inherit !important;
+               font-weight: inherit !important;
+               font-size: inherit !important;
+            }
          }
       }
       h3 {
@@ -480,7 +513,7 @@ export default {
          .link {
             font-weight: normal;
             text-decoration: none;
-            color: var(--uvalib-text);
+            color: var(--uvalib-text) !important;
             display: inline-block;
             margin-left: 5px;
             cursor: pointer;
