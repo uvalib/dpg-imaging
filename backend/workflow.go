@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -117,7 +116,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		c.String(http.StatusBadRequest, "Invalid request")
 		return
 	}
-	log.Printf("INFO: user %s is finishing active step in project %s with duration %d", claims.ComputeID, projID, doneReq.DurationMins)
+
 	var proj project
 	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
 	resp := dbReq.First(&proj)
@@ -126,6 +125,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		c.String(http.StatusInternalServerError, resp.Error.Error())
 		return
 	}
+	log.Printf("INFO: user %s is finishing [%s] step in project [%s] with duration %d", claims.ComputeID, proj.CurrentStep.Name, projID, doneReq.DurationMins)
 
 	// First finish attempt includes a non-zero duration. Record it.
 	// If a step fails and is corrected, 0 duration will be passed. Just
@@ -249,6 +249,8 @@ func (svc *serviceContext) nextStep(proj *project, nextStepID uint, ownerID *uin
 }
 
 func (svc *serviceContext) validateFinishStep(proj *project) error {
+	log.Printf("INFO: validate project [%d] step [%s] finish", proj.ID, proj.CurrentStep.Name)
+
 	if proj.Workflow.Name == "Manuscript" && *proj.ContainerTypeID == 0 {
 		svc.failStep(proj, "Other", "<p>This project is missing the required Container Type setting.</p>")
 		return errors.New("manuscript is missing container type")
@@ -381,6 +383,13 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 	log.Printf("INFO: validate count and tif sequence in %s", tgtDir)
 	highest := -1
 	cnt := 0
+
+	pendingFilesCnt := 0
+	chunkSize := 20
+	cmdArray := titleExifCmd()
+	channel := make(chan []titleCheck)
+	outstandingRequests := 0
+
 	err := filepath.WalkDir(tgtDir, func(fullPath string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() {
 			return nil
@@ -404,30 +413,23 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 		}
 
 		if proj.CurrentStep.Name == "Create Metadata" || proj.CurrentStep.Name == "Finalize" {
-			// Make sure metadata is present at completion of create metadata and again as a final check on finalize
-			cmdArray := []string{"-json", "-iptc:headline", fullPath}
-			log.Printf("INFO: exif command %+v", cmdArray)
-			stdout, err := exec.Command("exiftool", cmdArray...).Output()
-			if err != nil {
-				svc.failStep(proj, "Metadata", fmt.Sprintf("<p>Unable to extract metadata from %s.</p>", fullPath))
-				return fmt.Errorf("unable to extract metadata from %s: %s", fullPath, err.Error())
-			}
-			log.Printf("INFO: exif response %s", stdout)
-			var mfMD []exifData
-			err = json.Unmarshal(stdout, &mfMD)
-			if err != nil {
-				svc.failStep(proj, "Metadata", fmt.Sprintf("<p>Unable to extract metadata from %s.</p>", fullPath))
-				return fmt.Errorf("unable to extract metadata from %s: %s", fullPath, err.Error())
-			}
-
-			if mfMD[0].Title == nil {
-				svc.failStep(proj, "Metadata", fmt.Sprintf("<p>Missing Tile metadata in %s.</p>", fullPath))
-				return fmt.Errorf("Missing Tile metadata in %s", fullPath)
+			cmdArray = append(cmdArray, fullPath)
+			pendingFilesCnt++
+			if pendingFilesCnt == chunkSize {
+				outstandingRequests++
+				go checkExifHeaders(cmdArray, channel)
+				cmdArray = titleExifCmd()
+				pendingFilesCnt = 0
 			}
 		}
 
 		return nil
 	})
+
+	if pendingFilesCnt > 0 {
+		outstandingRequests++
+		go checkExifHeaders(cmdArray, channel)
+	}
 
 	if err != nil {
 		return err
@@ -439,6 +441,28 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 	if highest != cnt {
 		svc.failStep(proj, "Filename", fmt.Sprintf("<p>Number of image files does not match highest image sequence number %d.</p>", highest))
 		return fmt.Errorf("count/sequence mismatch in %s", tgtDir)
+	}
+
+	if outstandingRequests > 0 {
+		log.Printf("INFO: await %d outstanding header check requests", outstandingRequests)
+		for outstandingRequests > 0 {
+			info := <-channel
+			log.Printf("INFO: received header check response")
+			outstandingRequests--
+			if len(info) == 0 {
+				svc.failStep(proj, "Metadata", "<p>Unable to extract metadata from images.</p>")
+				return fmt.Errorf("unable to extract metadata from images")
+			}
+			for _, tc := range info {
+				if tc.Valid == false {
+					svc.failStep(proj, "Metadata", fmt.Sprintf("<p>Missing Tile metadata in %s.</p>", tc.File))
+					return fmt.Errorf("Missing Tile metadata in %s", tc.File)
+				}
+			}
+			if outstandingRequests > 0 {
+				log.Printf("INFO: await %d outstanding header check requests", outstandingRequests)
+			}
+		}
 	}
 
 	log.Printf("INFO: %s sequence is valid", tgtDir)

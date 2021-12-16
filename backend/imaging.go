@@ -34,9 +34,19 @@ type exifData struct {
 	OwnerID       interface{} `json:"OwnerID"`
 }
 
+type exifTitle struct {
+	SourceFile string      `json:"SourceFile"`
+	Headline   interface{} `json:"Headline"`
+}
+
 type updateProblem struct {
 	File    string `json:"file"`
 	Problem string `json:"problem"`
+}
+
+type titleCheck struct {
+	File  string `json:"file"`
+	Valid bool   `json:"valid"`
 }
 
 func (svc *serviceContext) finalizeUnitRequest(c *gin.Context) {
@@ -410,6 +420,36 @@ func updateExifData(fileCommands map[string][]string, channel chan []updateProbl
 	channel <- errors
 }
 
+func checkExifHeaders(cmdArray []string, channel chan []titleCheck) {
+	log.Printf("INFO: check exif header for %d files", len(cmdArray))
+	out := make([]titleCheck, 0)
+	stdout, err := exec.Command("exiftool", cmdArray...).Output()
+	if err != nil {
+		log.Printf("ERROR: unable to get title metadata: %s", err.Error())
+		channel <- out
+	}
+	var parsed []exifTitle
+	err = json.Unmarshal(stdout, &parsed)
+	if err != nil {
+		log.Printf("ERROR: unable to parse title metadata: %s", err.Error())
+		channel <- out
+	}
+	for _, md := range parsed {
+		valid := false
+		if md.Headline != nil {
+			check := fmt.Sprintf("%v", md.Headline)
+			if check != "" {
+				valid = true
+			} else {
+				log.Printf("INFO: %s is missing a title", md.SourceFile)
+			}
+		}
+		tc := titleCheck{File: md.SourceFile, Valid: valid}
+		out = append(out, tc)
+	}
+	channel <- out
+}
+
 // getExifData will retrieve a batch of metadata for masterfiles in a goroutine. When complete return true
 func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int, channel chan bool) {
 	currIdx := startIdx
@@ -463,5 +503,10 @@ func baseExifCmd() []string {
 	out := []string{"-json", "-ImageWidth", "-ImageHeight",
 		"-FileType", "-XResolution", "-FileSize", "-icc_profile:ProfileDescription", "-iptc:OwnerID",
 		"-iptc:headline", "-iptc:caption-abstract", "-iptc:ClassifyState"}
+	return out
+}
+
+func titleExifCmd() []string {
+	out := []string{"-json", "-iptc:headline"}
 	return out
 }
