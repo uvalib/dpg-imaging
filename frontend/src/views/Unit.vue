@@ -276,7 +276,7 @@ export default {
       pageSizeChanged(sz) {
          this.$store.dispatch("units/setPageSize", sz)
          let query = Object.assign({}, this.$route.query)
-         query.pagesize = this.currPageSize
+         query.pagesize = this.pageSize
          query.page = this.currPage
          this.$router.push({query})
       },

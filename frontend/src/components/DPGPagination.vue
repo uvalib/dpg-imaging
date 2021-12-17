@@ -30,10 +30,10 @@
       </span>
       <span class="setup" v-if="sizePicker">
          <label>per page:</label>
-         <select v-model="currPageSize" @change="pageSizeChanged">
-            <option :value="20">20</option>
-            <option :value="50">50</option>
-            <option :value="75">75</option>
+         <select @change="pageSizeChanged">
+            <option :value="20" :selected="pageSize==20">20</option>
+            <option :value="50" :selected="pageSize==50">50</option>
+            <option :value="75" :selected="pageSize==75">75</option>
          </select>
       </span>
    </span>
@@ -57,7 +57,7 @@ export default {
       },
       pageSize: {
          type: Number,
-         default: 20
+         required: true
       },
    },
    computed: {
@@ -72,12 +72,11 @@ export default {
       return {
          pageJumpOpen: false,
          pageJump: 1,
-         currPageSize: this.pageSize
       }
    },
    methods: {
-      pageSizeChanged() {
-         this.$emit("size", this.currPageSize)
+      pageSizeChanged(e) {
+         this.$emit("size", parseInt(e.target.value, 10) )
       },
       pageJumpCanceled() {
          this.pageJumpOpen = false
