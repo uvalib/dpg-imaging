@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -49,6 +50,7 @@ type titleCheck struct {
 	Valid bool   `json:"valid"`
 }
 
+// TODO this needs to be retired when TS code is retired
 func (svc *serviceContext) finalizeUnitRequest(c *gin.Context) {
 	uid := c.Param("uid")
 	start := time.Now()
@@ -130,7 +132,7 @@ func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse
 		go updateExifData(fileCommands, channel)
 	}
 
-	log.Printf("INFO: await all finalization updates")
+	log.Printf("INFO: await all finalization updates for %s", uid)
 	var resp finalizeResponse
 	resp.Success = true
 	resp.Problems = make([]updateProblem, 0)
@@ -143,6 +145,7 @@ func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse
 			resp.Problems = append(resp.Problems, errs...)
 		}
 	}
+	log.Printf("INFO: all finalization updates for %s are done", uid)
 
 	return &resp, nil
 }
@@ -349,9 +352,33 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 	if rotateDirString == "left" {
 		rotateDir = "-90"
 	}
-	fullPath := path.Join(svc.ImagesDir, unit, file)
 
-	// grab the currrent data inthe exif heassers ad the rotate command wipes it all
+	basePath := path.Join(svc.ImagesDir, unit)
+	log.Printf("INFO: looking for image %s in unit dir %s", file, basePath)
+	fullPath := ""
+	err := filepath.WalkDir(basePath, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() == true {
+			return nil
+		}
+		if entry.Name() == file {
+			fullPath = path
+		}
+		return nil
+	})
+
+	if err != nil {
+		log.Printf("ERROR: find image %s in unit dir %s failed: %s", file, basePath, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	if fullPath == "" {
+		log.Printf("ERROR: unable to find %s found in unit dir %s", file, basePath)
+		c.String(http.StatusInternalServerError, fmt.Sprintf("%s not found", file))
+		return
+	}
+	log.Printf("INFO: %s found here: %s", file, fullPath)
+
+	// grab the currrent data inthe exif headers ad the rotate command wipes it all
 	cmdArray := []string{"-json", "-iptc:OwnerID", "-iptc:headline", "-iptc:caption-abstract", "-iptc:ClassifyState", fullPath}
 	stdout, err := exec.Command("exiftool", cmdArray...).Output()
 	if err != nil {
@@ -421,7 +448,6 @@ func updateExifData(fileCommands map[string][]string, channel chan []updateProbl
 }
 
 func checkExifHeaders(cmdArray []string, channel chan []titleCheck) {
-	log.Printf("INFO: check exif header for %d files", len(cmdArray))
 	out := make([]titleCheck, 0)
 	stdout, err := exec.Command("exiftool", cmdArray...).Output()
 	if err != nil {

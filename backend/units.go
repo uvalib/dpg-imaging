@@ -125,7 +125,6 @@ func (svc *serviceContext) getUnitMasterFiles(c *gin.Context) {
 				log.Printf("INFO: skipping hidden file %s", fName)
 				return nil
 			}
-			log.Printf("INFO: Found file %s", path)
 
 			if !tifRegex.Match([]byte(fName)) {
 				log.Printf("INFO: %s is not a tif; skipping", fName)
@@ -170,6 +169,7 @@ func (svc *serviceContext) getUnitMasterFiles(c *gin.Context) {
 		return
 	}
 
+	log.Printf("INFO: found %d files in %s", len(out.MasterFiles), unitDir)
 	if len(out.MasterFiles) > 0 {
 		lastMF := out.MasterFiles[len(out.MasterFiles)-1]
 		lastSeq := strings.Split(lastMF.FileName, "_")[1]
@@ -203,13 +203,13 @@ func (svc *serviceContext) getUnitMasterFiles(c *gin.Context) {
 	}
 
 	if pendingFilesCnt > 0 {
-		log.Printf("INFO: get batch #%d of %d exif metadata starting at %d", outstandingRequests, chunkSize, currIdx)
+		log.Printf("INFO: get batch #%d of %d exif metadata starting at %d for unit %s", outstandingRequests, chunkSize, currIdx, uidStr)
 		outstandingRequests++
 		go getExifData(cmdArray, out.MasterFiles, currIdx, channel)
 	}
 
 	// wait for all metadata to complete
-	log.Printf("INFO: await all metadata")
+	log.Printf("INFO: await all metadata for %s", uidStr)
 	for outstandingRequests > 0 {
 		<-channel
 		outstandingRequests--

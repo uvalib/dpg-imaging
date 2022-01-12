@@ -4,7 +4,7 @@
          <template v-if="currProject.workflow.name == 'Manuscript'">
             <dt>Container Type:</dt>
             <dd>
-               <span v-if="currProject.containerType.id > 0">{{currProject.containerType.name}}</span>
+               <span v-if="currProject.containerType && currProject.containerType.id > 0">{{currProject.containerType.name}}</span>
                <span v-else class="na">EMPTY</span>
             </dd>
          </template>

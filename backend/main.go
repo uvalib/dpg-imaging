@@ -10,7 +10,7 @@ import (
 )
 
 // Version of the service
-const Version = "3.0.2"
+const Version = "3.0.3"
 
 func main() {
 	// Load cfg
@@ -44,7 +44,7 @@ func main() {
 		api.POST("/projects/:id/reject", svc.authMiddleware, svc.rejectProjectStep)
 
 		api.GET("/units/:uid/masterfiles", svc.authMiddleware, svc.getUnitMasterFiles)
-		api.POST("/units/:uid/finalize", svc.finalizeUnitRequest)
+		api.POST("/units/:uid/finalize", svc.finalizeUnitRequest) // TODO retire this when tracksys workflow is retired
 		api.POST("/units/:uid/update", svc.authMiddleware, svc.updateMetadata)
 		api.POST("/units/:uid/rename", svc.authMiddleware, svc.renameFiles)
 		api.DELETE("/units/:uid/:file", svc.authMiddleware, svc.deleteFile)

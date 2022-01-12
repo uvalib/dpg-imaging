@@ -20,7 +20,7 @@ import (
 func (svc *serviceContext) startProjectStep(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)
-	log.Printf("INFO: user %s is starting active step in project %s", claims.ComputeID, projID)
+	log.Printf("INFO: user %s is looking for project %s to start active step", claims.ComputeID, projID)
 	var proj project
 	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
 	resp := dbReq.First(&proj)
@@ -29,10 +29,11 @@ func (svc *serviceContext) startProjectStep(c *gin.Context) {
 		c.String(http.StatusInternalServerError, resp.Error.Error())
 		return
 	}
+	log.Printf("INFO: user %s is starting [%s] for project %s", claims.ComputeID, proj.CurrentStep.Name, projID)
 
 	startTime := time.Now()
 	if proj.StartedAt == nil {
-		log.Printf("INFO: setting project start time to %v", startTime)
+		log.Printf("INFO: setting project %s step %s start time to %v", projID, proj.CurrentStep.Name, startTime)
 		proj.StartedAt = &startTime
 		r := svc.DB.Model(&proj).Select("started_at").Updates(proj)
 		if r.Error != nil {
@@ -444,7 +445,7 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 	}
 
 	if outstandingRequests > 0 {
-		log.Printf("INFO: await %d outstanding header check requests", outstandingRequests)
+		log.Printf("INFO: await %d outstanding header check requests for  %s", outstandingRequests, tgtDir)
 		for outstandingRequests > 0 {
 			info := <-channel
 			log.Printf("INFO: received header check response")
@@ -463,6 +464,7 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 				log.Printf("INFO: await %d outstanding header check requests", outstandingRequests)
 			}
 		}
+		log.Printf("INFO: all header check requests have completed for %s", tgtDir)
 	}
 
 	log.Printf("INFO: %s sequence is valid", tgtDir)
