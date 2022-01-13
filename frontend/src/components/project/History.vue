@@ -20,7 +20,7 @@
             <template v-for="a in currProject.assignments" :key="`a${a.id}`">
                <template v-if="lookupStepName(a.stepID) != 'Unknown'">
                   <template v-if="a.finishedAt">
-                     <!-- status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing] -->
+                     <!-- status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing, :working] -->
                      <tr :class="{success: a.status != 3, reject: a.status==3}">
                         <td>{{formatDate(a.finishedAt)}}</td>
                         <td>{{lookupStepName(a.stepID)}}</td>
@@ -37,11 +37,12 @@
                      </tr>
                   </template>
                   <template v-if="a.startedAt">
-                     <tr :class="{error: a.status == 4, finalize: a.status == 6}">
+                     <tr :class="{error: a.status == 4, finalize: a.status == 6, working: a.status == 7}">
                         <td>{{formatDate(a.startedAt)}}</td>
                         <td>{{lookupStepName(a.stepID)}}</td>
                         <td v-if="a.status == 4">Error</td>
                         <td v-else-if="a.status == 6">Finalizing...</td>
+                        <td v-else-if="a.status == 7">Working...</td>
                         <td v-else>Started</td>
                         <td>{{a.staffMember.firstName}} {{a.staffMember.lastName}}</td>
                      </tr>
@@ -135,8 +136,12 @@ export default {
          padding: 10px;
       }
 
+      tr.working td {
+         background: var(--uvalib-teal-lightest);
+      }
       tr.create td {
-         background: var(--uvalib-blue-alt-light);
+         background: var(--uvalib-teal-darker);
+         color: white;
       }
       tr.success td {
          background: #C3F3CF;

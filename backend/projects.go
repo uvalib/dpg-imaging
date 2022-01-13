@@ -272,7 +272,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 	if proj.OwnerID != nil {
 		activeAssign := proj.Assignments[len(proj.Assignments)-1]
 		log.Printf("INFO: marking assignment %d as reassigned", activeAssign.ID)
-		activeAssign.Status = 5
+		activeAssign.Status = StepReassigned
 		r := svc.DB.Model(&activeAssign).Select("Status").Updates(activeAssign)
 		if r.Error != nil {
 			log.Printf("ERROR: unable to mark project %d active assignment as reassigned: %s", proj.ID, r.Error.Error())

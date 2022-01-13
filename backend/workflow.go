@@ -17,6 +17,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Assignment status codes
+const (
+	StepPending    = 0 // not started
+	StepStarted    = 1 // start has been clicked
+	StepFinished   = 2 // finish has been clicked and all processing/validations are complete
+	StepRejected   = 3 // QA rejection
+	StepError      = 4 // any kind of error
+	StepReassigned = 5 // step has been reassigned to a new owner
+	StepFinalizing = 6 // finalization is in process
+	StepWorking    = 7 // finish has been clicked, step validations in-progress
+)
+
 func (svc *serviceContext) startProjectStep(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)
@@ -46,7 +58,7 @@ func (svc *serviceContext) startProjectStep(c *gin.Context) {
 	currA := proj.Assignments[0]
 	log.Printf("INFO: start project %d assignment %d", proj.ID, currA.ID)
 	currA.StartedAt = &startTime
-	currA.Status = 1 // started
+	currA.Status = StepStarted
 	r := svc.DB.Model(&currA).Select("StartedAt", "Status").Updates(currA)
 	if r.Error != nil {
 		log.Printf("ERROR: unable to update project %d step %d start time: %s", proj.ID, currA.StepID, r.Error.Error())
@@ -83,7 +95,7 @@ func (svc *serviceContext) rejectProjectStep(c *gin.Context) {
 	now := time.Now()
 	currA.DurationMinutes = doneReq.DurationMins
 	currA.FinishedAt = &now
-	currA.Status = 3 // rejected
+	currA.Status = StepRejected
 	resp = svc.DB.Model(&currA).Select("DurationMinutes", "FinishedAt", "Status").Updates(currA)
 	if resp.Error != nil {
 		log.Printf("ERROR: unable to reject assignment: %s", resp.Error.Error())
@@ -132,11 +144,25 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 	// If a step fails and is corrected, 0 duration will be passed. Just
 	// preserve the original duration. Requested by Sam P.
 	currA := proj.Assignments[0]
+	if currA.Status == StepWorking {
+		log.Printf("ERROR: user %s attempt to finish [%s] step in project [%s] that is already in process", claims.ComputeID, proj.CurrentStep.Name, projID)
+		c.String(http.StatusBadRequest, "step finish is already in-process")
+		return
+	}
+	if currA.Status != StepStarted && currA.Status != StepError {
+		log.Printf("ERROR: user %s attempt to finish [%s] step in project [%s] that is not started", claims.ComputeID, proj.CurrentStep.Name, projID)
+		c.String(http.StatusBadRequest, "step has not been started")
+		return
+	}
 	if doneReq.DurationMins > 0 {
 		log.Printf("INFO: set duration %d for assignment %d", doneReq.DurationMins, currA.ID)
 		currA.DurationMinutes = doneReq.DurationMins
 		svc.DB.Model(&currA).Select("DurationMinutes").Updates(currA)
 	}
+
+	log.Printf("INFO: mark step [%s] in project [%s] as working", proj.CurrentStep.Name, projID)
+	currA.Status = StepWorking
+	svc.DB.Model(&currA).Select("Status").Updates(currA)
 
 	// is this the last step of a workflow?
 	if proj.CurrentStep.StepType == 1 {
@@ -157,14 +183,14 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		fr.UnitID = proj.UnitID
 		_, httpErr := svc.postRequest(fmt.Sprintf("%s/api/finalize", svc.TrackSysURL), fr)
 		if httpErr != nil {
-			currA.Status = 4 // error
+			currA.Status = StepError
 			svc.DB.Model(&currA).Select("Status").Updates(currA)
 			log.Printf("ERROR: finalize request failed: %s", httpErr.Message)
 			c.String(http.StatusInternalServerError, httpErr.Message)
 			return
 		}
 
-		currA.Status = 6 // finalizing
+		currA.Status = StepFinalizing
 		svc.DB.Model(&currA).Select("Status").Updates(currA)
 		c.JSON(http.StatusOK, proj)
 		return
@@ -181,7 +207,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 	log.Printf("INFO: mark assignment %d finished", currA.ID)
 	nowTimeStamp := time.Now()
 	currA.FinishedAt = &nowTimeStamp
-	currA.Status = 2 // finished
+	currA.Status = StepFinished
 	resp = svc.DB.Model(&currA).Select("FinishedAt", "Status").Updates(currA)
 	if resp.Error != nil {
 		log.Printf("ERROR: unable to update project %d step %d finish time: %s", proj.ID, currA.StepID, resp.Error.Error())
@@ -597,7 +623,7 @@ func (svc *serviceContext) nextStepName(proj *project) string {
 func (svc *serviceContext) failStep(proj *project, problemName string, message string) {
 	log.Printf("INFO: flag project %d step %s with an error", proj.ID, proj.CurrentStep.Name)
 	currA := proj.Assignments[0]
-	currA.Status = 4 // error
+	currA.Status = StepError
 	svc.DB.Model(&currA).Select("Status").Updates(currA)
 
 	log.Printf("INFO: adding problem(%s) note to project %d step %s", problemName, proj.ID, proj.CurrentStep.Name)

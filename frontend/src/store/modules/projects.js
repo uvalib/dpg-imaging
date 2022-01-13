@@ -66,7 +66,14 @@ const projects = {
          let p = state.projects[projIdx]
          if (p.assignments.length == 0) return false
          let currA = p.assignments[0]
-         return  currA.status == 1 ||  currA.status == 4 ||  currA.status == 6
+         return  currA.status == 1 ||  currA.status == 4 ||  currA.status == 6 ||  currA.status == 7
+      },
+      isWorking: state => projIdx => {
+         if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
+         let p = state.projects[projIdx]
+         if (p.assignments.length == 0) return false
+         let currA = p.assignments[0]
+         return currA.status == 7
       },
       isOwner: state => (computeID) => {
          if ( state.selectedProjectIdx == -1 ) return false
