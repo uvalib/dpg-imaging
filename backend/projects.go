@@ -166,6 +166,12 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	whereQ := filterQ[filterIdx]
 	log.Printf("INFO: user %s requests projects page %d", claims.ComputeID, page)
 
+	// ALWAYS exclude caneled projects. exclude done projects when filter is not finished.
+	whereQ += " AND units.unit_status != 'canceled'"
+	if filterIdx != 3 {
+		whereQ += " AND units.unit_status != 'done'"
+	}
+
 	qWorkflow := c.Query("workflow")
 	if qWorkflow != "" {
 		id, _ := strconv.Atoi(qWorkflow)
