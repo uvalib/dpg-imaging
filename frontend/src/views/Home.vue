@@ -73,7 +73,7 @@
                         <dd>{{p.category.name}}</dd>
                      </dl>
                   </div>
-                  <div class="status" v-if="isFinished(p) == false">
+                  <div class="status" v-if="!p.finishedAt || p.finishedAt == ''">
                      <div class="progress-panel">
                         <span>{{statusText(p.id)}}</span>
                         <div class="progress-bar">
