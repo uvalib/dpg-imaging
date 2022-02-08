@@ -163,11 +163,11 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		c.String(http.StatusBadRequest, fmt.Sprintf("%s is an invalid filter", filter))
 		return
 	}
-	whereQ := filterQ[filterIdx]
+
 	log.Printf("INFO: user %s requests projects page %d", claims.ComputeID, page)
 
 	// ALWAYS exclude caneled projects. exclude done projects when filter is not finished.
-	whereQ += " AND units.unit_status != 'canceled'"
+	whereQ := " AND units.unit_status != 'canceled'"
 	if filterIdx != 3 {
 		whereQ += " AND units.unit_status != 'done'"
 	}
@@ -208,20 +208,36 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	}
 
 	type projResp struct {
-		Total    int64     `json:"total"`
-		Page     uint      `json:"page"`
-		PageSize uint      `json:"pageSize"`
-		Projects []project `json:"projects"`
+		TotalMe         int64     `json:"totalMe"`
+		TotalActive     int64     `json:"totalActive"`
+		TotalUnassigned int64     `json:"totalUnassigned"`
+		TotalFinished   int64     `json:"totalFinished"`
+		Page            uint      `json:"page"`
+		PageSize        uint      `json:"pageSize"`
+		Projects        []project `json:"projects"`
 	}
 	out := projResp{Page: uint(page), PageSize: uint(pageSize)}
 
-	cr := svc.getBaseProjectQuery().Model(&project{}).Distinct("projects.id").Where(whereQ).Count(&out.Total)
-	if cr.Error != nil {
-		log.Printf("ERROR: unable to get count of projects: %s", cr.Error.Error())
-		c.String(http.StatusInternalServerError, cr.Error.Error())
-		return
+	for idx, q := range filterQ {
+		var total int64
+		countQ := q + whereQ
+		cr := svc.getBaseProjectQuery().Model(&project{}).Distinct("projects.id").Where(countQ).Count(&total)
+		if cr.Error != nil {
+			log.Printf("WARNING: unable to get count of projects: %s", cr.Error.Error())
+			total = 0
+		}
+		if idx == 0 {
+			out.TotalMe = total
+		} else if idx == 1 {
+			out.TotalActive = total
+		} else if idx == 2 {
+			out.TotalUnassigned = total
+		} else {
+			out.TotalFinished = total
+		}
 	}
 
+	whereQ = filterQ[filterIdx] + whereQ
 	resp := svc.getBaseProjectQuery().Distinct().
 		Offset(offset).Limit(pageSize).Order("due_on asc").
 		Where(whereQ).

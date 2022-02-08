@@ -6,7 +6,12 @@ const projects = {
    state: {
       projects: [],
       selectedProjectIdx: -1,
-      total: 0,
+      totals: {
+         me: 0,
+         active: 0,
+         unassigned: 0,
+         finished: 0
+      },
       pageSize: 10,
       currPage: 1,
       candidates: [],
@@ -83,7 +88,15 @@ const projects = {
          return false
       },
       totalPages: state => {
-         return Math.ceil(state.total/state.pageSize)
+         let total = state.totals.active
+         if (state.filter == "me") {
+            total = state.totals.me
+         } else if (state.filter == "unassigned") {
+            total = state.totals.unassigned
+         } else if (state.filter == "finished") {
+            total = state.totals.finished
+         }
+         return Math.ceil(total/state.pageSize)
       },
       currProject: state => {
          if (state.selectedProjectIdx == -1) {
@@ -167,7 +180,10 @@ const projects = {
          state.currPage = 1
       },
       setProjects(state, data) {
-         state.total = data.total
+         state.totals.me  = data.totalMe
+         state.totals.active  = data.totalActive
+         state.totals.unassigned  = data.totalUnassigned
+         state.totals.finished  = data.totalFinished
          state.pageSize = data.pageSize
          data.currPage = data.page
          state.projects.splice(0, state.projects.length)
@@ -183,7 +199,15 @@ const projects = {
          }
       },
       setPage(state, pg) {
-         let maxPg = Math.ceil(state.total/state.pageSize)
+         let total = state.totals.active
+         if (state.filter == "me") {
+            total = state.totals.me
+         } else if (state.filter == "unassigned") {
+            total = state.totals.unassigned
+         } else if (state.filter == "finished") {
+            total = state.totals.finished
+         }
+         let maxPg = Math.ceil(total/state.pageSize)
          if (pg > 0 && pg <= maxPg) {
             state.currPage = pg
          }

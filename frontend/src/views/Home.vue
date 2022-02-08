@@ -9,19 +9,19 @@
             <div class="filter">
                <label for="me">
                   <input id="me" type="radio" value="me" name="filter" v-model="filter" @change="filterChanged">
-                  <span>Assigned to me</span>
+                  <span>Assigned to me <span class="count">({{totals.me}})</span></span>
                </label>
                <label for="active">
                   <input id="active" type="radio" value="active" name="filter" v-model="filter" @change="filterChanged">
-                  <span>Active</span>
+                  <span>Active <span class="count">({{totals.active}})</span></span>
                </label>
                <label for="unassigned">
                   <input id="unassigned" type="radio" value="unassigned" name="filter" v-model="filter" @change="filterChanged">
-                  <span>Unassigned</span>
+                  <span>Unassigned <span class="count">({{totals.unassigned}})</span></span>
                </label>
                <label for="finished">
                   <input id="finished" type="radio" value="finished" name="filter" v-model="filter" @change="filterChanged">
-                  <span>Finished</span>
+                  <span>Finished <span class="count">({{totals.finished}})</span></span>
                </label>
             </div>
             <div class="page-ctl" v-if="!working && projects.length>0">
@@ -113,6 +113,7 @@ export default {
       ...mapState({
          working : state => state.projects.working,
          projects : state => state.projects.projects,
+         totals : state => state.projects.totals,
          currPage : state => state.projects.currPage,
          pageSize : state => state.projects.pageSize,
          jwt : state => state.user.jwt,
@@ -235,6 +236,11 @@ export default {
                font-size: 0.9em;
                position: relative;
                top: 2px;
+            }
+            .count {
+               display: inline-block;
+               top: 0;
+               color: var(--uvalib-grey);
             }
             &:hover {
                text-decoration: underline;
