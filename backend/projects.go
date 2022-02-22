@@ -206,6 +206,12 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		whereQ += fmt.Sprintf(" AND units.id = %d", id)
 		log.Printf("INFO: query for unit %d", id)
 	}
+	qOrderID := c.Query("order")
+	if qOrderID != "" {
+		id, _ := strconv.Atoi(qOrderID)
+		whereQ += fmt.Sprintf(" AND orders.id = %d", id)
+		log.Printf("INFO: query for order %d", id)
+	}
 
 	type projResp struct {
 		TotalMe         int64     `json:"totalMe"`

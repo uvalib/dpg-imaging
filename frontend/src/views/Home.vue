@@ -131,6 +131,8 @@ export default {
       }),
       ...mapFields({
         filter: 'projects.filter',
+        tgtUnitID: "projects.search.unitID",
+        tgtOrderID: "projects.search.orderID",
       })
    },
    methods: {
@@ -179,8 +181,16 @@ export default {
       }
    },
    created() {
-      if (this.jwt != "" && this.projects.length <= 1) {
+      if ( this.$route.query.order ) {
+         this.tgtOrderID = this.$route.query.order
          this.$store.dispatch("projects/getProjects")
+      } else if ( this.$route.query.unit ) {
+         this.tgtUnitID = this.$route.query.unit
+         this.$store.dispatch("projects/getProjects")
+      } else {
+         if (this.jwt != "" && this.projects.length <= 1) {
+            this.$store.dispatch("projects/getProjects")
+         }
       }
    },
 };
