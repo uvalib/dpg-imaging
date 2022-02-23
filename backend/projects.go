@@ -227,7 +227,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	for idx, q := range filterQ {
 		var total int64
 		countQ := q + whereQ
-		cr := svc.getBaseProjectQuery().Model(&project{}).Distinct("projects.id").Where(countQ).Count(&total)
+		cr := svc.getBaseCountsQuery().Model(&project{}).Distinct("projects.id").Where(countQ).Count(&total)
 		if cr.Error != nil {
 			log.Printf("WARNING: unable to get count of projects: %s", cr.Error.Error())
 			total = 0
@@ -556,4 +556,16 @@ func (svc *serviceContext) getBaseProjectQuery() (tx *gorm.DB) {
 		Preload("Unit.Order.Customer").          // customer is deeply nested, so need to preload explicitly
 		Preload("Notes." + clause.Associations). // preload all associations under notes
 		Preload("Workflow.Steps")                // explicitly preload nested workflow steps
+}
+
+func (svc *serviceContext) getBaseCountsQuery() (tx *gorm.DB) {
+	return svc.DB.
+		Joins("LEFT OUTER JOIN assignments on assignments.project_id=projects.id").
+		Joins("LEFT OUTER JOIN staff_members on assignments.staff_member_id=staff_members.id").
+		Joins("INNER JOIN units on units.id=projects.unit_id").
+		Joins("INNER JOIN metadata on metadata.id=units.metadata_id").
+		Joins("INNER JOIN orders on orders.id=units.order_id").
+		Joins("INNER JOIN customers on customers.id=orders.customer_id").
+		Joins("LEFT OUTER JOIN agencies on agencies.id=orders.agency_id").
+		Joins("LEFT OUTER JOIN notes on notes.project_id = projects.id")
 }
