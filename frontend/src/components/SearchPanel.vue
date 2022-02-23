@@ -71,7 +71,15 @@ export default {
       })
    },
    methods: {
-      resetSearch() {
+      async resetSearch() {
+         let query = Object.assign({}, this.$route.query)
+         if (query.order) {
+            delete query.order
+            await this.$router.push({ query })
+         } else if (query.unit) {
+            delete query.unit
+            await this.$router.push({ query })
+         }
          this.$store.dispatch("projects/resetSearch")
       },
       doSearch() {
