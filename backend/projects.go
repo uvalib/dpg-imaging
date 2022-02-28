@@ -261,7 +261,11 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 	projID := c.Param("id")
 	userID := c.Param("uid")
 	claims := getJWTClaims(c)
-	log.Printf("INFO: user %s is assigning project %s to user ID %s", claims.ComputeID, projID, userID)
+	if userID == "0" {
+		log.Printf("INFO: user %s is assigning clearing %s assignment", claims.ComputeID, projID)
+	} else {
+		log.Printf("INFO: user %s is assigning project %s to user ID %s", claims.ComputeID, projID, userID)
+	}
 
 	log.Printf("INFO: looking up project %s", projID)
 	var proj project
@@ -270,6 +274,40 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 	if resp.Error != nil {
 		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
 		c.String(http.StatusInternalServerError, resp.Error.Error())
+		return
+	}
+
+	// In a clear POST, userID will be 0
+	if userID == "0" {
+		now := time.Now()
+		msg := fmt.Sprintf("<p>Admin user canceled assignment to %s</p>", proj.Owner.ComputingID)
+		newNote := note{ProjectID: proj.ID, StepID: proj.CurrentStepID, StaffMemberID: *proj.OwnerID,
+			NoteType: 0, Note: msg, CreatedAt: &now, UpdatedAt: &now}
+		err := svc.DB.Model(&proj).Association("Notes").Append(&newNote)
+		if err != nil {
+			log.Printf("ERROR: unable to add note to project %d: %s", proj.ID, err.Error())
+			return
+		}
+
+		activeAssign := proj.Assignments[0]
+		log.Printf("INFO: mark assignment %d as reassigied", activeAssign.ID)
+		activeAssign.Status = StepReassigned
+		r := svc.DB.Model(&activeAssign).Select("Status").Updates(activeAssign)
+		if r.Error != nil {
+			log.Printf("ERROR: unable to mark project %d active assignment as reassigned: %s", proj.ID, r.Error.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		log.Printf("INFO: clear owner for project %s", projID)
+		proj.OwnerID = nil
+		proj.Owner = nil
+		err = svc.DB.Model(&proj).Select("OwnerID").Updates(proj).Error
+		if err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, proj)
 		return
 	}
 
@@ -298,7 +336,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 
 	// If someone else has this assignment, flag it as reassigned. Do not mark the finished time as it was never actually finished
 	if proj.OwnerID != nil {
-		activeAssign := proj.Assignments[len(proj.Assignments)-1]
+		activeAssign := proj.Assignments[0]
 		log.Printf("INFO: marking assignment %d as reassigned", activeAssign.ID)
 		activeAssign.Status = StepReassigned
 		r := svc.DB.Model(&activeAssign).Select("Status").Updates(activeAssign)
@@ -486,7 +524,7 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 
 	// Prior owner
 	if proj.CurrentStep.OwnerType == 1 {
-		lastAssign := proj.Assignments[len(proj.Assignments)-1]
+		lastAssign := proj.Assignments[0]
 		if lastAssign.StaffMember.ComputingID != assignee.ComputingID {
 			log.Printf("INFO: project %d requires prior owner %s to claim, not %s",
 				proj.ID, lastAssign.StaffMember.ComputingID, assignee.ComputingID)
@@ -508,7 +546,7 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 
 	// Original owner
 	if proj.CurrentStep.OwnerType == 3 {
-		origAssign := proj.Assignments[0]
+		origAssign := proj.Assignments[len(proj.Assignments)-1]
 		if origAssign.StaffMember.ComputingID != assignee.ComputingID {
 			log.Printf("INFO: project %d requires original owner %s to claim, not %s",
 				proj.ID, origAssign.StaffMember.ComputingID, assignee.ComputingID)

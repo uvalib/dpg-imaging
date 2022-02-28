@@ -47,11 +47,11 @@
                         <td>{{a.staffMember.firstName}} {{a.staffMember.lastName}}</td>
                      </tr>
                   </template>
-
-                  <tr>
+                  <tr v-else :class="{reassign: a.status == 5}">
                      <td>{{formatDate(a.assignedAt)}}</td>
                      <td>{{lookupStepName(a.stepID)}}</td>
-                     <td>Assigned</td>
+                     <td v-if="a.status == 5">Reassigned</td>
+                     <td v-else>Assigned</td>
                      <td>{{a.staffMember.firstName}} {{a.staffMember.lastName}}</td>
                   </tr>
 
@@ -155,6 +155,7 @@ export default {
       }
       tr.reassign td {
          background: lightgoldenrodyellow;
+         color: var(--uvalib-text);
       }
       tr.finalize {
          background-color: #5a5;

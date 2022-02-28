@@ -52,6 +52,9 @@
             <DPGButton v-if="isWorking(projectIdx) == false && hasOwner(projectIdx) == false" @clicked="claimClicked()"  class="pad-right">Claim</DPGButton>
             <AssignModal v-if="(isAdmin || isSupervisor)" :projectID="currProject.id" @assign="assignClicked"/>
          </template>
+         <DPGButton v-if="hasOwner(projectIdx) && (isAdmin || isSupervisor)" @clicked="clearClicked()" class="pad-right">
+            Clear Assignment
+         </DPGButton>
       </div>
       <div class="workflow-message" v-if="isOwner(computingID) && workflowNote">
          {{workflowNote}}
@@ -159,6 +162,9 @@ export default {
       }
    },
    methods: {
+      clearClicked() {
+         this.$store.dispatch("projects/assignProject", {projectID: this.currProject.id, ownerID: 0} )
+      },
       rejectStepClicked() {
          this.action = "reject"
          this.showTimeEntry()

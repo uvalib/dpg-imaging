@@ -50,23 +50,6 @@ type titleCheck struct {
 	Valid bool   `json:"valid"`
 }
 
-// TODO this needs to be retired when TS code is retired
-func (svc *serviceContext) finalizeUnitRequest(c *gin.Context) {
-	uid := c.Param("uid")
-	start := time.Now()
-	resp, err := svc.finalizeUnitData(uid)
-	if err != nil {
-		log.Printf("ERROR: %s", err.Error())
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-	elapsed := time.Since(start)
-	elapsedMS := int64(elapsed / time.Millisecond)
-
-	log.Printf("INFO: finalized  unit %s in %dms", uid, elapsedMS)
-	c.JSON(http.StatusOK, resp)
-}
-
 func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse, error) {
 	uid := padLeft(rawUnitID, 9)
 	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
