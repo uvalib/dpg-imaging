@@ -75,11 +75,11 @@
 
 <script>
 import { mapState, mapGetters } from "vuex"
-import ItemInfo from "@/components/project/ItemInfo"
-import Workflow from "@/components/project/Workflow"
-import History from "@/components/project/History"
-import Notes from "@/components/project/Notes"
-import Equipment from "@/components/project/Equipment"
+import ItemInfo from "@/components/project/ItemInfo.vue"
+import Workflow from "@/components/project/Workflow.vue"
+import History from "@/components/project/History.vue"
+import Notes from "@/components/project/Notes.vue"
+import Equipment from "@/components/project/Equipment.vue"
 import NoteModal from '@/components/project/NoteModal.vue'
 export default {
    name: "project",

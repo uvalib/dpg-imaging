@@ -24,8 +24,8 @@
 </template>
 
 <script>
-import UvaLibraryLogo from "@/components/UvaLibraryLogo";
-import ScrollToTop from "@/components/ScrollToTop";
+import UvaLibraryLogo from "@/components/UvaLibraryLogo.vue"
+import ScrollToTop from "@/components/ScrollToTop.vue"
 import { mapState, mapGetters } from "vuex";
 export default {
    components: {

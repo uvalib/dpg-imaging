@@ -10,11 +10,11 @@ app.use(store)
 app.use(router)
 
 // Global component registration. All components can use these without import
-import WaitSpinner from "@/components/WaitSpinner"
-import ErrorMessage from "@/components/ErrorMessage"
-import DPGButton from "@/components/DPGButton"
+import WaitSpinner from "@/components/WaitSpinner.vue"
+import ErrorMessage from "@/components/ErrorMessage.vue"
+import DPGButton from "@/components/DPGButton.vue"
 import DPGPagination from '@/components/DPGPagination.vue'
-import ConfirmModal from "@/components/ConfirmModal"
+import ConfirmModal from "@/components/ConfirmModal.vue"
 app.component("WaitSpinner", WaitSpinner)
 app.component("ErrorMessage", ErrorMessage)
 app.component("DPGButton", DPGButton)

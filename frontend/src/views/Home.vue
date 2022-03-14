@@ -102,8 +102,8 @@
 <script>
 import { mapState, mapGetters } from "vuex"
 import { mapFields } from 'vuex-map-fields'
-import AssignModal from "@/components/AssignModal"
-import SearchPanel from "@/components/SearchPanel"
+import AssignModal from "@/components/AssignModal.vue"
+import SearchPanel from "@/components/SearchPanel.vue"
 export default {
    name: "home",
    components: {

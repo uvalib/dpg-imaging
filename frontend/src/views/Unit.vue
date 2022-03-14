@@ -360,6 +360,7 @@ export default {
          })
       },
       dragStarted() {
+         console.log("DRAG START")
          let eles=document.getElementsByClassName("selected")
          while (eles[0]) {
             eles[0].classList.remove('selected')

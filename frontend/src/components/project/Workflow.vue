@@ -68,7 +68,7 @@
 <script>
 import { mapState, mapGetters } from "vuex"
 import date from 'date-and-time'
-import AssignModal from "@/components/AssignModal"
+import AssignModal from "@/components/AssignModal.vue"
 import NoteModal from '@/components/project/NoteModal.vue'
 export default {
    components: {
