@@ -3,39 +3,39 @@
       <h3>Search</h3>
       <div class="form">
          <label for="workflow">Workflow</label>
-         <select id="workflow"  v-model="tgtWorkflow">
+         <select id="workflow"  v-model="projectStore.search.workflow">
             <option :value="0">Any</option>
-            <option v-for="w in workflows" :key="`wf${w.id}`" :value="w.id">{{w.name}}</option>
+            <option v-for="w in systemStore.workflows" :key="`wf${w.id}`" :value="w.id">{{w.name}}</option>
          </select>
 
          <label for="assigned">Assigned To</label>
-         <select id="assigned" v-model="tgtAssignedTo">
+         <select id="assigned" v-model="projectStore.search.assignedTo">
             <option :value="0">Any</option>
-            <option v-for="sm in staff" :key="`sm${sm.id}`" :value="sm.id">{{sm.lastName}}, {{sm.firstName}}</option>
+            <option v-for="sm in systemStore.staffMembers" :key="`sm${sm.id}`" :value="sm.id">{{sm.lastName}}, {{sm.firstName}}</option>
          </select>
 
          <label for="unit">Order</label>
-         <input id="unit" v-model="tgtOrderID">
+         <input id="unit" v-model="projectStore.search.orderID">
 
          <label for="unit">Unit</label>
-         <input id="unit" v-model="tgtUnitID">
+         <input id="unit" v-model="projectStore.search.unitID">
 
          <label for="call">Call Number</label>
-         <input id="call" v-model="tgtCallNumber">
+         <input id="call" v-model="projectStore.search.callNumber">
 
          <label for="customer">Customer Last Name</label>
-         <input id="customer" v-model="tgtCustomer">
+         <input id="customer" v-model="projectStore.search.customer">
 
          <label for="agency">Agency</label>
-         <select id="agency" v-model="tgtAgency">
+         <select id="agency" v-model="projectStore.search.agency">
             <option :value="0">Any</option>
-            <option v-for="a in agencies" :key="`agency${a.id}`" :value="a.id">{{a.name}}</option>
+            <option v-for="a in systemStore.agencies" :key="`agency${a.id}`" :value="a.id">{{a.name}}</option>
          </select>
 
          <label for="workstation">Workstation</label>
-         <select id="workstation" v-model="tgtWorkstation">
+         <select id="workstation" v-model="projectStore.search.workstation">
             <option :value="0">Any</option>
-            <option v-for="ws in workstations" :key="`ws${ws.id}`" :value="ws.id">{{ws.name}}</option>
+            <option v-for="ws in systemStore.workstations" :key="`ws${ws.id}`" :value="ws.id">{{ws.name}}</option>
          </select>
       </div>
       <div class="buttons">
@@ -45,48 +45,30 @@
    </div>
 </template>
 
-<script>
-import { mapState } from "vuex"
-import { mapFields } from 'vuex-map-fields'
-export default {
-   components: {
-   },
-   computed: {
-      ...mapState({
-         workstations : state => state.workstations,
-         workflows : state => state.workflows,
-         staff : state => state.staffMembers,
-         agencies : state => state.agencies,
-      }),
-      ...mapFields({
-         search: "projects.search",
-         tgtWorkflow: "projects.search.workflow",
-         tgtAssignedTo: "projects.search.assignedTo",
-         tgtWorkstation: "projects.search.workstation",
-         tgtCallNumber: "projects.search.callNumber",
-         tgtCustomer: "projects.search.customer",
-         tgtAgency: "projects.search.agency",
-         tgtUnitID: "projects.search.unitID",
-         tgtOrderID: "projects.search.orderID",
-      })
-   },
-   methods: {
-      async resetSearch() {
-         let query = Object.assign({}, this.$route.query)
-         if (query.order) {
-            delete query.order
-            await this.$router.push({ query })
-         } else if (query.unit) {
-            delete query.unit
-            await this.$router.push({ query })
-         }
-         this.$store.dispatch("projects/resetSearch")
-      },
-      doSearch() {
-         this.$store.dispatch("projects/getProjects")
-      }
-   },
-};
+<script setup>
+import {useProjectStore} from '@/stores/project'
+import {useSystemStore} from '@/stores/system'
+import { useRoute, useRouter } from 'vue-router'
+
+const route = useRoute()
+const router = useRouter()
+const projectStore = useProjectStore()
+const systemStore = useSystemStore()
+
+async function resetSearch() {
+   let query = Object.assign({}, route.query)
+   if (query.order) {
+      delete query.order
+      await router.push({ query })
+   } else if (query.unit) {
+      delete query.unit
+      await router.push({ query })
+   }
+   projectStore.resetSearch()
+}
+function doSearch() {
+   projectStore.getProjects()
+}
 </script>
 
 <style scoped lang="scss">

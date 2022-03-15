@@ -16,17 +16,12 @@
    </div>
 </template>
 
-<script>
-export default {
-   name: "signedout",
-   components: {
-   },
-   methods: {
-      signinClick() {
-         this.$router.push("/")
-      }
-   }
-};
+<script setup>
+import { useRouter } from 'vue-router'
+const router = useRouter()
+function signinClick() {
+   router.push("/")
+}
 </script>
 
 <style scoped lang="scss">

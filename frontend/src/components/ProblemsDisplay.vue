@@ -1,12 +1,12 @@
 <template>
    <div class="problems-wrap" v-if="problems.length > 0">
-      <span class="problems-btn" v-if="problems" @click="toggleList()">
-         {{problems.length}} <span v-if="problems.length==1">issue</span><span v-else>issues</span> detected
+      <span class="problems-btn" v-if="unitStore.problems" @click="toggleList()">
+         {{problems.length}} <span v-if="unitStore.problems.length==1">issue</span><span v-else>issues</span> detected
          <i class="caret fas fa-angle-down" :class="{rotate: opened}"></i>
       </span>
       <div class="list" v-if="opened">
          <ol start="1">
-            <li v-for="(p,idx) in problems" :key="`p${idx}`">
+            <li v-for="(p,idx) in unitStore.problems" :key="`p${idx}`">
                {{p}}
             </li>
          </ol>
@@ -14,24 +14,15 @@
    </div>
 </template>
 
-<script>
-import { mapState } from "vuex"
-export default {
-   computed: {
-      ...mapState({
-         problems: state => state.units.problems
-      }),
-   },
-   data() {
-      return {
-        opened: false,
-      }
-   },
-   methods: {
-      toggleList() {
-         this.opened = !this.opened
-      }
-   }
+<script setup>
+import {useUnitStore} from "@/stores/unit"
+import {ref } from 'vue'
+
+const unitStore = useUnitStore()
+const opened = ref(false)
+
+function toggleList() {
+   opened.value = !opened.value
 }
 </script>
 

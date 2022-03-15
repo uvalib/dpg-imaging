@@ -1,6 +1,6 @@
 <template>
    <div class="assign-modal-wrapper">
-      <DPGButton id="assign-trigger" @clicked="show">{{label}}</DPGButton>
+      <DPGButton id="assign-trigger" @clicked="show">{{props.label}}</DPGButton>
       <div class="assign-modal-dimmer" v-if="isOpen">
          <div role="dialog" aria-labelledby="assign-modal-title" id="assign-modal" class="assign-modal">
             <div id="assign-modal-title" class="assign-modal-title">Assign Project</div>
@@ -29,11 +29,13 @@
    </div>
 </template>
 
-<script>
-import { mapState } from "vuex"
-export default {
-   emits: ['assign', 'closed', 'opened' ],
-   props: {
+<script setup>
+import { ref, nextTick } from 'vue'
+import {useSystemStore} from '@/stores/system'
+
+const systemStore = useSystemStore()
+const emit = defineEmits( ['assign', 'closed', 'opened' ] )
+const props = defineProps({
       projectID: {
          type: Number,
          required: true,
@@ -42,57 +44,46 @@ export default {
          type: String,
          default: "Assign"
       }
-   },
-   data: function()  {
-      return {
-         isOpen: false,
-         selectedIdx: -1,
-         error: ""
-      }
-   },
-   computed: {
-      ...mapState({
-         working: state => state.projects.working,
-         candidates: state => state.staffMembers,
-      })
-   },
-   methods: {
-      selectCandidate(idx) {
-         this.selectedIdx = idx
-      },
-      assignClicked() {
-         this.error = ""
-         if ( this.selectedIdx == -1) {
-            this.error = "Please select a user"
-            return
-         }
-         this.hide()
-         this.$nextTick( () => {
-            let userID = this.candidates[this.selectedIdx].id
-            this.$emit('assign', {projectID: this.projectID, ownerID: userID})
-         })
-      },
-      hide() {
-         this.isOpen=false
-         this.setFocus("assign-trigger")
-         this.$emit('closed')
-      },
-      show() {
-         this.isOpen=true
-         setTimeout(()=>{
-            this.setFocus("close-assign")
-            this.$emit('opened')
-         }, 150)
-         this.error = ""
-         this.selectedIdx = -1
-      },
-      setFocus(id) {
-         let ele = document.getElementById(id)
-         if (ele ) {
-            ele.focus()
-         }
-      },
-   },
+   })
+
+const isOpen = ref(false)
+const selectedIdx = ref(-1)
+const error = ref("")
+
+function selectCandidate(idx) {
+   selectedIdx.value = idx
+}
+function assignClicked() {
+   error.value = ""
+   if ( selectedIdx.value == -1) {
+      error.value = "Please select a user"
+      return
+   }
+   hide()
+   nextTick( () => {
+      let userID = systemStore.candidates[selectedIdx.value].id
+      emit('assign', {projectID: props.projectID, ownerID: userID})
+   })
+}
+function hide() {
+   isOpen.value=false
+   setFocus("assign-trigger")
+   emit('closed')
+}
+function show() {
+   isOpen.value = true
+   setTimeout(()=>{
+      setFocus("close-assign")
+      emit('opened')
+   }, 150)
+   error.value = ""
+   selectedIdx.value = -1
+}
+function setFocus(id) {
+   let ele = document.getElementById(id)
+   if (ele ) {
+      ele.focus()
+   }
 }
 </script>
 

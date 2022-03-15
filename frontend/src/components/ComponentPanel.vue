@@ -4,16 +4,16 @@
       <div class="content">
          <span class="entry pad-right">
             <label>Start Image:</label>
-            <select id="start-page" v-model="rangeStartIdx">
+            <select id="start-page" v-model="unitStore.rangeStartIdx">
                <option disabled :value="-1">Select start page</option>
-               <option v-for="(mf,idx) in masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
+               <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
             </select>
          </span>
          <span class="entry pad-right">
             <label>End Image:</label>
-            <select id="end-page" v-model="rangeEndIdx">
+            <select id="end-page" v-model="unitStore.rangeEndIdx">
                <option disabled :value="-1">Select end page</option>
-               <option v-for="(mf,idx) in masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
+               <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
             </select>
          </span>
          <span class="entry">
@@ -69,72 +69,58 @@
    </div>
 </template>
 
-<script>
-import { mapState } from "vuex"
-import { mapFields } from 'vuex-map-fields'
-export default {
-   computed: {
-      ...mapState({
-         masterFiles : state => state.units.masterFiles,
-         currUnit: state => state.units.currUnit,
-         component: state => state.units.component
-      }),
-      ...mapFields({
-        rangeStartIdx: 'units.rangeStartIdx',
-        rangeEndIdx: 'units.rangeEndIdx',
-        editMode: 'units.editMode',
-      }),
-   },
-   data() {
-      return {
-        componentID: "",
-      }
-   },
-   methods: {
-      formatData( value ) {
-         if (value && value != "" )  return value
-         return "N/A"
-      },
-      okClicked() {
-         this.$store.commit("clearError")
-         this.$store.commit("units/clearComponent")
-         if ( this.rangeStartIdx == -1 || this.rangeEndIdx == -1) {
-            this.$store.commit("setError", "Start and end image must be selected")
-            return
-         }
-         if (this.componentID == "") {
-            this.$store.commit("setError", "Component ID is required")
-            return
-         }
-         this.$store.dispatch("units/lookupComponentID", this.componentID)
-      },
-      noLinkClicked() {
-         this.$store.commit("clearError")
-         this.$store.commit("units/clearComponent")
-      },
-      cancelEditClicked() {
-         this.$store.commit("clearError")
-         this.$store.commit("units/clearComponent")
-         this.editMode = ""
-      },
-      async unlinkClicked() {
-         this.$store.commit("clearError")
-         this.$store.commit("units/clearComponent")
-         if ( this.rangeStartIdx == -1 || this.rangeEndIdx == -1) {
-            this.$store.commit("setError", "Start and end image must be selected")
-            return
-         }
-         await this.$store.dispatch("units/componentLink","")
-         this.cancelEditClicked()
-      },
-      async linkConfirmed() {
-         await this.$store.dispatch("units/componentLink",this.componentID)
-         this.cancelEditClicked()
-      },
-      selectAllClicked() {
-         this.$store.commit("units/selectAll")
-      }
+<script setup>
+import {useUnitStore} from "@/stores/unit"
+import {useSystemStore} from "@/stores/system"
+import { ref } from 'vue'
+
+const unitStore = useUnitStore()
+const systemStore = useSystemStore()
+
+const componentID = ref("")
+
+function formatData( value ) {
+   if (value && value != "" )  return value
+   return "N/A"
+}
+function okClicked() {
+   systemStore.error = ""
+   unitStore.clearComponent()
+   if ( unitStore.rangeStartIdx == -1 || unitStore.rangeEndIdx == -1) {
+      systemStore.error = "Start and end image must be selected"
+      return
    }
+   if (this.componentID == "") {
+      systemStore.error = "Component ID is required"
+      return
+   }
+   unitStore.lookupComponentID(componentID.value)
+}
+function noLinkClicked() {
+   systemStore.error = ""
+   unitStore.clearComponent()
+}
+function cancelEditClicked() {
+   systemStore.error = ""
+   unitStore.clearComponent()
+   unitStore.editMode = ""
+}
+async function unlinkClicked() {
+   systemStore.error = ""
+   unitStore.clearComponent()
+   if ( unitStore.rangeStartIdx == -1 || unitStore.rangeEndIdx == -1) {
+      systemStore.error = "Start and end image must be selected"
+      return
+   }
+   await unitStore.componentLink("")
+   cancelEditClicked()
+}
+async function linkConfirmed() {
+   await unitStore.componentLink(componentID.value)
+   cancelEditClicked()
+}
+function selectAllClicked() {
+   unitStore.selectAll()
 }
 </script>
 

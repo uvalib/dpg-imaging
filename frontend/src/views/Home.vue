@@ -3,29 +3,29 @@
       <h2>
          <span>Digitization Projects</span>
       </h2>
-      <WaitSpinner v-if="working" :overlay="true" message="Loading projects..." />
+      <WaitSpinner v-if="projectStore.working" :overlay="true" message="Loading projects..." />
       <div class="projects-content">
          <div class="toolbar">
             <div class="filter">
                <label for="me">
-                  <input id="me" type="radio" value="me" name="filter" v-model="filter" @change="filterChanged">
-                  <span>Assigned to me <span class="count">({{totals.me}})</span></span>
+                  <input id="me" type="radio" value="me" name="filter" v-model="projectStore.filter" @change="filterChanged">
+                  <span>Assigned to me <span class="count">({{projectStore.totals.me}})</span></span>
                </label>
                <label for="active">
-                  <input id="active" type="radio" value="active" name="filter" v-model="filter" @change="filterChanged">
-                  <span>Active <span class="count">({{totals.active}})</span></span>
+                  <input id="active" type="radio" value="active" name="filter" v-model="projectStore.filter" @change="filterChanged">
+                  <span>Active <span class="count">({{projectStore.totals.active}})</span></span>
                </label>
                <label for="unassigned">
-                  <input id="unassigned" type="radio" value="unassigned" name="filter" v-model="filter" @change="filterChanged">
-                  <span>Unassigned <span class="count">({{totals.unassigned}})</span></span>
+                  <input id="unassigned" type="radio" value="unassigned" name="filter" v-model="projectStore.filter" @change="filterChanged">
+                  <span>Unassigned <span class="count">({{projectStore.totals.unassigned}})</span></span>
                </label>
                <label for="finished">
-                  <input id="finished" type="radio" value="finished" name="filter" v-model="filter" @change="filterChanged">
-                  <span>Finished <span class="count">({{totals.finished}})</span></span>
+                  <input id="finished" type="radio" value="finished" name="filter" v-model="projectStore.filter" @change="filterChanged">
+                  <span>Finished <span class="count">({{projectStore.totals.finished}})</span></span>
                </label>
             </div>
-            <div class="page-ctl" v-if="!working && projects.length>0">
-               <DPGPagination :currPage="currPage" :pageSize="pageSize" :totalPages="totalPages"
+            <div class="page-ctl" v-if="!projectStore.working && projectStore.projects.length>0">
+               <DPGPagination :currPage="projectStore.currPage" :pageSize="projectStore.pageSize" :totalPages="projectStore.totalPages"
                   @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
                   @jump="pageJumpClicked"
                />
@@ -33,11 +33,11 @@
          </div>
          <div class="project-board">
             <SearchPanel />
-            <div class="none" v-if="!working && projects.length == 0">
+            <div class="none" v-if="!projectStore.working && projectStore.projects.length == 0">
                No projects match your search criteria
             </div>
             <ul v-else class="projects">
-               <li class="card" v-for="p in projects" :key="`p${p.id}`">
+               <li class="card" v-for="p in projectStore.projects" :key="`p${p.id}`">
                   <div class="top">
                      <div class="due">
                         <span>
@@ -47,7 +47,7 @@
                         <span v-if="p.finishedAt"><label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span></span>
                      </div>
                      <div class="title">
-                        <router-link @click="selectProject(p.id)" :to="`/projects/${p.id}`">{{p.unit.metadata.title}}</router-link>
+                        <router-link @click="projectStore.selectProject(p.id)" :to="`/projects/${p.id}`">{{p.unit.metadata.title}}</router-link>
                      </div>
                   </div>
                   <div class="data">
@@ -64,9 +64,9 @@
                      </dl>
                      <dl class="right">
                         <dt>Order:</dt>
-                        <dd><a target="_blank" :href="`${adminURL}/orders/${p.unit.order.id}`">{{p.unit.order.id}}</a></dd>
+                        <dd><a target="_blank" :href="`${systemStore.adminURL}/orders/${p.unit.order.id}`">{{p.unit.order.id}}</a></dd>
                         <dt>Unit:</dt>
-                        <dd><a target="_blank" :href="`${adminURL}/units/${p.unit.id}`">{{p.unit.id}}</a></dd>
+                        <dd><a target="_blank" :href="`${systemStore.adminURL}/units/${p.unit.id}`">{{p.unit.id}}</a></dd>
                         <dt>Workflow:</dt>
                         <dd>{{p.workflow.name}}</dd>
                         <dt>Category:</dt>
@@ -75,9 +75,9 @@
                   </div>
                   <div class="status" v-if="!p.finishedAt || p.finishedAt == ''">
                      <div class="progress-panel">
-                        <span>{{statusText(p.id)}}</span>
+                        <span>{{projectStore.statusText(p.id)}}</span>
                         <div class="progress-bar">
-                           <div class="percentage" :style="{width: percentComplete(p.id) }"></div>
+                           <div class="percentage" :style="{width: projectStore.percentComplete(p.id) }"></div>
                         </div>
                      </div>
                      <div class="owner-panel">
@@ -88,7 +88,7 @@
                         </span>
                         <span class="owner-buttons">
                            <DPGButton v-if="canClaim(p)" @clicked="claimClicked(p.id)">Claim</DPGButton>
-                           <assign-modal  v-if="canAssign" :projectID="p.id" @assign="assignClicked"/>
+                           <AssignModal  v-if="canAssign" :projectID="p.id" @assign="assignClicked"/>
                         </span>
                      </div>
                   </div>
@@ -99,101 +99,75 @@
    </div>
 </template>
 
-<script>
-import { mapState, mapGetters } from "vuex"
-import { mapFields } from 'vuex-map-fields'
+<script setup>
 import AssignModal from "@/components/AssignModal.vue"
 import SearchPanel from "@/components/SearchPanel.vue"
-export default {
-   name: "home",
-   components: {
-      AssignModal, SearchPanel
-   },
-   computed: {
-      ...mapState({
-         working : state => state.projects.working,
-         projects : state => state.projects.projects,
-         totals : state => state.projects.totals,
-         currPage : state => state.projects.currPage,
-         pageSize : state => state.projects.pageSize,
-         jwt : state => state.user.jwt,
-         userComputingID : state => state.user.computeID,
-         userID : state => state.user.ID,
-         adminURL: state => state.adminURL,
-      }),
-      ...mapGetters({
-         totalPages: 'projects/totalPages',
-         isAdmin: 'user/isAdmin',
-         isSupervisor: 'user/isSupervisor',
-         statusText: 'projects/statusText',
-         percentComplete: 'projects/percentComplete',
-         isFinished: 'projects/isFinished'
-      }),
-      ...mapFields({
-        filter: 'projects.filter',
-        tgtUnitID: "projects.search.unitID",
-        tgtOrderID: "projects.search.orderID",
-      })
-   },
-   methods: {
-      filterChanged() {
-         this.$store.dispatch("projects/getProjects")
-      },
-      selectProject(id) {
-         this.$store.commit("projects/selectProject", id)
-      },
-      canClaim(p) {
-         if ( !p.owner ) return true
-         if ( (this.isAdmin || this.isSupervisor ) && p.owner.computingID != this.userComputingID) return true
-         return false
-      },
-      claimClicked(projID) {
-         this.$store.dispatch("projects/assignProject", {projectID: projID, ownerID: this.userID} )
-      },
-      canAssign() {
-         return (this.isAdmin || this.isSupervisor)
-      },
-      assignClicked( info ) {
-         this.$store.dispatch("projects/assignProject", {projectID: info.projectID, ownerID: info.ownerID} )
-      },
-      nextClicked() {
-         this.$store.dispatch("projects/setCurrentPage", this.currPage+1 )
-      },
-      priorClicked() {
-         this.$store.dispatch("projects/setCurrentPage", this.currPage-1 )
-      },
-      firstClicked() {
-         this.$store.dispatch("projects/setCurrentPage", 1 )
-      },
-      lastClicked() {
-         this.$store.dispatch("projects/setCurrentPage", this.totalPages )
-      },
-      pageJumpClicked(p) {
-         this.$store.dispatch("projects/setCurrentPage", p )
-      },
-      ownerInfo(p) {
-         return `${p.owner.firstName} ${p.owner.lastName} (${p.owner.computingID})`
-      },
-      isOverdue(p) {
-         let due =  new Date(p.dueOn)
-         let now = new Date()
-         return now > due
+import {useProjectStore} from "@/stores/project"
+import {useSystemStore} from "@/stores/system"
+import {useUserStore} from "@/stores/user"
+import { useRoute } from 'vue-router'
+import { onMounted } from 'vue'
+
+const projectStore = useProjectStore()
+const systemStore = useSystemStore()
+const userStore = useUserStore()
+const route = useRoute()
+
+function filterChanged() {
+   projectStore.getProjects()
+}
+function canClaim(p) {
+   if ( !p.owner ) return true
+   if ( (userStore.isAdmin || userStore.isSupervisor ) && p.owner.computingID != userStore.computeID) return true
+   return false
+}
+function claimClicked(projID) {
+   projectStore.assignProject( {projectID: projID, ownerID: userStore.ID} )
+}
+function canAssign() {
+   return (userStore.isAdmin || userStore.isSupervisor)
+}
+function assignClicked( info ) {
+   projectStore.assignProject( {projectID: info.projectID, ownerID: info.ownerID} )
+}
+function nextClicked() {
+   projectStore.setCurrentPage(projectStore.currPage+1 )
+}
+function priorClicked() {
+   projectStore.setCurrentPage(projectStore.currPage-1 )
+}
+function firstClicked() {
+   projectStore.setCurrentPage( 1 )
+}
+function lastClicked() {
+   projectStore.setCurrentPage(projectStore.totalPages )
+}
+function pageJumpClicked(p) {
+   projectStore.setCurrentPage( p )
+}
+function ownerInfo(p) {
+   return `${p.owner.firstName} ${p.owner.lastName} (${p.owner.computingID})`
+}
+function isOverdue(p) {
+   let due =  new Date(p.dueOn)
+   let now = new Date()
+   return now > due
+}
+
+onMounted( async () => {
+   console.log("CREATED")
+   if ( route.query.order ) {
+      projectStore.orderID = route.query.order
+      projectStore.getProjects()
+   } else if ( route.query.unit ) {
+      projectStore.unitID = route.query.unit
+      projectStore.getProjects()
+   } else {
+      if (userStore.jwt != "" && projectStore.projects.length <= 1) {
+         projectStore.getProjects()
       }
-   },
-   created() {
-      if ( this.$route.query.order ) {
-         this.tgtOrderID = this.$route.query.order
-         this.$store.dispatch("projects/getProjects")
-      } else if ( this.$route.query.unit ) {
-         this.tgtUnitID = this.$route.query.unit
-         this.$store.dispatch("projects/getProjects")
-      } else {
-         if (this.jwt != "" && this.projects.length <= 1) {
-            this.$store.dispatch("projects/getProjects")
-         }
-      }
-   },
-};
+   }
+})
 </script>
 
 <style scoped lang="scss">

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import router from '../../router'
+import { defineStore } from 'pinia'
 
 function parseJwt(token) {
    var base64Url = token.split('.')[1]
@@ -12,16 +12,15 @@ function parseJwt(token) {
 }
 
 
-const user = {
-   namespaced: true,
-   state: {
+export const useUserStore = defineStore('user', {
+   state: () => ({
       jwt: "",
       firstName: "",
       lastName: "",
       role: "",
       computeID: "",
       ID: 0
-   },
+   }),
    getters: {
       isAdmin: state => {
          return state.role == "admin"
@@ -33,30 +32,30 @@ const user = {
          return `${state.firstName} ${state.lastName} (${state.computeID})`
       },
    },
-   mutations: {
-      signout(state) {
+   actions: {
+      signout() {
          localStorage.removeItem("dpg_jwt")
-         state.jwt = ""
-         state.firstName = ""
-         state.lastName = ""
-         state.role = ""
-         state.computeID = ""
-         state.ID = 0
+         this.jwt = ""
+         this.firstName = ""
+         this.lastName = ""
+         this.role = ""
+         this.computeID = ""
+         this.ID = 0
       },
-      setJWT(state, jwt) {
-         if (jwt != state.jwt) {
-            state.jwt = jwt
+      setJWT(jwt) {
+         if (jwt != this.jwt) {
+            this.jwt = jwt
             localStorage.setItem("dpg_jwt", jwt)
 
             let parsed = parseJwt(jwt)
-            state.ID = parsed.userID
-            state.computeID = parsed.computeID
-            state.firstName = parsed.firstName
-            state.lastName = parsed.lastName
-            state.role = parsed.role
+            this.ID = parsed.userID
+            this.computeID = parsed.computeID
+            this.firstName = parsed.firstName
+            this.lastName = parsed.lastName
+            this.role = parsed.role
 
             // add interceptor to put bearer token in header
-            axios.interceptors.request.use( config => {
+            axios.interceptors.request.use(config => {
                config.headers['Authorization'] = 'Bearer ' + jwt
                return config
             }, error => {
@@ -67,18 +66,18 @@ const user = {
             axios.interceptors.response.use(
                res => res,
                err => {
-                  if (err.config.url.match(/\/authenticate/) ) {
-                     router.push( "/forbidden" )
+                  if (err.config.url.match(/\/authenticate/)) {
+                     this.router.push("/forbidden")
                   } else {
-                     if (err.response && err.response.status == 401 ) {
+                     if (err.response && err.response.status == 401) {
                         localStorage.removeItem("dpg_jwt")
-                        state.jwt = ""
-                        state.firstName = ""
-                        state.lastName = ""
-                        state.role = ""
-                        state.computeID = ""
-                        state.ID = 0
-                        router.push( "/signedout?expired=1" )
+                        this.jwt = ""
+                        this.firstName = ""
+                        this.lastName = ""
+                        this.role = ""
+                        this.computeID = ""
+                        this.ID = 0
+                        this.router.push("/signedout?expired=1")
                         return new Promise(() => { })
                      }
                   }
@@ -88,5 +87,4 @@ const user = {
          }
       },
    }
-}
-export default user
+})

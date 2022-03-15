@@ -9,50 +9,41 @@
             </div>
             <div class="site-link">
                <router-link to="/">DPG Imaging</router-link>
-               <p class="version">v{{ version }}</p>
+               <p class="version">v{{ systemStore.version }}</p>
             </div>
          </div>
-         <div class="user-banner" v-if="jwt">
-            <label>Signed in as:</label><span class="user">{{ signedInUser }}</span>
+         <div class="user-banner" v-if="userStore.jwt">
+            <label>Signed in as:</label><span class="user">{{ userStore.signedInUser }}</span>
             <span class="signout" @click="signout">Sign out</span>
          </div>
       </div>
       <router-view />
-      <ErrorMessage v-if="hasError" />
+      <ErrorMessage v-if="systemStore.error != ''" />
       <ScrollToTop />
    </div>
 </template>
 
-<script>
+<script setup>
 import UvaLibraryLogo from "@/components/UvaLibraryLogo.vue"
 import ScrollToTop from "@/components/ScrollToTop.vue"
-import { mapState, mapGetters } from "vuex";
-export default {
-   components: {
-      UvaLibraryLogo,
-      ScrollToTop,
-   },
-   computed: {
-      ...mapState({
-         hasError: (state) => state.error,
-         version: (state) => state.version,
-         jwt: (state) => state.user.jwt,
-      }),
-      ...mapGetters({
-         signedInUser: 'user/signedInUser',
-      })
-   },
-   methods: {
-      signout() {
-         this.$store.commit("user/signout")
-         this.$router.push("signedout")
-      }
-   },
-   async beforeCreate() {
-      this.$store.dispatch("getVersion")
-      await this.$store.dispatch("getConfig")
-   },
-};
+import {useSystemStore} from "@/stores/system"
+import {useUserStore} from "@/stores/user"
+import { useRouter } from 'vue-router'
+import { onMounted } from 'vue'
+
+const systemStore = useSystemStore()
+const userStore = useUserStore()
+const router = useRouter()
+
+function signout() {
+   userStore.signout()
+   router.push("signedout")
+}
+
+onMounted( async () => {
+   systemStore.getVersion()
+   await systemStore.getConfig()
+})
 </script>
 
 <style lang="scss">

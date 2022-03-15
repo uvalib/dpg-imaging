@@ -1,38 +1,38 @@
 <template>
    <div class="project">
       <h2>
-         <span>Digitization Project #{{$route.params.id}}</span>
+         <span>Digitization Project #{{route.params.id}}</span>
          <span v-if="working == false" class="due">
-            <label>Due:</label><span>{{currProject.dueOn.split("T")[0]}}</span>
+            <label>Due:</label><span>{{projectStore.currProject.dueOn.split("T")[0]}}</span>
          </span>
       </h2>
-      <WaitSpinner v-if="working" :overlay="true" message="Working..." />
-      <template v-if="selectedProjectIdx >=0">
+      <WaitSpinner v-if="projectStore.working" :overlay="true" message="Working..." />
+      <template v-if="projectStore.selectedProjectIdx >=0">
          <div class="project-head">
             <h3>
-               <a target="_blank" :href="metadataLink">{{currProject.unit.metadata.title}}</a>
+               <a target="_blank" :href="metadataLink">{{projectStore.currProject.unit.metadata.title}}</a>
             </h3>
             <h4 class="proj-data">
                <div class="column right-pad">
                   <div>
                      <label>Unit:</label>
-                     <a target="_blank" :href="`${adminURL}/units/${currProject.unit.id}`">{{currProject.unit.id}}</a>
+                     <a target="_blank" :href="`${systemStore.adminURL}/units/${projectStore.currProject.unit.id}`">{{projectStore.currProject.unit.id}}</a>
                   </div>
                   <div>
                      <label>Order:</label>
-                     <a target="_blank" :href="`${adminURL}/orders/${currProject.unit.orderID}`">{{currProject.unit.orderID}}</a>
+                     <a target="_blank" :href="`${systemStore.adminURL}/orders/${currProject.unit.orderID}`">{{projectStore.currProject.unit.orderID}}</a>
                   </div>
                </div>
                <div class="column">
                   <div>
                      <label>Customer:</label>
-                     <a target="_blank" :href="`${adminURL}/customers/${currProject.unit.order.customer.id}`">
-                        {{currProject.unit.order.customer.firstName}} {{currProject.unit.order.customer.lastName}}
+                     <a target="_blank" :href="`${systemStore.adminURL}/customers/${projectStore.currProject.unit.order.customer.id}`">
+                        {{projectStore.currProject.unit.order.customer.firstName}} {{projectStore.currProject.unit.order.customer.lastName}}
                      </a>
                   </div>
                   <div>
                      <label>Intended Use:</label>
-                     <span class="data">{{currProject.unit.intendedUse.description}}</span>
+                     <span class="data">{{projectStore.currProject.unit.intendedUse.description}}</span>
                   </div>
                </div>
             </h4>
@@ -73,44 +73,36 @@
    </div>
 </template>
 
-<script>
-import { mapState, mapGetters } from "vuex"
+<script setup>
 import ItemInfo from "@/components/project/ItemInfo.vue"
 import Workflow from "@/components/project/Workflow.vue"
 import History from "@/components/project/History.vue"
 import Notes from "@/components/project/Notes.vue"
 import Equipment from "@/components/project/Equipment.vue"
 import NoteModal from '@/components/project/NoteModal.vue'
-export default {
-   name: "project",
-   components: {
-      ItemInfo, Workflow, History, Notes, Equipment, NoteModal
-   },
-   computed: {
-      ...mapState({
-         working : state => state.projects.working,
-         adminURL: state => state.adminURL,
-         selectedProjectIdx: state => state.projects.selectedProjectIdx,
-      }),
-      ...mapGetters({
-         currProject: 'projects/currProject',
-      }),
-      metadataLink() {
-         let mdType = "sirsi_metadata"
-         if (this.currProject.unit.metadata.type == "XmlMetadata") {
-            mdType = "xml_metadata"
-         }
-         return `${this.adminURL}/${mdType}/${this.currProject.unit.metadata.id}`
-      },
-   },
-   methods: {
-   },
-  async beforeMount() {
-      if (this.selectedProjectIdx == -1) {
-         await this.$store.dispatch("projects/getProject", this.$route.params.id)
-      }
-   },
-};
+import {useSystemStore} from "@/stores/system"
+import {useProjectStore} from "@/stores/project"
+import { onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const systemStore = useSystemStore()
+const projectStore = useProjectStore()
+const route = useRoute()
+
+const metadataLink = computed(() => {
+   let mdType = "sirsi_metadata"
+   if (projectStore.currProject.unit.metadata.type == "XmlMetadata") {
+      mdType = "xml_metadata"
+   }
+   return `${systemStore.adminURL}/${mdType}/${projectStore.currProject.unit.metadata.id}`
+})
+
+onMounted( async () => {
+   if (projectStore.selectedProjectIdx == -1) {
+      await projectStore.getProject(route.params.id)
+   }
+})
+
 </script>
 
 <style scoped lang="scss">

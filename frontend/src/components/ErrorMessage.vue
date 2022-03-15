@@ -16,26 +16,22 @@
    </div>
 </template>
 
-<script>
-import { mapState } from "vuex"
-export default {
-   computed: {
-      ...mapState({
-         message: state => state.errorMessage,
-      }),
-   },
-   methods: {
-      dismiss() {
-         this.$store.commit("clearError")
-      },
-   },
-   mounted() {
-      this.$nextTick( () =>{
-         let ele = document.getElementById("close-error")
-         ele.focus()
-      })
-   },
+<script setup>
+import {useSystemStore} from "@/stores/system"
+import { onMounted, nextTick } from 'vue'
+
+const systemStore = useSystemStore()
+
+function dismiss() {
+   systemStore.error = ""
 }
+
+onMounted( () => {
+   nextTick( () =>{
+      let ele = document.getElementById("close-error")
+      ele.focus()
+   })
+})
 </script>
 
 <style lang="scss" scoped>
