@@ -1,27 +1,28 @@
 <template>
    <div class="unit">
       <WaitSpinner v-if="updating" :overlay="true" message="Updating data..." />
-      <div class="load" v-if="loadingUnit || loadingProject">
+      <div class="load" v-if="systemStore.loading || projectStore.working">
          <WaitSpinner message="Loading master files..." />
       </div>
       <template v-else>
          <div class="metadata">
             <h2>
                <ProblemsDisplay class="topleft" />
-               <span class="title"><router-link :to="`/projects/${currProject.id}`">{{title}}</router-link></span>
+               <span class="title"><router-link :to="`/projects/${projectStore.currProject.id}`">{{title}}</router-link></span>
             </h2>
             <h3>
                <div>{{callNumber}}</div>
-               <div>Unit {{currUnit}}</div>
-               <div class="small">{{masterFiles.length}} Images</div>
+               <div>Unit {{unitStore.currUnit}}</div>
+               <div class="small">{{unitStore.masterFiles.length}} Images</div>
             </h3>
             <span class="back">
                <i class="fas fa-angle-double-left back-button"></i>
-               <router-link :to="`/projects/${currProject.id}`" class="link">Back to project</router-link>
+               <router-link :to="`/projects/${projectStore.currProject.id}`" class="link">Back to project</router-link>
             </span>
          </div>
          <div class="toolbar">
-            <DPGPagination :currPage="currPage" :pageSize="pageSize" :totalPages="totalPages" :sizePicker="true"
+            <DPGPagination :currPage="unitStore.currPage" :pageSize="unitStore.pageSize"
+               :totalPages="unitStore.totalPages" :sizePicker="true"
                @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
                @jump="pageJumpClicked" @size="pageSizeChanged"
             />
@@ -29,7 +30,7 @@
             <span class="actions">
                <span class="view-mode">
                   <label>View:</label>
-                  <select id="layout" v-model="viewMode" @change="viewModeChanged">
+                  <select id="layout" v-model="unitStore.viewMode" @change="viewModeChanged">
                      <option value="list">List</option>
                      <option value="medium">Gallery (medium)</option>
                      <option value="large">Gallery (large)</option>
@@ -43,9 +44,9 @@
                <DPGButton id="set-titles" @clicked="componentLinkClicked" class="button">Component Link</DPGButton>
             </span>
          </div>
-         <PageNumPanel v-if="editMode == 'page'" />
-         <ComponentPanel v-if="editMode == 'component'" />
-         <table class="unit-list" v-if="viewMode == 'list'">
+         <PageNumPanel v-if="unitStore.editMode == 'page'" />
+         <ComponentPanel v-if="unitStore.editMode == 'component'" />
+         <table class="unit-list" v-if="unitStore.viewMode == 'list'">
             <thead>
                <tr>
                   <th></th>
@@ -60,7 +61,7 @@
                   <th>Path</th>
                </tr>
             </thead>
-            <draggable v-model="pageMasterFiles" tag="tbody"  @start="dragStarted" item-key="fileName">
+            <draggable v-model="unitStore.pageMasterFiles" tag="tbody"  @start="dragStarted" item-key="fileName">
                <template #item="{element, index}">
                   <tr @mousedown="fileSelected(element.fileName, $event)"  :id="element.fileName" :key="element.fileName"
                      @contextmenu.prevent="showContextMenu(element.fileName, $event)"
@@ -103,7 +104,7 @@
                </template>
             </draggable>
          </table>
-         <draggable v-else v-model="pageMasterFiles" @start="dragStarted" class="gallery" :class="viewMode" item-key="fileName">
+         <draggable v-else v-model="unitStore.pageMasterFiles" @start="dragStarted" class="gallery" :class="unitStore.viewMode" item-key="fileName">
             <template #item="{element, index}">
                <div class="card" :id="element.fileName"
                   @mousedown="fileSelected(element.fileName, $event)"
@@ -184,278 +185,257 @@
    </div>
 </template>
 
-<script>
-import { mapState, mapGetters } from "vuex"
-import { mapFields } from 'vuex-map-fields'
+<script setup>
 import ComponentPanel from '../components/ComponentPanel.vue'
 import PageNumPanel from '../components/PageNumPanel.vue'
 import TagPicker from '../components/TagPicker.vue'
 import TitleInput from '../components/TitleInput.vue'
 import ProblemsDisplay from '../components/ProblemsDisplay.vue'
 import draggable from 'vuedraggable'
-export default {
-   components: {PageNumPanel, draggable, ProblemsDisplay, ComponentPanel, TagPicker, TitleInput },
-   name: "unit",
-   computed: {
-      ...mapState({
-         loadingProject: state => state.projects.working,
-         loadingUnit : state => state.loading,
-         updating : state => state.updating,
-         currUnit: state => state.units.currUnit,
-         currPage : state => state.units.currPage,
-         pageSize : state => state.units.pageSize,
-         selectedProjectIdx: state => state.projects.selectedProjectIdx,
-      }),
-      ...mapGetters({
-         pageStartIdx: 'units/pageStartIdx',
-         totalPages: 'units/totalPages',
-         currProject: 'projects/currProject',
-      }),
-      ...mapFields({
-         viewMode: 'units.viewMode',
-         rangeStartIdx: "units.rangeStartIdx",
-         rangeEndIdx: "units.rangeEndIdx",
-         editMode: "units.editMode",
-         masterFiles: "units.masterFiles",
-         pageMasterFiles: "units.pageMasterFiles"
-      }),
-      title() {
-         let t = this.currProject.unit.metadata.title
-         if ( t == "") {
-            t = "Unknown"
-         }
-         return t
-      },
-      callNumber() {
-         let t = this.currProject.unit.metadata.callNumber
-         if ( t == "") {
-            t = "Unknown"
-         }
-         return t
-      },
-      paddedUnit() {
-         let unitStr = ""+this.currUnit
-         return unitStr.padStart(9,'0')
-      }
-   },
-   data() {
-      return {
-        editMF: null,
-        rightClickedMF: "",
-        newTitle: "",
-        newDescription: "",
-        editField: "",
-        menuVisible: false,
-        showError: ""
-      }
-   },
-   methods: {
-      imageViewerURL(pgIndex) {
-         return `/projects/${this.currProject.id}/unit/images/${this.pageStartIdx+pgIndex+1}`
-      },
-      priorClicked() {
-         this.$store.commit("units/setPage", this.currPage-1)
-         this.pageChanged()
-      },
-      nextClicked() {
-         this.$store.commit("units/setPage", this.currPage+1)
-         this.pageChanged()
-      },
-      lastClicked() {
-         this.$store.commit("units/setPage", this.totalPages)
-         this.pageChanged()
-      },
-      firstClicked() {
-         this.$store.commit("units/setPage", 1)
-         this.pageChanged()
-      },
-      pageJumpClicked(pg) {
-         this.$store.commit("units/setPage", pg)
-         this.pageChanged()
-      },
-      pageSizeChanged(sz) {
-         this.$store.dispatch("units/setPageSize", sz)
-         let query = Object.assign({}, this.$route.query)
-         query.pagesize = this.pageSize
-         query.page = this.currPage
-         this.$router.push({query})
-      },
-      pageChanged() {
-         let query = Object.assign({}, this.$route.query)
-         query.page = this.currPage
-         this.$router.push({query})
-      },
-      viewModeChanged() {
-         let query = Object.assign({}, this.$route.query)
-         query.view = this.viewMode
-         this.$router.push({query})
-      },
-      hoverExit() {
-         this.showError = ""
-      },
-      hoverEnter(f) {
-         this.showError = f
-      },
-      clearState() {
-          this.rightClickedMF = ""
-          this.menuVisible= false
-          this.rangeStartIdx = -1
-          this.rangeEndIdx = -1
-      },
-      deleteSelected() {
-         this.$store.dispatch("units/deleteMasterFile", this.rightClickedMF)
-      },
-      showContextMenu(fileName, e) {
-         this.rightClickedMF = fileName
-         let m = document.getElementById("popupmenu")
-         m.style.left = e.pageX+"px"
-         m.style.top = e.pageY+"px"
-         this.menuVisible =  true
-         this.$nextTick( () => {
-            let mW = m.offsetWidth
-            let mH = m.offsetHeight
-            if ( mW +  e.pageX > window.innerWidth) {
-               m.style.left = (e.pageX - mW) + "px";
-            }
-            if ( mH +  e.pageY > window.innerHeight) {
-               m.style.top = (e.pageY - mH) + "px";
-            }
-            let items = document.getElementsByClassName("menuitem")
-            if (items.length > 0) {
-               items[0].focus()
-            }
-         })
-      },
-      focusLastmenu() {
-          let items = document.getElementsByClassName("menuitem")
-            if (items.length > 0) {
-               items[items.length-1].focus()
-            }
-      },
-      focusFirstmenu() {
-          let items = document.getElementsByClassName("menuitem")
-            if (items.length > 0) {
-               items[0].focus()
-            }
-      },
-      renameAll() {
-         this.$store.dispatch("units/renameAll")
-      },
-      componentLinkClicked() {
-         this.editMode = "component"
-         this.menuVisible =  false
-         this.$nextTick( () => {
-            let p = document.getElementById("component-id")
-            p.focus()
-            p.select()
-         })
-      },
-      setPageNumbersClicked() {
-         this.editMode = "page"
-         this.menuVisible =  false
-         this.$nextTick( () => {
-            let p = document.getElementById("start-page-num")
-            p.focus()
-            p.select()
-         })
-      },
-      dragStarted() {
-         console.log("DRAG START")
-         let eles=document.getElementsByClassName("selected")
-         while (eles[0]) {
-            eles[0].classList.remove('selected')
-         }
-      },
-      fileSelected(fn, e) {
-         this.menuVisible = false
-         if ( e.ctrlKey ) return
+import {useProjectStore} from "@/stores/project"
+import {useSystemStore} from "@/stores/system"
+import {useUnitStore} from "@/stores/unit"
+import { computed, ref, onBeforeMount, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-         if ( e.shiftKey ) {
-            // start of by considering this the end of a range
-            this.rangeEndIdx = this.masterFiles.findIndex( mf => mf.fileName == fn)
-            if ( this.rangeStartIdx > this.rangeEndIdx ) {
-               // if not, swap indexes
-               let t = this.rangeEndIdx
-               this.rangeEndIdx =  this.rangeStartIdx
-               this.rangeStartIdx = t
-            }
+const projectStore = useProjectStore()
+const systemStore = useSystemStore()
+const unitStore = useUnitStore()
+const route = useRoute()
+const router = useRouter()
 
-            let eles=document.getElementsByClassName("selected")
-            while (eles[0]) {
-               eles[0].classList.remove('selected')
-            }
+// local data
+const editMF = ref(null)
+const rightClickedMF = ref("")
+const newTitle = ref("")
+const newDescription = ref("")
+const editField = ref("")
+const menuVisible = ref(false)
+const showError = ref("")
 
-            for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
-               let tgt = this.masterFiles[i].fileName
-               let tgtEle = document.getElementById(tgt)
-               tgtEle.classList.add("selected")
-            }
-         } else {
-            // grab selected element and set a flag if it is not currently selected
-            this.rangeStartIdx = -1
-            this.rangeEndIdx = -1
-            let tgtEle = document.getElementById(fn)
-            let selectIt = (tgtEle.classList.contains("selected") == false)
+// computed
+const title = computed(() => {
+   let t = this.currProject.unit.metadata.title
+   if ( t == "") {
+      t = "Unknown"
+   }
+   return t
+})
+const callNumber = computed(() => {
+   let t = this.currProject.unit.metadata.callNumber
+   if ( t == "") {
+      t = "Unknown"
+   }
+   return t
+})
 
-            // clear all selected classes
-            let eles=document.getElementsByClassName("selected")
-            while (eles[0]) {
-               eles[0].classList.remove('selected')
-            }
-
-            // if the just-clicked element needs to be selected, select it now
-            if (selectIt) {
-               document.getElementById(fn).classList.add("selected")
-               this.rangeStartIdx =  this.masterFiles.findIndex( mf => mf.fileName == fn)
-            }
-         }
-
-      },
-      isEditing(mf, field = "all") {
-         return this.editMF == mf && this.editField == field
-      },
-      editMetadata(mf, field) {
-         this.editMF = mf
-         this.newTitle = mf.title
-         this.newDescription = mf.description
-         this.editField = field
-         this.$nextTick( ()=> {
-            if ( field == "description") {
-               let ele = document.getElementById("edit-desc")
-               ele.focus()
-               ele.select()
-            }
-         })
-      },
-      cancelEdit() {
-         this.editMF = null
-      },
-      async submitEdit(mf) {
-         await this.$store.dispatch("units/updateMasterFileMetadata",
-            { file: mf.path, title: this.newTitle, description: this.newDescription,
-              status: mf.status, componentID: mf.componentID } )
-         this.editMF = null
-      }
-   },
-   async beforeMount() {
-      if (this.selectedProjectIdx == -1) {
-         await this.$store.dispatch("projects/getProject", this.$route.params.id)
-      }
-
-      await this.$store.dispatch("units/getUnitMasterFiles", this.currProject.unit.id)
-      if ( this.$route.query.view ) {
-         this.viewMode = this.$route.query.view
-      }
-      if ( this.$route.query.pagesize ) {
-         let ps = parseInt(this.$route.query.pagesize, 10)
-         this.$store.dispatch("units/setPageSize", ps)
-      }
-      if ( this.$route.query.page ) {
-         let pg = parseInt(this.$route.query.page, 10)
-         this.$store.commit("units/setPage", pg)
-      }
-   },
+function paddedUnit() {
+   let unitStr = ""+unitStore.currUnit
+   return unitStr.padStart(9,'0')
 }
+function imageViewerURL(pgIndex) {
+   return `/projects/${projectStore.currProject.id}/unit/images/${unitStore.pageStartIdx+pgIndex+1}`
+}
+function priorClicked() {
+   unitStore.setPage(unitStore.currPage-1)
+   pageChanged()
+}
+function nextClicked() {
+   unitStore.setPage(unitStore.currPage+1)
+   pageChanged()
+}
+function lastClicked() {
+   unitStore.setPage(unitStore.totalPages)
+   pageChanged()
+}
+function firstClicked() {
+   unitStore.setPage(1)
+   pageChanged()
+}
+function pageJumpClicked(pg) {
+   unitStore.setPage(pg)
+   pageChanged()
+}
+function pageSizeChanged(sz) {
+   unitStore.setPageSize(sz)
+   let query = Object.assign({}, route.query)
+   query.pagesize = unitStore.pageSize
+   query.page = unitStore.currPage
+   router.push({query})
+}
+function pageChanged() {
+   let query = Object.assign({}, route.query)
+   query.page = unitStore.currPage
+   router.push({query})
+}
+function viewModeChanged() {
+   let query = Object.assign({},route.query)
+   query.view = unitStore.viewMode
+   router.push({query})
+}
+function hoverExit() {
+   showError.value = ""
+}
+function hoverEnter(f) {
+   showError.value = f
+}
+function clearState() {
+   rightClickedMF.value = ""
+   menuVisible.value = false
+   unitStore.rangeStartIdx = -1
+   unitStore.rangeEndIdx = -1
+}
+function deleteSelected() {
+   unitStore.deleteMasterFile(rightClickedMF.value)
+}
+function showContextMenu(fileName, e) {
+   rightClickedMF.value = fileName
+   let m = document.getElementById("popupmenu")
+   m.style.left = e.pageX+"px"
+   m.style.top = e.pageY+"px"
+   menuVisible.value =  true
+   nextTick( () => {
+      let mW = m.offsetWidth
+      let mH = m.offsetHeight
+      if ( mW +  e.pageX > window.innerWidth) {
+         m.style.left = (e.pageX - mW) + "px";
+      }
+      if ( mH +  e.pageY > window.innerHeight) {
+         m.style.top = (e.pageY - mH) + "px";
+      }
+      let items = document.getElementsByClassName("menuitem")
+      if (items.length > 0) {
+         items[0].focus()
+      }
+   })
+}
+function focusLastmenu() {
+   let items = document.getElementsByClassName("menuitem")
+   if (items.length > 0) {
+      items[items.length-1].focus()
+   }
+}
+function focusFirstmenu() {
+   let items = document.getElementsByClassName("menuitem")
+   if (items.length > 0) {
+      items[0].focus()
+   }
+}
+function renameAll() {
+   unitStore.renameAll()
+}
+function componentLinkClicked() {
+   unitStore.editMode = "component"
+   menuVisible.value =  false
+   nextTick( () => {
+      let p = document.getElementById("component-id")
+      p.focus()
+      p.select()
+   })
+}
+function setPageNumbersClicked() {
+   unitStore.editMode = "page"
+   menuVisible.value =  false
+   nextTick( () => {
+      let p = document.getElementById("start-page-num")
+      p.focus()
+      p.select()
+   })
+}
+function dragStarted() {
+   let eles=document.getElementsByClassName("selected")
+   while (eles[0]) {
+      eles[0].classList.remove('selected')
+   }
+}
+function fileSelected(fn, e) {
+   menuVisible.value = false
+   if ( e.ctrlKey ) return
+
+   if ( e.shiftKey ) {
+      // start of by considering this the end of a range
+      unitStore.rangeEndIdx = unitStore.masterFiles.findIndex( mf => mf.fileName == fn)
+      if ( unitStore.rangeStartIdx > unitStore.rangeEndIdx ) {
+         // if not, swap indexes
+         let t = unitStore.rangeEndIdx
+         unitStore.rangeEndIdx =  unitStore.rangeStartIdx
+         unitStore.rangeStartIdx = t
+      }
+
+      let eles=document.getElementsByClassName("selected")
+      while (eles[0]) {
+         eles[0].classList.remove('selected')
+      }
+
+      for (let i=unitStore.rangeStartIdx; i<=unitStore.rangeEndIdx; i++) {
+         let tgt = unitStore.masterFiles[i].fileName
+         let tgtEle = document.getElementById(tgt)
+         tgtEle.classList.add("selected")
+      }
+   } else {
+      // grab selected element and set a flag if it is not currently selected
+      unitStore.rangeStartIdx = -1
+      unitStore.rangeEndIdx = -1
+      let tgtEle = document.getElementById(fn)
+      let selectIt = (tgtEle.classList.contains("selected") == false)
+
+      // clear all selected classes
+      let eles=document.getElementsByClassName("selected")
+      while (eles[0]) {
+         eles[0].classList.remove('selected')
+      }
+
+      // if the just-clicked element needs to be selected, select it now
+      if (selectIt) {
+         document.getElementById(fn).classList.add("selected")
+         unitStore.rangeStartIdx =  unitStore.masterFiles.findIndex( mf => mf.fileName == fn)
+      }
+   }
+}
+function isEditing(mf, field = "all") {
+   return editMF.value == mf && editField.value == field
+}
+function editMetadata(mf, field) {
+   editMF.value = mf
+   newTitle.value = mf.title
+   newDescription.value = mf.description
+   editField.value = field
+   nextTick( ()=> {
+      if ( field == "description") {
+         let ele = document.getElementById("edit-desc")
+         ele.focus()
+         ele.select()
+      }
+   })
+}
+function cancelEdit() {
+   editMF.value = null
+}
+async function submitEdit(mf) {
+   await unitStore.updateMasterFileMetadata(
+      { file: mf.path, title: newTitle.value, description: newDescription.value,
+        status: mf.status, componentID: mf.componentID } )
+   editMF.value = null
+}
+
+onBeforeMount( async () => {
+   if (projectStore.selectedProjectIdx == -1) {
+      await projectStore.getProject(route.params.id)
+   }
+
+   await unitStore.getUnitMasterFiles( projectStore.currProject.unit.id)
+   if ( route.query.view ) {
+      unitStore.viewMode = route.query.view
+   }
+   if ( route.query.pagesize ) {
+      let ps = parseInt(route.query.pagesize, 10)
+      unitStore.setPageSize(ps)
+   }
+   if ( route.query.page ) {
+      let pg = parseInt(route.query.page, 10)
+      unitStore.setPage(pg)
+   }
+})
 </script>
 
 <style lang="scss" scoped>

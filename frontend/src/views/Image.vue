@@ -1,7 +1,7 @@
 <template>
    <div class="viewer">
-      <WaitSpinner v-if="updating" :overlay="true" message="Updating data..." />
-       <div class="load" v-if="loadingUnit || loadingProject || masterFiles == false">
+      <WaitSpinner v-if="systemStore.updating" :overlay="true" message="Updating data..." />
+       <div class="load" v-if="systemStore.loading || projectStore.working || unitStore.masterFiles.length == 0">
          <WaitSpinner message="Loading viewer..." />
       </div>
       <template v-else>
@@ -39,11 +39,11 @@
             </table>
             <span class="toolbar-button group back">
                <i class="fas fa-angle-double-left back-button"></i>
-               <span @click="$router.back()">Back to unit</span>
+               <span @click="router.back()">Back to unit</span>
             </span>
             <span class="paging group">
                <span id="previous" title="Previous" class="toolbar-button"><i class="fas fa-arrow-left"></i></span>
-               <span class="page">{{page}} of {{pageInfoURLs.length}}</span>
+               <span class="page">{{page}} of {{unitStore.pageInfoURLs.length}}</span>
                <span id="next" title="Next" class="toolbar-button"><i class="fas fa-arrow-right"></i></span>
             </span>
             <span class="zoom group">
@@ -62,133 +62,119 @@
    </div>
 </template>
 
-<script>
-import { mapState, mapGetters } from "vuex"
+<script setup>
 import OpenSeadragon from "openseadragon"
 import TagPicker from '../components/TagPicker.vue'
 import TitleInput from '../components/TitleInput.vue'
-export default {
-   name: "Image",
-   components: {
-      TagPicker, TitleInput
-   },
-   computed: {
-      ...mapState({
-         loadingProject: state => state.projects.working,
-         loadingUnit : state => state.loading,
-         updating : state => state.updating,
-         currUnit: state => state.units.currUnit,
-         selectedProjectIdx: state  => state.projects.selectedProjectIdx,
-         masterFiles:  state => state.units.masterFiles
-      }),
-      ...mapGetters({
-         pageInfoURLs: 'units/pageInfoURLs',
-         masterFileInfo: 'units/masterFileInfo',
-         currProject: 'projects/currProject',
-      }),
-      hasMasterFiles() {
-         return this.masterFiles.length > 0
-      },
-      currMasterFile() {
-         return this.masterFileInfo( this.page-1)
-      }
-   },
-   data() {
-      return {
-        viewer: null,
-        page: 1,
-        zoom: 50,
-        newTitle: "",
-        newDescription: "",
-        editField: ""
-      }
-   },
-   methods: {
-      rotateImage(dir) {
-         this.$store.dispatch("units/rotateImage", {file: this.currMasterFile.fileName, dir: dir})
-      },
-      viewActualSize() {
-         this.viewer.viewport.zoomTo(this.viewer.viewport.imageToViewportZoom(1.0))
-      },
-      isEditing(field = "all") {
-         return this.editField == field
-      },
-      editMetadata(field) {
-         let mf = this.currMasterFile
-         this.newTitle = mf.title
-         this.newDescription = mf.description
-         this.editField = field
-         this.$nextTick( ()=> {
-            if ( field == "description") {
-               let ele = document.getElementById("edit-desc")
-               ele.focus()
-               ele.select()
-            }
-         })
-      },
-      cancelEdit() {
-         this.editField = ""
-      },
-      async submitEdit() {
-         let mf = this.currMasterFile
-         await this.$store.dispatch("units/updateMasterFileMetadata",
-            { file: mf.path, title: this.newTitle, description: this.newDescription,
-              status: mf.status, componentID: mf.componentID } )
-         this.editField = ""
+import {useProjectStore} from "@/stores/project"
+import {useSystemStore} from "@/stores/system"
+import {useUnitStore} from "@/stores/unit"
+import { computed, ref, onBeforeMount, onUnmounted, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-      }
-   },
-   async beforeMount() {
-      if (this.selectedProjectIdx == -1) {
-         await this.$store.dispatch("projects/getProject", this.$route.params.id)
-         await this.$store.dispatch("units/getUnitMasterFiles", this.currProject.unit.id)
-      }
-      this.$nextTick(()=>{
-         let hdr = document.getElementById("uva-header")
-         let toolbar = document.getElementById("iiif-toolbar")
-         let h = hdr.offsetHeight + toolbar.offsetHeight
-         document.getElementById("iiif-viewer").style.top = `${h}px`
-         this.page = parseInt(this.$route.params.page, 10)
-         let pageIdx = this.page-1
-         this.viewer = OpenSeadragon({
-            id: "iiif-viewer",
-            toolbar: "iiif-toolbar",
-            showNavigator: true,
-            sequenceMode: true,
-            preserveViewport: true,
-            autoResize: true,
-            visibilityRatio: 0.95,
-            constrainDuringPan: true,
-            imageSmoothingEnabled: false,
-            maxZoomPixelRatio: 2.0,
-            placeholderFillStyle: '#555555',
-            navigatorPosition: "BOTTOM_RIGHT",
-            zoomInButton:   "zoom-in",
-            zoomOutButton:  "zoom-out",
-            homeButton:     "home",
-            fullPageButton: "full-page",
-            nextButton:     "next",
-            previousButton: "previous",
-            tileSources: this.pageInfoURLs,
-            initialPage: pageIdx
-         })
-         this.viewer.addHandler("page", (data) => {
-            this.page = data.page + 1
-            let url = `/projects/${this.currProject.id}/unit/images/${this.page}`
-            this.$router.replace(url)
-         })
-         this.viewer.addHandler("zoom", (data) => {
-            this.zoom = this.viewer.viewport.viewportToImageZoom(data.zoom)
-         })
-         this.viewer.forceRedraw()
-      })
-   },
-   unmounted() {
-      if (this.viewer) {
-         this.viewer.destroy()
-      }
-   }
+const projectStore = useProjectStore()
+const systemStore = useSystemStore()
+const unitStore = useUnitStore()
+const route = useRoute()
+const router = useRouter()
+
+// local data
+var viewer = null
+const page = ref(1)
+const zoom = ref(50)
+const newTitle = ref("")
+const newDescription = ref("")
+const editField = ref("")
+
+const currMasterFile = computed(() => {
+   return unitStore.masterFileInfo( page.value-1)
+})
+
+function rotateImage(dir) {
+   unitStore.rotateImage({file: currMasterFile.value.fileName, dir: dir})
 }
+function viewActualSize() {
+   viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(1.0))
+}
+function isEditing(field = "all") {
+   return editField.value == field
+}
+function editMetadata(field) {
+   let mf = currMasterFile.value
+   newTitle.value = mf.title
+   newDescription.value = mf.description
+   editField.value = field
+   nextTick( ()=> {
+      if ( field.value == "description") {
+         let ele = document.getElementById("edit-desc")
+         ele.focus()
+         ele.select()
+      }
+   })
+}
+function cancelEdit() {
+   editField.value = ""
+}
+async function submitEdit() {
+   let mf = currMasterFile.value
+   await unitStore.updateMasterFileMetadata(
+      { file: mf.path, title: newTitle.value, description: newDescription.value,
+        status: mf.status, componentID: mf.componentID
+      }
+   )
+   editField.value = ""
+}
+
+onBeforeMount( async () => {
+   if (this.selectedProjectIdx == -1) {
+      await projectStore.getProject(route.params.id)
+      await unitStore.getUnitMasterFiles(projectStore.currProject.unit.id)
+   }
+   nextTick(()=>{
+      let hdr = document.getElementById("uva-header")
+      let toolbar = document.getElementById("iiif-toolbar")
+      let h = hdr.offsetHeight + toolbar.offsetHeight
+      document.getElementById("iiif-viewer").style.top = `${h}px`
+      page.value = parseInt(route.params.page, 10)
+      let pageIdx = this.page-1
+      viewer = OpenSeadragon({
+         id: "iiif-viewer",
+         toolbar: "iiif-toolbar",
+         showNavigator: true,
+         sequenceMode: true,
+         preserveViewport: true,
+         autoResize: true,
+         visibilityRatio: 0.95,
+         constrainDuringPan: true,
+         imageSmoothingEnabled: false,
+         maxZoomPixelRatio: 2.0,
+         placeholderFillStyle: '#555555',
+         navigatorPosition: "BOTTOM_RIGHT",
+         zoomInButton:   "zoom-in",
+         zoomOutButton:  "zoom-out",
+         homeButton:     "home",
+         fullPageButton: "full-page",
+         nextButton:     "next",
+         previousButton: "previous",
+         tileSources: this.pageInfoURLs,
+         initialPage: pageIdx
+      })
+      viewer.addHandler("page", (data) => {
+         page.value = data.page + 1
+         let url = `/projects/${projectStore.currProject.id}/unit/images/${page.value}`
+         router.replace(url)
+      })
+      viewer.addHandler("zoom", (data) => {
+         zoom.value = viewer.viewport.viewportToImageZoom(data.zoom)
+      })
+      viewer.forceRedraw()
+   })
+})
+onUnmounted( async () => {
+   if (viewer) {
+      viewer.destroy()
+   }
+})
 </script>
 
 <style scoped lang="scss">

@@ -155,7 +155,6 @@ function isOverdue(p) {
 }
 
 onMounted( async () => {
-   console.log("CREATED")
    if ( route.query.order ) {
       projectStore.orderID = route.query.order
       projectStore.getProjects()
