@@ -39,8 +39,8 @@
          </select>
       </div>
       <div class="buttons">
-         <DPGButton @clicked="resetSearch">Reset Search</DPGButton>
-         <DPGButton @clicked="doSearch">Search</DPGButton>
+         <DPGButton @click="resetSearch">Reset Search</DPGButton>
+         <DPGButton @click="doSearch">Search</DPGButton>
       </div>
    </div>
 </template>

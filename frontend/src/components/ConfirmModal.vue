@@ -1,6 +1,6 @@
 <template>
    <div class="confirm-modal-wrapper">
-      <DPGButton v-if="type=='button'" id="confirm-trigger" @clicked="show">{{label}}</DPGButton>
+      <DPGButton v-if="type=='button'" id="confirm-trigger" @click="show">{{label}}</DPGButton>
       <span class="txt-trigger" v-else id="confirm-trigger" @click="show">{{label}}</span>
       <div class="confirm-modal-dimmer" v-if="isOpen">
          <div role="dialog" aria-labelledby="confirm-modal-title" id="confirm-modal" class="confirm-modal">
@@ -10,11 +10,11 @@
                <p class="sure">Are you sure?</p>
             </div>
             <div class="confirm-modal-controls">
-               <DPGButton id="close-confirm" @clicked="hide" @tabback="setFocus('ok-confirm')" :focusBackOverride="true">
+               <DPGButton id="close-confirm" @click="hide" @tabback="setFocus('ok-confirm')" :focusBackOverride="true">
                   No
                </DPGButton>
                <span class="spacer"></span>
-               <DPGButton id="ok-confirm" @clicked="confirmClicked" @tabnext="setFocus('close-confirm')" :focusNextOverride="true">
+               <DPGButton id="ok-confirm" @click="confirmClicked" @tabnext="setFocus('close-confirm')" :focusNextOverride="true">
                   Yes
                </DPGButton>
             </div>

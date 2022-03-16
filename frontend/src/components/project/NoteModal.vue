@@ -1,6 +1,6 @@
 <template>
    <div class="note-modal-wrapper">
-      <DPGButton :id="`${id}-trigger`" v-if="!manual" mode="icon" @clicked="show"><i class="fas fa-plus-circle"></i></DPGButton>
+      <DPGButton :id="`${id}-trigger`" v-if="!manual" mode="icon" @click="show"><i class="fas fa-plus-circle"></i></DPGButton>
       <div class="note-modal-dimmer" v-if="isOpen">
          <div role="dialog" :aria-labelledby="`${id}-title`" :id="id" class="note-modal">
             <div :id="`${id}-title`" class="note-modal-title">Create Note</div>
@@ -29,11 +29,11 @@
             </div>
             <p class="error" v-if="error">{{error}}</p>
             <div class="note-modal-controls">
-               <DPGButton :id="`${id}-close`" @clicked="hide" :focusBackOverride="true">
+               <DPGButton :id="`${id}-close`" @click="hide" :focusBackOverride="true">
                   Cancel
                </DPGButton>
                <span class="spacer"></span>
-               <DPGButton :id="`${id}-ok`" @clicked="createClicked" @tabnext="okNextTab" :focusNextOverride="true">
+               <DPGButton :id="`${id}-ok`" @click="createClicked" @tabnext="okNextTab" :focusNextOverride="true">
                   Create
                </DPGButton>
             </div>

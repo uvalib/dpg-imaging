@@ -22,10 +22,10 @@
             </span>
       </div>
       <div class="panel-actions">
-         <DPGButton @clicked="selectAllClicked" class="left">Select All</DPGButton>
+         <DPGButton @click="selectAllClicked" class="left">Select All</DPGButton>
          <label class="verso">Unnumbered Verso<input v-model="unnumberVerso" type="checkbox"/></label>
-         <DPGButton @clicked="cancelEditClicked" class="right-pad">Cancel</DPGButton>
-         <DPGButton @clicked="okPagesClicked">OK</DPGButton>
+         <DPGButton @click="cancelEditClicked" class="right-pad">Cancel</DPGButton>
+         <DPGButton @click="okPagesClicked">OK</DPGButton>
       </div>
    </div>
 </template>

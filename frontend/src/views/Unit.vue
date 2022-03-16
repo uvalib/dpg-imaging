@@ -40,8 +40,8 @@
                   <div>All files will be renamed to match the following format:</div>
                   <code>{{paddedUnit}}_0001.tif - {{paddedUnit}}_nnnn.tif</code>
                </ConfirmModal>
-               <DPGButton id="set-titles" @clicked="setPageNumbersClicked" class="button right-pad">Set Page Numbers</DPGButton>
-               <DPGButton id="set-titles" @clicked="componentLinkClicked" class="button">Component Link</DPGButton>
+               <DPGButton id="set-titles" @click="setPageNumbersClicked" class="button right-pad">Set Page Numbers</DPGButton>
+               <DPGButton id="set-titles" @click="componentLinkClicked" class="button">Component Link</DPGButton>
             </span>
          </div>
          <PageNumPanel v-if="unitStore.editMode == 'page'" />
@@ -197,6 +197,7 @@ import {useSystemStore} from "@/stores/system"
 import {useUnitStore} from "@/stores/unit"
 import { computed, ref, onBeforeMount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import DPGPagination from '../components/DPGPagination.vue'
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()

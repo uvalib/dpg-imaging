@@ -29,30 +29,30 @@
             <input id="time" type="number" v-model="stepMinutes"  @keyup.enter="timeEntered">
          </div>
          <div class="ok-cancel">
-             <DPGButton @clicked="cancelFinish">Cancel</DPGButton>
-             <DPGButton @clicked="timeEntered">OK</DPGButton>
+             <DPGButton @click="cancelFinish">Cancel</DPGButton>
+             <DPGButton @click="timeEntered">OK</DPGButton>
          </div>
       </div>
       <div class="workflow-btns" v-else-if="isFinalizeRunning(selectedProjectIdx) == false && isFinished(selectedProjectIdx) == false">
          <template v-if="isOwner(userStore.computeID)">
-            <DPGButton @clicked="viewerClicked" class="pad-right" v-if="isScanning == false">Open QA Viewer</DPGButton>
+            <DPGButton @click="viewerClicked" class="pad-right" v-if="isScanning == false">Open QA Viewer</DPGButton>
             <template v-if="isWorking(selectedProjectIdx) == false">
                <AssignModal v-if="(isOwner(userStore.computeID) || isSupervisor || isAdmin) "
                   :projectID="currProject.id" @assign="assignClicked" label="Reassign"/>
-               <DPGButton v-if="inProgress(selectedProjectIdx) == false" @clicked="startStep">Start</DPGButton>
-               <DPGButton v-if="inProgress(selectedProjectIdx) == true" :disabled="!isFinishEnabled" @clicked="finishClicked">
+               <DPGButton v-if="inProgress(selectedProjectIdx) == false" @click="startStep">Start</DPGButton>
+               <DPGButton v-if="inProgress(selectedProjectIdx) == true" :disabled="!isFinishEnabled" @click="finishClicked">
                   <template v-if="isFinalizing &&  hasError(selectedProjectIdx) == true">Retry Finalize</template>
                   <template v-else>Finish</template>
                </DPGButton>
-               <DPGButton v-if="canReject(selectedProjectIdx)" class="reject"  @clicked="rejectStepClicked">Reject</DPGButton>
+               <DPGButton v-if="canReject(selectedProjectIdx)" class="reject"  @click="rejectStepClicked">Reject</DPGButton>
             </template>
          </template>
          <template v-else>
-            <DPGButton @clicked="viewerClicked" class="pad-right" v-if="isScanning == false && (isAdmin || isSupervisor)">Open QA Viewer</DPGButton>
-            <DPGButton v-if="isWorking(selectedProjectIdx) == false && hasOwner(selectedProjectIdx) == false" @clicked="claimClicked()"  class="pad-right">Claim</DPGButton>
+            <DPGButton @click="viewerClicked" class="pad-right" v-if="isScanning == false && (isAdmin || isSupervisor)">Open QA Viewer</DPGButton>
+            <DPGButton v-if="isWorking(selectedProjectIdx) == false && hasOwner(selectedProjectIdx) == false" @click="claimClicked()"  class="pad-right">Claim</DPGButton>
             <AssignModal v-if="(isAdmin || isSupervisor)" :projectID="currProject.id" @assign="assignClicked"/>
          </template>
-         <DPGButton v-if="hasOwner(selectedProjectIdx) && (isAdmin || isSupervisor)" @clicked="clearClicked()" class="pad-right">
+         <DPGButton v-if="hasOwner(selectedProjectIdx) && (isAdmin || isSupervisor)" @click="clearClicked()" class="pad-right">
             Clear Assignment
          </DPGButton>
       </div>

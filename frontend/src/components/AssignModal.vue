@@ -1,6 +1,6 @@
 <template>
    <div class="assign-modal-wrapper">
-      <DPGButton id="assign-trigger" @clicked="show">{{props.label}}</DPGButton>
+      <DPGButton id="assign-trigger" @click="show">{{props.label}}</DPGButton>
       <div class="assign-modal-dimmer" v-if="isOpen">
          <div role="dialog" aria-labelledby="assign-modal-title" id="assign-modal" class="assign-modal">
             <div id="assign-modal-title" class="assign-modal-title">Assign Project</div>
@@ -16,11 +16,11 @@
             </div>
             <p class="error">{{error}}</p>
             <div class="assign-modal-controls">
-               <DPGButton id="close-assign" @clicked="hide" @tabback="setFocus('ok-assign')" :focusBackOverride="true">
+               <DPGButton id="close-assign" @click="hide" @tabback="setFocus('ok-assign')" :focusBackOverride="true">
                   Cancel
                </DPGButton>
                <span class="spacer"></span>
-               <DPGButton id="ok-assign" @clicked="assignClicked" @tabnext="setFocus('close-assign')" :focusNextOverride="true">
+               <DPGButton id="ok-assign" @click="assignClicked" @tabnext="setFocus('close-assign')" :focusNextOverride="true">
                   Assign
                </DPGButton>
             </div>

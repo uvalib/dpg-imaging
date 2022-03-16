@@ -1,19 +1,19 @@
 <template>
    <span class=pager>
       <span class="pages">
-         <DPGButton mode="icon" :disabled="!prevAvailable" @clicked="$emit('first')" aria-label="first page">
+         <DPGButton mode="icon" :disabled="!prevAvailable" @click="$emit('first')" aria-label="first page">
             <i class="fas fa-angle-double-left"></i>
          </DPGButton>
-         <DPGButton mode="icon" :disabled="!prevAvailable"  @clicked="$emit('prior')" aria-label="previous page">
+         <DPGButton mode="icon" :disabled="!prevAvailable"  @click="$emit('prior')" aria-label="previous page">
             <i class="fas fa-angle-left"></i>
          </DPGButton>
          <span class="page-info" @click="showPageJump">
             {{currPage}} of {{totalPages}}
          </span>
-         <DPGButton mode="icon"  :disabled="!nextAvailable" @clicked="$emit('next')" aria-label="next page">
+         <DPGButton mode="icon"  :disabled="!nextAvailable" @click="$emit('next')" aria-label="next page">
             <i class="fas fa-angle-right"></i>
          </DPGButton>
-         <DPGButton mode="icon" :disabled="!nextAvailable" @clicked="$emit('last')" aria-label="last page">
+         <DPGButton mode="icon" :disabled="!nextAvailable" @click="$emit('last')" aria-label="last page">
             <i class="fas fa-angle-double-right"></i>
          </DPGButton>
          <div class="page-jump" v-if="pageJumpOpen">

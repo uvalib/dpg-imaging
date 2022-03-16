@@ -87,7 +87,7 @@
                            <span v-else class="assigned">{{ownerInfo(p)}}</span>
                         </span>
                         <span class="owner-buttons">
-                           <DPGButton v-if="canClaim(p)" @clicked="claimClicked(p.id)">Claim</DPGButton>
+                           <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)">Claim</DPGButton>
                            <AssignModal  v-if="canAssign" :projectID="p.id" @assign="assignClicked"/>
                         </span>
                      </div>
@@ -100,6 +100,7 @@
 </template>
 
 <script setup>
+import DPGPagination from "../components/DPGPagination.vue"
 import AssignModal from "@/components/AssignModal.vue"
 import SearchPanel from "@/components/SearchPanel.vue"
 import {useProjectStore} from "@/stores/project"
@@ -131,6 +132,7 @@ function assignClicked( info ) {
    projectStore.assignProject( {projectID: info.projectID, ownerID: info.ownerID} )
 }
 function nextClicked() {
+   console.log("NEXT")
    projectStore.setCurrentPage(projectStore.currPage+1 )
 }
 function priorClicked() {
