@@ -5,11 +5,11 @@
          <div role="dialog" aria-labelledby="assign-modal-title" id="assign-modal" class="assign-modal">
             <div id="assign-modal-title" class="assign-modal-title">Assign Project</div>
             <div class="assign-modal-content">
-               <div v-if="working" class="spinner-wrap">
+               <div v-if="projectStore.working" class="spinner-wrap">
                   <WaitSpinner :overlay="false" message="Loading candidates..." />
                </div>
                <div v-else class="candidate-scroller">
-                  <div class="val" v-for="(c,idx) in candidates" :key="c.id" :class="{selected: idx == selectedIdx}" @click="selectCandidate(idx)">
+                  <div class="val" v-for="(c,idx) in systemStore.staffMembers" :key="c.id" :class="{selected: idx == selectedIdx}" @click="selectCandidate(idx)">
                      <span class="candidate">{{c.lastName}}, {{c.firstName}}</span> ({{c.computingID}})
                   </div>
                </div>
@@ -32,8 +32,10 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import {useSystemStore} from '@/stores/system'
+import {useProjectStore} from '@/stores/project'
 
 const systemStore = useSystemStore()
+const projectStore = useProjectStore()
 const emit = defineEmits( ['assign', 'closed', 'opened' ] )
 const props = defineProps({
       projectID: {
@@ -61,7 +63,7 @@ function assignClicked() {
    }
    hide()
    nextTick( () => {
-      let userID = systemStore.candidates[selectedIdx.value].id
+      let userID = systemStore.staffMembers[selectedIdx.value].id
       emit('assign', {projectID: props.projectID, ownerID: userID})
    })
 }
@@ -72,10 +74,10 @@ function hide() {
 }
 function show() {
    isOpen.value = true
-   setTimeout(()=>{
+   nextTick( () => {
       setFocus("close-assign")
       emit('opened')
-   }, 150)
+   })
    error.value = ""
    selectedIdx.value = -1
 }
@@ -127,7 +129,7 @@ div.assign-modal {
    height: auto;
    z-index: 8000;
    background: white;
-   top: 30%;
+   top: 50%;
    left: 50%;
    transform: translate(-50%, -50%);
    box-shadow: var(--box-shadow);
