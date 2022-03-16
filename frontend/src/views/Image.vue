@@ -126,7 +126,7 @@ async function submitEdit() {
 }
 
 onBeforeMount( async () => {
-   if (this.selectedProjectIdx == -1) {
+   if (projectStore.selectedProjectIdx == -1) {
       await projectStore.getProject(route.params.id)
       await unitStore.getUnitMasterFiles(projectStore.currProject.unit.id)
    }
@@ -136,7 +136,7 @@ onBeforeMount( async () => {
       let h = hdr.offsetHeight + toolbar.offsetHeight
       document.getElementById("iiif-viewer").style.top = `${h}px`
       page.value = parseInt(route.params.page, 10)
-      let pageIdx = this.page-1
+      let pageIdx = page.value-1
       viewer = OpenSeadragon({
          id: "iiif-viewer",
          toolbar: "iiif-toolbar",
@@ -156,7 +156,7 @@ onBeforeMount( async () => {
          fullPageButton: "full-page",
          nextButton:     "next",
          previousButton: "previous",
-         tileSources: this.pageInfoURLs,
+         tileSources: unitStore.pageInfoURLs,
          initialPage: pageIdx
       })
       viewer.addHandler("page", (data) => {

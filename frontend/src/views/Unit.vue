@@ -1,6 +1,6 @@
 <template>
    <div class="unit">
-      <WaitSpinner v-if="updating" :overlay="true" message="Updating data..." />
+      <WaitSpinner v-if="systemStore.updating" :overlay="true" message="Updating data..." />
       <div class="load" v-if="systemStore.loading || projectStore.working">
          <WaitSpinner message="Loading master files..." />
       </div>
@@ -112,8 +112,8 @@
 
                >
                   <router-link :to="imageViewerURL(index)">
-                     <img :src="element.mediumURL" v-if="viewMode == 'medium'"/>
-                     <img :src="element.largeURL" v-if="viewMode == 'large'"/>
+                     <img :src="element.mediumURL" v-if="unitStore.viewMode == 'medium'"/>
+                     <img :src="element.largeURL" v-if="unitStore.viewMode == 'large'"/>
                   </router-link>
                   <div class="tag">
                      <TagPicker :masterFile="element" display="wide"/>
@@ -216,14 +216,14 @@ const showError = ref("")
 
 // computed
 const title = computed(() => {
-   let t = this.currProject.unit.metadata.title
+   let t = projectStore.currProject.unit.metadata.title
    if ( t == "") {
       t = "Unknown"
    }
    return t
 })
 const callNumber = computed(() => {
-   let t = this.currProject.unit.metadata.callNumber
+   let t = projectStore.currProject.unit.metadata.callNumber
    if ( t == "") {
       t = "Unknown"
    }
@@ -631,7 +631,7 @@ onBeforeMount( async () => {
             }
          }
          img {
-            background-image: url('~@/assets/dots.gif');
+            background-image: url('/src/assets/dots.gif');
             background-repeat:no-repeat;
             background-position: center center;
             background-color: #f5f5f5;

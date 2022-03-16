@@ -1,5 +1,5 @@
 <template>
-   <button tabindex="0" class="dpg-button" :class="{icon: mode=='icon', disabled: disabled}"
+   <button tabindex="0" class="dpg-button" :class="{icon: props.mode=='icon', disabled: props.disabled}"
       @keydown.exact.tab="tabNext"
       @keydown.shift.tab="tabBack"
       @click.prevent.stop="clicked" @keydown.prevent.stop.enter="clicked" @keydown.space.prevent.stop="clicked">

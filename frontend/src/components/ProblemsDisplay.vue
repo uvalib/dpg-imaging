@@ -1,7 +1,7 @@
 <template>
-   <div class="problems-wrap" v-if="problems.length > 0">
+   <div class="problems-wrap" v-if="unitStore.problems.length > 0">
       <span class="problems-btn" v-if="unitStore.problems" @click="toggleList()">
-         {{problems.length}} <span v-if="unitStore.problems.length==1">issue</span><span v-else>issues</span> detected
+         {{unitStore.problems.length}} <span v-if="unitStore.problems.length==1">issue</span><span v-else>issues</span> detected
          <i class="caret fas fa-angle-down" :class="{rotate: opened}"></i>
       </span>
       <div class="list" v-if="opened">

@@ -131,7 +131,7 @@ export const useUnitStore = defineStore('unit', {
          if (this.currUnit == unit && this.masterFiles.length > 0 && this.updating == false) return
 
          this.systemStore.loading = true
-         this.commit("clearUnitDetails")
+         this.clearUnitDetails()
          return axios.get(`/api/units/${unit}/masterfiles`).then(response => {
             this.currUnit = unit
             this.masterFiles.splice(0, this.masterFiles.length)

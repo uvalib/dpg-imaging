@@ -27,30 +27,30 @@
          <DPGButton @click="cancelEditClicked" class="right-pad">Cancel</DPGButton>
          <DPGButton @click="okClicked">OK</DPGButton>
       </div>
-      <div class="component-dimmer" v-if="component.valid">
+      <div class="component-dimmer" v-if="unitStore.component.valid">
          <div role="dialog" aria-labelledby="component-modal-title" id="component-modal" class="component-modal">
             <div id="component-modal-title" class="component-modal-title">Confirm Component Link</div>
             <div class="component-modal-content">
                <table>
                   <tr>
                      <td class="label">Title:</td>
-                     <td class="data">{{formatData(component.title)}}</td>
+                     <td class="data">{{formatData(unitStore.component.title)}}</td>
                   </tr>
                   <tr>
                      <td class="label">Label:</td>
-                     <td class="data">{{formatData(component.label)}}</td>
+                     <td class="data">{{formatData(unitStore.component.label)}}</td>
                   </tr>
                   <tr>
                      <td class="label">Description:</td>
-                     <td class="data">{{formatData(component.description)}}</td>
+                     <td class="data">{{formatData(unitStore.component.description)}}</td>
                   </tr>
                   <tr>
                      <td class="label">Date:</td>
-                     <td class="data">{{formatData(component.date)}}</td>
+                     <td class="data">{{formatData(unitStore.component.date)}}</td>
                   </tr>
                   <tr>
                      <td class="label">Type:</td>
-                     <td class="data">{{formatData(component.type)}}</td>
+                     <td class="data">{{formatData(unitStore.component.type)}}</td>
                   </tr>
                </table>
                <p class="confirm">Link this component to selected images?</p>
