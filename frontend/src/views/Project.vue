@@ -2,37 +2,37 @@
    <div class="project">
       <h2>
          <span>Digitization Project #{{route.params.id}}</span>
-         <span v-if="working == false" class="due">
-            <label>Due:</label><span>{{projectStore.currProject.dueOn.split("T")[0]}}</span>
+         <span v-if="projectStore.working == false && currProject.dueOn" class="due">
+            <label>Due:</label><span>{{currProject.dueOn.split("T")[0]}}</span>
          </span>
       </h2>
       <WaitSpinner v-if="projectStore.working" :overlay="true" message="Working..." />
       <template v-if="projectStore.selectedProjectIdx >=0">
          <div class="project-head">
             <h3>
-               <a target="_blank" :href="metadataLink">{{projectStore.currProject.unit.metadata.title}}</a>
+               <a target="_blank" :href="metadataLink">{{currProject.unit.metadata.title}}</a>
             </h3>
             <h4 class="proj-data">
                <div class="column right-pad">
                   <div>
                      <label>Unit:</label>
-                     <a target="_blank" :href="`${systemStore.adminURL}/units/${projectStore.currProject.unit.id}`">{{projectStore.currProject.unit.id}}</a>
+                     <a target="_blank" :href="`${systemStore.adminURL}/units/${currProject.unit.id}`">{{currProject.unit.id}}</a>
                   </div>
                   <div>
                      <label>Order:</label>
-                     <a target="_blank" :href="`${systemStore.adminURL}/orders/${currProject.unit.orderID}`">{{projectStore.currProject.unit.orderID}}</a>
+                     <a target="_blank" :href="`${systemStore.adminURL}/orders/${currProject.unit.orderID}`">{{currProject.unit.orderID}}</a>
                   </div>
                </div>
                <div class="column">
                   <div>
                      <label>Customer:</label>
-                     <a target="_blank" :href="`${systemStore.adminURL}/customers/${projectStore.currProject.unit.order.customer.id}`">
-                        {{projectStore.currProject.unit.order.customer.firstName}} {{projectStore.currProject.unit.order.customer.lastName}}
+                     <a target="_blank" :href="`${systemStore.adminURL}/customers/${currProject.unit.order.customer.id}`">
+                        {{currProject.unit.order.customer.firstName}} {{currProject.unit.order.customer.lastName}}
                      </a>
                   </div>
                   <div>
                      <label>Intended Use:</label>
-                     <span class="data">{{projectStore.currProject.unit.intendedUse.description}}</span>
+                     <span class="data">{{currProject.unit.intendedUse.description}}</span>
                   </div>
                </div>
             </h4>
@@ -84,17 +84,20 @@ import {useSystemStore} from "@/stores/system"
 import {useProjectStore} from "@/stores/project"
 import { onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { storeToRefs } from 'pinia'
 
 const systemStore = useSystemStore()
 const projectStore = useProjectStore()
 const route = useRoute()
 
+const { currProject } = storeToRefs(projectStore)
+
 const metadataLink = computed(() => {
    let mdType = "sirsi_metadata"
-   if (projectStore.currProject.unit.metadata.type == "XmlMetadata") {
+   if (currProject.value.unit.metadata.type == "XmlMetadata") {
       mdType = "xml_metadata"
    }
-   return `${systemStore.adminURL}/${mdType}/${projectStore.currProject.unit.metadata.id}`
+   return `${systemStore.adminURL}/${mdType}/${currProject.value.unit.metadata.id}`
 })
 
 onMounted( async () => {

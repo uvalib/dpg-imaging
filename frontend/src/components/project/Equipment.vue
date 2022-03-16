@@ -72,10 +72,13 @@ import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUserStore} from "@/stores/user"
 import { ref} from 'vue'
+import { storeToRefs } from 'pinia'
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
 const userStore = useUserStore()
+
+const { currProject } = storeToRefs(projectStore)
 
 const editing = ref(false)
 const workstationID = ref(0)
@@ -84,16 +87,16 @@ const resizedResolution = ref("")
 const resolutionNote = ref("")
 
 function editClicked() {
-   workstationID.value = projectStore.currProject.workstation.id
+   workstationID.value = currProject.value.workstation.id
    captureResolution.value = ""
    resizedResolution.value = ""
-   if ( projectStore.currProject.captureResolution) {
-      captureResolution.value = projectStore.currProject.captureResolution
+   if ( currProject.value.captureResolution) {
+      captureResolution.value = currProject.value.captureResolution
    }
-   if (projectStore.currProject.resizedResolution) {
-      resizedResolution.value = projectStore.currProject.resizedResolution
+   if (currProject.value.resizedResolution) {
+      resizedResolution.value = currProject.value.resizedResolution
    }
-   resolutionNote.value = projectStore.currProject.resolutionNote
+   resolutionNote.value = currProject.value.resolutionNote
    editing.value = true
 }
 

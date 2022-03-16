@@ -288,7 +288,7 @@ export const useProjectStore = defineStore('project', {
       async setEquipment(data) {
          // data contains { workstationID, captureResolution, resizeResolution, resolutionNote }
          this.working = true
-         return axios.post(`/api/projects/${this.currentProject.id}/equipment`, data).then(response => {
+         return axios.post(`/api/projects/${this.currProject.id}/equipment`, data).then(response => {
             this.updateProjectData(response.data)
             this.working = false
          }).catch( e => {
