@@ -1,8 +1,8 @@
 <template>
-   <button tabindex="0" class="uva-button" :class="{disabled: disabled}"
+   <button tabindex="0" class="dpg-button" :class="{icon: mode=='icon', disabled: disabled}"
       @keydown.exact.tab="tabNext"
       @keydown.shift.tab="tabBack"
-      @click.prevent.stop="clicked" @keydown.prevent.stop.enter="clicked" @keydown.space.prevent.stop="clicked" @keyup.stop.esc="escClicked">
+      @click.prevent.stop="clicked" @keydown.prevent.stop.enter="clicked" @keydown.space.prevent.stop="clicked">
       <slot></slot>
    </button>
 </template>
@@ -20,16 +20,15 @@ const props = defineProps({
    disabled: {
       type: Boolean,
       default: false
-   }
+   },
+   mode: {
+      type: String,
+      default: "button"
+   },
 })
 
-const emit = defineEmits( ['click', 'esc', 'tabback', 'tabnext' ])
+const emit = defineEmits( ['click', 'tabback', 'tabnext' ])
 
-function escClicked() {
-   if (!props.disabled) {
-      emit('esc')
-   }
-}
 function clicked() {
    if (!props.disabled) {
       emit('click')
@@ -55,20 +54,35 @@ function tabNext(event) {
 </script>
 
 <style lang="scss" scoped>
-button.uva-button {
-   font-weight: normal;
-   padding: 8px 20px;
+.dpg-button {
    border-radius: 5px;
+   font-weight: normal;
+   border: 1px solid var(--uvalib-grey);
+   padding: 2px 12px 3px 12px;
+   background: var(--uvalib-grey-lightest);
    cursor: pointer;
-   background-color: var(--uvalib-brand-blue-light);
-   border: 1px solid var(--uvalib-brand-blue-light);
-   color: white;
+   font-size: 0.9em;
+   transition: all 0.25s ease-out;
+   outline: 0;
    &:hover {
-      background-color: var(--uvalib-brand-blue-lighter);
+      background: #fafafa;
+   }
+   &:focus {
+      background: #f0f0ff;
+      border: 1px solid var(--uvalib-blue-alt);
    }
 }
-.uva-button.disabled {
-   cursor: default;
-   opacity: 0.25;
+.dpg-button.disabled {
+   cursor: default !important;
+   opacity: 0.5;
+}
+.dpg-button.icon {
+   border: none;
+   background: transparent;
+   padding: 2px 4px;
+   font-size: 1em;
+   &:hover {
+      color: var(--uvalib-blue-alt);
+   }
 }
 </style>

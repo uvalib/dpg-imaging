@@ -7,17 +7,17 @@
          <dd>{{currProject.currentStep.description}}</dd>
          <dt>Owner:</dt>
          <dd>
-            <span v-if="hasOwner(projectIdx)">{{currProject.owner.firstName}} {{currProject.owner.lastName}}</span>
+            <span v-if="hasOwner(selectedProjectIdx)">{{currProject.owner.firstName}} {{currProject.owner.lastName}}</span>
             <span v-else class="na">Unassigned</span>
          </dd>
          <dt>Assigned:</dt>
          <dd>
-            <span v-if="hasOwner(projectIdx)">{{assignedAt}}</span>
+            <span v-if="hasOwner(selectedProjectIdx)">{{assignedAt}}</span>
             <span v-else class="na">N/A</span>
          </dd>
          <dt>Started:</dt>
          <dd>
-            <span v-if="hasOwner(projectIdx) && startedAt">{{startedAt}}</span>
+            <span v-if="hasOwner(selectedProjectIdx) && startedAt">{{startedAt}}</span>
             <span v-else class="na">N/A</span>
          </dd>
          <dt>Directory:</dt>
@@ -33,30 +33,30 @@
              <DPGButton @clicked="timeEntered">OK</DPGButton>
          </div>
       </div>
-      <div class="workflow-btns" v-else-if="isFinalizeRunning(projectIdx) == false && isFinished(projectIdx) == false">
-         <template v-if="isOwner(computingID)">
+      <div class="workflow-btns" v-else-if="isFinalizeRunning(selectedProjectIdx) == false && isFinished(selectedProjectIdx) == false">
+         <template v-if="isOwner(userStore.computeID)">
             <DPGButton @clicked="viewerClicked" class="pad-right" v-if="isScanning == false">Open QA Viewer</DPGButton>
-            <template v-if="isWorking(projectIdx) == false">
-               <AssignModal v-if="(isOwner(computingID) || isSupervisor || isAdmin) "
+            <template v-if="isWorking(selectedProjectIdx) == false">
+               <AssignModal v-if="(isOwner(userStore.computeID) || isSupervisor || isAdmin) "
                   :projectID="currProject.id" @assign="assignClicked" label="Reassign"/>
-               <DPGButton v-if="inProgress(projectIdx) == false" @clicked="startStep">Start</DPGButton>
-               <DPGButton v-if="inProgress(projectIdx) == true" :disabled="!isFinishEnabled" @clicked="finishClicked">
-                  <template v-if="isFinalizing &&  hasError(projectIdx) == true">Retry Finalize</template>
+               <DPGButton v-if="inProgress(selectedProjectIdx) == false" @clicked="startStep">Start</DPGButton>
+               <DPGButton v-if="inProgress(selectedProjectIdx) == true" :disabled="!isFinishEnabled" @clicked="finishClicked">
+                  <template v-if="isFinalizing &&  hasError(selectedProjectIdx) == true">Retry Finalize</template>
                   <template v-else>Finish</template>
                </DPGButton>
-               <DPGButton v-if="canReject(projectIdx)" class="reject"  @clicked="rejectStepClicked">Reject</DPGButton>
+               <DPGButton v-if="canReject(selectedProjectIdx)" class="reject"  @clicked="rejectStepClicked">Reject</DPGButton>
             </template>
          </template>
          <template v-else>
             <DPGButton @clicked="viewerClicked" class="pad-right" v-if="isScanning == false && (isAdmin || isSupervisor)">Open QA Viewer</DPGButton>
-            <DPGButton v-if="isWorking(projectIdx) == false && hasOwner(projectIdx) == false" @clicked="claimClicked()"  class="pad-right">Claim</DPGButton>
+            <DPGButton v-if="isWorking(selectedProjectIdx) == false && hasOwner(selectedProjectIdx) == false" @clicked="claimClicked()"  class="pad-right">Claim</DPGButton>
             <AssignModal v-if="(isAdmin || isSupervisor)" :projectID="currProject.id" @assign="assignClicked"/>
          </template>
-         <DPGButton v-if="hasOwner(projectIdx) && (isAdmin || isSupervisor)" @clicked="clearClicked()" class="pad-right">
+         <DPGButton v-if="hasOwner(selectedProjectIdx) && (isAdmin || isSupervisor)" @clicked="clearClicked()" class="pad-right">
             Clear Assignment
          </DPGButton>
       </div>
-      <div class="workflow-message" v-if="isOwner(computingID) && workflowNote">
+      <div class="workflow-message" v-if="isOwner(userStore.computeID) && workflowNote">
          {{workflowNote}}
       </div>
       <NoteModal id="problem-modal" :manual="true" :trigger="showRejectNote" :noteType="2"
@@ -65,178 +65,166 @@
    </div>
 </template>
 
-<script>
-import { mapState, mapGetters } from "vuex"
+<script setup>
 import date from 'date-and-time'
 import AssignModal from "@/components/AssignModal.vue"
 import NoteModal from '@/components/project/NoteModal.vue'
-export default {
-   components: {
-      AssignModal, NoteModal
-   },
-   data: function()  {
-      return {
-         timeEntry: false,
-         stepMinutes: 0,
-         action: "finish",
-         showRejectNote: false
+import {useProjectStore} from "@/stores/project"
+import {useSystemStore} from "@/stores/system"
+import {useUserStore} from "@/stores/user"
+import { ref, computed, nextTick } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const projectStore = useProjectStore()
+const systemStore = useSystemStore()
+const userStore = useUserStore()
+const {
+   currProject, selectedProjectIdx, isOwner, isAdmin, isSupervisor, hasOwner,
+   isFinalizeRunning, isFinished, inProgress, isWorking, canReject, hasError
+} = storeToRefs(projectStore)
+
+const timeEntry = ref(false)
+const stepMinutes = ref(0)
+const action = ref("finish")
+const showRejectNote = ref(false)
+
+const currStepName = computed(()=>{
+   return currProject.value.currentStep.name
+})
+const isFinalizing = computed(()=>{
+   return currStepName.value == 'Finalize'
+})
+const isScanning = computed(()=>{
+   return (currStepName.value == 'Scan' || currStepName.value == 'Process')
+})
+const isFinishEnabled = computed(()=>{
+   if ( currStepName.value == "Scan" && currProject.value.workstation.id == 0) return false
+   if ( currStepName.value == "Finalize") {
+      if ( currProject.value.unit.metadata.ocrHint.id == 0) return false
+      if ( currProject.value.unit.metadata.ocrHint.id == 1 && currProject.value.unit.metadata.ocrLanguageHint == "") return false
+   }
+   return true
+})
+const workingDir = computed(()=>{
+   let unitDir =  unitDirectory(currProject.value.unit.id)
+   if (currProject.value.currentStep.name == "Process" || currProject.value.currentStep.name == "Scan") {
+      return `${systemStore.scanDir}/${unitDir}`
+   }
+   return `${systemStore.qaDir}/${unitDir}`
+})
+const assignedAt = computed(()=>{
+   let stepID = currProject.value.currentStep.id
+   let a = currProject.value.assignments.find( a => a.stepID == stepID)
+   if (a && a.assignments)  {
+      return date.format(new Date(a.assignedAt), "YYYY-MM-DD hh:mm A")
+   }
+   return ""
+})
+const startedAt = computed(()=>{
+   let stepID = currProject.value.currentStep.id
+   let a = currProject.value.assignments.find( a => a.stepID == stepID)
+   if ( a && a.startedAt) return date.format(new Date(a.startedAt), "YYYY-MM-DD hh:mm A")
+   return ""
+})
+const workflowNote = computed(()=>{
+   if ( currStepName.value == "Scan" && currProject.value.workstation.id == 0) {
+      return "Assignment cannot be finished until the workstation has been set."
+   }
+   if ( currStepName.value == "Finalize" && currProject.value.unit.metadata.ocrHint.id == 0) {
+      return "Assignment cannot be finished until the OCR hint has been set."
+   }
+   if ( currProject.value.unit.metadata.ocrHint.id > 1 && currProject.value.unit.ocrMasterFiles == true) {
+      return "Cannot OCR items that are not regular text."
+   }
+   if ( currProject.value.unit.metadata.ocrHint.id == 1 && currProject.value.unit.metadata.ocrLanguageHint == "" && currStepName.value == "Finalize") {
+      return "Assignment cannot be finished until the OCR Language Hint has been set."
+   }
+   if ( currProject.value.unit.status == "error" ) {
+      return "Finalization has failed. Correct the problem then click 'Retry Finalization'."
+   }
+   return ""
+})
+
+function clearClicked() {
+   projectStore.assignProject({projectID: currProject.value.id, ownerID: 0} )
+}
+
+function rejectStepClicked() {
+   action.value = "reject"
+   showTimeEntry()
+}
+
+function assignClicked( info ) {
+   projectStore.assignProject({projectID: currProject.value.id, ownerID: info.ownerID} )
+}
+
+function claimClicked() {
+   projectStore.assignProject({projectID: currProject.value.id, ownerID: userStore.ID} )
+}
+
+function finishClicked() {
+   action.value = "finish"
+   if ( currProject.value.assignments[0].durationMinutes == 0) {
+      showTimeEntry()
+   } else {
+      // send a 0 time to indicate that time has already been recorded
+      projectStore.finishStep(0)
+   }
+}
+
+function showTimeEntry() {
+   timeEntry.value = true
+   stepMinutes.value = 0
+   nextTick( () => {
+      let te = document.getElementById("time")
+      if (te) {
+         te.focus()
+         te.select()
       }
-    },
-   computed: {
-      ...mapState({
-         adminURL: state => state.adminURL,
-         scanDir: state => state.scanDir,
-         qaDir: state => state.qaDir,
-         projectIdx: state => state.projects.selectedProjectIdx,
-         computingID: state => state.user.computeID,
-         userID : state => state.user.ID,
-      }),
-      ...mapGetters({
-         currProject: 'projects/currProject',
-         isOwner: 'projects/isOwner',
-         isAdmin: 'user/isAdmin',
-         isSupervisor: 'user/isSupervisor',
-         isFinalizeRunning: 'projects/isFinalizeRunning',
-         isFinished: 'projects/isFinished',
-         inProgress: 'projects/inProgress',
-         isWorking: 'projects/isWorking',
-         canReject: 'projects/canReject',
-         hasError: 'projects/hasError',
-         hasOwner: 'projects/hasOwner',
-      }),
-      isFinalizing() {
-         return this.currStepName == 'Finalize'
-      },
-      isScanning() {
-         return (this.currStepName == 'Scan' || this.currStepName == 'Process')
-      },
-      currStepName() {
-         return this.currProject.currentStep.name
-      },
-      isFinishEnabled() {
-         if ( this.currStepName == "Scan" && this.currProject.workstation.id == 0) return false
-         if ( this.currStepName == "Finalize") {
-            if ( this.currProject.unit.metadata.ocrHint.id == 0) return false
-            if ( this.currProject.unit.metadata.ocrHint.id == 1 && this.currProject.unit.metadata.ocrLanguageHint == "") return false
-         }
-         return true
-      },
-      workingDir() {
-         let unitDir =  this.unitDirectory(this.currProject.unit.id)
-         if (this.currProject.currentStep.name == "Process" || this.currProject.currentStep.name == "Scan") {
-            return `${this.scanDir}/${unitDir}`
-         }
-         return `${this.qaDir}/${unitDir}`
-      },
-      assignedAt() {
-         let stepID = this.currProject.currentStep.id
-         let a = this.currProject.assignments.find( a => a.stepID == stepID)
-         if (a && a.assignments)  {
-            return date.format(new Date(a.assignedAt), "YYYY-MM-DD hh:mm A")
-         }
-         return ""
-      },
-      startedAt() {
-         let stepID = this.currProject.currentStep.id
-         let a = this.currProject.assignments.find( a => a.stepID == stepID)
-         if ( a && a.startedAt) return date.format(new Date(a.startedAt), "YYYY-MM-DD hh:mm A")
-         return ""
-      },
-      workflowNote() {
-         if ( this.currStepName == "Scan" && this.currProject.workstation.id == 0) {
-            return "Assignment cannot be finished until the workstation has been set."
-         }
-         if ( this.currStepName == "Finalize" && this.currProject.unit.metadata.ocrHint.id == 0) {
-            return "Assignment cannot be finished until the OCR hint has been set."
-         }
-         if ( this.currProject.unit.metadata.ocrHint.id > 1 && this.currProject.unit.ocrMasterFiles == true) {
-            return "Cannot OCR items that are not regular text."
-         }
-         if ( this.currProject.unit.metadata.ocrHint.id == 1 && this.currProject.unit.metadata.ocrLanguageHint == "" && this.currStepName == "Finalize") {
-            return "Assignment cannot be finished until the OCR Language Hint has been set."
-         }
-         if ( this.currProject.unit.status == "error" ) {
-            return "Finalization has failed. Correct the problem then click 'Retry Finalization'."
-         }
-         return ""
-      }
-   },
-   methods: {
-      clearClicked() {
-         this.$store.dispatch("projects/assignProject", {projectID: this.currProject.id, ownerID: 0} )
-      },
-      rejectStepClicked() {
-         this.action = "reject"
-         this.showTimeEntry()
-      },
-      assignClicked( info ) {
-         this.$store.dispatch("projects/assignProject", {projectID: this.currProject.id, ownerID: info.ownerID} )
-      },
-      claimClicked() {
-         this.$store.dispatch("projects/assignProject", {projectID: this.currProject.id, ownerID: this.userID} )
-      },
-      finishClicked() {
-         this.action = "finish"
-         if ( this.currProject.assignments[0].durationMinutes == 0) {
-            this.showTimeEntry()
-         } else {
-            // send a 0 time to indicate that time has already been recorded
-            this.$store.dispatch("projects/finishStep", 0)
-         }
-      },
-      showTimeEntry() {
-         this.timeEntry = true
-         this.stepMinutes = 0
-         this.$nextTick( () => {
-            let te = document.getElementById("time")
-            if (te) {
-               te.focus()
-               te.select()
-            }
-         })
-      },
-      timeEntered() {
-         if ( this.action == "finish")  {
-            this.$store.dispatch("projects/finishStep", this.stepMinutes)
-            this.timeEntry = false
-            this.stepMinutes = 0
-         } else {
-            this.showRejectNote = true
-            this.timeEntry = false
-         }
-      },
-      rejectCanceled() {
-         this.showRejectNote = false
-         this.timeEntry = false
-         this.stepMinutes = 0
-      },
-      rejectSubmitted() {
-         this.$store.dispatch("projects/rejectStep", this.stepMinutes)
-         this.showRejectNote = false
-         this.timeEntry = false
-         this.stepMinutes = 0
-      },
-      cancelFinish() {
-         this.timeEntry = false
-      },
-      viewerClicked() {
-         this.$router.push(`/projects/${this.currProject.id}/unit`)
-      },
-      startStep() {
-         this.$store.dispatch("projects/startStep")
-      },
-      formatDate( date ) {
-         return date.getUTCFullYear() + "/" +
-            ("0" + (date.getUTCMonth()+1)).slice(-2) + "/" +
-            ("0" + date.getUTCDate()).slice(-2) + " " +
-            ("0" + date.getUTCHours()).slice(-2) + ":" +
-            ("0" + date.getUTCMinutes()).slice(-2)
-      },
-      unitDirectory(unitID) {
-         let ud = ""+unitID
-         return ud.padStart(9, "0")
-      },
-   },
+   })
+}
+
+function timeEntered() {
+   if ( action.value == "finish")  {
+      projectStore.finishStep(stepMinutes.value)
+      timeEntry.value = false
+      stepMinutes.value = 0
+   } else {
+      showRejectNote.value = true
+      timeEntry.value = false
+   }
+}
+
+function rejectCanceled() {
+   showRejectNote.value = false
+   timeEntry.value = false
+   stepMinutes.value = 0
+}
+
+function rejectSubmitted() {
+   projectStore.rejectStep(stepMinutes.value)
+   showRejectNote.value = false
+   timeEntry.value = false
+   stepMinutes.value = 0
+}
+
+function cancelFinish() {
+   timeEntry.value = false
+}
+
+function viewerClicked() {
+   router.push(`/projects/${currProject.value.id}/unit`)
+}
+
+function startStep() {
+   projectStore.startStep()
+}
+
+function unitDirectory(unitID) {
+   let ud = ""+unitID
+   return ud.padStart(9, "0")
 }
 </script>
 

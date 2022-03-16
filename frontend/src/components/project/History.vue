@@ -3,12 +3,12 @@
       <div class="timing">
          <span>
             <label>Date started:</label>
-            <span v-if="currProject.startedAt">{{formatDate(currProject.startedAt)}}</span>
+            <span v-if="projectStore.currProject.startedAt">{{formatDate(projectStore.currProject.startedAt)}}</span>
             <span v-else class="na">N/A</span>
          </span>
          <span>
             <label>Total work time:</label>
-            <span v-if="currProject.startedAt">{{totalWorkTime}}</span>
+            <span v-if="projectStore.currProject.startedAt">{{totalWorkTime}}</span>
             <span v-else class="na">N/A</span>
          </span>
       </div>
@@ -17,7 +17,7 @@
             <tr>
                <th>Date</th><th>Step</th><th>Activity</th><th>Owner</th>
             </tr>
-            <template v-for="a in currProject.assignments" :key="`a${a.id}`">
+            <template v-for="a in projectStore.currProject.assignments" :key="`a${a.id}`">
                <template v-if="lookupStepName(a.stepID) != 'Unknown'">
                   <template v-if="a.finishedAt">
                      <!-- status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing, :working] -->
@@ -58,8 +58,8 @@
                </template>
             </template>
             <tr class="create">
-               <td>{{formatDate(currProject.addedAt)}}</td>
-               <td>Project #{{currProject.id}}</td>
+               <td>{{formatDate(projectStore.currProject.addedAt)}}</td>
+               <td>Project #{{projectStore.currProject.id}}</td>
                <td>Created</td>
                <td></td>
             </tr>
@@ -68,40 +68,37 @@
    </div>
 </template>
 
-<script>
-import { mapGetters } from "vuex"
+<script setup>
 import date from 'date-and-time'
-export default {
-   computed: {
-      ...mapGetters({
-         currProject: 'projects/currProject',
-      }),
-      totalWorkTime() {
-         let mins = 0
-         this.currProject.assignments.forEach( a => {
-            mins += a.durationMinutes
-         })
-         let h = 0
-         if (mins > 60) {
-            h = Math.round(mins/60)
-            mins -= (h*60)
-         }
-         return `${(""+h).padStart(2,"0")}:${(""+mins).padStart(2,"0")}`
-      }
-   },
-   methods: {
-      lookupStepName( stepID) {
-         let s = this.currProject.workflow.steps.find( s => s.id == stepID)
-         if (s) {
-            return s.name
-         }
-         return "Unknown"
-      },
-      formatDate( d ) {
-         return date.format(new Date(d), "YYYY-MM-DD hh:mm A")
-      },
-   },
-};
+import { useProjectStore } from "@/stores/project"
+import { computed } from 'vue'
+
+const projectStore = useProjectStore()
+
+const totalWorkTime = computed(() => {
+   let mins = 0
+   projectStore.currProject.assignments.forEach( a => {
+      mins += a.durationMinutes
+   })
+   let h = 0
+   if (mins > 60) {
+      h = Math.round(mins/60)
+      mins -= (h*60)
+   }
+   return `${(""+h).padStart(2,"0")}:${(""+mins).padStart(2,"0")}`
+})
+
+function lookupStepName( stepID) {
+   let s = projectStore.currProject.workflow.steps.find( s => s.id == stepID)
+   if (s) {
+      return s.name
+   }
+   return "Unknown"
+}
+
+function formatDate( d ) {
+   return date.format(new Date(d), "YYYY-MM-DD hh:mm A")
+}
 </script>
 
 <style scoped lang="scss">

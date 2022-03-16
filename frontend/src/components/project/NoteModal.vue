@@ -17,7 +17,7 @@
                </div>
                <div class="row pad" v-if="noteTypeID==2">
                   <label>Problem (select all that apply)</label>
-                  <label class="cb" v-for="p in problems" :key="p.label">
+                  <label class="cb" v-for="p in systemStore.problems" :key="p.label">
                      <input type="checkbox" :value="p.id" v-model="problemIDs" />
                      {{p.name}}
                   </label>
@@ -43,9 +43,10 @@
 </template>
 
 <script>
-import { mapState } from "vuex"
+import { mapStores } from 'pinia'
+import { useSystemStore } from '@/stores/system'
 export default {
-    emits: ['opened', 'closed', 'submitted' ],
+   emits: ['opened', 'closed', 'submitted' ],
    props: {
       id: {
          type: String,
@@ -89,9 +90,7 @@ export default {
       }
    },
    computed: {
-      ...mapState({
-         problems: state => state.problemTypes,
-      })
+      ...mapStores(useSystemStore),
    },
    methods: {
       okNextTab() {

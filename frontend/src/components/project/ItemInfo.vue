@@ -50,7 +50,7 @@
             <td class="data">
                <select id="container" v-model="containerTypeID">
                   <option :value="0" disabled>Select a container type</option>
-                  <option v-for="c in containerTypes" :key="`container-${c.id}`" :value="c.id">{{c.name}}</option>
+                  <option v-for="c in systemStore.containerTypes" :key="`container-${c.id}`" :value="c.id">{{c.name}}</option>
                </select>
             </td>
          </tr>
@@ -59,7 +59,7 @@
             <td class="data">
                <select id="category" v-model="categoryID">
                   <option :value="0" disabled>Select a category</option>
-                  <option v-for="c in categories" :key="`cat${c.id}`" :value="c.id">{{c.name}}</option>
+                  <option v-for="c in systemStore.categories" :key="`cat${c.id}`" :value="c.id">{{c.name}}</option>
                </select>
             </td>
          </tr>
@@ -111,7 +111,7 @@
             <td class="data"><input type="checkbox" :class="{disabled: !ocrCandidate}" id="do-ocr" v-model="ocrMasterFiles" :disabled="!ocrCandidate"></td>
          </tr>
       </table>
-      <div class="buttons" v-if="isOwner(computingID)">
+      <div class="buttons" v-if="projectStore.isOwner(userStore.computeID)">
          <DPGButton v-if="!editing" @clicked="editClicked">Edit</DPGButton>
          <template v-else>
             <DPGButton @clicked="cancelClicked">Cancel</DPGButton>
@@ -121,78 +121,72 @@
    </div>
 </template>
 
-<script>
-import { mapState, mapGetters } from "vuex"
-export default {
-   data: function()  {
-      return {
-         editing: false,
-         categoryID: 0,
-         containerTypeID: 0,
-         condition: 0,
-         note: "",
-         ocrHintID: 0,
-         ocrLangage: "",
-         ocrMasterFiles: false,
-         ocrCandidate: true
-      }
-   },
-   computed: {
-      ...mapState({
-         computingID: state => state.user.computeID,
-         categories: state => state.categories,
-         containerTypes: state => state.containerTypes,
-         ocrHints: state => state.ocrHints,
-         ocrLanguageHints: state => state.ocrLanguageHints,
-      }),
-      ...mapGetters({
-         currProject: 'projects/currProject',
-         isOwner: "projects/isOwner"
-      }),
-   },
-   methods: {
-      hintChanged() {
-         this.ocrLangage = ""
-         let hint = this.ocrHints.find(h => h.id == this.ocrHintID)
-         this.ocrCandidate =  hint.ocrCandidate
-         if ( !this.ocrCandidate) {
-            this.ocrMasterFiles = false
-         }
-      },
-      conditionText(condID) {
-         if (condID == 0) return "Good"
-         return "Bad"
-      },
-      editClicked() {
-         this.editing = true
-         this.categoryID = this.currProject.category.id
-         this.containerTypeID = 0
-         if ( this.currProject.containerType ) {
-            this.containerTypeID = this.currProject.containerType.id
-         }
-         this.condition = this.currProject.itemCondition
-         this.note = this.currProject.conditionNote
-         this.ocrHintID = this.currProject.unit.metadata.ocrHint.id
-         this.ocrLangage = this.currProject.unit.metadata.ocrLanguageHint
-      },
-      cancelClicked() {
-         this.editing = false
-      },
-      async saveClicked() {
-         let data = {
-            containerTypeID: this.containerTypeID,
-            categoryID: this.categoryID,
-            condition: this.condition,
-            note: this.note,
-            ocrHintID: this.ocrHintID,
-            ocrLangage: this.ocrLangage,
-            ocrMasterFiles: this.ocrMasterFiles
-         }
-         await this.$store.dispatch("projects/updateProject", data)
-         this.editing = false
-      }
-   },
-};
+<script setup>
+import {useProjectStore} from "@/stores/project"
+import {useSystemStore} from "@/stores/system"
+import {useUserStore} from "@/stores/user"
+import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
+
+const projectStore = useProjectStore()
+const systemStore = useSystemStore()
+const userStore = useUserStore()
+const { currProject } = storeToRefs(projectStore)
+
+const editing = ref(false)
+const categoryID = ref(0)
+const containerTypeID = ref(0)
+const condition = ref(0)
+const note = ref("")
+const ocrHintID = ref(0)
+const ocrLangage = ref("")
+const ocrMasterFiles = ref(false)
+const ocrCandidate = ref(true)
+
+function hintChanged() {
+   ocrLangage.value = ""
+   let hint = systemStore.ocrHints.find(h => h.id == ocrHintID.value)
+   ocrCandidate.value =  hint.ocrCandidate
+   if ( !ocrCandidate.value) {
+      ocrMasterFiles.value = false
+   }
+}
+
+function conditionText(condID) {
+   if (condID == 0) return "Good"
+   return "Bad"
+}
+
+function editClicked() {
+   editing.value = true
+   categoryID.value = currProject.category.id
+   containerTypeID.value = 0
+   if ( currProject.containerType ) {
+      containerTypeID.value = currProject.containerType.id
+   }
+   condition.value = currProject.itemCondition
+   note.value = currProject.conditionNote
+   ocrHintID.value = currProject.unit.metadata.ocrHint.id
+   ocrLangage.value = currProject.unit.metadata.ocrLanguageHint
+}
+
+function cancelClicked() {
+   editing.value = false
+}
+
+async function saveClicked() {
+   let data = {
+      containerTypeID: containerTypeID.value,
+      categoryID: categoryID.value,
+      condition: condition.value,
+      note: note.value,
+      ocrHintID: ocrHintID.value,
+      ocrLangage: ocrLangage.value,
+      ocrMasterFiles: ocrMasterFiles.value
+   }
+   await projectStore.updateProject(data)
+   editing.value = false
+}
 </script>
 
 <style scoped lang="scss">
