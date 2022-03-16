@@ -39,63 +39,60 @@
    </span>
 </template>
 
-<script>
-export default {
-   emits: ['next', 'prior', 'first', 'last', 'jump', 'size' ],
-   props: {
-      totalPages: {
-         type: Number,
-         required: true
-      },
-      sizePicker: {
-         type: Boolean,
-         default: false
-      },
-      currPage: {
-         type: Number,
-         required: true
-      },
-      pageSize: {
-         type: Number,
-         required: true
-      },
+<script setup>
+import { ref, computed, nextTick } from 'vue'
+const props = defineProps({
+   totalPages: {
+      type: Number,
+      required: true
    },
-   computed: {
-      prevAvailable() {
-         return this.currPage >1
-      },
-      nextAvailable() {
-         return this.currPage < this.totalPages
-      }
+   sizePicker: {
+      type: Boolean,
+      default: false
    },
-   data() {
-      return {
-         pageJumpOpen: false,
-         pageJump: 1,
-      }
+   currPage: {
+      type: Number,
+      required: true
    },
-   methods: {
-      pageSizeChanged(e) {
-         this.$emit("size", parseInt(e.target.value, 10) )
-      },
-      pageJumpCanceled() {
-         this.pageJumpOpen = false
-      },
-      pageJumpSelected() {
-         if (this.pageJump <= 0 || this.pageJump > this.totalPages) return
-         let tgtPage = (this.pageJump-1)
-         this.pageJumpOpen = false
-         this.$emit("jump", tgtPage)
-       },
-      showPageJump() {
-         this.pageJumpOpen = true
-         this.$nextTick( () =>{
-            let ele = document.getElementById("page-jump")
-            ele.focus()
-            ele.select()
-         })
-      },
+   pageSize: {
+      type: Number,
+      required: true
    },
+})
+const emit = defineEmits( ['next', 'prior', 'first', 'last', 'jump', 'size' ] )
+
+const prevAvailable = computed( () => {
+   return props.currPage >1
+})
+const nextAvailable = computed( () => {
+   return props.currPage < props.totalPages
+})
+
+const pageJumpOpen = ref(false)
+const pageJump = ref(1)
+
+function pageSizeChanged(e) {
+   emit("size", parseInt(e.target.value, 10) )
+}
+
+function pageJumpCanceled() {
+   pageJumpOpen.value = false
+}
+
+function pageJumpSelected() {
+   if (pageJump.value <= 0 || pageJump.value > props.totalPages) return
+   let tgtPage = pageJump.value
+   pageJumpOpen.value = false
+   emit("jump", tgtPage)
+}
+
+function showPageJump() {
+   pageJumpOpen.value = true
+   nextTick( () =>{
+      let ele = document.getElementById("page-jump")
+      ele.focus()
+      ele.select()
+   })
 }
 </script>
 
@@ -129,9 +126,10 @@ export default {
       font-size: 0.9em;
       position: absolute;
       top: 20px;
-      left: 15px;
+      left: 5px;
       z-index: 10000;
       text-align: left;
+      width: 130px;
       .jump-body {
          margin: 10px;
       }
