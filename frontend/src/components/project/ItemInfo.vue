@@ -92,7 +92,7 @@
             <td class="data">
                <select id="ocr-hint" v-model="ocrHintID" @change="hintChanged">
                   <option :value="0" disabled>Select an OCR hint</option>
-                  <option v-for="h in ocrHints" :key="`ocr${h.id}`" :value="h.id">{{h.name}}</option>
+                  <option v-for="h in systemStore.ocrHints" :key="`ocr${h.id}`" :value="h.id">{{h.name}}</option>
                </select>
             </td>
 
@@ -102,7 +102,7 @@
             <td class="data">
                <select id="ocr-language" v-model="ocrLangage" :class="{disabled: !ocrCandidate}" :disabled="!ocrCandidate">
                   <option value="" disabled>Select an OCR language hint</option>
-                  <option v-for="h in ocrLanguageHints" :key="`lang${h.code}`" :value="h.code">{{h.language}}</option>
+                  <option v-for="h in systemStore.ocrLanguageHints" :key="`lang${h.code}`" :value="h.code">{{h.language}}</option>
                </select>
             </td>
          </tr>
@@ -159,15 +159,15 @@ function conditionText(condID) {
 
 function editClicked() {
    editing.value = true
-   categoryID.value = currProject.category.id
+   categoryID.value = currProject.value.category.id
    containerTypeID.value = 0
-   if ( currProject.containerType ) {
-      containerTypeID.value = currProject.containerType.id
+   if ( currProject.value.containerType ) {
+      containerTypeID.value = currProject.value.containerType.id
    }
-   condition.value = currProject.itemCondition
-   note.value = currProject.conditionNote
-   ocrHintID.value = currProject.unit.metadata.ocrHint.id
-   ocrLangage.value = currProject.unit.metadata.ocrLanguageHint
+   condition.value = currProject.value.itemCondition
+   note.value = currProject.value.conditionNote
+   ocrHintID.value = currProject.value.unit.metadata.ocrHint.id
+   ocrLangage.value = currProject.value.unit.metadata.ocrLanguageHint
 }
 
 function cancelClicked() {

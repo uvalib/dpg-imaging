@@ -49,7 +49,12 @@
          </template>
          <template v-else>
             <DPGButton @click="viewerClicked" class="pad-right" v-if="isScanning == false && (isAdmin || isSupervisor)">Open QA Viewer</DPGButton>
-            <DPGButton v-if="isWorking(selectedProjectIdx) == false && hasOwner(selectedProjectIdx) == false" @click="claimClicked()"  class="pad-right">Claim</DPGButton>
+            <DPGButton
+               v-if="isWorking(selectedProjectIdx) == false && (hasOwner(selectedProjectIdx) == false || isAdmin ||isSupervisor)"
+               @click="claimClicked()"  class="pad-right"
+            >
+               Claim
+            </DPGButton>
             <AssignModal v-if="(isAdmin || isSupervisor)" :projectID="currProject.id" @assign="assignClicked"/>
          </template>
          <DPGButton v-if="hasOwner(selectedProjectIdx) && (isAdmin || isSupervisor)" @click="clearClicked()" class="pad-right">
@@ -81,9 +86,10 @@ const projectStore = useProjectStore()
 const systemStore = useSystemStore()
 const userStore = useUserStore()
 const {
-   currProject, selectedProjectIdx, isOwner, isAdmin, isSupervisor, hasOwner,
-   isFinalizeRunning, isFinished, inProgress, isWorking, canReject, hasError
+   currProject, selectedProjectIdx, isOwner, hasOwner, hasError,
+   isFinalizeRunning, isFinished, inProgress, isWorking, canReject,
 } = storeToRefs(projectStore)
+const {isAdmin, isSupervisor} = storeToRefs(userStore)
 
 const timeEntry = ref(false)
 const stepMinutes = ref(0)
