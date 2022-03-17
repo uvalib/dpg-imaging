@@ -40,7 +40,7 @@
             <td class="data">
                <select id="workstation" v-model="workstationID">
                   <option disabled :value="0">Choose a workstation</option>
-                  <option v-for="ws in workstations" :key="`ws${ws.id}`" :value="ws.id">{{ws.name}}</option>
+                  <option v-for="ws in systemStore.workstations" :key="`ws${ws.id}`" :value="ws.id">{{ws.name}}</option>
                </select>
             </td>
          </tr>
@@ -57,67 +57,63 @@
             <td class="data"><textarea id="res-note" v-model="resolutionNote"></textarea></td>
          </tr>
       </table>
-      <div class="buttons" v-if="isOwner(computingID)">
-         <DPGButton v-if="!editing" @clicked="editClicked">Edit</DPGButton>
+      <div class="buttons" v-if="projectStore.isOwner(userStore.computeID)">
+         <DPGButton v-if="!editing" @click="editClicked">Edit</DPGButton>
          <template v-else>
-            <DPGButton @clicked="cancelClicked">Cancel</DPGButton>
-            <DPGButton @clicked="saveClicked">Save</DPGButton>
+            <DPGButton @click="cancelClicked">Cancel</DPGButton>
+            <DPGButton @click="saveClicked">Save</DPGButton>
          </template>
       </div>
    </div>
 </template>
 
-<script>
-import { mapGetters, mapState } from "vuex";
-export default {
-   data: function()  {
-      return {
-         editing: false,
-         workstationID: 0,
-         captureResolution: "",
-         resizedResolution: "",
-         resolutionNote: ""
-      }
-   },
-   computed: {
-      ...mapState({
-         workstations: state => state.workstations,
-         computingID: state => state.user.computeID,
-      }),
-      ...mapGetters({
-         currProject: "projects/currProject",
-         isOwner: "projects/isOwner"
-      }),
-   },
-   methods: {
-      editClicked() {
-         this.workstationID = this.currProject.workstation.id
-         this.captureResolution = ""
-          this.resizedResolution = ""
-         if ( this.currProject.captureResolution) {
-            this.captureResolution = this.currProject.captureResolution
-         }
-         if (this.currProject.resizedResolution) {
-            this.resizedResolution = this.currProject.resizedResolution
-         }
-         this.resolutionNote = this.currProject.resolutionNote
-         this.editing = true
-      },
-      cancelClicked() {
-         this.editing = false
-      },
-      async saveClicked() {
-         let data = {
-            workstationID: this.workstationID,
-            captureResolution: parseInt(this.captureResolution, 10),
-            resizeResolution: parseInt(this.resizedResolution, 10),
-            resolutionNote: this.resolutionNote
-         }
-         await this.$store.dispatch("projects/setEquipment", data)
-         this.editing = false
-      }
-   },
-};
+<script setup>
+import {useProjectStore} from "@/stores/project"
+import {useSystemStore} from "@/stores/system"
+import {useUserStore} from "@/stores/user"
+import { ref} from 'vue'
+import { storeToRefs } from 'pinia'
+
+const projectStore = useProjectStore()
+const systemStore = useSystemStore()
+const userStore = useUserStore()
+
+const { currProject } = storeToRefs(projectStore)
+
+const editing = ref(false)
+const workstationID = ref(0)
+const captureResolution = ref("")
+const resizedResolution = ref("")
+const resolutionNote = ref("")
+
+function editClicked() {
+   workstationID.value = currProject.value.workstation.id
+   captureResolution.value = ""
+   resizedResolution.value = ""
+   if ( currProject.value.captureResolution) {
+      captureResolution.value = currProject.value.captureResolution
+   }
+   if (currProject.value.resizedResolution) {
+      resizedResolution.value = currProject.value.resizedResolution
+   }
+   resolutionNote.value = currProject.value.resolutionNote
+   editing.value = true
+}
+
+function cancelClicked() {
+   editing.value = false
+}
+
+async function saveClicked() {
+   let data = {
+      workstationID: workstationID.value,
+      captureResolution: parseInt(captureResolution.value, 10),
+      resizeResolution: parseInt(resizedResolution.value, 10),
+      resolutionNote: resolutionNote.value
+   }
+   await projectStore.setEquipment(data)
+   editing.value = false
+}
 </script>
 
 <style scoped lang="scss">

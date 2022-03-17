@@ -1,26 +1,26 @@
 <template>
    <div class="assign-modal-wrapper">
-      <DPGButton id="assign-trigger" @clicked="show">{{label}}</DPGButton>
+      <DPGButton id="assign-trigger" @click="show">{{props.label}}</DPGButton>
       <div class="assign-modal-dimmer" v-if="isOpen">
          <div role="dialog" aria-labelledby="assign-modal-title" id="assign-modal" class="assign-modal">
             <div id="assign-modal-title" class="assign-modal-title">Assign Project</div>
             <div class="assign-modal-content">
-               <div v-if="working" class="spinner-wrap">
+               <div v-if="projectStore.working" class="spinner-wrap">
                   <WaitSpinner :overlay="false" message="Loading candidates..." />
                </div>
                <div v-else class="candidate-scroller">
-                  <div class="val" v-for="(c,idx) in candidates" :key="c.id" :class="{selected: idx == selectedIdx}" @click="selectCandidate(idx)">
+                  <div class="val" v-for="(c,idx) in systemStore.staffMembers" :key="c.id" :class="{selected: idx == selectedIdx}" @click="selectCandidate(idx)">
                      <span class="candidate">{{c.lastName}}, {{c.firstName}}</span> ({{c.computingID}})
                   </div>
                </div>
             </div>
             <p class="error">{{error}}</p>
             <div class="assign-modal-controls">
-               <DPGButton id="close-assign" @clicked="hide" @tabback="setFocus('ok-assign')" :focusBackOverride="true">
+               <DPGButton id="close-assign" @click="hide" @tabback="setFocus('ok-assign')" :focusBackOverride="true">
                   Cancel
                </DPGButton>
                <span class="spacer"></span>
-               <DPGButton id="ok-assign" @clicked="assignClicked" @tabnext="setFocus('close-assign')" :focusNextOverride="true">
+               <DPGButton id="ok-assign" @click="assignClicked" @tabnext="setFocus('close-assign')" :focusNextOverride="true">
                   Assign
                </DPGButton>
             </div>
@@ -29,11 +29,15 @@
    </div>
 </template>
 
-<script>
-import { mapState } from "vuex"
-export default {
-   emits: ['assign', 'closed', 'opened' ],
-   props: {
+<script setup>
+import { ref, nextTick } from 'vue'
+import {useSystemStore} from '@/stores/system'
+import {useProjectStore} from '@/stores/project'
+
+const systemStore = useSystemStore()
+const projectStore = useProjectStore()
+const emit = defineEmits( ['assign', 'closed', 'opened' ] )
+const props = defineProps({
       projectID: {
          type: Number,
          required: true,
@@ -42,57 +46,46 @@ export default {
          type: String,
          default: "Assign"
       }
-   },
-   data: function()  {
-      return {
-         isOpen: false,
-         selectedIdx: -1,
-         error: ""
-      }
-   },
-   computed: {
-      ...mapState({
-         working: state => state.projects.working,
-         candidates: state => state.staffMembers,
-      })
-   },
-   methods: {
-      selectCandidate(idx) {
-         this.selectedIdx = idx
-      },
-      assignClicked() {
-         this.error = ""
-         if ( this.selectedIdx == -1) {
-            this.error = "Please select a user"
-            return
-         }
-         this.hide()
-         this.$nextTick( () => {
-            let userID = this.candidates[this.selectedIdx].id
-            this.$emit('assign', {projectID: this.projectID, ownerID: userID})
-         })
-      },
-      hide() {
-         this.isOpen=false
-         this.setFocus("assign-trigger")
-         this.$emit('closed')
-      },
-      show() {
-         this.isOpen=true
-         setTimeout(()=>{
-            this.setFocus("close-assign")
-            this.$emit('opened')
-         }, 150)
-         this.error = ""
-         this.selectedIdx = -1
-      },
-      setFocus(id) {
-         let ele = document.getElementById(id)
-         if (ele ) {
-            ele.focus()
-         }
-      },
-   },
+   })
+
+const isOpen = ref(false)
+const selectedIdx = ref(-1)
+const error = ref("")
+
+function selectCandidate(idx) {
+   selectedIdx.value = idx
+}
+function assignClicked() {
+   error.value = ""
+   if ( selectedIdx.value == -1) {
+      error.value = "Please select a user"
+      return
+   }
+   hide()
+   nextTick( () => {
+      let userID = systemStore.staffMembers[selectedIdx.value].id
+      emit('assign', {projectID: props.projectID, ownerID: userID})
+   })
+}
+function hide() {
+   isOpen.value=false
+   setFocus("assign-trigger")
+   emit('closed')
+}
+function show() {
+   isOpen.value = true
+   nextTick( () => {
+      setFocus("close-assign")
+      emit('opened')
+   })
+   error.value = ""
+   selectedIdx.value = -1
+}
+function setFocus(id) {
+   let ele = document.getElementById(id)
+   if (ele ) {
+      ele.focus()
+   }
 }
 </script>
 
@@ -136,7 +129,7 @@ div.assign-modal {
    height: auto;
    z-index: 8000;
    background: white;
-   top: 30%;
+   top: 50%;
    left: 50%;
    transform: translate(-50%, -50%);
    box-shadow: var(--box-shadow);

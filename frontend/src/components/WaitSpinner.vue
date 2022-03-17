@@ -1,48 +1,35 @@
 <template>
-   <div v-if="overlay" class="spinner-overlay">
+   <div v-if="props.overlay" class="spinner-overlay">
       <div class="spinner">
-         <h3 v-if="message">{{ message }}</h3>
+         <h3 v-if="message">{{ props.message }}</h3>
          <div class="spinner-animation">
-            <div class="bounce1" :style="{ backgroundColor: color }"></div>
-            <div class="bounce2" :style="{ backgroundColor: color }"></div>
-            <div class="bounce3" :style="{ backgroundColor: color }"></div>
+            <div class="dot bounce1"></div>
+            <div class="dot bounce2"></div>
+            <div class="dot bounce3"></div>
          </div>
       </div>
    </div>
    <div v-else class="spinner embed">
-      <h3 v-if="message">{{ message }}</h3>
+      <h3 v-if="message">{{ props.message }}</h3>
       <div class="spinner-animation">
-         <div class="bounce1" :style="{ backgroundColor: color }"></div>
-         <div class="bounce2" :style="{ backgroundColor: color }"></div>
-         <div class="bounce3" :style="{ backgroundColor: color }"></div>
+         <div class="dot bounce1"></div>
+         <div class="dot bounce2"></div>
+         <div class="dot bounce3"></div>
       </div>
    </div>
 </template>
 
-<script>
-export default {
-   name: "WaitSpinner",
-   props: {
-      message: {
-         type: String,
-         default: "",
-      },
-      overlay: {
-         type: Boolean,
-         default: false,
-      },
-      color: {
-         type: String,
-         default: "var(--uvalib-brand-orange)",
-      },
+<script setup>
+const props = defineProps({
+   message: {
+      type: String,
+      default: "",
    },
-   computed: {
-      backgroundColor() {
-         if (this.transparent) return "transparent";
-         return "white";
-      },
+   overlay: {
+      type: Boolean,
+      default: false,
    },
-};
+})
 </script>
 
 <style lang="scss" scoped>
@@ -53,10 +40,9 @@ div.spinner-overlay {
    width: 100%;
    height: 100%;
    z-index: 1000;
-   background: rgba(0,0,0,0.3);
-   div.spinner {
-      border: 1px solid var(--uvalib-grey);
-      box-shadow:  0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+   background: rgba(100,100,100,0.3);
+   .spinner {
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);;
    }
 }
 div.spinner {
@@ -74,18 +60,6 @@ div.spinner.embed {
    margin: 0;
    background: transparent;
 }
-@media only screen and (min-width: 768px) {
-   div.spinner {
-      padding: 40px 90px;
-   }
-}
-@media only screen and (max-width: 768px) {
-   div.spinner {
-      width: 95%;
-      padding: 40px 0;
-      margin-top: 30%;
-   }
-}
 div.spinner h1 {
    color: var(--uvalib-text);
    border: none;
@@ -94,6 +68,9 @@ div.spinner h1 {
    margin: 0 auto;
    width: 80px;
    text-align: center;
+   .dot  {
+      color: var(--uvalib-brand-orange);
+   }
 }
 .spinner-animation > div {
    width: 18px;

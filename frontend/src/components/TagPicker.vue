@@ -1,7 +1,7 @@
 <template>
    <div class="tag-picker">
-      <span tabindex="0" @click="showMenu" @keydown.enter="showMenu" class="tag current" :class="[masterFile.status, display]"></span>
-      <div class="popup-list" v-if="menuOpen" :class="position">
+      <span tabindex="0" @click="showMenu" @keydown.enter="showMenu" class="tag current" :class="[masterFile.status, props.display]"></span>
+      <div class="popup-list" v-if="menuOpen" :class="props.position">
          <div class="title">
             <span>Select a tag</span>
             <span tabindex="0" @click.stop.prevent="hideMenu()" class="close">X</span>
@@ -40,39 +40,37 @@
    </div>
 </template>
 
-<script>
-export default {
-   props: {
-      masterFile: {
-         type: Object,
-         required: true
-      },
-      display: {
-         type: String,
-         default: "default"
-      },
-      position: {
-         type: String,
-         default: "default"
-      }
+<script setup>
+import {useUnitStore} from "@/stores/unit"
+import { ref } from 'vue'
+
+const unitStore = useUnitStore()
+const menuOpen = ref(false)
+
+const props = defineProps({
+   masterFile: {
+      type: Object,
+      required: true
    },
-   data() {
-      return {
-        menuOpen: false,
-      }
+   display: {
+      type: String,
+      default: "default"
    },
-   methods: {
-      showMenu() {
-         this.menuOpen = true
-      },
-      hideMenu() {
-         this.menuOpen = false
-      },
-      async selectTag( tag ) {
-         await this.$store.dispatch("units/setTag", {file: this.masterFile.path, tag: tag})
-         this.hideMenu()
-      }
+   position: {
+      type: String,
+      default: "default"
    }
+})
+
+function showMenu() {
+   menuOpen.value = true
+}
+function hideMenu() {
+   menuOpen.value = false
+}
+async function selectTag( tag ) {
+   await unitStore.setTag({file: props.masterFile.path, tag: tag})
+   hideMenu()
 }
 </script>
 

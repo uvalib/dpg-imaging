@@ -8,7 +8,8 @@ import NotFound from '../views/NotFound.vue'
 import Forbidden from '../views/Forbidden.vue'
 import SignedOut from '../views/SignedOut.vue'
 import VueCookies from 'vue-cookies'
-import store from '../store'
+
+import { useUserStore } from '@/stores/user'
 
 const routes = [
    {
@@ -54,14 +55,15 @@ const router = createRouter({
 })
 
 router.beforeEach((to, _from, next) => {
+   const userStore = useUserStore()
    if (to.path === '/granted') {
       let jwtStr = VueCookies.get("dpg_jwt")
-      store.commit("user/setJWT", jwtStr)
+      userStore.setJWT(jwtStr)
       next( "/" )
    } else if (to.name !== 'not_found' && to.name !== 'forbidden' && to.name !== "signedout") {
       let jwtStr = localStorage.getItem('dpg_jwt')
       if ( jwtStr) {
-         store.commit("user/setJWT", jwtStr)
+         userStore.setJWT(jwtStr)
          next()
       } else {
          window.location.href = "/authenticate"

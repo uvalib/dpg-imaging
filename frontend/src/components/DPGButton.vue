@@ -1,58 +1,56 @@
 <template>
-   <button tabindex="0" class="dpg-button" :class="{icon: mode=='icon', disabled: disabled}"
-      @keydown.exact.tab="tabNext($event)"
-      @keydown.shift.tab="tabBack($event)"
+   <button tabindex="0" class="dpg-button" :class="{icon: props.mode=='icon', disabled: props.disabled}"
+      @keydown.exact.tab="tabNext"
+      @keydown.shift.tab="tabBack"
       @click.prevent.stop="clicked" @keydown.prevent.stop.enter="clicked" @keydown.space.prevent.stop="clicked">
       <slot></slot>
    </button>
 </template>
 
-<script>
-export default {
-   emits: ['clicked', 'tabback', 'tabnext' ],
-   props: {
-      focusNextOverride: {
-         type: Boolean,
-         default: false
-      },
-      focusBackOverride: {
-         type: Boolean,
-         default: false
-      },
-      mode: {
-         type: String,
-         default: "button"
-      },
-      disabled: {
-         type: Boolean,
-         default: false
-      }
+<script setup>
+const props = defineProps({
+   focusNextOverride: {
+      type: Boolean,
+      default: false
    },
-   methods: {
-      clicked() {
-         if ( this.disabled) {
-            return
-         }
-         this.$nextTick( () => {
-            this.$emit('clicked')
-         })
-      },
-      tabBack(event) {
-         if (this.focusBackOverride ) {
-            event.stopPropagation()
-            event.preventDefault()
-            this.$emit('tabback')
-         }
-      },
-      tabNext(event ) {
-         if (this.focusNextOverride ) {
-            event.stopPropagation()
-            event.preventDefault()
-            this.$emit('tabnext')
-         }
-      }
+   focusBackOverride: {
+      type: Boolean,
+      default: false
+   },
+   disabled: {
+      type: Boolean,
+      default: false
+   },
+   mode: {
+      type: String,
+      default: "button"
+   },
+})
+
+const emit = defineEmits( ['click', 'tabback', 'tabnext' ])
+
+function clicked() {
+   if (!props.disabled) {
+      emit('click')
    }
 }
+
+function tabBack(event) {
+   if (props.focusBackOverride ) {
+      event.stopPropagation()
+      event.preventDefault()
+      emit('tabback')
+   }
+}
+
+function tabNext(event) {
+   if (props.focusNextOverride ) {
+      event.stopPropagation()
+      event.preventDefault()
+      emit('tabnext')
+   }
+}
+
 </script>
 
 <style lang="scss" scoped>

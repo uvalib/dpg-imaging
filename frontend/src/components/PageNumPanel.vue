@@ -4,16 +4,16 @@
       <div class="content">
          <span class="entry pad-right">
             <label>Start Image:</label>
-            <select id="start-page" v-model="rangeStartIdx">
+            <select id="start-page" v-model="unitStore.rangeStartIdx">
                <option disabled :value="-1">Select start page</option>
-               <option v-for="(mf,idx) in masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
+               <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
             </select>
          </span>
          <span class="entry  pad-right">
             <label>End Image:</label>
-            <select id="end-page" v-model="rangeEndIdx">
+            <select id="end-page" v-model="unitStore.rangeEndIdx">
                <option disabled :value="-1">Select end page</option>
-               <option v-for="(mf,idx) in masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
+               <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
             </select>
          </span>
             <span class="entry">
@@ -22,61 +22,49 @@
             </span>
       </div>
       <div class="panel-actions">
-         <DPGButton @clicked="selectAllClicked" class="left">Select All</DPGButton>
+         <DPGButton @click="selectAllClicked" class="left">Select All</DPGButton>
          <label class="verso">Unnumbered Verso<input v-model="unnumberVerso" type="checkbox"/></label>
-         <DPGButton @clicked="cancelEditClicked" class="right-pad">Cancel</DPGButton>
-         <DPGButton @clicked="okPagesClicked">OK</DPGButton>
+         <DPGButton @click="cancelEditClicked" class="right-pad">Cancel</DPGButton>
+         <DPGButton @click="okPagesClicked">OK</DPGButton>
       </div>
    </div>
 </template>
 
-<script>
-import { mapState } from "vuex"
-import { mapFields } from 'vuex-map-fields'
-export default {
-   computed: {
-      ...mapState({
-         masterFiles : state => state.units.masterFiles,
-         currUnit: state => state.units.currUnit,
-      }),
-      ...mapFields({
-        rangeStartIdx: 'units.rangeStartIdx',
-        rangeEndIdx: 'units.rangeEndIdx',
-        editMode: 'units.editMode',
-      }),
-   },
-   data() {
-      return {
-        startPage: "1",
-        unnumberVerso: false
-      }
-   },
-   methods: {
-      cancelEditClicked() {
-         this.$store.commit("clearError")
-         this.editMode = ""
-      },
-      okPagesClicked() {
-         this.$store.commit("clearError")
-         if ( this.rangeStartIdx == -1 || this.rangeEndIdx == -1) {
-            this.$store.commit("setError", "Start and end image must be selected")
-            return
-         }
-         if (this.startPage == "") {
-            this.$store.commit("setError", "Start page is required")
-            return
-         }
-         if (this.unnumberVerso && (this.rangeEndIdx-this.rangeStartIdx)%2 == 0) {
-            this.$store.commit("setError", "An even number of pages is required for unnumbered verso")
-            return
-         }
-         this.$store.dispatch("units/updatePageNumbers", {start: this.startPage, verso: !this.unnumberVerso})
-         this.editMode = ""
-      },
-      selectAllClicked() {
-         this.$store.commit("units/selectAll")
-      }
+<script setup>
+import {useUnitStore} from "@/stores/unit"
+import {useSystemStore} from "@/stores/system"
+import { ref } from 'vue'
+
+const unitStore = useUnitStore()
+const systemStore = useSystemStore()
+
+const startPage = ref("1")
+const unnumberVerso = ref(false)
+
+function cancelEditClicked() {
+   systemStore.error = ""
+   unitStore.editMode = ""
+}
+
+function okPagesClicked() {
+   systemStore.error = ""
+   if ( unitStore.rangeStartIdx == -1 || unitStore.rangeEndIdx == -1) {
+      systemStore.error = "Start and end image must be selected"
+      return
    }
+   if (startPage.value == "") {
+      systemStore.error = "Start page is required"
+      return
+   }
+   if (unnumberVerso.value && (unitStore.rangeEndIdx-unitStore.rangeStartIdx)%2 == 0) {
+      systemStore.error = "An even number of pages is required for unnumbered verso"
+      return
+   }
+   unitStore.updatePageNumbers({start: startPage.value, verso: !unnumberVerso.value})
+   unitStore.editMode = ""
+}
+function selectAllClicked() {
+   unitStore.selectAll()
 }
 </script>
 

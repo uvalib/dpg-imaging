@@ -22,43 +22,37 @@
    </div>
 </template>
 
-<script>
-import { mapGetters } from "vuex";
-import date from "date-and-time";
-export default {
-   computed: {
-      ...mapGetters({
-         currProject: "projects/currProject",
-      }),
-    },
-   methods: {
-      problemsString(probs) {
-         let out = []
-         probs.forEach(p => out.push(p.label) )
-         return out.join(", ")
-      },
-      noteTypeString(typeID) {
-         let types = ["COMMENT", "SUGGESTION", "PROBLEM", "ITEM CONDITION"]
-         if ( typeID < 0 || typeID > types.length-1) return "COMMENT"
-         return types[typeID]
-      },
-      problems( problems ) {
-         let out = []
-         problems.forEach( p => out.push(p.name))
-         return out.join(", ")
-      },
-      lookupStepName(stepID) {
-         let s = this.currProject.workflow.steps.find((s) => s.id == stepID);
-         if (s) {
-            return s.name;
-         }
-         return "Unknown";
-      },
-      formatDate(d) {
-         return date.format(new Date(d), "YYYY-MM-DD hh:mm A");
-      },
-   },
-};
+<script setup>
+import {useProjectStore} from "@/stores/project"
+import { storeToRefs } from 'pinia'
+import date from "date-and-time"
+
+const projectStore = useProjectStore()
+const { currProject } = storeToRefs(projectStore)
+
+function problemsString(probs) {
+   let out = []
+   probs.forEach(p => out.push(p.label) )
+   return out.join(", ")
+}
+
+function noteTypeString(typeID) {
+   let types = ["COMMENT", "SUGGESTION", "PROBLEM", "ITEM CONDITION"]
+   if ( typeID < 0 || typeID > types.length-1) return "COMMENT"
+   return types[typeID]
+}
+
+function lookupStepName(stepID) {
+   let s = this.currProject.workflow.steps.find((s) => s.id == stepID)
+   if (s) {
+      return s.name
+   }
+   return "Unknown"
+}
+
+function formatDate(d) {
+   return date.format(new Date(d), "YYYY-MM-DD hh:mm A")
+}
 </script>
 
 <style scoped lang="scss">

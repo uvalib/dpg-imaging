@@ -15,56 +15,52 @@
    </div>
 </template>
 
-<script>
-export default {
-   props: ['modelValue'],
-   emits: ['update:modelValue', 'accepted', 'canceled'],
-   data() {
-      return {
-         editVal: this.modelValue,
-         dropdownOpen: false,
-         vocab: ["Spine", "Front Cover", "Front Cover verso", "Back Cover", "Back Cover recto",
-                 "Head", "Tail", "Fore-edge", "Front Paste-down Endpaper", "Front Free Endpaper",
-                 "Back Free Endpaper", "Plate",
-                 "Blank Page", "Half-title", "Frontispiece", "Printer's Imprint", "Copyright",
-                 "Privilege", "Ad Lectorem",  "Table of Contents", "Titlepage", "Device",
-                 "Epigraph", "Prologue/Preface", "Dedication", "Errata"].sort()
-      }
-   },
-   methods: {
-      showDropdown() {
-         this.dropdownOpen = true
-      },
-      hideDropdown() {
-         this.dropdownOpen = false
-      },
-      acceptEdit() {
-         this.hideDropdown()
-         this.$emit("accepted")
-      },
-      cancelEdit() {
-         this.hideDropdown()
-         this.$emit("canceled")
-      },
-      vocabSelected(val) {
-         this.editVal = val
-         this.$emit('update:modelValue', val)
-         document.getElementById("title-input-box").focus()
+<script setup>
+import { ref, onMounted } from 'vue'
 
-      },
-      handleInput(newVal) {
-         this.editVal = newVal
-         this.$emit('update:modelValue', newVal)
-      },
-   },
-   mounted() {
-      let ele = document.getElementById("title-input-box")
-      if ( ele ) {
-         ele.focus()
-         ele.select()
-      }
-   }
+const props = defineProps( ['modelValue'] )
+const emit = defineEmits( ['update:modelValue', 'accepted', 'canceled'] )
+
+const editVal = ref(props.modelValue)
+const dropdownOpen = ref(false)
+const vocab = ref(["Spine", "Front Cover", "Front Cover verso", "Back Cover", "Back Cover recto",
+         "Head", "Tail", "Fore-edge", "Front Paste-down Endpaper", "Front Free Endpaper",
+         "Back Free Endpaper", "Plate",
+         "Blank Page", "Half-title", "Frontispiece", "Printer's Imprint", "Copyright",
+         "Privilege", "Ad Lectorem",  "Table of Contents", "Titlepage", "Device",
+         "Epigraph", "Prologue/Preface", "Dedication", "Errata"].sort())
+
+function showDropdown() {
+   dropdownOpen.value = true
 }
+function hideDropdown() {
+   dropdownOpen.value = false
+}
+function acceptEdit() {
+   hideDropdown()
+   emit("accepted")
+}
+function cancelEdit() {
+   hideDropdown()
+   emit("canceled")
+}
+function vocabSelected(val) {
+   editVal.value = val
+   emit('update:modelValue', val)
+   document.getElementById("title-input-box").focus()
+}
+function handleInput(newVal) {
+   editVal.value = newVal
+   emit('update:modelValue', newVal)
+}
+
+onMounted( async () => {
+   let ele = document.getElementById("title-input-box")
+   if ( ele ) {
+      ele.focus()
+      ele.select()
+   }
+})
 </script>
 
 <style lang="scss" scoped>

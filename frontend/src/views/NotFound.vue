@@ -5,12 +5,7 @@
    </div>
 </template>
 
-<script>
-export default {
-   name: "not_found",
-   components: {
-   },
-};
+<script setup>
 </script>
 
 <style scoped lang="scss">
