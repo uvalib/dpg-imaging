@@ -50,6 +50,7 @@
             <thead>
                <tr>
                   <th></th>
+                  <th></th>
                   <th>Tag</th>
                   <th>File Name</th>
                   <th>Title</th>
@@ -66,6 +67,7 @@
                   <tr @mousedown="fileSelected(element.fileName, $event)"  :id="element.fileName" :key="element.fileName"
                      @contextmenu.prevent="showContextMenu(element.fileName, $event)"
                   >
+                     <td class="grip"><i class="fas fa-grip-lines"></i></td>
                      <td class="thumb">
                         <router-link :to="imageViewerURL(index)"><img :src="element.thumbURL"/></router-link>
                      </td>
@@ -100,6 +102,7 @@
                      <td>{{element.resolution}}</td>
                      <td>{{element.colorProfile}}</td>
                      <td>{{element.path}}</td>
+
                   </tr>
                </template>
             </draggable>
@@ -670,6 +673,9 @@ onBeforeMount( async () => {
          img {
             border:1px solid var(--uvalib-grey);
          }
+      }
+      td.grip {
+         color: var(--uvalib-grey);
       }
       th {
          border-bottom: 1px solid var(--uvalib-grey);

@@ -1,7 +1,7 @@
 <template>
    <div class="confirm-modal-wrapper">
-      <DPGButton v-if="type=='button'" id="confirm-trigger" @click="show">{{label}}</DPGButton>
-      <span class="txt-trigger" v-else id="confirm-trigger" @click="show">{{label}}</span>
+      <DPGButton v-if="props.type=='button'" id="confirm-trigger" @click="show">{{props.label}}</DPGButton>
+      <span class="txt-trigger" v-else id="confirm-trigger" @click="show">{{props.label}}</span>
       <div class="confirm-modal-dimmer" v-if="isOpen">
          <div role="dialog" aria-labelledby="confirm-modal-title" id="confirm-modal" class="confirm-modal">
             <div id="confirm-modal-title" class="confirm-modal-title">Confirm Action</div>
@@ -23,49 +23,46 @@
    </div>
 </template>
 
-<script>
-export default {
-   props: {
-      label: {
-         type: String,
-         required: true
-      },
-      type: {
-         type: String,
-         default: "button"
-      }
+<script setup>
+import { ref, nextTick } from 'vue'
+
+const emit = defineEmits( ['confirmed', 'closed', 'opened' ] )
+const props = defineProps({
+   label: {
+      type: String,
+      required: true
    },
-   data: function()  {
-      return {
-         isOpen: false
-      }
-   },
-   methods: {
-      confirmClicked() {
-         this.hide()
-         this.$nextTick( () => {
-            this.$emit('confirmed')
-         })
-      },
-      hide() {
-         this.isOpen=false
-         this.setFocus("confirm-trigger")
-         this.$emit('closed')
-      },
-      show() {
-         this.isOpen=true
-         setTimeout(()=>{
-            this.setFocus("close-confirm")
-            this.$emit('opened')
-         }, 150)
-      },
-      setFocus(id) {
-         let ele = document.getElementById(id)
-         if (ele ) {
-            ele.focus()
-         }
-      },
-   },
+   type: {
+      type: String,
+      default: "button"
+   }
+})
+
+const isOpen = ref(false)
+
+function confirmClicked() {
+   hide()
+   nextTick( () => {
+      emit('confirmed')
+   })
+}
+function hide() {
+   isOpen.value=false
+   setFocus("confirm-trigger")
+   emit('closed')
+}
+function show() {
+   isOpen.value=true
+   nextTick( () => {
+      setFocus("close-confirm")
+      emit('opened')
+   })
+}
+function setFocus(id) {
+   let ele = document.getElementById(id)
+   if (ele ) {
+      ele.focus()
+   }
 }
 </script>
 

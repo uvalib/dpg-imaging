@@ -73,7 +73,6 @@ function doSearch() {
 
 <style scoped lang="scss">
 .search {
-   background: #f6f6f6;
    width: 20%;
    min-width: 270px;
    border: 1px solid var(--uvalib-grey);
@@ -82,9 +81,10 @@ function doSearch() {
       text-align: center;
       padding: 5px;
       margin: 0;
-      background: var(--uvalib-grey-lightest);
+      background: var(--uvalib-blue-alt-light);
       border-bottom: 1px solid var(--uvalib-grey);
       font-size: 1em;
+      font-weight: normal;
    }
    .form {
       background: white;

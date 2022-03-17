@@ -90,7 +90,7 @@ function okClicked() {
       systemStore.error = "Start and end image must be selected"
       return
    }
-   if (this.componentID == "") {
+   if (componentID.value == "") {
       systemStore.error = "Component ID is required"
       return
    }
