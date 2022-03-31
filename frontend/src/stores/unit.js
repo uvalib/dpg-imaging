@@ -4,7 +4,6 @@ import { useSystemStore } from './system'
 
 export const useUnitStore = defineStore('unit', {
    state: () => ({
-      systemStore: useSystemStore(),
       currUnit: "",
       masterFiles: [],
       pageMasterFiles: [],
@@ -130,7 +129,8 @@ export const useUnitStore = defineStore('unit', {
          // dont try to reload a unit if the data is already present - unless an update is in process
          if (this.currUnit == unit && this.masterFiles.length > 0 && this.updating == false) return
 
-         this.systemStore.loading = true
+         const system = useSystemStore()
+         system.loading = true
          this.clearUnitDetails()
          return axios.get(`/api/units/${unit}/masterfiles`).then(response => {
             this.currUnit = unit
@@ -142,17 +142,18 @@ export const useUnitStore = defineStore('unit', {
 
             this.setPage(1)
             this.problems = response.data.problems
-            this.systemStore.loading = false
-            this.systemStore.updating = false
+            system.loading = false
+            system.updating = false
          }).catch( e => {
-            this.systemStore.error = e
-            this.systemStore.loading = false
-            this.systemStore.updating = false
+            system.error = e
+            system.loading = false
+            system.updating = false
          })
       },
 
       updatePageNumbers( {start, verso} ) {
-         this.systemStore.updating = true
+         const system = useSystemStore()
+         system.updating = true
          let data = []
          let page = parseInt(start,10)
          let pageCnt = 0
@@ -175,18 +176,19 @@ export const useUnitStore = defineStore('unit', {
 
          axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
             this.applyMasterFileMetadataUpdate(data)
-            this.systemStore.updating = false
+            system.updating = false
             if (resp.data.success == false) {
-               this.systemStore.setError("Some images were not renumbered")
+               system.setError("Some images were not renumbered")
                this.setMasterFileProblems(resp.data.problems)
             }
          }).catch( e => {
-            this.systemStore.error = e
+            system.error = e
          })
       },
 
       async componentLink(componentID) {
-         this.systemStore.updating = true
+         const system = useSystemStore()
+         system.updating = true
          let data = []
          for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
             let mf = this.masterFiles[i]
@@ -194,34 +196,36 @@ export const useUnitStore = defineStore('unit', {
          }
          return axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
             this.applyMasterFileMetadataUpdate(data)
-            this.systemStore.updating = false
+            system.updating = false
             if (resp.data.success == false) {
-               this.systemStore.setError("Some images could not be linked with component "+componentID)
+               system.setError("Some images could not be linked with component "+componentID)
                this.setMasterFileProblems(resp.data.problems)
             }
          }).catch( e => {
-            this.systemStore.error = e
+            system.error = e
          })
       },
 
       async updateMasterFileMetadata({file, title, description, status, componentID}) {
-         this.systemStore.updating = true
+         const system = useSystemStore()
+         system.updating = true
          let data = [{file: file, title: title.trim(), description: description.trim(), status: status, componentID: componentID}]
          return axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
             this.applyMasterFileMetadataUpdate(data)
-            this.systemStore.updating = false
+            system.updating = false
             if (resp.data.success == false) {
-               this.systemStore.setError("Unable to update image metadata")
+               system.setError("Unable to update image metadata")
                this.setMasterFileProblems(resp.data.problems)
             }
          }).catch( e => {
-            this.systemStore.error = e
-            this.systemStore.updating = false
+            system.error = e
+            system.updating = false
          })
       },
 
       async setTag({file, tag}) {
-         this.systemStore.updating = true
+         const system = useSystemStore()
+         system.updating = true
          let mf = this.masterFiles.find( mf => mf.path == file)
          let status = tag
          if (tag == "none") {
@@ -230,41 +234,44 @@ export const useUnitStore = defineStore('unit', {
          let data = [{file: file, title: mf.title.trim(), description: mf.description.trim(), status: status}]
          return axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
             this.applyMasterFileMetadataUpdate(data)
-            this.systemStore.updating = false
+            system.updating = false
             if (resp.data.success == false) {
-               this.systemStore.setError("Unable to set tag on image")
+               system.setError("Unable to set tag on image")
                this.setMasterFileProblems(resp.data.problems)
             }
          }).catch( e => {
-            this.systemStore.error = e
+            system.error = e
          })
       },
 
       deleteMasterFile(mf) {
-         this.systemStore.updating = true
+         const system = useSystemStore()
+         system.updating = true
          axios.delete(`/api/units/${this.currUnit}/${mf}`).then(() => {
             this.removeMasterFile(mf)
-            this.systemStore.updating = false
+            system.updating = false
             window.location.reload()
          }).catch( e => {
-            this.systemStore.error = e
+            system.error = e
          })
       },
 
       rotateImage({file, dir}) {
-         this.systemStore.updating = true
+         const system = useSystemStore()
+         system.updating = true
          axios.post(`/api/units/${this.currUnit}/${file}/rotate?dir=${dir}`, {}).then(() => {
             setTimeout( ()=>{
-               this.systemStore.updating = false
+               system.updating = false
                window.location.reload()
             }, 250)
          }).catch( e => {
-            this.systemStore.error = e
+            system.error = e
          })
       },
 
       renameAll() {
-         this.systemStore.updating = true
+         const system = useSystemStore()
+         system.updating = true
          let data = []
          let pStartIdx = this.pageStartIdx
          let pEndIdx = pStartIdx + this.pageSize-1
@@ -302,17 +309,18 @@ export const useUnitStore = defineStore('unit', {
          axios.post(`/api/units/${this.currUnit}/rename`, data).then(() => {
             window.location.reload()
          }).catch( e => {
-            this.systemStore.error = e
+            system.error = e
          })
       },
 
       lookupComponentID(componentID) {
-         this.systemStore.updating = true
+         const system = useSystemStore()
+         system.updating = true
          axios.get(`/api/components/${componentID}`).then(response => {
             this.setComponentInfo(response.data)
-            this.systemStore.updating = false
+            system.updating = false
          }).catch( e => {
-            this.systemStore.error = e
+            system.error = e
          })
       }
    }

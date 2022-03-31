@@ -4,7 +4,6 @@ import axios from 'axios'
 
 export const useProjectStore = defineStore('project', {
    state: () => ({
-      system: useSystemStore(),
       projects: [],
       selectedProjectIdx: -1,
       totals: {
@@ -263,12 +262,12 @@ export const useProjectStore = defineStore('project', {
             q += `&${qParam.join("&")}`
          }
 
-         console.log("GET PROJECTS "+q)
          axios.get(q).then(response => {
             this.setProjects(response.data)
             this.working = false
          }).catch( e => {
-            this.system.error = e
+            const system = useSystemStore()
+            system.error = e
             this.working = false
          })
       },
@@ -281,7 +280,8 @@ export const useProjectStore = defineStore('project', {
             this.selectProject(projectID)
             this.working = false
          }).catch( e => {
-            this.system.error = e
+            const system = useSystemStore()
+            system.error = e
             this.working = false
          })
       },
@@ -292,7 +292,8 @@ export const useProjectStore = defineStore('project', {
             this.updateProjectData(response.data)
             this.working = false
          }).catch( e => {
-            this.system.error = e
+            const system = useSystemStore()
+            system.error = e
             this.working = false
          })
       },
@@ -304,7 +305,8 @@ export const useProjectStore = defineStore('project', {
             this.updateProjectData(response.data)
             this.working = false
          }).catch( e => {
-            this.system.error = e
+            const system = useSystemStore()
+            system.error = e
             this.working = false
          })
       },
@@ -317,7 +319,8 @@ export const useProjectStore = defineStore('project', {
             this.updateProjectData(response.data)
             this.working = false
          }).catch( e => {
-            this.system.error = e
+            const system = useSystemStore()
+            system.error = e
             this.working = false
          })
       },
@@ -327,7 +330,8 @@ export const useProjectStore = defineStore('project', {
             this.updateProjectData(response.data)
             this.working = false
          }).catch( e => {
-            this.system.error = e
+            const system = useSystemStore()
+            system.error = e
             this.working = false
          })
       },
@@ -337,7 +341,8 @@ export const useProjectStore = defineStore('project', {
             this.updateProjectData(response.data)
             this.working = false
          }).catch( e => {
-            this.system.error = e
+            const system = useSystemStore()
+            system.error = e
             this.working = false
          })
       },
@@ -347,7 +352,8 @@ export const useProjectStore = defineStore('project', {
             this.updateProjectData(response.data)
             this.working = false
          }).catch( e => {
-            this.system.error = e
+            const system = useSystemStore()
+            system.error = e
             this.working = false
          })
       },
@@ -357,7 +363,8 @@ export const useProjectStore = defineStore('project', {
             this.updateProjectData(response.data)
             this.working = false
          }).catch( e => {
-            this.system.error = e
+            const system = useSystemStore()
+            system.error = e
             this.working = false
          })
       }
