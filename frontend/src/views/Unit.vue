@@ -38,7 +38,7 @@
                </span>
                <ConfirmModal label="Batch Rename" class="right-pad" @confirmed="renameAll">
                   <div>All files will be renamed to match the following format:</div>
-                  <code>{{paddedUnit}}_0001.tif - {{paddedUnit}}_nnnn.tif</code>
+                  <code>{{paddedUnit()}}_0001.tif - {{paddedUnit()}}_nnnn.tif</code>
                </ConfirmModal>
                <DPGButton id="set-titles" @click="setPageNumbersClicked" class="button right-pad">Set Page Numbers</DPGButton>
                <DPGButton id="set-titles" @click="componentLinkClicked" class="button">Component Link</DPGButton>
