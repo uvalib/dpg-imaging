@@ -43,7 +43,7 @@ function noteTypeString(typeID) {
 }
 
 function lookupStepName(stepID) {
-   let s = this.currProject.workflow.steps.find((s) => s.id == stepID)
+   let s = currProject.value.workflow.steps.find((s) => s.id == stepID)
    if (s) {
       return s.name
    }
