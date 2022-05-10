@@ -197,7 +197,10 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 	}
 
 	log.Printf("INFO: load problems")
-	dbResp = svc.DB.Where("not(id >= 5 and id <= 7) and id < 11").Order("name asc").Find(&resp.Problems)
+	dbResp = svc.DB.Where("label != ?", "Finalization").
+		Where("label != ?", "Filesystem").
+		Where("label != ?", "Filename").
+		Order("name asc").Find(&resp.Problems)
 	if dbResp.Error != nil {
 		log.Printf("ERROR: unable to load problems: %s", dbResp.Error.Error())
 		c.String(http.StatusInternalServerError, dbResp.Error.Error())
