@@ -30,6 +30,7 @@ type serviceContext struct {
 	FinalizeDir string
 	IIIFURL     string
 	TrackSysURL string
+	FinalizeURL string
 	HTTPClient  *http.Client
 	DB          *gorm.DB
 	DevAuthUser string
@@ -52,6 +53,7 @@ func initializeService(version string, cfg *configData) *serviceContext {
 		JWTKey:      cfg.jwtKey,
 		ServiceURL:  cfg.serviceURL,
 		TrackSysURL: cfg.tracksysURL,
+		FinalizeURL: cfg.finalizeURL,
 		DevAuthUser: cfg.devAuthUser}
 
 	log.Printf("INFO: connecting to DB...")

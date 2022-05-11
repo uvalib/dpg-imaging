@@ -176,12 +176,8 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 			}
 		}
 
-		log.Printf("INFO: sending request to TrackSys to begin or restart finalization of unit %d", proj.UnitID)
-		var fr struct {
-			UnitID uint `json:"unit_id"`
-		}
-		fr.UnitID = proj.UnitID
-		_, httpErr := svc.postRequest(fmt.Sprintf("%s/api/finalize", svc.TrackSysURL), fr)
+		log.Printf("INFO: sending request to dpg-jobs to begin or restart finalization of unit %d", proj.UnitID)
+		_, httpErr := svc.postRequest(fmt.Sprintf("%s/units/%d/finalize", svc.FinalizeURL, proj.UnitID), nil)
 		if httpErr != nil {
 			currA.Status = StepError
 			svc.DB.Model(&currA).Select("Status").Updates(currA)
@@ -422,6 +418,17 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 			return nil
 		}
 
+		lcFN := strings.ToLower(entry.Name())
+		if lcFN == "notes.txt" {
+			if proj.Workflow.Name != "Manuscript" {
+				log.Printf("ERROR: found notes.text for non-manuscript workflow")
+				svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Found unexpected notes: %s</p>", fullPath))
+				return fmt.Errorf("unexpected %s", fullPath)
+			}
+			log.Printf("INFO: found notes.txt for Manuscript workflow")
+			return nil
+		}
+
 		ext := filepath.Ext(entry.Name())
 		noExtFN := strings.TrimSuffix(entry.Name(), ext)
 		seqStr := strings.Split(noExtFN, "_")[1]
@@ -538,7 +545,7 @@ func (svc *serviceContext) validateDirectoryStructure(proj *project, tgtDir stri
 			// Count slashes to figure out where in the directory tree this file resides.
 			// NOTE: use -1 becase the filename is part of the relative path; EX: box/sample.tif
 			// Validate based on folders flag in the container_type model
-			if depth-1 < 1 {
+			if depth-1 < 1 && strings.ToLower(entry.Name()) != "notes.txt" {
 				svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Files found in project root directory: %s</p>", fullPath))
 				return fmt.Errorf("files found in root directory %s", fullPath)
 			}
