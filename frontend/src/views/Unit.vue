@@ -244,11 +244,8 @@ async function priorClicked() {
    pageChanged()
 }
 async function nextClicked() {
-   console.log("NEXT CLICLK "+Date.now())
    await unitStore.setPage(unitStore.currPage+1)
-   console.log("CALL CHANGE PAGE "+Date.now())
    pageChanged()
-   console.log("END NEXT CLICK "+Date.now())
 }
 async function lastClicked() {
    await unitStore.setPage(unitStore.totalPages)
@@ -444,12 +441,10 @@ onBeforeMount( async () => {
    }
 
    await unitStore.getUnitMasterFiles( projectStore.currProject.unit.id )
-   console.log("UNIT GET MD "+Date.now())
    await unitStore.getMetadataPage()
    if ( route.query.view ) {
       unitStore.viewMode = route.query.view
    }
-   console.log("UNID BFORE LOAD DONE "+Date.now())
 })
 </script>
 

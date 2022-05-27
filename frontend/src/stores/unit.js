@@ -46,11 +46,9 @@ export const useUnitStore = defineStore('unit', {
       },
       async setPage(startPageNum) {
          this.currPage = startPageNum
-         console.log("SET PAGE, GET MD "+Date.now())
          return this.getMetadataPage()
       },
       setPageSize(newSize) {
-         console.log("SET PAGE SIZE "+Date.now())
          this.pageSize = newSize
          this.setPage(1)
       },
@@ -186,11 +184,9 @@ export const useUnitStore = defineStore('unit', {
 
          const system = useSystemStore()
          system.working = true
-         console.log("REQUEST PAGE "+Date.now())
          let mdURL = `/api/units/${ this.currUnit}/masterfiles/metadata?page=${this.currPage}&pagesize=${this.pageSize}`
          return axios.get(mdURL).then(response => {
             system.working = false
-            console.log("GOT RESPONSE "+Date.now())
             response.data.forEach( md => {
                let mf = this.masterFiles.find( m => m.fileName == md.fileName)
                mf.colorProfile = md.colorProfile
@@ -205,7 +201,6 @@ export const useUnitStore = defineStore('unit', {
                mf.componentID = md.componentID
             })
             this.pageMasterFiles = this.masterFiles.slice(startIdx, startIdx+this.pageSize)
-            console.log("GOT RESPONSE DONE "+Date.now())
          }).catch( e => {
             system.error = e
             system.working = false
