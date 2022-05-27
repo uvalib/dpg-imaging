@@ -29,11 +29,6 @@ export const useUnitStore = defineStore('unit', {
          state.masterFiles.forEach( mf => out.push(mf.infoURL) )
          return out
       },
-      masterFileInfo: state => {
-         return (page) => {
-            return state.masterFiles[page]
-         }
-      },
       pageStartIdx: state => {
          return (state.currPage-1)*state.pageSize
       },
@@ -49,15 +44,15 @@ export const useUnitStore = defineStore('unit', {
          this.rangeStartIdx = 0
          this.rangeEndIdx = this.masterFiles.length - 1
       },
-      setPage(startPageNum) {
-         this.pageMasterFiles.splice(0, this.pageMasterFiles.length)
-         for (let idx = 0; idx<this.pageSize; idx++) {
-            let mfIdx = (startPageNum-1)*this.pageSize + idx
-            if (mfIdx < this.masterFiles.length ) {
-               this.pageMasterFiles.push( this.masterFiles[mfIdx])
-            }
-         }
+      async setPage(startPageNum) {
          this.currPage = startPageNum
+         console.log("SET PAGE, GET MD "+Date.now())
+         return this.getMetadataPage()
+      },
+      setPageSize(newSize) {
+         console.log("SET PAGE SIZE "+Date.now())
+         this.pageSize = newSize
+         this.setPage(1)
       },
 
       applyMasterFileMetadataUpdate(data) {
@@ -116,21 +111,16 @@ export const useUnitStore = defineStore('unit', {
          this.rangeEndIdx = -1
          this.editMode = ""
          this.problems.splice(0, this.problems.length)
-         this.currPage = 1
          this.viewMode = "list"
       },
 
-      setPageSize(newSize) {
-         this.pageSize = newSize
-         this.setPage(1)
-      },
-
       async getUnitMasterFiles(unit) {
-         // dont try to reload a unit if the data is already present - unless an update is in process
-         if (this.currUnit == unit && this.masterFiles.length > 0 && this.updating == false) return
+         // dont try to reload a unit if the data is already present
+         let intUnit = parseInt(unit, 10)
+         if (this.currUnit == intUnit && this.masterFiles.length > 0 || this.working == true) return
 
          const system = useSystemStore()
-         system.loading = true
+         system.working = true
          this.clearUnitDetails()
          return axios.get(`/api/units/${unit}/masterfiles`).then(response => {
             this.currUnit = unit
@@ -139,21 +129,92 @@ export const useUnitStore = defineStore('unit', {
                mf.error = ""
                this.masterFiles.push(mf)
             })
-
-            this.setPage(1)
             this.problems = response.data.problems
-            system.loading = false
-            system.updating = false
+            system.working = false
          }).catch( e => {
             system.error = e
-            system.loading = false
-            system.updating = false
+            system.working = false
+         })
+      },
+
+      async getMasterFileMetadata( masterFileIndex ) {
+         let mf = this.masterFiles[masterFileIndex]
+         if (!mf) return
+         if (mf.resolution) return
+
+         const system = useSystemStore()
+         system.working = true
+         let mdURL = `/api/units/${ this.currUnit}/masterfiles/metadata?file=${mf.path}`
+         return axios.get(mdURL).then(response => {
+            let md = response.data[0]
+            mf.colorProfile = md.colorProfile
+            mf.fileSize = md.fileSize
+            mf.fileType = md.fileType
+            mf.resolution = md.resolution
+            mf.title = md.title
+            mf.description = md.description
+            mf.width = md.width
+            mf.height = md.height
+            mf.status = md.status
+            mf.componentID = md.componentID
+            system.working = false
+         }).catch( e => {
+            system.error = e
+            system.working = false
+         })
+      },
+
+      async getMetadataPage() {
+         // must have a unit set to get metdata
+         if (this.currUnit == "") return
+         let startIdx = (this.currPage-1) * this.pageSize
+         let endIdx = startIdx+this.pageSize-1
+         if (endIdx >= this.masterFiles.length-1) {
+            endIdx = this.masterFiles.length-1
+         }
+         let needsData = false
+         for ( let i=startIdx; i<endIdx; i++) {
+            if ( !this.masterFiles[i].resolution ) {
+               needsData = true
+               break
+            }
+         }
+         if (needsData == false ) {
+            this.pageMasterFiles = this.masterFiles.slice(startIdx, startIdx+this.pageSize)
+            return
+         }
+
+         const system = useSystemStore()
+         system.working = true
+         console.log("REQUEST PAGE "+Date.now())
+         let mdURL = `/api/units/${ this.currUnit}/masterfiles/metadata?page=${this.currPage}&pagesize=${this.pageSize}`
+         return axios.get(mdURL).then(response => {
+            system.working = false
+            console.log("GOT RESPONSE "+Date.now())
+            response.data.forEach( md => {
+               let mf = this.masterFiles.find( m => m.fileName == md.fileName)
+               mf.colorProfile = md.colorProfile
+               mf.fileSize = md.fileSize
+               mf.fileType = md.fileType
+               mf.resolution = md.resolution
+               mf.title = md.title
+               mf.description = md.description
+               mf.width = md.width
+               mf.height = md.height
+               mf.status = md.status
+               mf.componentID = md.componentID
+            })
+            this.pageMasterFiles = this.masterFiles.slice(startIdx, startIdx+this.pageSize)
+            console.log("GOT RESPONSE DONE "+Date.now())
+         }).catch( e => {
+            system.error = e
+            system.working = false
          })
       },
 
       updatePageNumbers( {start, verso} ) {
          const system = useSystemStore()
-         system.updating = true
+         system.working = true
          let data = []
          let page = parseInt(start,10)
          let pageCnt = 0
@@ -174,104 +235,100 @@ export const useUnitStore = defineStore('unit', {
             pageCnt+=1
          }
 
-         axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
+         axios.post(`/api/units/${this.currUnit}/update?field=title`, data).then( resp => {
             this.applyMasterFileMetadataUpdate(data)
-            system.updating = false
+            system.working = false
             if (resp.data.success == false) {
                system.setError("Some images were not renumbered")
                this.setMasterFileProblems(resp.data.problems)
             }
          }).catch( e => {
-            system.error = e
+            system.setError(e)
          })
       },
 
       async componentLink(componentID) {
          const system = useSystemStore()
-         system.updating = true
+         system.working = true
          let data = []
          for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
             let mf = this.masterFiles[i]
             data.push( {file: mf.path, title: mf.title.trim(), description: mf.description.trim(), status: mf.status, componentID: componentID})
          }
-         return axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
+         return axios.post(`/api/units/${this.currUnit}/update?field=component`, data).then( resp => {
             this.applyMasterFileMetadataUpdate(data)
-            system.updating = false
+            system.working = false
             if (resp.data.success == false) {
                system.setError("Some images could not be linked with component "+componentID)
                this.setMasterFileProblems(resp.data.problems)
             }
          }).catch( e => {
-            system.error = e
+            system.setError(e)
          })
       },
 
       async updateMasterFileMetadata({file, title, description, status, componentID}) {
          const system = useSystemStore()
-         system.updating = true
+         system.working = true
          let data = [{file: file, title: title.trim(), description: description.trim(), status: status, componentID: componentID}]
          return axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
             this.applyMasterFileMetadataUpdate(data)
-            system.updating = false
+            system.working = false
             if (resp.data.success == false) {
                system.setError("Unable to update image metadata")
                this.setMasterFileProblems(resp.data.problems)
             }
          }).catch( e => {
-            system.error = e
-            system.updating = false
+            system.setError(e)
          })
       },
 
       async setTag({file, tag}) {
          const system = useSystemStore()
-         system.updating = true
+         system.working = true
          let mf = this.masterFiles.find( mf => mf.path == file)
          let status = tag
          if (tag == "none") {
             status = ""
          }
          let data = [{file: file, title: mf.title.trim(), description: mf.description.trim(), status: status}]
-         return axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
+         return axios.post(`/api/units/${this.currUnit}/update?field=tag`, data).then( resp => {
             this.applyMasterFileMetadataUpdate(data)
-            system.updating = false
+            system.working = false
             if (resp.data.success == false) {
                system.setError("Unable to set tag on image")
                this.setMasterFileProblems(resp.data.problems)
             }
          }).catch( e => {
-            system.error = e
+            system.setError(e)
          })
       },
 
       deleteMasterFile(mf) {
          const system = useSystemStore()
-         system.updating = true
+         system.working = true
          axios.delete(`/api/units/${this.currUnit}/${mf}`).then(() => {
             this.removeMasterFile(mf)
-            system.updating = false
+            system.working = false
             window.location.reload()
          }).catch( e => {
-            system.error = e
+            system.setError(e)
          })
       },
 
-      rotateImage({file, dir}) {
+      async rotateImage({file, dir}) {
          const system = useSystemStore()
-         system.updating = true
-         axios.post(`/api/units/${this.currUnit}/${file}/rotate?dir=${dir}`, {}).then(() => {
-            setTimeout( ()=>{
-               system.updating = false
-               window.location.reload()
-            }, 250)
+         system.working = true
+         return axios.post(`/api/units/${this.currUnit}/${file}/rotate?dir=${dir}`, {}).then(() => {
+            system.working = false
          }).catch( e => {
-            system.error = e
+            system.setError(e)
          })
       },
 
       renameAll() {
          const system = useSystemStore()
-         system.updating = true
+         system.working = true
          let data = []
          let pStartIdx = this.pageStartIdx
          let pEndIdx = pStartIdx + this.pageSize-1
@@ -309,18 +366,18 @@ export const useUnitStore = defineStore('unit', {
          axios.post(`/api/units/${this.currUnit}/rename`, data).then(() => {
             window.location.reload()
          }).catch( e => {
-            system.error = e
+            system.setError(e)
          })
       },
 
       lookupComponentID(componentID) {
          const system = useSystemStore()
-         system.updating = true
+         system.working = true
          axios.get(`/api/components/${componentID}`).then(response => {
             this.setComponentInfo(response.data)
-            system.updating = false
+            system.working = false
          }).catch( e => {
-            system.error = e
+            system.setError(e)
          })
       }
    }

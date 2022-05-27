@@ -7,7 +7,7 @@
             <div class="bar">
                <span tabindex="-1" id="msgtitle" class="title">DPG Imaging Error</span>
             </div>
-            <div class="message-body" id="msgbody" v-html="message"></div>
+            <div class="message-body" id="msgbody" v-html="systemStore.error"></div>
             <div class="controls">
                <DPGButton id="close-error" @click="dismiss">OK</DPGButton>
             </div>

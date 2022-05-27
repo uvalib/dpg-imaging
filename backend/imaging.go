@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -23,6 +22,7 @@ type finalizeResponse struct {
 }
 
 type exifData struct {
+	SourceFile    string      `json:"SourceFile"`
 	ColorProfile  string      `json:"ProfileDescription"`
 	FileSize      string      `json:"FileSize"`
 	FileType      string      `json:"FileType"`
@@ -136,7 +136,18 @@ func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse
 func (svc *serviceContext) updateMetadata(c *gin.Context) {
 	uid := padLeft(c.Param("uid"), 9)
 	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
-	log.Printf("INFO: update master file metadata in %s", unitDir)
+	updateField := c.Query("field")
+	if updateField == "" {
+		updateField = "all"
+		log.Printf("INFO: update master file metadata in %s", unitDir)
+	} else {
+		if !(updateField == "title" || updateField == "tag" || updateField == "component") {
+			log.Printf("ERROR: unsupported update field %s", updateField)
+			c.String(http.StatusBadRequest, fmt.Sprintf("%s is not a valid update field", updateField))
+			return
+		}
+		log.Printf("INFO: update master file %s metadata in %s", updateField, unitDir)
+	}
 
 	var mdPost []struct {
 		File        string `json:"file"`
@@ -161,10 +172,18 @@ func (svc *serviceContext) updateMetadata(c *gin.Context) {
 	outstandingRequests := 0
 	for _, change := range mdPost {
 		cmd := make([]string, 0)
-		cmd = append(cmd, fmt.Sprintf("-iptc:headline=%s", change.Title))
-		cmd = append(cmd, fmt.Sprintf("-iptc:caption-abstract=%s", change.Description))
-		cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%s", change.Status))
-		cmd = append(cmd, fmt.Sprintf("-iptc:OwnerID=%s", change.ComponentID))
+		if updateField == "title" || updateField == "all" {
+			cmd = append(cmd, fmt.Sprintf("-iptc:headline=%s", change.Title))
+		}
+		if updateField == "all" {
+			cmd = append(cmd, fmt.Sprintf("-iptc:caption-abstract=%s", change.Description))
+		}
+		if updateField == "tag" || updateField == "all" {
+			cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%s", change.Status))
+		}
+		if updateField == "component" || updateField == "all" {
+			cmd = append(cmd, fmt.Sprintf("-iptc:OwnerID=%s", change.ComponentID))
+		}
 		cmd = append(cmd, change.File)
 		fileCommands[change.File] = cmd
 		pendingFilesCnt++
@@ -338,28 +357,12 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 
 	basePath := path.Join(svc.ImagesDir, unit)
 	log.Printf("INFO: looking for image %s in unit dir %s", file, basePath)
-	fullPath := ""
-	err := filepath.WalkDir(basePath, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil || entry.IsDir() == true {
-			return nil
-		}
-		if entry.Name() == file {
-			fullPath = path
-		}
-		return nil
-	})
-
-	if err != nil {
-		log.Printf("ERROR: find image %s in unit dir %s failed: %s", file, basePath, err.Error())
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
+	fullPath := findFile(basePath, file)
 	if fullPath == "" {
 		log.Printf("ERROR: unable to find %s found in unit dir %s", file, basePath)
-		c.String(http.StatusInternalServerError, fmt.Sprintf("%s not found", file))
+		c.String(http.StatusBadRequest, fmt.Sprintf("%s not found", file))
 		return
 	}
-	log.Printf("INFO: %s found here: %s", file, fullPath)
 
 	// grab the currrent data inthe exif headers ad the rotate command wipes it all
 	cmdArray := []string{"-json", "-iptc:OwnerID", "-iptc:headline", "-iptc:caption-abstract", "-iptc:ClassifyState", fullPath}
@@ -459,10 +462,16 @@ func checkExifHeaders(cmdArray []string, channel chan []titleCheck) {
 	channel <- out
 }
 
-// getExifData will retrieve a batch of metadata for masterfiles in a goroutine. When complete return true
-func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int, channel chan bool) {
-	currIdx := startIdx
-	stdout, err := exec.Command("exiftool", cmdArray...).Output()
+// getExifData will retrieve a batch of metadata for masterfiles in a goroutine. The list of metadata is returned.
+func asyncGetExifData(cmdArray []string, channel chan []masterFileMetadata) {
+	channel <- getExifData(cmdArray)
+}
+
+// getExifData will retrieve a batch of metadata for masterfiles in a goroutine. The list of metadata is returned.
+func getExifData(cmdArray []string) []masterFileMetadata {
+	out := make([]masterFileMetadata, 0)
+	cmd := exec.Command("exiftool", cmdArray...)
+	stdout, err := cmd.Output()
 	if err != nil {
 		log.Printf("WARNINIG: unable to get image metadata: %s", err.Error())
 	} else {
@@ -472,40 +481,41 @@ func getExifData(cmdArray []string, files []*masterFileInfo, startIdx int, chann
 			log.Printf("WARNING: unable to parse metadata: %s", err.Error())
 		} else {
 			for _, md := range parsed {
+				mdRec := masterFileMetadata{}
+				mdRec.FileName = path.Base(fmt.Sprintf("%v", md.SourceFile))
 				if md.Title != nil {
-					files[currIdx].Title = fmt.Sprintf("%v", md.Title)
+					mdRec.Title = fmt.Sprintf("%v", md.Title)
 				}
 				if md.Description != nil {
-					files[currIdx].Description = fmt.Sprintf("%v", md.Description)
+					mdRec.Description = fmt.Sprintf("%v", md.Description)
 				}
 				if md.OwnerID != nil {
-					files[currIdx].ComponentID = fmt.Sprintf("%v", md.OwnerID)
+					mdRec.ComponentID = fmt.Sprintf("%v", md.OwnerID)
 				}
 				if md.Resolution != nil {
 					valType := fmt.Sprintf("%T", md.Resolution)
 					if valType == "int" {
-						files[currIdx].Resolution = md.Resolution.(int)
+						mdRec.Resolution = md.Resolution.(int)
 					} else if valType == "float64" {
 						fRes := md.Resolution.(float64)
-						files[currIdx].Resolution = int(fRes)
+						mdRec.Resolution = int(fRes)
 					} else {
 						log.Printf("WARN: unsupported resolution type %s", valType)
-						files[currIdx].Resolution = 0
+						mdRec.Resolution = 0
 					}
 				}
-				files[currIdx].ColorProfile = md.ColorProfile
-				files[currIdx].FileSize = md.FileSize
-				files[currIdx].FileType = md.FileType
-				files[currIdx].Width = md.Width
-				files[currIdx].Height = md.Height
-				files[currIdx].Status = md.ClassifyState
-				currIdx++
+				mdRec.ColorProfile = md.ColorProfile
+				mdRec.FileSize = md.FileSize
+				mdRec.FileType = md.FileType
+				mdRec.Width = md.Width
+				mdRec.Height = md.Height
+				mdRec.Status = md.ClassifyState
+				out = append(out, mdRec)
 			}
 		}
 	}
 
-	// notify caller that the block is done
-	channel <- true
+	return out
 }
 
 func baseExifCmd() []string {

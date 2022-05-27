@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"net"
@@ -289,4 +290,18 @@ func handleAPIResponse(logURL string, resp *http.Response, err error) ([]byte, *
 	defer resp.Body.Close()
 	bodyBytes, _ := ioutil.ReadAll(resp.Body)
 	return bodyBytes, nil
+}
+
+func findFile(basePath, tgtFileName string) string {
+	fullPath := ""
+	filepath.WalkDir(basePath, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() == true {
+			return nil
+		}
+		if entry.Name() == tgtFileName {
+			fullPath = path
+		}
+		return nil
+	})
+	return fullPath
 }

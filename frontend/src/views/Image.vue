@@ -1,64 +1,59 @@
 <template>
    <div class="viewer">
-      <WaitSpinner v-if="systemStore.updating" :overlay="true" message="Updating data..." />
-       <div class="load" v-if="systemStore.loading || projectStore.working || unitStore.masterFiles.length == 0">
-         <WaitSpinner message="Loading viewer..." />
+      <WaitSpinner v-if="systemStore.working" :overlay="true" message="Working..." />
+      <div id="iiif-toolbar" class="toolbar">
+         <TagPicker v-if="currMasterFile" :masterFile="currMasterFile" display="large" position="topright" class="top-right"/>
+         <table class="info" v-if="projectStore.selectedProjectIdx > -1">
+            <tr class="line">
+               <td class="label">Image:</td>
+               <td class="data" v-if="currMasterFile">
+                  <span>{{currMasterFile.fileName}}</span>
+                  <span class="detail">(Size: {{currMasterFile.width}} x {{currMasterFile.height}}, Resolution: {{currMasterFile.resolution}})</span>
+               </td>
+            </tr>
+            <tr class="line">
+               <td class="label">Title:</td>
+               <td class="data editable" @click="editMetadata('title')" >
+                  <TitleInput  v-if="isEditing('title')" @canceled="cancelEdit" @accepted="submitEdit" v-model="newTitle"/>
+                  <template v-else>
+                     <span  v-if="currMasterFile && currMasterFile.title">{{currMasterFile.title}}</span>
+                     <span v-else class="undefined editable">Undefined</span>
+                  </template>
+               </td>
+            </tr>
+            <tr class="line">
+               <td class="label">Caption:</td>
+               <td class="data editable" @click="editMetadata('description')" >
+                  <input  v-if="isEditing('description')" id="edit-desc" type="text" v-model="newDescription"
+                     @keyup.enter="submitEdit()" @keyup.esc="cancelEdit" />
+                  <template v-else>
+                     <span v-if="currMasterFile && currMasterFile.description">{{currMasterFile.description}}</span>
+                     <span v-else class="undefined editable">Undefined</span>
+                  </template>
+               </td>
+            </tr>
+         </table>
+         <span class="toolbar-button group back">
+            <i class="fas fa-angle-double-left back-button"></i>
+            <span @click="router.back()">Back to unit</span>
+         </span>
+         <span class="paging group">
+            <span id="previous" title="Previous" class="toolbar-button" :class="{disabled: prevDisabled()}"  @click="prevImage"><i class="fas fa-arrow-left"></i></span>
+            <span class="page">{{page}} of {{unitStore.pageInfoURLs.length}}</span>
+            <span id="next" title="Next" class="toolbar-button" :class="{disabled: nextDisabled()}" @click="nextImage"><i class="fas fa-arrow-right"></i></span>
+         </span>
+         <span class="zoom group">
+            <span id="rotate-left" title="Rotate Left" class="toolbar-button"  @click="rotateImage('left')"><i class="fas fa-undo"></i></span>
+            <span id="rotate-right" title="Rotate Right" class="toolbar-button"  @click="rotateImage('right')"><i class="rotated fas fa-undo"></i></span>
+            <span id="zoom-in" title="Zoom in" class="toolbar-button"><i class="fas fa-search-plus"></i></span>
+            <span class="page">{{Math.round(zoom*100)}} %</span>
+            <span id="zoom-out" title="Zoom in" class="toolbar-button"><i class="fas fa-search-minus"></i></span>
+            <span id="actual-size" title="Reset view" @click="viewActualSize" class="full toolbar-button">1:1</span>
+            <span id="home" title="Reset view" class="toolbar-button"><i class="fas fa-home"></i></span>
+            <span id="full-page" title="Full Screen" class="toolbar-button"><i class="fas fa-expand"></i></span>
+         </span>
       </div>
-      <template v-else>
-         <div id="iiif-toolbar" class="toolbar">
-            <TagPicker :masterFile="currMasterFile" display="large" position="topright" class="top-right"/>
-            <table class="info">
-               <tr class="line">
-                  <td class="label">Image:</td>
-                  <td class="data">
-                     <span>{{currMasterFile.fileName}}</span>
-                     <span class="detail">(Size: {{currMasterFile.width}} x {{currMasterFile.height}}, Resolution: {{currMasterFile.resolution}})</span>
-                  </td>
-               </tr>
-               <tr class="line">
-                  <td class="label">Title:</td>
-                  <td class="data editable" @click="editMetadata('title')" >
-                     <TitleInput  v-if="isEditing('title')" @canceled="cancelEdit" @accepted="submitEdit" v-model="newTitle"/>
-                     <template v-else>
-                        <span  v-if="currMasterFile.title">{{currMasterFile.title}}</span>
-                        <span v-else class="undefined editable">Undefined</span>
-                     </template>
-                  </td>
-               </tr>
-               <tr class="line">
-                  <td class="label">Caption:</td>
-                  <td class="data editable" @click="editMetadata('description')" >
-                     <input  v-if="isEditing('description')" id="edit-desc" type="text" v-model="newDescription"
-                        @keyup.enter="submitEdit()" @keyup.esc="cancelEdit" />
-                     <template v-else>
-                        <span v-if="currMasterFile.description">{{currMasterFile.description}}</span>
-                        <span v-else class="undefined editable">Undefined</span>
-                     </template>
-                  </td>
-               </tr>
-            </table>
-            <span class="toolbar-button group back">
-               <i class="fas fa-angle-double-left back-button"></i>
-               <span @click="router.back()">Back to unit</span>
-            </span>
-            <span class="paging group">
-               <span id="previous" title="Previous" class="toolbar-button"><i class="fas fa-arrow-left"></i></span>
-               <span class="page">{{page}} of {{unitStore.pageInfoURLs.length}}</span>
-               <span id="next" title="Next" class="toolbar-button"><i class="fas fa-arrow-right"></i></span>
-            </span>
-            <span class="zoom group">
-               <span id="rotate-left" title="Rotate Left" class="toolbar-button"  @click="rotateImage('left')"><i class="fas fa-undo"></i></span>
-               <span id="rotate-right" title="Rotate Right" class="toolbar-button"  @click="rotateImage('right')"><i class="rotated fas fa-undo"></i></span>
-               <span id="zoom-in" title="Zoom in" class="toolbar-button"><i class="fas fa-search-plus"></i></span>
-               <span class="page">{{Math.round(zoom*100)}} %</span>
-               <span id="zoom-out" title="Zoom in" class="toolbar-button"><i class="fas fa-search-minus"></i></span>
-               <span id="actual-size" title="Reset view" @click="viewActualSize" class="full toolbar-button">1:1</span>
-               <span id="home" title="Reset view" class="toolbar-button"><i class="fas fa-home"></i></span>
-               <span id="full-page" title="Full Screen" class="toolbar-button"><i class="fas fa-expand"></i></span>
-            </span>
-         </div>
-         <div id="iiif-viewer"></div>
-      </template>
+      <div id="iiif-viewer"></div>
    </div>
 </template>
 
@@ -70,7 +65,7 @@ import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUnitStore} from "@/stores/unit"
 import { computed, ref, onBeforeMount, onUnmounted, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
@@ -87,11 +82,13 @@ const newDescription = ref("")
 const editField = ref("")
 
 const currMasterFile = computed(() => {
-   return unitStore.masterFileInfo( page.value-1)
+   return unitStore.masterFiles[page.value-1]
 })
 
-function rotateImage(dir) {
-   unitStore.rotateImage({file: currMasterFile.value.fileName, dir: dir})
+async function rotateImage(dir) {
+   await unitStore.rotateImage({file: currMasterFile.value.fileName, dir: dir})
+   viewer.world.resetItems()
+   viewer.goToPage( viewer.currentPage() )
 }
 function viewActualSize() {
    viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(1.0))
@@ -105,7 +102,7 @@ function editMetadata(field) {
    newDescription.value = mf.description
    editField.value = field
    nextTick( ()=> {
-      if ( field.value == "description") {
+      if ( field == "description") {
          let ele = document.getElementById("edit-desc")
          ele.focus()
          ele.select()
@@ -125,18 +122,47 @@ async function submitEdit() {
    editField.value = ""
 }
 
+async function nextImage() {
+   page.value++
+   let pgIdx = page.value-1
+   await unitStore.getMasterFileMetadata( pgIdx )
+   viewer.goToPage( pgIdx )
+   let url = `/projects/${projectStore.currProject.id}/unit/images/${page.value}`
+   router.replace(url)
+}
+
+function prevDisabled() {
+   return page.value == 1
+}
+function nextDisabled() {
+   return page.value == unitStore.totalFiles
+}
+async function prevImage() {
+   if (page.value > 1) {
+      page.value--
+      let pgIdx = page.value-1
+      await unitStore.getMasterFileMetadata( pgIdx )
+      viewer.goToPage( pgIdx )
+      let url = `/projects/${projectStore.currProject.id}/unit/images/${page.value}`
+      router.replace(url)
+   }
+}
+
+
 onBeforeMount( async () => {
+   page.value = parseInt(route.params.page, 10)
+   let currPageIndex = page.value-1
+
    if (projectStore.selectedProjectIdx == -1) {
       await projectStore.getProject(route.params.id)
       await unitStore.getUnitMasterFiles(projectStore.currProject.unit.id)
+      await unitStore.getMasterFileMetadata( currPageIndex )
    }
    nextTick(()=>{
       let hdr = document.getElementById("uva-header")
       let toolbar = document.getElementById("iiif-toolbar")
       let h = hdr.offsetHeight + toolbar.offsetHeight
       document.getElementById("iiif-viewer").style.top = `${h}px`
-      page.value = parseInt(route.params.page, 10)
-      let pageIdx = page.value-1
       viewer = OpenSeadragon({
          id: "iiif-viewer",
          toolbar: "iiif-toolbar",
@@ -154,20 +180,13 @@ onBeforeMount( async () => {
          zoomOutButton:  "zoom-out",
          homeButton:     "home",
          fullPageButton: "full-page",
-         nextButton:     "next",
-         previousButton: "previous",
+         showSequenceControl: false,
          tileSources: unitStore.pageInfoURLs,
-         initialPage: pageIdx
-      })
-      viewer.addHandler("page", (data) => {
-         page.value = data.page + 1
-         let url = `/projects/${projectStore.currProject.id}/unit/images/${page.value}`
-         router.replace(url)
+         initialPage: currPageIndex
       })
       viewer.addHandler("zoom", (data) => {
          zoom.value = viewer.viewport.viewportToImageZoom(data.zoom)
       })
-      viewer.forceRedraw()
    })
 })
 onUnmounted( async () => {
@@ -262,6 +281,9 @@ onUnmounted( async () => {
          &:hover {
             text-decoration: underline;
          }
+      }
+      .toolbar-button.disabled {
+         opacity:0.2;
       }
       .back-button {
          padding: 5px 10px 5px 0;

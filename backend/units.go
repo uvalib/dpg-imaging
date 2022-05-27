@@ -78,12 +78,16 @@ type unit struct {
 }
 
 type masterFileInfo struct {
+	FileName  string `json:"fileName"`
+	Path      string `json:"path"`
+	ThumbURL  string `json:"thumbURL"`
+	MediumURL string `json:"mediumURL"`
+	LargeURL  string `json:"largeURL"`
+	InfoURL   string `json:"infoURL"`
+}
+
+type masterFileMetadata struct {
 	FileName     string `json:"fileName"`
-	Path         string `json:"path"`
-	ThumbURL     string `json:"thumbURL"`
-	MediumURL    string `json:"mediumURL"`
-	LargeURL     string `json:"largeURL"`
-	InfoURL      string `json:"infoURL"`
 	ColorProfile string `json:"colorProfile"`
 	FileSize     string `json:"fileSize"`
 	FileType     string `json:"fileType"`
@@ -107,7 +111,7 @@ func (svc *serviceContext) getUnitMasterFiles(c *gin.Context) {
 	out := unitMasterfiles{MasterFiles: make([]*masterFileInfo, 0), Problems: make([]string, 0)}
 	start := time.Now()
 
-	log.Printf("INFO: get master files from %s", unitDir)
+	log.Printf("INFO: get all master files from %s", unitDir)
 
 	// walk the unit directory and generate masterFile info for each .tif
 	mfRegex := regexp.MustCompile(`^\d{9}_\w{4,}\.tif$`)
@@ -182,42 +186,76 @@ func (svc *serviceContext) getUnitMasterFiles(c *gin.Context) {
 		out.Problems = append(out.Problems, "No images found")
 	}
 
-	// use exiftool to get metadata for master files in batches
-	currIdx := 0
-	pendingFilesCnt := 0
-	chunkSize := 20
+	elapsed := time.Since(start)
+	elapsedMS := int64(elapsed / time.Millisecond)
+	log.Printf("INFO: got %d masterfiles for unit %s in %dms", len(out.MasterFiles), uidStr, elapsedMS)
+
+	c.JSON(http.StatusOK, out)
+}
+
+// getMasterFilesMetadata will retrieve the metadata for one page of master files
+func (svc *serviceContext) getMasterFilesMetadata(c *gin.Context) {
+	uidStr := padLeft(c.Param("uid"), 9)
+	tgtFile := c.Query("file")
+	if tgtFile != "" {
+		log.Printf("INFO: get metadata for masterfile %s", tgtFile)
+		cmdArray := baseExifCmd()
+		cmdArray = append(cmdArray, tgtFile)
+		c.JSON(http.StatusOK, getExifData(cmdArray))
+		return
+	}
+
+	currPage, _ := strconv.Atoi(c.Query("page"))
+	if currPage == 0 {
+		currPage = 1
+	}
+	pageSize, _ := strconv.Atoi(c.Query("pagesize"))
+	if pageSize == 0 {
+		pageSize = 20
+	}
+	unitDir := path.Join(svc.ImagesDir, uidStr)
+	startSeqNum := (currPage-1)*pageSize + 1
+	log.Printf("INFO: get %d metadata records from %s from masterfile %d", pageSize, unitDir, startSeqNum)
+
+	// use exiftool to get metadata for master files on the current page only
+	start := time.Now()
 	cmdArray := baseExifCmd()
-	channel := make(chan bool)
+	pendingFilesCnt := 0
+	chunkSize := 10
+	channel := make(chan []masterFileMetadata)
 	outstandingRequests := 0
-	for _, mf := range out.MasterFiles {
-		cmdArray = append(cmdArray, mf.Path)
-		pendingFilesCnt++
-		if pendingFilesCnt == chunkSize {
-			outstandingRequests++
-			log.Printf("INFO: get batch #%d of %d exif metadata starting at %d", outstandingRequests, chunkSize, currIdx)
-			go getExifData(cmdArray, out.MasterFiles, currIdx, channel)
-			cmdArray = baseExifCmd()
-			pendingFilesCnt = 0
-			currIdx += chunkSize
+	for i := 0; i < pageSize; i++ {
+		mfSeqNum := startSeqNum + i
+		filename := fmt.Sprintf("%s_%04d.tif", uidStr, mfSeqNum)
+		fullPath := findFile(unitDir, filename)
+		if fullPath != "" {
+			cmdArray = append(cmdArray, fullPath)
+			pendingFilesCnt++
+			if pendingFilesCnt == chunkSize {
+				outstandingRequests++
+				go asyncGetExifData(cmdArray, channel)
+				cmdArray = baseExifCmd()
+				pendingFilesCnt = 0
+			}
 		}
 	}
 
 	if pendingFilesCnt > 0 {
-		log.Printf("INFO: get batch #%d of %d exif metadata starting at %d for unit %s", outstandingRequests, chunkSize, currIdx, uidStr)
 		outstandingRequests++
-		go getExifData(cmdArray, out.MasterFiles, currIdx, channel)
+		go asyncGetExifData(cmdArray, channel)
 	}
 
-	// wait for all metadata to complete
-	log.Printf("INFO: await all metadata for %s", uidStr)
+	// wait for all metadata updates to complete
+	out := make([]masterFileMetadata, 0)
 	for outstandingRequests > 0 {
-		<-channel
+		mdResp := <-channel
+		out = append(out, mdResp...)
 		outstandingRequests--
 	}
 
 	elapsed := time.Since(start)
 	elapsedMS := int64(elapsed / time.Millisecond)
-	log.Printf("INFO: got %d masterfiles for unit %s in %dms", len(out.MasterFiles), uidStr, elapsedMS)
+	log.Printf("INFO: got %d metadata records for unit %s in %dms", pageSize, uidStr, elapsedMS)
 
 	c.JSON(http.StatusOK, out)
 }

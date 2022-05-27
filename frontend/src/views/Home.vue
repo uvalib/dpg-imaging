@@ -138,7 +138,6 @@ function assignClicked( info ) {
    projectStore.assignProject( {projectID: info.projectID, ownerID: info.ownerID} )
 }
 function nextClicked() {
-   console.log("NEXT")
    projectStore.setCurrentPage(projectStore.currPage+1 )
 }
 function priorClicked() {

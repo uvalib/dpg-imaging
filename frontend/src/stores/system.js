@@ -3,8 +3,7 @@ import axios from 'axios'
 
 export const useSystemStore = defineStore('system', {
 	state: () => ({
-      loading: false,
-      updating: false,
+      working: false,
 		version: "unknown",
 		error: "",
       staffMembers: [],
@@ -23,6 +22,10 @@ export const useSystemStore = defineStore('system', {
 	getters: {
 	},
 	actions: {
+      setError( e ) {
+         this.error = e
+         this.working = false
+      },
 		getVersion() {
          axios.get("/version").then(response => {
             this.version = `v${response.data.version}-${response.data.build}`
@@ -31,7 +34,7 @@ export const useSystemStore = defineStore('system', {
          })
       },
       getConfig() {
-         this.loading = true
+         this.working = true
          axios.get("/config").then(response => {
             this.adminURL = response.data.tracksysURL
             this.qaDir =  response.data.qaImageDir
@@ -45,10 +48,10 @@ export const useSystemStore = defineStore('system', {
             this.problemTypes = response.data.problems
             this.containerTypes = response.data.containerTypes
             this.agencies = response.data.agencies
-            this.loading = false
+            this.working = false
          }).catch( e => {
             this.error =  e
-            this.loading = true
+            this.working = false
          })
       },
 	}

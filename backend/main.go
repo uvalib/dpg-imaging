@@ -5,12 +5,13 @@ import (
 	"log"
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 )
 
 // Version of the service
-const Version = "4.1.0"
+const Version = "4.2.0"
 
 func main() {
 	// Load cfg
@@ -22,9 +23,10 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DisableConsoleColor()
 	router := gin.Default()
+	router.Use(cors.Default())
+	router.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	// Set routes and start server
-	router.Use(cors.Default())
 	router.GET("/config", svc.getConfig)
 	router.GET("/version", svc.getVersion)
 	router.GET("/healthcheck", svc.healthCheck)
@@ -44,6 +46,7 @@ func main() {
 		api.POST("/projects/:id/reject", svc.authMiddleware, svc.rejectProjectStep)
 
 		api.GET("/units/:uid/masterfiles", svc.authMiddleware, svc.getUnitMasterFiles)
+		api.GET("/units/:uid/masterfiles/metadata", svc.authMiddleware, svc.getMasterFilesMetadata)
 		api.POST("/units/:uid/update", svc.authMiddleware, svc.updateMetadata)
 		api.POST("/units/:uid/rename", svc.authMiddleware, svc.renameFiles)
 		api.DELETE("/units/:uid/:file", svc.authMiddleware, svc.deleteFile)
