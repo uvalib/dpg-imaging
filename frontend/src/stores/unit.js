@@ -171,7 +171,7 @@ export const useUnitStore = defineStore('unit', {
             endIdx = this.masterFiles.length-1
          }
          let needsData = false
-         for ( let i=startIdx; i<endIdx; i++) {
+         for ( let i=startIdx; i<=endIdx; i++) {
             if ( !this.masterFiles[i].resolution ) {
                needsData = true
                break
