@@ -265,7 +265,20 @@ export const useUnitStore = defineStore('unit', {
       async updateMasterFileMetadata({file, title, description, status, componentID}) {
          const system = useSystemStore()
          system.working = true
-         let data = [{file: file, title: title.trim(), description: description.trim(), status: status, componentID: componentID}]
+         let cleanTitle = title
+         if (cleanTitle) {
+            cleanTitle = cleanTitle.trim()
+         } else {
+            cleanTitle = ""
+         }
+         let cleanDesc = description
+         if (cleanDesc) {
+            cleanDesc = cleanDesc.trim()
+         } else {
+            cleanDesc = ""
+         }
+         let data = [{file: file, title: cleanTitle, description: cleanDesc, status: status, componentID: componentID}]
+         if (data)
          return axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
             this.applyMasterFileMetadataUpdate(data)
             system.working = false
