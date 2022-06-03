@@ -129,6 +129,7 @@ async function nextImage() {
    viewer.goToPage( pgIdx )
    let url = `/projects/${projectStore.currProject.id}/unit/images/${page.value}`
    router.replace(url)
+   focusViewer()
 }
 
 function prevDisabled() {
@@ -145,9 +146,18 @@ async function prevImage() {
       viewer.goToPage( pgIdx )
       let url = `/projects/${projectStore.currProject.id}/unit/images/${page.value}`
       router.replace(url)
+      focusViewer()
    }
 }
 
+function focusViewer() {
+   nextTick(()=>{
+      let viewEle = document.getElementById("iiif-viewer")
+      if (viewEle) {
+         viewEle.querySelector('.openseadragon-canvas').focus()
+      }
+   })
+}
 
 onBeforeMount( async () => {
    page.value = parseInt(route.params.page, 10)
@@ -184,9 +194,12 @@ onBeforeMount( async () => {
          tileSources: unitStore.pageInfoURLs,
          initialPage: currPageIndex
       })
+      viewer.gestureSettingsMouse.clickToZoom = false
       viewer.addHandler("zoom", (data) => {
          zoom.value = viewer.viewport.viewportToImageZoom(data.zoom)
+         focusViewer()
       })
+      focusViewer()
    })
 })
 onUnmounted( async () => {
