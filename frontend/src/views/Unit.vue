@@ -10,7 +10,9 @@
          <h3>
             <div>{{callNumber}}</div>
             <div>Unit {{unitStore.currUnit}}</div>
-            <div class="small">{{unitStore.masterFiles.length}} Images</div>
+            <div class="divider"></div>
+            <div class="small" >{{workingDir}}</div>
+            <div class="small" >{{unitStore.masterFiles.length}} Images</div>
          </h3>
          <span class="back">
             <i class="fas fa-angle-double-left back-button"></i>
@@ -53,18 +55,19 @@
                <th>File Name</th>
                <th>Title</th>
                <th>Caption</th>
+               <template v-if="isManuscript">
+                  <th>Box</th>
+                  <th>Folder</th>
+               </template>
                <th>Component</th>
                <th>Size</th>
                <th>Resolution</th>
                <th>Color Profile</th>
-               <th>Path</th>
             </tr>
          </thead>
          <draggable v-model="unitStore.pageMasterFiles" tag="tbody"  @start="dragStarted" item-key="fileName">
             <template #item="{element, index}">
-               <tr @mousedown="fileSelected(element.fileName, $event)"  :id="element.fileName" :key="element.fileName"
-                  @contextmenu.prevent="showContextMenu(element.fileName, $event)"
-               >
+               <tr :id="element.fileName" :key="element.fileName">
                   <td class="grip"><i class="fas fa-grip-lines"></i></td>
                   <td class="thumb">
                      <router-link :to="imageViewerURL(index)"><img :src="element.thumbURL"/></router-link>
@@ -82,16 +85,32 @@
                         <span v-if="element.title">{{element.title}}</span>
                         <span v-else class="undefined">Undefined</span>
                      </span>
-                     <TitleInput v-else @canceled="cancelEdit" @accepted="submitEdit(element)" v-model="newTitle"  @blur.stop.prevent="cancelEdit"/>
+                     <TitleInput v-else @canceled="cancelEdit" @accepted="submitEdit(element)" v-model="newValue"  @blur.stop.prevent="cancelEdit"/>
                   </td>
                   <td @click="editMetadata(element, 'description')" class="editable nowrap" >
                      <span  tabindex="0" @focus.stop.prevent="editMetadata(element, 'description')" v-if="!isEditing(element, 'description')" class="editable">
                         <span v-if="element.description">{{element.description}}</span>
                         <span v-else class="undefined">Undefined</span>
                      </span>
-                     <input v-else id="edit-desc" type="text" v-model="newDescription"
+                     <input v-else id="edit-desc" type="text" v-model="newValue"
                         @keyup.enter="submitEdit(element)"  @keyup.esc="cancelEdit"  @blur.stop.prevent="cancelEdit"/>
                   </td>
+                  <template v-if="isManuscript">
+                     <td @click="editMetadata(element, 'box')" class="editable nowrap" tabindex="0" @focus.stop.prevent="editMetadata(element, 'box')" >
+                        <span v-if="!isEditing(element, 'box')"  class="editable">
+                           <span v-if="element.box">{{element.box}}</span>
+                           <span v-else class="undefined">Undefined</span>
+                        </span>
+                        <input v-else id="edit-box" type="text" v-model="newValue" @keyup.enter="submitEdit(element)"  @keyup.esc="cancelEdit"  @blur.stop.prevent="cancelEdit"/>
+                     </td>
+                     <td @click="editMetadata(element, 'folder')" class="editable nowrap" tabindex="0" @focus.stop.prevent="editMetadata(element, 'folder')" >
+                        <span v-if="!isEditing(element, 'folder')"  class="editable">
+                           <span v-if="element.folder">{{element.folder}}</span>
+                           <span v-else class="undefined">Undefined</span>
+                        </span>
+                        <input v-else id="edit-folder" type="text" v-model="newValue" @keyup.enter="submitEdit(element)"  @keyup.esc="cancelEdit"  @blur.stop.prevent="cancelEdit"/>
+                     </td>
+                  </template>
                   <td>
                      <span v-if="element.componentID">{{element.componentID}}</span>
                      <span v-else>N/A</span>
@@ -99,8 +118,6 @@
                   <td class="nowrap">{{element.width}} x {{element.height}}</td>
                   <td>{{element.resolution}}</td>
                   <td class="nowrap">{{element.colorProfile}}</td>
-                  <td>{{element.path}}</td>
-
                </tr>
             </template>
          </draggable>
@@ -108,11 +125,7 @@
 
       <draggable v-else v-model="unitStore.pageMasterFiles" @start="dragStarted" class="gallery" :class="unitStore.viewMode" item-key="fileName">
          <template #item="{element, index}">
-            <div class="card" :id="element.fileName"
-               @mousedown="fileSelected(element.fileName, $event)"
-               @contextmenu.prevent="showContextMenu(element.fileName, $event)"
-
-            >
+            <div class="card" :id="element.fileName">
                <router-link :to="imageViewerURL(index)">
                   <img :src="element.mediumURL" v-if="unitStore.viewMode == 'medium'"/>
                   <img :src="element.largeURL" v-if="unitStore.viewMode == 'large'"/>
@@ -135,7 +148,7 @@
                      <label>Title</label>
                      <div tabindex="0" @focus.stop.prevent="editMetadata(element, 'title')" class="data editable" @click="editMetadata(element, 'title')">
                         <template v-if="isEditing(element, 'title')">
-                           <TitleInput  @canceled="cancelEdit" @accepted="submitEdit(element)" v-model="newTitle" @blur.stop.prevent="cancelEdit"/>
+                           <TitleInput  @canceled="cancelEdit" @accepted="submitEdit(element)" v-model="newValue" @blur.stop.prevent="cancelEdit"/>
                         </template>
                         <template v-else>
                            <template v-if="element.title">{{element.title}}</template>
@@ -147,13 +160,21 @@
                      <label>Caption</label>
                      <div class="data editable" tabindex="0" @focus.stop.prevent="editMetadata(element, 'description')"  @click="editMetadata(element, 'description')">
                         <template v-if="isEditing(element, 'description')">
-                           <input id="edit-desc" type="text" v-model="newDescription" @keyup.enter="submitEdit(element)" @keyup.esc="cancelEdit" @blur.stop.prevent="cancelEdit"/>
+                           <input id="edit-desc" type="text" v-model="newValue" @keyup.enter="submitEdit(element)" @keyup.esc="cancelEdit" @blur.stop.prevent="cancelEdit"/>
                         </template>
                         <template v-else>
                            <template v-if="element.description">{{element.description}}</template>
                            <span v-else class="undefined">Undefined</span>
                         </template>
                      </div>
+                  </div>
+                  <div class="row" v-if="element.box">
+                     <label>Box</label>
+                     <div class="data">{{element.box}}</div>
+                  </div>
+                  <div class="row" v-if="element.folder">
+                     <label>Folder</label>
+                     <div class="data">{{element.folder}}</div>
                   </div>
                   <div class="row" v-if="element.componentID">
                      <label>Component</label>
@@ -163,27 +184,6 @@
             </div>
          </template>
       </draggable>
-
-      <div class="popupmenu" id="popupmenu" v-show="menuVisible">
-         <ul @keydown.esc="clearState">
-            <li tabindex="0" @click.stop.prevent="setPageNumbersClicked" class="menuitem"
-               @keydown.exact.shift.tab.stop.prevent="focusLastmenu()"
-            >
-               Set Page Numbers
-            </li>
-            <li tabindex="0" @click.stop.prevent="componentLinkClicked" class="menuitem">
-               Component Link
-            </li>
-            <li tabindex="0" class="menuitem">
-               <ConfirmModal label="Delete Image" type="text" @confirmed="deleteSelected" @closed="menuVisible=false" >
-                  <div>Delete image {{rightClickedMF}}? This cannot be reversed.</div>
-               </ConfirmModal>
-            </li>
-            <li tabindex="0" @click="menuVisible = false" class="menuitem" @keydown.exact.tab.stop.prevent="focusFirstmenu()">
-               Close Menu
-            </li>
-         </ul>
-      </div>
    </div>
 </template>
 
@@ -209,11 +209,8 @@ const router = useRouter()
 
 // local data
 const editMF = ref(null)
-const rightClickedMF = ref("")
-const newTitle = ref("")
-const newDescription = ref("")
+const newValue = ref("")
 const editField = ref("")
-const menuVisible = ref(false)
 const showError = ref("")
 
 // computed
@@ -230,6 +227,16 @@ const callNumber = computed(() => {
       t = "Unknown"
    }
    return t
+})
+const workingDir = computed(()=>{
+   let unitDir =  paddedUnit(projectStore.currProject.unit.id)
+   if (projectStore.currProject.currentStep.name == "Process" || projectStore.currProject.currentStep.name == "Scan") {
+      return `${systemStore.scanDir}/${unitDir}`
+   }
+   return `${systemStore.qaDir}/${unitDir}`
+})
+const isManuscript = computed(() => {
+   return projectStore.currProject.workflow && projectStore.currProject.workflow.name=='Manuscript'
 })
 
 function paddedUnit() {
@@ -282,68 +289,14 @@ function hoverExit() {
 function hoverEnter(f) {
    showError.value = f
 }
-function clearState() {
-   rightClickedMF.value = ""
-   menuVisible.value = false
-   unitStore.rangeStartIdx = -1
-   unitStore.rangeEndIdx = -1
-}
-function deleteSelected() {
-   unitStore.deleteMasterFile(rightClickedMF.value)
-}
-function showContextMenu(fileName, e) {
-   rightClickedMF.value = fileName
-   let m = document.getElementById("popupmenu")
-   m.style.left = e.pageX+"px"
-   m.style.top = e.pageY+"px"
-   menuVisible.value =  true
-   nextTick( () => {
-      let mW = m.offsetWidth
-      let mH = m.offsetHeight
-      if ( mW +  e.pageX > window.innerWidth) {
-         m.style.left = (e.pageX - mW) + "px";
-      }
-      if ( mH +  e.pageY > window.innerHeight) {
-         m.style.top = (e.pageY - mH) + "px";
-      }
-      let items = document.getElementsByClassName("menuitem")
-      if (items.length > 0) {
-         items[0].focus()
-      }
-   })
-}
-function focusLastmenu() {
-   let items = document.getElementsByClassName("menuitem")
-   if (items.length > 0) {
-      items[items.length-1].focus()
-   }
-}
-function focusFirstmenu() {
-   let items = document.getElementsByClassName("menuitem")
-   if (items.length > 0) {
-      items[0].focus()
-   }
-}
 function renameAll() {
    unitStore.renameAll()
 }
 function componentLinkClicked() {
    unitStore.editMode = "component"
-   menuVisible.value =  false
-   nextTick( () => {
-      let p = document.getElementById("component-id")
-      p.focus()
-      p.select()
-   })
 }
 function setPageNumbersClicked() {
    unitStore.editMode = "page"
-   menuVisible.value =  false
-   nextTick( () => {
-      let p = document.getElementById("start-page-num")
-      p.focus()
-      p.select()
-   })
 }
 function dragStarted() {
    let eles=document.getElementsByClassName("selected")
@@ -351,61 +304,36 @@ function dragStarted() {
       eles[0].classList.remove('selected')
    }
 }
-function fileSelected(fn, e) {
-   menuVisible.value = false
-   if ( e.ctrlKey ) return
-
-   if ( e.shiftKey ) {
-      // start of by considering this the end of a range
-      unitStore.rangeEndIdx = unitStore.masterFiles.findIndex( mf => mf.fileName == fn)
-      if ( unitStore.rangeStartIdx > unitStore.rangeEndIdx ) {
-         // if not, swap indexes
-         let t = unitStore.rangeEndIdx
-         unitStore.rangeEndIdx =  unitStore.rangeStartIdx
-         unitStore.rangeStartIdx = t
-      }
-
-      let eles=document.getElementsByClassName("selected")
-      while (eles[0]) {
-         eles[0].classList.remove('selected')
-      }
-
-      for (let i=unitStore.rangeStartIdx; i<=unitStore.rangeEndIdx; i++) {
-         let tgt = unitStore.masterFiles[i].fileName
-         let tgtEle = document.getElementById(tgt)
-         tgtEle.classList.add("selected")
-      }
-   } else {
-      // grab selected element and set a flag if it is not currently selected
-      unitStore.rangeStartIdx = -1
-      unitStore.rangeEndIdx = -1
-      let tgtEle = document.getElementById(fn)
-      let selectIt = (tgtEle.classList.contains("selected") == false)
-
-      // clear all selected classes
-      let eles=document.getElementsByClassName("selected")
-      while (eles[0]) {
-         eles[0].classList.remove('selected')
-      }
-
-      // if the just-clicked element needs to be selected, select it now
-      if (selectIt) {
-         document.getElementById(fn).classList.add("selected")
-         unitStore.rangeStartIdx =  unitStore.masterFiles.findIndex( mf => mf.fileName == fn)
-      }
-   }
-}
-function isEditing(mf, field = "all") {
+function isEditing(mf, field) {
    return editMF.value == mf && editField.value == field
 }
 function editMetadata(mf, field) {
    editMF.value = mf
-   newTitle.value = mf.title
-   newDescription.value = mf.description
    editField.value = field
+   if (field == "title") {
+      newValue.value = mf.title
+   }
+   if (field == "description") {
+      newValue.value = mf.description
+   }
+   if (field == "box") {
+      newValue.value = mf.box
+   }
+   if (field == "folder") {
+      newValue.value = mf.folder
+   }
    nextTick( ()=> {
+      let ele = null
       if ( field == "description") {
-         let ele = document.getElementById("edit-desc")
+         ele = document.getElementById("edit-desc")
+      }
+      if ( field == "box") {
+         ele = document.getElementById("edit-box")
+      }
+      if ( field == "folder") {
+         ele = document.getElementById("edit-folder")
+      }
+      if (ele) {
          ele.focus()
          ele.select()
       }
@@ -415,9 +343,7 @@ function cancelEdit() {
    editMF.value = null
 }
 async function submitEdit(mf) {
-   await unitStore.updateMasterFileMetadata(
-      { file: mf.path, title: newTitle.value, description: newDescription.value,
-        status: mf.status, componentID: mf.componentID } )
+   await unitStore.updateMasterFileMetadata( mf.fileName, editField.value, newValue.value )
    editMF.value = null
 }
 
@@ -458,7 +384,8 @@ onBeforeMount( async () => {
       margin-bottom: 15px;
       position: relative;
       .small {
-         font-size: 0.8em;
+         font-size: 0.85em;
+         margin-bottom: 5px;
       }
       .topleft {
          position: absolute;
@@ -478,8 +405,13 @@ onBeforeMount( async () => {
          }
       }
       h3 {
-          margin: 5px 0;
+          margin: 5px 0 25px 0;
           font-weight: normal;
+          .divider {
+            border-bottom: 1px solid var(--uvalib-grey-light);
+            margin: 10px auto 20px auto;
+            width: 50%;
+          }
       }
       a {
          display: inline-block;
@@ -499,7 +431,7 @@ onBeforeMount( async () => {
       .back {
          position: absolute;
          left: 10px;
-         bottom: 0;
+         bottom: -15px;
          .link {
             font-weight: normal;
             text-decoration: none;

@@ -69,7 +69,7 @@ function hideMenu() {
    menuOpen.value = false
 }
 async function selectTag( tag ) {
-   await unitStore.setTag({file: props.masterFile.path, tag: tag})
+   await unitStore.updateMasterFileMetadata( props.masterFile.fileName, "tag", tag )
    hideMenu()
 }
 </script>

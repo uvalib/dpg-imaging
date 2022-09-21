@@ -184,6 +184,7 @@ export const useUnitStore = defineStore('unit', {
 
          const system = useSystemStore()
          system.working = true
+         console.log("getMetadataPage")
          let mdURL = `/api/units/${ this.currUnit}/masterfiles/metadata?page=${this.currPage}&pagesize=${this.pageSize}`
          return axios.get(mdURL).then(response => {
             system.working = false
@@ -198,6 +199,8 @@ export const useUnitStore = defineStore('unit', {
                mf.width = md.width
                mf.height = md.height
                mf.status = md.status
+               mf.box = md.box
+               mf.folder = md.folder
                mf.componentID = md.componentID
             })
             this.pageMasterFiles = this.masterFiles.slice(startIdx, startIdx+this.pageSize)
@@ -262,63 +265,30 @@ export const useUnitStore = defineStore('unit', {
          })
       },
 
-      async updateMasterFileMetadata({file, title, description, status, componentID}) {
+      async updateMasterFileMetadata(file, field, value) {
          const system = useSystemStore()
          system.working = true
-         let cleanTitle = title
-         if (cleanTitle) {
-            cleanTitle = cleanTitle.trim()
-         } else {
-            cleanTitle = ""
+         if (field == "tag" && value == "none") {
+            value = ""
          }
-         let cleanDesc = description
-         if (cleanDesc) {
-            cleanDesc = cleanDesc.trim()
-         } else {
-            cleanDesc = ""
-         }
-         let data = [{file: file, title: cleanTitle, description: cleanDesc, status: status, componentID: componentID}]
-         if (data)
-         return axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
-            this.applyMasterFileMetadataUpdate(data)
+         return axios.post(`/api/units/${this.currUnit}/${file}/update?field=${field}&value=${encodeURIComponent(value.trim())}`).then( resp => {
+            let tgtMF = this.masterFiles.find( mf => mf.fileName == file)
+            if (field == "title") {
+               tgtMF.title = value
+            } else if (field == "description") {
+               tgtMF.description = value
+            } else if (field == "box") {
+               tgtMF.box = value
+            } else if (field == "folder") {
+               tgtMF.folder = value
+            } else if (field == "tag") {
+               tgtMF.status = value
+            }
             system.working = false
             if (resp.data.success == false) {
                system.setError("Unable to update image metadata")
                this.setMasterFileProblems(resp.data.problems)
             }
-         }).catch( e => {
-            system.setError(e)
-         })
-      },
-
-      async setTag({file, tag}) {
-         const system = useSystemStore()
-         system.working = true
-         let mf = this.masterFiles.find( mf => mf.path == file)
-         let status = tag
-         if (tag == "none") {
-            status = ""
-         }
-         let data = [{file: file, title: mf.title.trim(), description: mf.description.trim(), status: status}]
-         return axios.post(`/api/units/${this.currUnit}/update?field=tag`, data).then( resp => {
-            this.applyMasterFileMetadataUpdate(data)
-            system.working = false
-            if (resp.data.success == false) {
-               system.setError("Unable to set tag on image")
-               this.setMasterFileProblems(resp.data.problems)
-            }
-         }).catch( e => {
-            system.setError(e)
-         })
-      },
-
-      deleteMasterFile(mf) {
-         const system = useSystemStore()
-         system.working = true
-         axios.delete(`/api/units/${this.currUnit}/${mf}`).then(() => {
-            this.removeMasterFile(mf)
-            system.working = false
-            window.location.reload()
          }).catch( e => {
             system.setError(e)
          })
