@@ -41,11 +41,17 @@
                <code>{{paddedUnit()}}_0001.tif - {{paddedUnit()}}_nnnn.tif</code>
             </ConfirmModal>
             <DPGButton id="set-titles" @click="setPageNumbersClicked" class="button right-pad">Set Page Numbers</DPGButton>
+            <template v-if="isManuscript">
+               <DPGButton id="set-boxes" @click="boxClicked" class="button right-pad">Set Box</DPGButton>
+               <DPGButton id="set-folders" @click="folderClicked" class="button right-pad">Set Folder</DPGButton>
+            </template>
             <DPGButton id="set-titles" @click="componentLinkClicked" class="button">Component Link</DPGButton>
          </span>
       </div>
       <PageNumPanel v-if="unitStore.editMode == 'page'" />
       <ComponentPanel v-if="unitStore.editMode == 'component'" />
+      <BoxPanel v-if="unitStore.editMode == 'box'" />
+      <FolderPanel v-if="unitStore.editMode == 'folder'" />
       <table class="unit-list" v-if="unitStore.viewMode == 'list'">
          <thead>
             <tr>
@@ -96,13 +102,10 @@
                         @keyup.enter="submitEdit(element)"  @keyup.esc="cancelEdit"  @blur.stop.prevent="cancelEdit"/>
                   </td>
                   <template v-if="isManuscript">
-                     <td @click="editMetadata(element, 'box')" class="editable nowrap" tabindex="0" @focus.stop.prevent="editMetadata(element, 'box')" >
-                        <span v-if="!isEditing(element, 'box')"  class="editable">
-                           <span v-if="element.box">{{element.box}}</span>
-                           <span v-else class="undefined">Undefined</span>
-                        </span>
-                        <input v-else id="edit-box" type="text" v-model="newValue" @keyup.enter="submitEdit(element)"  @keyup.esc="cancelEdit"  @blur.stop.prevent="cancelEdit"/>
-                     </td>
+                     <td>
+                     <span v-if="element.box">{{element.box}}</span>
+                     <span v-else class="undefined">Undefined</span>
+                  </td>
                      <td @click="editMetadata(element, 'folder')" class="editable nowrap" tabindex="0" @focus.stop.prevent="editMetadata(element, 'folder')" >
                         <span v-if="!isEditing(element, 'folder')"  class="editable">
                            <span v-if="element.folder">{{element.folder}}</span>
@@ -189,6 +192,8 @@
 
 <script setup>
 import ComponentPanel from '../components/ComponentPanel.vue'
+import BoxPanel from '../components/BoxPanel.vue'
+import FolderPanel from '../components/FolderPanel.vue'
 import PageNumPanel from '../components/PageNumPanel.vue'
 import TagPicker from '../components/TagPicker.vue'
 import TitleInput from '../components/TitleInput.vue'
@@ -291,6 +296,12 @@ function hoverEnter(f) {
 }
 function renameAll() {
    unitStore.renameAll()
+}
+function boxClicked() {
+   unitStore.editMode = "box"
+}
+function folderClicked() {
+   unitStore.editMode = "folder"
 }
 function componentLinkClicked() {
    unitStore.editMode = "component"

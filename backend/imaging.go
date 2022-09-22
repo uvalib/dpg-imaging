@@ -146,26 +146,16 @@ func (svc *serviceContext) updateImageMetadata(c *gin.Context) {
 	updateField := c.Query("field")
 	updateValue := c.Query("value")
 	log.Printf("INFO: update %s/%s %s to %s", unitDir, fileName, updateField, updateValue)
-	var tgtUpdate *exifMapping
-	fields := []exifMapping{{FieldName: "title", ExifTag: "iptc:headline"}, {FieldName: "description", ExifTag: "iptc:caption-abstract"},
-		{FieldName: "box", ExifTag: "iptc:Keywords"}, {FieldName: "folder", ExifTag: "iptc:ContentLocationName"},
-		{FieldName: "tag", ExifTag: "iptc:ClassifyState"},
-	}
-	for _, fv := range fields {
-		if updateField == fv.FieldName {
-			tgtUpdate = &fv
-			break
-		}
-	}
 
-	if tgtUpdate == nil {
-		log.Printf("ERROR: invalid updated field %s", updateField)
+	exifTag := getExifTag(updateField)
+	if exifTag == "" {
+		log.Printf("ERROR: invalid update field %s", updateField)
 		c.String(http.StatusBadRequest, fmt.Sprintf("%s is not a valid update field", updateField))
 		return
 	}
 
 	tgtFile := path.Join(unitDir, fileName)
-	cmd := []string{fmt.Sprintf("-%s=%s", tgtUpdate.ExifTag, updateValue), tgtFile}
+	cmd := []string{fmt.Sprintf("-%s=%s", exifTag, updateValue), tgtFile}
 	log.Printf("INFO: update command %v", cmd)
 	_, err := exec.Command("exiftool", cmd...).Output()
 	if err != nil {
@@ -176,6 +166,23 @@ func (svc *serviceContext) updateImageMetadata(c *gin.Context) {
 	cleanupExifToolDups(tgtFile)
 
 	c.String(http.StatusOK, "ok")
+}
+
+func getExifTag(fieldName string) string {
+	log.Printf("INFO: lookup exif tag for field %s", fieldName)
+	fields := []exifMapping{{FieldName: "title", ExifTag: "iptc:headline"}, {FieldName: "description", ExifTag: "iptc:caption-abstract"},
+		{FieldName: "box", ExifTag: "iptc:Keywords"}, {FieldName: "folder", ExifTag: "iptc:ContentLocationName"},
+		{FieldName: "tag", ExifTag: "iptc:ClassifyState"}, {FieldName: "component", ExifTag: "iptc:OwnerID"},
+	}
+	exifTag := ""
+	for _, fv := range fields {
+		if fieldName == fv.FieldName {
+			exifTag = fv.ExifTag
+			break
+		}
+	}
+	log.Printf("INFO: field %s matches exif tag  %s", fieldName, exifTag)
+	return exifTag
 }
 
 func cleanupExifToolDups(fullPath string) {
@@ -211,12 +218,8 @@ func (svc *serviceContext) updateMetadataBatch(c *gin.Context) {
 	outstandingRequests := 0
 	for _, change := range mdPost {
 		cmd := make([]string, 0)
-		if change.Field == "title" {
-			cmd = append(cmd, fmt.Sprintf("-iptc:headline=%s", change.Value))
-		}
-		if change.Field == "component" {
-			cmd = append(cmd, fmt.Sprintf("-iptc:OwnerID=%s", change.Value))
-		}
+		exifTag := getExifTag(change.Field)
+		cmd = append(cmd, fmt.Sprintf("-%s=%s", exifTag, change.Value))
 		cmd = append(cmd, change.File)
 		fileCommands[change.File] = cmd
 		pendingFilesCnt++
@@ -416,7 +419,7 @@ func batchUpdateExifData(fileCommands map[string][]string, channel chan []update
 	for tgtFile, command := range fileCommands {
 		_, err := exec.Command("exiftool", command...).Output()
 		if err != nil {
-			log.Printf("ERROR: unable to update %s metadata with [exiftool %v]: %s", tgtFile, command, err.Error())
+			log.Printf("ERROR: unable to update %s metadata with %v: %s", tgtFile, command, err.Error())
 			errors = append(errors, updateProblem{File: path.Base(tgtFile), Problem: err.Error()})
 		} else {
 			cleanupExifToolDups(tgtFile)

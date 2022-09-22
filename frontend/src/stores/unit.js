@@ -271,6 +271,33 @@ export const useUnitStore = defineStore('unit', {
          })
       },
 
+      async setLocation(field, value) {
+         const system = useSystemStore()
+         system.working = true
+         let data = []
+         for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+            let mf = this.masterFiles[i]
+            data.push( {file: mf.path, field: field, value: value})
+         }
+         return axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
+            for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+               let update = data.shift()
+               if (field == "folder") {
+                  this.masterFiles[i].folder = update.value
+               } else {
+                  this.masterFiles[i].box = update.value
+               }
+            }
+            system.working = false
+            if (resp.data.success == false) {
+               system.setError("Faolder assignment failed for some images")
+               this.setMasterFileProblems(resp.data.problems)
+            }
+         }).catch( e => {
+            system.setError(e)
+         })
+      },
+
       async updateMasterFileMetadata(file, field, value) {
          const system = useSystemStore()
          system.working = true
