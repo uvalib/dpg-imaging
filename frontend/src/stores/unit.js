@@ -210,7 +210,7 @@ export const useUnitStore = defineStore('unit', {
          })
       },
 
-      updatePageNumbers( {start, verso} ) {
+      updatePageNumbers( start, verso ) {
          const system = useSystemStore()
          system.working = true
          let data = []
@@ -229,12 +229,15 @@ export const useUnitStore = defineStore('unit', {
             } else {
                page+=1
             }
-            data.push( {file: mf.path, title: title, description: mf.description, status: mf.status, componentID: mf.componentID})
+            data.push( {file: mf.path, field: "title", value: title})
             pageCnt+=1
          }
 
-         axios.post(`/api/units/${this.currUnit}/update?field=title`, data).then( resp => {
-            this.applyMasterFileMetadataUpdate(data)
+         axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
+            for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+               let update = data.shift()
+               this.masterFiles[i].title = update.value
+            }
             system.working = false
             if (resp.data.success == false) {
                system.setError("Some images were not renumbered")
@@ -251,10 +254,13 @@ export const useUnitStore = defineStore('unit', {
          let data = []
          for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
             let mf = this.masterFiles[i]
-            data.push( {file: mf.path, title: mf.title.trim(), description: mf.description.trim(), status: mf.status, componentID: componentID})
+            data.push( {file: mf.path, field: "component", value: componentID})
          }
-         return axios.post(`/api/units/${this.currUnit}/update?field=component`, data).then( resp => {
-            this.applyMasterFileMetadataUpdate(data)
+         return axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
+            for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+               let update = data.shift()
+               this.masterFiles[i].componentID = update.value
+            }
             system.working = false
             if (resp.data.success == false) {
                system.setError("Some images could not be linked with component "+componentID)

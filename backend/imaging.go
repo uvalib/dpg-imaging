@@ -188,27 +188,11 @@ func cleanupExifToolDups(fullPath string) {
 func (svc *serviceContext) updateMetadataBatch(c *gin.Context) {
 	uid := padLeft(c.Param("uid"), 9)
 	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
-	updateField := c.Query("field")
-	if updateField == "" {
-		updateField = "all"
-		log.Printf("INFO: update master file metadata in %s", unitDir)
-	} else {
-		if !(updateField == "title" || updateField == "tag" || updateField == "component") {
-			log.Printf("ERROR: unsupported update field %s", updateField)
-			c.String(http.StatusBadRequest, fmt.Sprintf("%s is not a valid update field", updateField))
-			return
-		}
-		log.Printf("INFO: update master file %s metadata in %s", updateField, unitDir)
-	}
 
 	var mdPost []struct {
-		File        string `json:"file"`
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		Status      string `json:"status"`
-		ComponentID string `json:"componentID"`
-		Box         string `json:"box"`
-		Folder      string `json:"folder"`
+		File  string `json:"file"`
+		Field string `json:"field"`
+		Value string `json:"value"`
 	}
 
 	qpErr := c.ShouldBindJSON(&mdPost)
@@ -217,6 +201,7 @@ func (svc *serviceContext) updateMetadataBatch(c *gin.Context) {
 		c.String(http.StatusBadRequest, "Invalid request")
 		return
 	}
+	log.Printf("INFO: batch master file metadata in %s", unitDir)
 
 	start := time.Now()
 	pendingFilesCnt := 0
@@ -226,17 +211,11 @@ func (svc *serviceContext) updateMetadataBatch(c *gin.Context) {
 	outstandingRequests := 0
 	for _, change := range mdPost {
 		cmd := make([]string, 0)
-		if updateField == "title" || updateField == "all" {
-			cmd = append(cmd, fmt.Sprintf("-iptc:headline=%s", change.Title))
+		if change.Field == "title" {
+			cmd = append(cmd, fmt.Sprintf("-iptc:headline=%s", change.Value))
 		}
-		if updateField == "all" {
-			cmd = append(cmd, fmt.Sprintf("-iptc:caption-abstract=%s", change.Description))
-		}
-		if updateField == "tag" || updateField == "all" {
-			cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%s", change.Status))
-		}
-		if updateField == "component" || updateField == "all" {
-			cmd = append(cmd, fmt.Sprintf("-iptc:OwnerID=%s", change.ComponentID))
+		if change.Field == "component" {
+			cmd = append(cmd, fmt.Sprintf("-iptc:OwnerID=%s", change.Value))
 		}
 		cmd = append(cmd, change.File)
 		fileCommands[change.File] = cmd
@@ -525,7 +504,6 @@ func getExifData(cmdArray []string) []masterFileMetadata {
 				mdRec.Width = md.Width
 				mdRec.Height = md.Height
 				mdRec.Status = md.ClassifyState
-				log.Printf("%s, %s", md.Keywords, md.ContentLocationName)
 				mdRec.Box = md.Keywords
 				mdRec.Folder = md.ContentLocationName
 

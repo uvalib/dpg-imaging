@@ -60,7 +60,7 @@ function okPagesClicked() {
       systemStore.error = "An even number of pages is required for unnumbered verso"
       return
    }
-   unitStore.updatePageNumbers({start: startPage.value, verso: !unnumberVerso.value})
+   unitStore.updatePageNumbers(startPage.value, !unnumberVerso.value)
    unitStore.editMode = ""
 }
 function selectAllClicked() {
