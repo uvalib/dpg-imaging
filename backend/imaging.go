@@ -338,7 +338,6 @@ func (svc *serviceContext) renameFiles(c *gin.Context) {
 	c.String(http.StatusOK, "ok")
 }
 
-// FIXME this also needs to preserve box and folder info
 func (svc *serviceContext) rotateFile(c *gin.Context) {
 	unit := padLeft(c.Param("uid"), 9)
 	file := c.Param("file")
@@ -361,7 +360,8 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 	}
 
 	// grab the currrent data inthe exif headers ad the rotate command wipes it all
-	cmdArray := []string{"-json", "-iptc:OwnerID", "-iptc:headline", "-iptc:caption-abstract", "-iptc:ClassifyState", fullPath}
+	cmdArray := []string{"-json", "-iptc:OwnerID", "-iptc:headline", "-iptc:caption-abstract",
+		"-iptc:ClassifyState", "-iptc:ContentLocationName", "-iptc:Keywords", fullPath}
 	stdout, err := exec.Command("exiftool", cmdArray...).Output()
 	if err != nil {
 		log.Printf("ERROR: unable to get %s metadata before rotation: %s", file, err.Error())
@@ -397,6 +397,8 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 		cmd = append(cmd, fmt.Sprintf("-iptc:caption-abstract=%v", origMD[0].Description))
 	}
 	cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%v", origMD[0].ClassifyState))
+	cmd = append(cmd, fmt.Sprintf("-iptc:ContentLocationName=%v", origMD[0].ContentLocationName))
+	cmd = append(cmd, fmt.Sprintf("-iptc:Keywords=%v", origMD[0].Keywords))
 	cmd = append(cmd, fullPath)
 	_, err = exec.Command("exiftool", cmd...).Output()
 	if err != nil {
