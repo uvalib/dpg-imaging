@@ -26,24 +26,19 @@ type exifMapping struct {
 }
 
 type exifData struct {
-	SourceFile          string      `json:"SourceFile"`
-	ColorProfile        string      `json:"ProfileDescription"`
-	FileSize            string      `json:"FileSize"`
-	FileType            string      `json:"FileType"`
-	Resolution          interface{} `json:"XResolution"`
-	Title               interface{} `json:"Headline"`
-	Description         interface{} `json:"Caption-Abstract"`
-	Width               int         `json:"ImageWidth"`
-	Height              int         `json:"ImageHeight"`
-	ClassifyState       string      `json:"ClassifyState"`       // tag
-	Keywords            string      `json:"Keywords"`            // box
-	ContentLocationName string      `json:"ContentLocationName"` // folder
-	OwnerID             interface{} `json:"OwnerID"`             // component
-}
-
-type exifTitle struct {
-	SourceFile string      `json:"SourceFile"`
-	Headline   interface{} `json:"Headline"`
+	SourceFile    string      `json:"SourceFile"`
+	ColorProfile  string      `json:"ProfileDescription"`
+	FileSize      string      `json:"FileSize"`
+	FileType      string      `json:"FileType"`
+	Resolution    interface{} `json:"XResolution"`
+	Title         interface{} `json:"Headline"`
+	Description   interface{} `json:"Caption-Abstract"`
+	Width         int         `json:"ImageWidth"`
+	Height        int         `json:"ImageHeight"`
+	ClassifyState string      `json:"ClassifyState"`       // tag
+	Box           string      `json:"Keywords"`            // box
+	Folder        string      `json:"ContentLocationName"` // folder
+	Component     interface{} `json:"OwnerID"`             // component
 }
 
 type updateProblem struct {
@@ -51,9 +46,10 @@ type updateProblem struct {
 	Problem string `json:"problem"`
 }
 
-type titleCheck struct {
-	File  string `json:"file"`
-	Valid bool   `json:"valid"`
+type qaCheck struct {
+	File   string   `json:"file"`
+	Valid  bool     `json:"valid"`
+	Errors []string `json:"errors"`
 }
 
 func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse, error) {
@@ -390,8 +386,8 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 
 	log.Printf("INFO: restoring metadata after rotaion of %s", file)
 	cmd = make([]string, 0)
-	if origMD[0].OwnerID != nil {
-		cmd = append(cmd, fmt.Sprintf("-iptc:OwnerID=%v", origMD[0].OwnerID))
+	if origMD[0].Component != nil {
+		cmd = append(cmd, fmt.Sprintf("-iptc:OwnerID=%v", origMD[0].Component))
 	}
 	if origMD[0].Title != nil {
 		cmd = append(cmd, fmt.Sprintf("-iptc:headline=%v", origMD[0].Title))
@@ -400,8 +396,8 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 		cmd = append(cmd, fmt.Sprintf("-iptc:caption-abstract=%v", origMD[0].Description))
 	}
 	cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%v", origMD[0].ClassifyState))
-	cmd = append(cmd, fmt.Sprintf("-iptc:ContentLocationName=%v", origMD[0].ContentLocationName))
-	cmd = append(cmd, fmt.Sprintf("-iptc:Keywords=%v", origMD[0].Keywords))
+	cmd = append(cmd, fmt.Sprintf("-iptc:ContentLocationName=%v", origMD[0].Folder))
+	cmd = append(cmd, fmt.Sprintf("-iptc:Keywords=%v", origMD[0].Box))
 	cmd = append(cmd, fullPath)
 	_, err = exec.Command("exiftool", cmd...).Output()
 	if err != nil {
@@ -430,31 +426,46 @@ func batchUpdateExifData(fileCommands map[string][]string, channel chan []update
 	channel <- errors
 }
 
-// FIXME this only checks Title. It also needs to check box (Keywords) and folder (ContentLocationName)
-func checkExifHeaders(cmdArray []string, channel chan []titleCheck) {
-	out := make([]titleCheck, 0)
-	stdout, err := exec.Command("exiftool", cmdArray...).Output()
+func checkExifHeaders(cmdArray []string, checkLocation bool, channel chan []qaCheck) {
+	out := make([]qaCheck, 0)
+	cmd := exec.Command("exiftool", cmdArray...)
+	stdout, err := cmd.Output()
 	if err != nil {
-		log.Printf("ERROR: unable to get title metadata: %s", err.Error())
+		log.Printf("ERROR: unable to get qa metadata: %s", err.Error())
 		channel <- out
 	}
-	var parsed []exifTitle
+
+	var parsed []exifData
 	err = json.Unmarshal(stdout, &parsed)
 	if err != nil {
-		log.Printf("ERROR: unable to parse title metadata: %s", err.Error())
+		log.Printf("ERROR: unable to parse qa metadata: %s", err.Error())
 		channel <- out
 	}
+
 	for _, md := range parsed {
-		valid := false
-		if md.Headline != nil {
-			check := fmt.Sprintf("%v", md.Headline)
-			if check != "" {
-				valid = true
-			} else {
-				log.Printf("INFO: %s is missing a title", md.SourceFile)
+		errors := make([]string, 0)
+
+		title := ""
+		if md.Title != nil {
+			title = fmt.Sprintf("%v", md.Title)
+		}
+		if title == "" {
+			log.Printf("ERROR: %s is missing a title", md.SourceFile)
+			errors = append(errors, "Missing title metadata")
+		}
+
+		if checkLocation {
+			if md.Box == "" {
+				log.Printf("ERROR: %s is missing a box", md.SourceFile)
+				errors = append(errors, "Missing box metadata")
+			}
+			if md.Folder == "" {
+				log.Printf("ERROR: %s is missing a folder", md.SourceFile)
+				errors = append(errors, "Missing folder metadata")
 			}
 		}
-		tc := titleCheck{File: md.SourceFile, Valid: valid}
+
+		tc := qaCheck{File: path.Base(md.SourceFile), Valid: len(errors) == 0, Errors: errors}
 		out = append(out, tc)
 	}
 	channel <- out
@@ -488,8 +499,8 @@ func getExifData(cmdArray []string) []masterFileMetadata {
 				if md.Description != nil {
 					mdRec.Description = fmt.Sprintf("%v", md.Description)
 				}
-				if md.OwnerID != nil {
-					mdRec.ComponentID = fmt.Sprintf("%v", md.OwnerID)
+				if md.Component != nil {
+					mdRec.ComponentID = fmt.Sprintf("%v", md.Component)
 				}
 				if md.Resolution != nil {
 					valType := fmt.Sprintf("%T", md.Resolution)
@@ -509,8 +520,8 @@ func getExifData(cmdArray []string) []masterFileMetadata {
 				mdRec.Width = md.Width
 				mdRec.Height = md.Height
 				mdRec.Status = md.ClassifyState
-				mdRec.Box = md.Keywords
-				mdRec.Folder = md.ContentLocationName
+				mdRec.Box = md.Box
+				mdRec.Folder = md.Folder
 
 				out = append(out, mdRec)
 			}
@@ -528,7 +539,7 @@ func baseExifCmd() []string {
 	return out
 }
 
-func titleExifCmd() []string {
-	out := []string{"-json", "-iptc:headline"}
+func qaExifCmd() []string {
+	out := []string{"-json", "-iptc:headline", "-iptc:ContentLocationName", "-iptc:Keywords"}
 	return out
 }
