@@ -69,12 +69,13 @@
                <th>Size</th>
                <th>Resolution</th>
                <th>Color Profile</th>
+               <th></th>
             </tr>
          </thead>
          <draggable v-model="unitStore.pageMasterFiles" tag="tbody"  @start="dragStarted" item-key="fileName">
             <template #item="{element, index}">
                <tr :id="element.fileName" :key="element.fileName">
-                  <td class="grip"><i class="fas fa-grip-lines"></i></td>
+                  <td class="grip"><input type="checkbox" v-model="element.selected" @click="masterFileCheckboxClicked(index)"/></td>
                   <td class="thumb">
                      <router-link :to="imageViewerURL(index)"><img :src="element.thumbURL"/></router-link>
                   </td>
@@ -121,6 +122,7 @@
                   <td class="nowrap">{{element.width}} x {{element.height}}</td>
                   <td>{{element.resolution}}</td>
                   <td class="nowrap">{{element.colorProfile}}</td>
+                  <td class="grip"><i class="fas fa-grip-lines"></i></td>
                </tr>
             </template>
          </draggable>
@@ -129,6 +131,16 @@
       <draggable v-else v-model="unitStore.pageMasterFiles" @start="dragStarted" class="gallery" :class="unitStore.viewMode" item-key="fileName">
          <template #item="{element, index}">
             <div class="card" :id="element.fileName">
+               <div class="card-sel">
+                  <input type="checkbox" v-model="element.selected" @click="masterFileCheckboxClicked(index)"/>
+                  <div class="file">
+                     <span>{{element.fileName}}</span>
+                     <span v-if="element.error">
+                        <i class="image-err fas fa-exclamation-circle" @mouseover="hoverEnter(element.fileName)" @mouseleave="hoverExit()"></i>
+                        <span v-if="showError==element.fileName" class="hover-error">{{element.error}}</span>
+                     </span>
+                  </div>
+               </div>
                <router-link :to="imageViewerURL(index)">
                   <img :src="element.mediumURL" v-if="unitStore.viewMode == 'medium'"/>
                   <img :src="element.largeURL" v-if="unitStore.viewMode == 'large'"/>
@@ -137,16 +149,6 @@
                   <TagPicker :masterFile="element" display="wide"/>
                </div>
                <div class="metadata">
-                  <div class="row">
-                     <label>Image</label>
-                     <div class="data hover-container">
-                        <span>{{element.fileName}}</span>
-                        <span v-if="element.error">
-                           <i class="image-err fas fa-exclamation-circle" @mouseover="hoverEnter(element.fileName)" @mouseleave="hoverExit()"></i>
-                           <span v-if="showError==element.fileName" class="hover-error">{{element.error}}</span>
-                        </span>
-                     </div>
-                  </div>
                   <div class="row">
                      <label>Title</label>
                      <div tabindex="0" @focus.stop.prevent="editMetadata(element, 'title')" class="data editable" @click="editMetadata(element, 'title')">
@@ -243,6 +245,10 @@ const workingDir = computed(()=>{
 const isManuscript = computed(() => {
    return projectStore.currProject.workflow && projectStore.currProject.workflow.name=='Manuscript'
 })
+
+function masterFileCheckboxClicked(index) {
+   unitStore.masterFileSelected(index)
+}
 
 function paddedUnit() {
    let unitStr = ""+unitStore.currUnit
@@ -388,6 +394,10 @@ onBeforeMount( async () => {
 <style lang="scss" scoped>
 .unit {
    padding: 0;
+   input[type=checkbox] {
+      width: 20px;
+      height: 20px;
+   }
    .load {
       margin-top: 15%;
    }
@@ -561,11 +571,26 @@ onBeforeMount( async () => {
       div.card {
          position: relative;
          border: 1px solid var(--uvalib-grey-light);
-         padding: 20px;
+         padding: 0 20px 20px 20px;
          display: inline-block;
          margin: 5px;
          background: white;
          box-shadow:  0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.12);
+
+         .card-sel {
+            padding: 20px 0;
+            display: flex;
+            flex-flow: row nowrap;
+            justify-content: flex-start;
+            align-items: end;
+
+            input[type=checkbox] {
+               margin:0;
+               padding:0;
+               display: inline-block;
+               margin-right: 15px;
+            }
+         }
          .metadata {
             text-align: left;
             font-size: 0.9em;

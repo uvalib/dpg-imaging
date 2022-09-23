@@ -43,6 +43,12 @@ export const useUnitStore = defineStore('unit', {
       selectAll() {
          this.rangeStartIdx = 0
          this.rangeEndIdx = this.masterFiles.length - 1
+         this.masterFiles.forEach( mf => mf.selected = true)
+      },
+      deselectAll() {
+         this.rangeStartIdx = -1
+         this.rangeEndIdx = - 1
+         this.masterFiles.forEach( mf => mf.selected = false)
       },
       async setPage(startPageNum) {
          this.currPage = startPageNum
@@ -51,22 +57,6 @@ export const useUnitStore = defineStore('unit', {
       setPageSize(newSize) {
          this.pageSize = newSize
          this.setPage(1)
-      },
-
-      applyMasterFileMetadataUpdate(data) {
-         // data is an array of {file, title, description}
-         data.forEach( d => {
-            let mfIdx = this.masterFiles.findIndex( mf => mf.path == d.file)
-            if (mfIdx > -1) {
-               let mf = this.masterFiles[mfIdx]
-               mf.title = d.title
-               mf.description = d.description
-               mf.status = d.status
-               mf.componentID = d.componentID
-               mf.error = ""
-               this.masterFiles.splice(mfIdx,1, mf)
-            }
-         })
       },
 
       setMasterFileProblems(data) {
@@ -78,13 +68,6 @@ export const useUnitStore = defineStore('unit', {
                this.masterFiles.splice(mfIdx,1, mf)
             }
          })
-      },
-
-      removeMasterFile(fn) {
-         let mfIdx = this.masterFiles.findIndex( mf => mf.fileName == fn)
-         if (mfIdx > -1) {
-            this.masterFiles.splice(mfIdx,1)
-         }
       },
 
       setComponentInfo(data) {
@@ -112,6 +95,32 @@ export const useUnitStore = defineStore('unit', {
          this.viewMode = "list"
       },
 
+      masterFileSelected(idx) {
+         if (this.masterFiles[idx].selected) {
+            this.masterFiles.forEach( mf => mf.selected = false)
+            this.rangeStartIdx = -1
+            this.rangeEndIdx = -1
+         } else {
+            let priorSelIdx = this.masterFiles.findIndex( mf => mf.selected)
+            if (priorSelIdx == -1) {
+               this.masterFiles[idx].selected = true
+               this.rangeStartIdx = idx
+               this.rangeEndIdx = idx
+            } else {
+               if (priorSelIdx < idx) {
+                  this.rangeStartIdx = priorSelIdx
+                  this.rangeEndIdx = idx
+               } else {
+                  this.rangeStartIdx = idx
+                  this.rangeEndIdx = priorSelIdx
+               }
+               for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+                  this.masterFiles[i].selected = true
+               }
+            }
+         }
+      },
+
       async getUnitMasterFiles(unit) {
          // dont try to reload a unit if the data is already present
          let intUnit = parseInt(unit, 10)
@@ -125,6 +134,7 @@ export const useUnitStore = defineStore('unit', {
             this.masterFiles.splice(0, this.masterFiles.length)
             response.data.masterFiles.forEach( mf =>{
                mf.error = ""
+               mf.selected = false
                this.masterFiles.push(mf)
             })
             this.problems = response.data.problems
@@ -238,6 +248,7 @@ export const useUnitStore = defineStore('unit', {
                let update = data.shift()
                this.masterFiles[i].title = update.value
             }
+            this.deselectAll()
             system.working = false
             if (resp.data.success == false) {
                system.setError("Some images were not renumbered")
@@ -261,6 +272,7 @@ export const useUnitStore = defineStore('unit', {
                let update = data.shift()
                this.masterFiles[i].componentID = update.value
             }
+            this.deselectAll()
             system.working = false
             if (resp.data.success == false) {
                system.setError("Some images could not be linked with component "+componentID)
@@ -288,6 +300,7 @@ export const useUnitStore = defineStore('unit', {
                   this.masterFiles[i].box = update.value
                }
             }
+            this.deselectAll()
             system.working = false
             if (resp.data.success == false) {
                system.setError("Faolder assignment failed for some images")

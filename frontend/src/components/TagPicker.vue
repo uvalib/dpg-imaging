@@ -159,6 +159,10 @@ async function selectTag( tag ) {
       height: 20px;
       border: 1px solid var(--uvalib-grey);
       background: white;
+      border-radius: 15px;
+   }
+   .tag.wide {
+      border-radius: 0;
    }
    .tag.rescan {
       background: var(--uvalib-red);
