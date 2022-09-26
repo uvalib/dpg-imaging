@@ -17,12 +17,19 @@
 <script setup>
 import {useUnitStore} from "@/stores/unit"
 import {useSystemStore} from "@/stores/system"
-import { ref } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 
 const unitStore = useUnitStore()
 const systemStore = useSystemStore()
 
 const box = ref("")
+
+onMounted( async () => {
+   nextTick( () => {
+      let ele = document.getElementById("box-id")
+      ele.focus()
+   })
+})
 
 async function okClicked() {
    unitStore.selectAll()

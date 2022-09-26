@@ -33,13 +33,20 @@
 <script setup>
 import {useUnitStore} from "@/stores/unit"
 import {useSystemStore} from "@/stores/system"
-import { ref } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 
 const unitStore = useUnitStore()
 const systemStore = useSystemStore()
 
 const startPage = ref("1")
 const unnumberVerso = ref(false)
+
+onMounted( async () => {
+   nextTick( () => {
+      let ele = document.getElementById("start-page")
+      ele.focus()
+   })
+})
 
 function cancelEditClicked() {
    systemStore.error = ""

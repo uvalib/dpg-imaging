@@ -32,12 +32,19 @@
 <script setup>
 import {useUnitStore} from "@/stores/unit"
 import {useSystemStore} from "@/stores/system"
-import { ref } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 
 const unitStore = useUnitStore()
 const systemStore = useSystemStore()
 
 const folder = ref("")
+
+onMounted( async () => {
+   nextTick( () => {
+      let ele = document.getElementById("start-page")
+      ele.focus()
+   })
+})
 
 async function okClicked() {
    await unitStore.setLocation( "folder", folder.value )

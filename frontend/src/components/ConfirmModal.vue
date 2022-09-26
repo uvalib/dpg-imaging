@@ -2,7 +2,7 @@
    <div class="confirm-modal-wrapper">
       <DPGButton v-if="props.type=='button'" id="confirm-trigger" @click="show">{{props.label}}</DPGButton>
       <span class="txt-trigger" v-else id="confirm-trigger" @click="show">{{props.label}}</span>
-      <div class="confirm-modal-dimmer" v-if="isOpen">
+      <div class="confirm-modal-dimmer" v-if="showConfirm">
          <div role="dialog" aria-labelledby="confirm-modal-title" id="confirm-modal" class="confirm-modal">
             <div id="confirm-modal-title" class="confirm-modal-title">Confirm Action</div>
             <div class="confirm-modal-content">
@@ -24,7 +24,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, computed } from 'vue'
 
 const emit = defineEmits( ['confirmed', 'closed', 'opened' ] )
 const props = defineProps({
@@ -35,10 +35,20 @@ const props = defineProps({
    type: {
       type: String,
       default: "button"
+   },
+   trigger: {
+      type: Boolean,
+      default: false
    }
 })
 
 const isOpen = ref(false)
+
+const showConfirm = computed(() => {
+   if (isOpen.value) return true
+   if (props.trigger == true) return true
+   return false
+})
 
 function confirmClicked() {
    hide()

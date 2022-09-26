@@ -36,7 +36,7 @@
                   <option value="large">Gallery (large)</option>
                </select>
             </span>
-            <ConfirmModal label="Batch Rename" class="right-pad" @confirmed="renameAll">
+            <ConfirmModal label="Batch Rename" class="right-pad" @confirmed="renameAll" :trigger="showRenameConfirm" @closed="showRenameConfirm=false">
                <div>All files will be renamed to match the following format:</div>
                <code>{{paddedUnit()}}_0001.tif - {{paddedUnit()}}_nnnn.tif</code>
             </ConfirmModal>
@@ -204,7 +204,7 @@ import draggable from 'vuedraggable'
 import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUnitStore} from "@/stores/unit"
-import { computed, ref, onBeforeMount, nextTick } from 'vue'
+import { computed, ref, onBeforeMount, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DPGPagination from '../components/DPGPagination.vue'
 
@@ -219,6 +219,7 @@ const editMF = ref(null)
 const newValue = ref("")
 const editField = ref("")
 const showError = ref("")
+const showRenameConfirm = ref(false)
 
 // computed
 const title = computed(() => {
@@ -333,9 +334,6 @@ function editMetadata(mf, field) {
    if (field == "description") {
       newValue.value = mf.description
    }
-   if (field == "box") {
-      newValue.value = mf.box
-   }
    if (field == "folder") {
       newValue.value = mf.folder
    }
@@ -343,9 +341,6 @@ function editMetadata(mf, field) {
       let ele = null
       if ( field == "description") {
          ele = document.getElementById("edit-desc")
-      }
-      if ( field == "box") {
-         ele = document.getElementById("edit-box")
       }
       if ( field == "folder") {
          ele = document.getElementById("edit-folder")
@@ -364,7 +359,26 @@ async function submitEdit(mf) {
    editMF.value = null
 }
 
+function keyboardHandler(event) {
+   if ( !event.ctrlKey ) return
+
+   if (event.key == 'r') {
+      showRenameConfirm.value = true
+   } else if (event.key == 'p') {
+      setPageNumbersClicked()
+   } else if (event.key == 'b') {
+      boxClicked()
+   } else if (event.key == 'f') {
+      folderClicked()
+   } else if (event.key == 'l') {
+      componentLinkClicked()
+   }
+}
+
 onBeforeMount( async () => {
+   // setup keyboard litener for shortcuts
+   window.addEventListener('keydown', keyboardHandler)
+
    if (projectStore.selectedProjectIdx == -1) {
       await projectStore.getProject(route.params.id)
    }
@@ -388,6 +402,9 @@ onBeforeMount( async () => {
    if ( route.query.view ) {
       unitStore.viewMode = route.query.view
    }
+})
+onBeforeUnmount( async () => {
+   window.removeEventListener('keydown', keyboardHandler)
 })
 </script>
 
