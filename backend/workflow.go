@@ -343,7 +343,7 @@ func (svc *serviceContext) validateDirectory(proj *project, tgtDir string) error
 	}
 
 	// Scan and Process and Error steps have no checks other than directory existance
-	if proj.CurrentStep.Name == "Scan" || proj.CurrentStep.Name == "Process" || proj.CurrentStep.StepType == 3 {
+	if proj.CurrentStep.Name == "Scan" || proj.CurrentStep.Name == "Process" || proj.CurrentStep.StepType == 2 {
 		log.Printf("INFO: scan, process and error steps have no validations")
 		return nil
 	}
