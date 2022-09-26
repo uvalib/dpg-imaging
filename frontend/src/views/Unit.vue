@@ -3,9 +3,18 @@
       <WaitSpinner  v-if="systemStore.working" :overlay="true" message="Working..." />
 
       <div class="metadata" v-if="projectStore.selectedProjectIdx > -1">
+         <div class="hints">
+            <table >
+               <tr><td class="act">Rename:</td><td>ctrl+r</td></tr>
+               <tr><td class="act">Page Numbers:</td><td>ctrl+p</td></tr>
+               <tr v-if="isManuscript"><td class="act">Set Box:</td><td>ctrl+b</td></tr>
+               <tr v-if="isManuscript"><td class="act">Set Folder:</td><td>ctrl+f</td></tr>
+               <tr><td class="act">Component Link:</td><td>ctrl+k</td></tr>
+            </table>
+         </div>
          <h2>
             <ProblemsDisplay class="topleft" />
-            <span class="title"><router-link :to="`/projects/${projectStore.currProject.id}`">{{title}}</router-link></span>
+            <span class="title"><router-link :to="`/projects/${projectStore.currProject.id}`">{{truncateTitle(title)}}</router-link></span>
          </h2>
          <h3>
             <div>{{callNumber}}</div>
@@ -36,7 +45,7 @@
                   <option value="large">Gallery (large)</option>
                </select>
             </span>
-            <ConfirmModal label="Batch Rename" class="right-pad" @confirmed="renameAll" :trigger="showRenameConfirm" @closed="showRenameConfirm=false">
+            <ConfirmModal label="Rename" class="right-pad" @confirmed="renameAll" :trigger="showRenameConfirm" @closed="showRenameConfirm=false">
                <div>All files will be renamed to match the following format:</div>
                <code>{{paddedUnit()}}_0001.tif - {{paddedUnit()}}_nnnn.tif</code>
             </ConfirmModal>
@@ -247,6 +256,10 @@ const isManuscript = computed(() => {
    return projectStore.currProject.workflow && projectStore.currProject.workflow.name=='Manuscript'
 })
 
+function truncateTitle(title) {
+   if (title.length < 200) return title
+   return title.slice(0,200)+"..."
+}
 function masterFileCheckboxClicked(index) {
    unitStore.masterFileSelected(index)
 }
@@ -370,7 +383,7 @@ function keyboardHandler(event) {
       boxClicked()
    } else if (event.key == 'f') {
       folderClicked()
-   } else if (event.key == 'l') {
+   } else if (event.key == 'k') {
       componentLinkClicked()
    }
 }
@@ -409,6 +422,14 @@ onBeforeUnmount( async () => {
 </script>
 
 <style lang="scss" scoped>
+div.hints {
+   font-size: 0.75em;
+   position: absolute;
+   right: 10px;
+   top: 0px;
+   text-align: left;
+   td.act { text-align: right;}
+}
 .unit {
    padding: 0;
    input[type=checkbox] {
@@ -435,6 +456,7 @@ onBeforeUnmount( async () => {
          margin: 10px 0;
          .title {
             display: block;
+            margin: 0 200px;
             a {
                color: inherit !important;
                font-weight: inherit !important;

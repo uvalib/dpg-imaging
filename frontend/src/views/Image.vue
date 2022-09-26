@@ -32,6 +32,10 @@
                   </template>
                </td>
             </tr>
+            <tr class="line">
+               <td class="label">Keybard Shortcuts:</td>
+               <td class="data">Pan Image: w,a,s,d or arrow keys. Pagination: &lt; prior, &gt; next (shift key not needed).</td>
+            </tr>
          </table>
          <span class="toolbar-button group back">
             <i class="fas fa-angle-double-left back-button"></i>
@@ -159,7 +163,23 @@ function focusViewer() {
    })
 }
 
+function keyboardHandler(event) {
+   if ( event.key == ',' || event.key == '<') {
+      if (prevDisabled() == false ) {
+         prevImage()
+      }
+   } else {
+      if ( event.key == '.' || event.key == '>') {
+         if (nextDisabled() == false ) {
+            nextImage()
+         }
+      }
+   }
+}
+
 onBeforeMount( async () => {
+   window.addEventListener('keydown', keyboardHandler)
+
    page.value = parseInt(route.params.page, 10)
    let currPageIndex = page.value-1
 
@@ -203,6 +223,7 @@ onBeforeMount( async () => {
    })
 })
 onUnmounted( async () => {
+   window.removeEventListener('keydown', keyboardHandler)
    if (viewer) {
       viewer.destroy()
    }
