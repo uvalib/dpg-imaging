@@ -36,8 +36,8 @@ type exifData struct {
 	Width         int         `json:"ImageWidth"`
 	Height        int         `json:"ImageHeight"`
 	ClassifyState string      `json:"ClassifyState"`       // tag
-	Box           string      `json:"Keywords"`            // box
-	Folder        string      `json:"ContentLocationName"` // folder
+	Box           interface{} `json:"Keywords"`            // box
+	Folder        interface{} `json:"ContentLocationName"` // folder
 	Component     interface{} `json:"OwnerID"`             // component
 }
 
@@ -502,6 +502,12 @@ func getExifData(cmdArray []string) []masterFileMetadata {
 				if md.Component != nil {
 					mdRec.ComponentID = fmt.Sprintf("%v", md.Component)
 				}
+				if md.Box != nil {
+					mdRec.Box = fmt.Sprintf("%v", md.Box)
+				}
+				if md.Folder != nil {
+					mdRec.Folder = fmt.Sprintf("%v", md.Folder)
+				}
 				if md.Resolution != nil {
 					valType := fmt.Sprintf("%T", md.Resolution)
 					if valType == "int" {
@@ -520,8 +526,6 @@ func getExifData(cmdArray []string) []masterFileMetadata {
 				mdRec.Width = md.Width
 				mdRec.Height = md.Height
 				mdRec.Status = md.ClassifyState
-				mdRec.Box = md.Box
-				mdRec.Folder = md.Folder
 
 				out = append(out, mdRec)
 			}
