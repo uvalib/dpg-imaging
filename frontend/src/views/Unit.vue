@@ -10,6 +10,7 @@
                <tr v-if="isManuscript"><td class="act">Set Box:</td><td>ctrl+b</td></tr>
                <tr v-if="isManuscript"><td class="act">Set Folder:</td><td>ctrl+f</td></tr>
                <tr><td class="act">Component Link:</td><td>ctrl+k</td></tr>
+               <tr><td class="act">Cancel Edit:</td><td>esc</td></tr>
             </table>
          </div>
          <h2>
