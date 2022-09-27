@@ -9,6 +9,7 @@ export const useProjectStore = defineStore('project', {
       totals: {
          me: 0,
          active: 0,
+         errors: 0,
          unassigned: 0,
          finished: 0
       },
@@ -66,7 +67,14 @@ export const useProjectStore = defineStore('project', {
             let p = state.projects[projIdx]
             if (p.assignments.length == 0) return false
             let currA = p.assignments[0]
-            return currA.status == 4
+            if (currA.status == 4) return true
+
+            let step = p.workflow.steps.find( s => s.id == currA.stepID)
+            if (step) {
+               if (step.stepType == 2) return true
+            }
+
+            return false
          }
       },
       hasOwner: state => {
@@ -111,7 +119,10 @@ export const useProjectStore = defineStore('project', {
             total = state.totals.unassigned
          } else if (state.filter == "finished") {
             total = state.totals.finished
+         } else if (state.filter == "errors") {
+            total = state.totals.errors
          }
+
          return Math.ceil(total/state.pageSize)
       },
       currProject: state => {
@@ -184,6 +195,7 @@ export const useProjectStore = defineStore('project', {
          this.totals.active  = data.totalActive
          this.totals.unassigned  = data.totalUnassigned
          this.totals.finished  = data.totalFinished
+         this.totals.errors  = data.totalError
          this.pageSize = data.pageSize
          data.currPage = data.page
          this.projects.splice(0, this.projects.length)
@@ -206,6 +218,8 @@ export const useProjectStore = defineStore('project', {
             total = this.totals.unassigned
          } else if (this.filter == "finished") {
             total = this.totals.finished
+         } else if (this.filter == "errors") {
+            total = this.totals.errors
          }
          let maxPg = Math.ceil(total/this.pageSize)
          if (pg > 0 && pg <= maxPg) {

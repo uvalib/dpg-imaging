@@ -14,6 +14,10 @@
                <input id="active" type="radio" value="active" name="filter" v-model="projectStore.filter" @change="filterChanged">
                <span>Active <span class="count">({{projectStore.totals.active}})</span></span>
             </label>
+            <label for="errors">
+               <input id="errors" type="radio" value="errors" name="filter" v-model="projectStore.filter" @change="filterChanged">
+               <span>Problems <span class="count">({{projectStore.totals.errors}})</span></span>
+            </label>
             <label for="unassigned">
                <input id="unassigned" type="radio" value="unassigned" name="filter" v-model="projectStore.filter" @change="filterChanged">
                <span>Unassigned <span class="count">({{projectStore.totals.unassigned}})</span></span>
@@ -37,18 +41,22 @@
             No projects match your search criteria
          </div>
          <ul v-else class="projects">
-            <li class="card" v-for="p in projectStore.projects" :key="`p${p.id}`">
+            <li class="card" v-for="(p,idx) in projectStore.projects" :key="`p${p.id}`">
                <div class="top">
                   <div class="due">
                      <span>
                         <label>Date Due:</label><span>{{p.dueOn.split("T")[0]}}</span>
                      </span>
-                     <span class="status-msg overdue" v-if="isOverdue(p) && !p.finishedAt">OVERDUE</span>
+                     <span>
+                        <span class="status-msg overdue" v-if="isOverdue(p) && !p.finishedAt">OVERDUE</span>
+                        <i v-if="projectStore.hasError(idx)" class="error-icon fas fa-exclamation-triangle"></i>
+                     </span>
                      <span v-if="p.finishedAt"><label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span></span>
                   </div>
                   <router-link @click="projectStore.selectProject(p.id)" :to="`/projects/${p.id}`">
                      <div class="title">
-                        {{p.unit.metadata.title}}
+                        <div class="project-id"><label>Project:</label><span>{{p.id}}</span></div>
+                        <div>{{p.unit.metadata.title}}</div>
                      </div>
                   </router-link>
                </div>
@@ -77,7 +85,7 @@
                </div>
                <div class="status" v-if="!p.finishedAt || p.finishedAt == ''">
                   <div class="progress-panel">
-                     <span>{{projectStore.statusText(p.id)}}</span>
+                     <span :class="{error: projectStore.hasError(idx)}">{{projectStore.statusText(p.id)}}</span>
                      <div class="progress-bar">
                         <div class="percentage" :style="{width: projectStore.percentComplete(p.id) }"></div>
                      </div>
@@ -183,12 +191,6 @@ onMounted( async () => {
    h2 {
       color: var(--uvalib-brand-orange);
       margin-bottom: 20px;
-      .old-units {
-         font-size: 14px;
-         position: absolute;
-         top: 5px;
-         left: 8px;
-      }
    }
    .none {
       font-size: 1.25em;
@@ -281,6 +283,7 @@ onMounted( async () => {
          font-size: 0.9em;
          box-shadow: rgba(0, 0, 0, 0.14) 0px 2px 2px 0px;
          background: white;
+         padding-bottom: 70px;
 
          .top {
             border-bottom: 1px solid var(--uvalib-grey);
@@ -289,6 +292,12 @@ onMounted( async () => {
                padding: 10px;
                color: var(--uvalib-text) !important;
                background:var(--uvalib-grey-lightest);
+               .project-id {
+                  label { font-weight: bold; margin-right: 5px;}
+                  margin-bottom: 10px;
+                  padding-bottom: 10px;
+                  border-bottom: 1px solid var(--uvalib-grey-light);
+               }
             }
             .due {
                padding: 5px 5px 5px 10px;
@@ -298,6 +307,12 @@ onMounted( async () => {
                flex-flow: row nowrap;
                justify-content: space-between;
                align-items: center;
+               .error-icon {
+                  display: inline-block;
+                  color: var(--uvalib-red-emergency);
+                  margin-left: 5px;
+                  font-size: 1.15em;
+               }
                label {
                   font-weight: bold;
                   margin-right: 5px;
@@ -309,9 +324,10 @@ onMounted( async () => {
                }
                .overdue {
                   font-weight: bold;
-                  background: firebrick;
+                  background: var(--uvalib-brand-orange);
                   color: white;
                   border: 0;
+                  border-radius: 5px;
                }
             }
          }
@@ -349,6 +365,10 @@ onMounted( async () => {
          .status {
             padding: 10px;
             border-top: 1px solid var(--uvalib-grey-lightest);
+            position: absolute;
+            width: 100%;
+            box-sizing: border-box;
+            bottom: 0;
 
             .owner-buttons {
                display: flex;
@@ -368,6 +388,10 @@ onMounted( async () => {
                flex-flow: row nowrap;
                justify-content: space-between;
                align-items: center;
+               .error {
+                  color: var(--uvalib-red-darker);
+                  font-weight: bold;
+               }
 
                .progress-bar {
                   border: 1px solid var(--uvalib-grey-light);

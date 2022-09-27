@@ -140,12 +140,13 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	}
 	offset := (page - 1) * pageSize
 
-	filters := []string{"me", "active", "unassigned", "finished"}
+	filters := []string{"me", "active", "unassigned", "finished", "errors"}
 	filterQ := []string{
 		fmt.Sprintf("owner_id=%d and projects.finished_at is null", claims.UserID),
 		"projects.finished_at is null and owner_id is not null",
 		"projects.finished_at is null and owner_id is null",
 		"projects.finished_at is not null",
+		"(assignments.status=4 or assignstep.step_type=2) and projects.finished_at is null and assignments.finished_at is null",
 	}
 	filter := c.Query("filter")
 	if filter == "" {
@@ -216,6 +217,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	type projResp struct {
 		TotalMe         int64     `json:"totalMe"`
 		TotalActive     int64     `json:"totalActive"`
+		TotalError      int64     `json:"totalError"`
 		TotalUnassigned int64     `json:"totalUnassigned"`
 		TotalFinished   int64     `json:"totalFinished"`
 		Page            uint      `json:"page"`
@@ -238,8 +240,10 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 			out.TotalActive = total
 		} else if idx == 2 {
 			out.TotalUnassigned = total
-		} else {
+		} else if idx == 3 {
 			out.TotalFinished = total
+		} else {
+			out.TotalError = total
 		}
 	}
 
@@ -575,6 +579,7 @@ func (svc *serviceContext) getBaseProjectQuery() (tx *gorm.DB) {
 	//  LEFT OUTER joins are for data that is optional
 	return svc.DB.Preload(clause.Associations).
 		Joins("LEFT OUTER JOIN assignments on assignments.project_id=projects.id").
+		Joins("LEFT OUTER JOIN steps as assignstep on assignments.step_id=assignstep.id").
 		Joins("LEFT OUTER JOIN staff_members on assignments.staff_member_id=staff_members.id").
 		Joins("INNER JOIN units on units.id=projects.unit_id").
 		Joins("INNER JOIN metadata on metadata.id=units.metadata_id").
@@ -599,6 +604,7 @@ func (svc *serviceContext) getBaseProjectQuery() (tx *gorm.DB) {
 func (svc *serviceContext) getBaseCountsQuery() (tx *gorm.DB) {
 	return svc.DB.
 		Joins("LEFT OUTER JOIN assignments on assignments.project_id=projects.id").
+		Joins("LEFT OUTER JOIN steps as assignstep on assignments.step_id=assignstep.id").
 		Joins("LEFT OUTER JOIN staff_members on assignments.staff_member_id=staff_members.id").
 		Joins("INNER JOIN units on units.id=projects.unit_id").
 		Joins("INNER JOIN metadata on metadata.id=units.metadata_id").
