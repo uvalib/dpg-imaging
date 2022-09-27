@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -21,6 +20,11 @@ type finalizeResponse struct {
 	Problems []updateProblem `json:"problems"`
 }
 
+type exifMapping struct {
+	FieldName string `json:"field"`
+	ExifTag   string `json:"exifTag"`
+}
+
 type exifData struct {
 	SourceFile    string      `json:"SourceFile"`
 	ColorProfile  string      `json:"ProfileDescription"`
@@ -31,13 +35,10 @@ type exifData struct {
 	Description   interface{} `json:"Caption-Abstract"`
 	Width         int         `json:"ImageWidth"`
 	Height        int         `json:"ImageHeight"`
-	ClassifyState string      `json:"ClassifyState"`
-	OwnerID       interface{} `json:"OwnerID"`
-}
-
-type exifTitle struct {
-	SourceFile string      `json:"SourceFile"`
-	Headline   interface{} `json:"Headline"`
+	ClassifyState string      `json:"ClassifyState"`       // tag
+	Box           interface{} `json:"Keywords"`            // box
+	Folder        interface{} `json:"ContentLocationName"` // folder
+	Component     interface{} `json:"OwnerID"`             // component
 }
 
 type updateProblem struct {
@@ -45,9 +46,10 @@ type updateProblem struct {
 	Problem string `json:"problem"`
 }
 
-type titleCheck struct {
-	File  string `json:"file"`
-	Valid bool   `json:"valid"`
+type qaCheck struct {
+	File   string   `json:"file"`
+	Valid  bool     `json:"valid"`
+	Errors []string `json:"errors"`
 }
 
 func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse, error) {
@@ -97,7 +99,7 @@ func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse
 		if pendingFilesCnt == chunkSize {
 			outstandingRequests++
 			log.Printf("INFO: finalize %s batch #%d of %d images", uid, outstandingRequests, chunkSize)
-			go updateExifData(fileCommands, channel)
+			go batchUpdateExifData(fileCommands, channel)
 			fileCommands = make(map[string][]string)
 			pendingFilesCnt = 0
 		}
@@ -112,7 +114,7 @@ func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse
 	if pendingFilesCnt > 0 {
 		outstandingRequests++
 		log.Printf("INFO: finalize %s batch #%d of %d images", uid, outstandingRequests, chunkSize)
-		go updateExifData(fileCommands, channel)
+		go batchUpdateExifData(fileCommands, channel)
 	}
 
 	log.Printf("INFO: await all finalization updates for %s", uid)
@@ -133,28 +135,67 @@ func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse
 	return &resp, nil
 }
 
-func (svc *serviceContext) updateMetadata(c *gin.Context) {
+func (svc *serviceContext) updateImageMetadata(c *gin.Context) {
 	uid := padLeft(c.Param("uid"), 9)
 	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
+	fileName := c.Param("file")
 	updateField := c.Query("field")
-	if updateField == "" {
-		updateField = "all"
-		log.Printf("INFO: update master file metadata in %s", unitDir)
-	} else {
-		if !(updateField == "title" || updateField == "tag" || updateField == "component") {
-			log.Printf("ERROR: unsupported update field %s", updateField)
-			c.String(http.StatusBadRequest, fmt.Sprintf("%s is not a valid update field", updateField))
-			return
-		}
-		log.Printf("INFO: update master file %s metadata in %s", updateField, unitDir)
+	updateValue := c.Query("value")
+	log.Printf("INFO: update %s/%s %s to %s", unitDir, fileName, updateField, updateValue)
+
+	exifTag := getExifTag(updateField)
+	if exifTag == "" {
+		log.Printf("ERROR: invalid update field %s", updateField)
+		c.String(http.StatusBadRequest, fmt.Sprintf("%s is not a valid update field", updateField))
+		return
 	}
 
+	tgtFile := path.Join(unitDir, fileName)
+	cmd := []string{fmt.Sprintf("-%s=%s", exifTag, updateValue), tgtFile}
+	log.Printf("INFO: update command %v", cmd)
+	_, err := exec.Command("exiftool", cmd...).Output()
+	if err != nil {
+		log.Printf("ERROR: exiftool %v failed: %s", cmd, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	cleanupExifToolDups(tgtFile)
+
+	c.String(http.StatusOK, "ok")
+}
+
+func getExifTag(fieldName string) string {
+	log.Printf("INFO: lookup exif tag for field %s", fieldName)
+	fields := []exifMapping{{FieldName: "title", ExifTag: "iptc:headline"}, {FieldName: "description", ExifTag: "iptc:caption-abstract"},
+		{FieldName: "box", ExifTag: "iptc:Keywords"}, {FieldName: "folder", ExifTag: "iptc:ContentLocationName"},
+		{FieldName: "tag", ExifTag: "iptc:ClassifyState"}, {FieldName: "component", ExifTag: "iptc:OwnerID"},
+	}
+	exifTag := ""
+	for _, fv := range fields {
+		if fieldName == fv.FieldName {
+			exifTag = fv.ExifTag
+			break
+		}
+	}
+	log.Printf("INFO: field %s matches exif tag  %s", fieldName, exifTag)
+	return exifTag
+}
+
+func cleanupExifToolDups(fullPath string) {
+	dupPath := fmt.Sprintf("%s_original", fullPath)
+	os.Remove(dupPath)
+	dupPath = fmt.Sprintf("%s_exiftool_tmp", fullPath)
+	os.Remove(dupPath)
+}
+
+func (svc *serviceContext) updateMetadataBatch(c *gin.Context) {
+	uid := padLeft(c.Param("uid"), 9)
+	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
+
 	var mdPost []struct {
-		File        string `json:"file"`
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		Status      string `json:"status"`
-		ComponentID string `json:"componentID"`
+		File  string `json:"file"`
+		Field string `json:"field"`
+		Value string `json:"value"`
 	}
 
 	qpErr := c.ShouldBindJSON(&mdPost)
@@ -163,6 +204,7 @@ func (svc *serviceContext) updateMetadata(c *gin.Context) {
 		c.String(http.StatusBadRequest, "Invalid request")
 		return
 	}
+	log.Printf("INFO: batch master file metadata in %s", unitDir)
 
 	start := time.Now()
 	pendingFilesCnt := 0
@@ -172,25 +214,15 @@ func (svc *serviceContext) updateMetadata(c *gin.Context) {
 	outstandingRequests := 0
 	for _, change := range mdPost {
 		cmd := make([]string, 0)
-		if updateField == "title" || updateField == "all" {
-			cmd = append(cmd, fmt.Sprintf("-iptc:headline=%s", change.Title))
-		}
-		if updateField == "all" {
-			cmd = append(cmd, fmt.Sprintf("-iptc:caption-abstract=%s", change.Description))
-		}
-		if updateField == "tag" || updateField == "all" {
-			cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%s", change.Status))
-		}
-		if updateField == "component" || updateField == "all" {
-			cmd = append(cmd, fmt.Sprintf("-iptc:OwnerID=%s", change.ComponentID))
-		}
+		exifTag := getExifTag(change.Field)
+		cmd = append(cmd, fmt.Sprintf("-%s=%s", exifTag, change.Value))
 		cmd = append(cmd, change.File)
 		fileCommands[change.File] = cmd
 		pendingFilesCnt++
 		if pendingFilesCnt == chunkSize {
 			outstandingRequests++
 			log.Printf("INFO: update batch #%d of %d images", outstandingRequests, chunkSize)
-			go updateExifData(fileCommands, channel)
+			go batchUpdateExifData(fileCommands, channel)
 			fileCommands = make(map[string][]string)
 			pendingFilesCnt = 0
 		}
@@ -199,7 +231,7 @@ func (svc *serviceContext) updateMetadata(c *gin.Context) {
 	if pendingFilesCnt > 0 {
 		outstandingRequests++
 		log.Printf("INFO: update batch #%d of %d images", outstandingRequests, chunkSize)
-		go updateExifData(fileCommands, channel)
+		go batchUpdateExifData(fileCommands, channel)
 	}
 
 	// wait for all metadata updates to complete
@@ -305,44 +337,6 @@ func (svc *serviceContext) renameFiles(c *gin.Context) {
 	c.String(http.StatusOK, "ok")
 }
 
-func (svc *serviceContext) deleteFile(c *gin.Context) {
-	unit := padLeft(c.Param("uid"), 9)
-	file := c.Param("file")
-	unitDir := path.Join(svc.ImagesDir, unit)
-	log.Printf("INFO: delete %s from %s", file, unitDir)
-	delFilePath := ""
-	err := filepath.Walk(unitDir, func(path string, f os.FileInfo, err error) error {
-		if err == nil {
-			if f.IsDir() == false && f.Name() == file {
-				delFilePath = path
-				return io.EOF
-			}
-		}
-		return nil
-	})
-	if err != nil && err != io.EOF {
-		log.Printf("ERROR: unable to traverse %s for file delete: %s", unitDir, err.Error())
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	if delFilePath == "" {
-		log.Printf("ERROR: unable to delete %s; file not found", file)
-		c.String(http.StatusNotFound, fmt.Sprintf("unable to delete %s: file not found", file))
-		return
-
-	}
-	log.Printf("INFO: delete %s", delFilePath)
-	err = os.Remove(delFilePath)
-	if err != nil {
-		log.Printf("ERROR: unable to delete %s: %s", delFilePath, err.Error())
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	c.String(http.StatusOK, fmt.Sprintf("deleted %s", delFilePath))
-}
-
 func (svc *serviceContext) rotateFile(c *gin.Context) {
 	unit := padLeft(c.Param("uid"), 9)
 	file := c.Param("file")
@@ -365,7 +359,8 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 	}
 
 	// grab the currrent data inthe exif headers ad the rotate command wipes it all
-	cmdArray := []string{"-json", "-iptc:OwnerID", "-iptc:headline", "-iptc:caption-abstract", "-iptc:ClassifyState", fullPath}
+	cmdArray := []string{"-json", "-iptc:OwnerID", "-iptc:headline", "-iptc:caption-abstract",
+		"-iptc:ClassifyState", "-iptc:ContentLocationName", "-iptc:Keywords", fullPath}
 	stdout, err := exec.Command("exiftool", cmdArray...).Output()
 	if err != nil {
 		log.Printf("ERROR: unable to get %s metadata before rotation: %s", file, err.Error())
@@ -391,8 +386,8 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 
 	log.Printf("INFO: restoring metadata after rotaion of %s", file)
 	cmd = make([]string, 0)
-	if origMD[0].OwnerID != nil {
-		cmd = append(cmd, fmt.Sprintf("-iptc:OwnerID=%v", origMD[0].OwnerID))
+	if origMD[0].Component != nil {
+		cmd = append(cmd, fmt.Sprintf("-iptc:OwnerID=%v", origMD[0].Component))
 	}
 	if origMD[0].Title != nil {
 		cmd = append(cmd, fmt.Sprintf("-iptc:headline=%v", origMD[0].Title))
@@ -401,31 +396,29 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 		cmd = append(cmd, fmt.Sprintf("-iptc:caption-abstract=%v", origMD[0].Description))
 	}
 	cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%v", origMD[0].ClassifyState))
+	cmd = append(cmd, fmt.Sprintf("-iptc:ContentLocationName=%v", origMD[0].Folder))
+	cmd = append(cmd, fmt.Sprintf("-iptc:Keywords=%v", origMD[0].Box))
 	cmd = append(cmd, fullPath)
 	_, err = exec.Command("exiftool", cmd...).Output()
 	if err != nil {
 		log.Printf("WARNING: unable to restore metadata to %s after rotation: %s", file, err.Error())
 	} else {
-		dupPath := fmt.Sprintf("%s_original", fullPath)
-		os.Remove(dupPath)
+		cleanupExifToolDups(fullPath)
 	}
 
 	c.String(http.StatusOK, "rotated")
 }
 
-// updateExifData is called as a goroutine. It will update a batch of files, then return true on the channel
-func updateExifData(fileCommands map[string][]string, channel chan []updateProblem) {
+// batchUpdateExifData is called as a goroutine. It will update a batch of files, then return true on the channel
+func batchUpdateExifData(fileCommands map[string][]string, channel chan []updateProblem) {
 	errors := make([]updateProblem, 0)
 	for tgtFile, command := range fileCommands {
 		_, err := exec.Command("exiftool", command...).Output()
 		if err != nil {
-			log.Printf("ERROR: unable to update %s metadata with [exiftool %v]: %s", tgtFile, command, err.Error())
+			log.Printf("ERROR: unable to update %s metadata with %v: %s", tgtFile, command, err.Error())
 			errors = append(errors, updateProblem{File: path.Base(tgtFile), Problem: err.Error()})
 		} else {
-			dupPath := fmt.Sprintf("%s_original", tgtFile)
-			os.Remove(dupPath)
-			dupPath = fmt.Sprintf("%s_exiftool_tmp", tgtFile)
-			os.Remove(dupPath)
+			cleanupExifToolDups(tgtFile)
 		}
 	}
 
@@ -433,30 +426,46 @@ func updateExifData(fileCommands map[string][]string, channel chan []updateProbl
 	channel <- errors
 }
 
-func checkExifHeaders(cmdArray []string, channel chan []titleCheck) {
-	out := make([]titleCheck, 0)
-	stdout, err := exec.Command("exiftool", cmdArray...).Output()
+func checkExifHeaders(cmdArray []string, checkLocation bool, channel chan []qaCheck) {
+	out := make([]qaCheck, 0)
+	cmd := exec.Command("exiftool", cmdArray...)
+	stdout, err := cmd.Output()
 	if err != nil {
-		log.Printf("ERROR: unable to get title metadata: %s", err.Error())
+		log.Printf("ERROR: unable to get qa metadata: %s", err.Error())
 		channel <- out
 	}
-	var parsed []exifTitle
+
+	var parsed []exifData
 	err = json.Unmarshal(stdout, &parsed)
 	if err != nil {
-		log.Printf("ERROR: unable to parse title metadata: %s", err.Error())
+		log.Printf("ERROR: unable to parse qa metadata: %s", err.Error())
 		channel <- out
 	}
+
 	for _, md := range parsed {
-		valid := false
-		if md.Headline != nil {
-			check := fmt.Sprintf("%v", md.Headline)
-			if check != "" {
-				valid = true
-			} else {
-				log.Printf("INFO: %s is missing a title", md.SourceFile)
+		errors := make([]string, 0)
+
+		title := ""
+		if md.Title != nil {
+			title = fmt.Sprintf("%v", md.Title)
+		}
+		if title == "" {
+			log.Printf("ERROR: %s is missing a title", md.SourceFile)
+			errors = append(errors, "Missing title metadata")
+		}
+
+		if checkLocation {
+			if md.Box == "" {
+				log.Printf("ERROR: %s is missing a box", md.SourceFile)
+				errors = append(errors, "Missing box metadata")
+			}
+			if md.Folder == "" {
+				log.Printf("ERROR: %s is missing a folder", md.SourceFile)
+				errors = append(errors, "Missing folder metadata")
 			}
 		}
-		tc := titleCheck{File: md.SourceFile, Valid: valid}
+
+		tc := qaCheck{File: path.Base(md.SourceFile), Valid: len(errors) == 0, Errors: errors}
 		out = append(out, tc)
 	}
 	channel <- out
@@ -471,6 +480,7 @@ func asyncGetExifData(cmdArray []string, channel chan []masterFileMetadata) {
 func getExifData(cmdArray []string) []masterFileMetadata {
 	out := make([]masterFileMetadata, 0)
 	cmd := exec.Command("exiftool", cmdArray...)
+	// log.Printf("INFO: %v", cmd)
 	stdout, err := cmd.Output()
 	if err != nil {
 		log.Printf("WARNINIG: unable to get image metadata: %s", err.Error())
@@ -489,8 +499,14 @@ func getExifData(cmdArray []string) []masterFileMetadata {
 				if md.Description != nil {
 					mdRec.Description = fmt.Sprintf("%v", md.Description)
 				}
-				if md.OwnerID != nil {
-					mdRec.ComponentID = fmt.Sprintf("%v", md.OwnerID)
+				if md.Component != nil {
+					mdRec.ComponentID = fmt.Sprintf("%v", md.Component)
+				}
+				if md.Box != nil {
+					mdRec.Box = fmt.Sprintf("%v", md.Box)
+				}
+				if md.Folder != nil {
+					mdRec.Folder = fmt.Sprintf("%v", md.Folder)
 				}
 				if md.Resolution != nil {
 					valType := fmt.Sprintf("%T", md.Resolution)
@@ -510,6 +526,7 @@ func getExifData(cmdArray []string) []masterFileMetadata {
 				mdRec.Width = md.Width
 				mdRec.Height = md.Height
 				mdRec.Status = md.ClassifyState
+
 				out = append(out, mdRec)
 			}
 		}
@@ -521,11 +538,12 @@ func getExifData(cmdArray []string) []masterFileMetadata {
 func baseExifCmd() []string {
 	out := []string{"-json", "-ImageWidth", "-ImageHeight",
 		"-FileType", "-XResolution", "-FileSize", "-icc_profile:ProfileDescription", "-iptc:OwnerID",
-		"-iptc:headline", "-iptc:caption-abstract", "-iptc:ClassifyState"}
+		"-iptc:headline", "-iptc:caption-abstract", "-iptc:ClassifyState",
+		"-iptc:ContentLocationName", "-iptc:Keywords"}
 	return out
 }
 
-func titleExifCmd() []string {
-	out := []string{"-json", "-iptc:headline"}
+func qaExifCmd() []string {
+	out := []string{"-json", "-iptc:headline", "-iptc:ContentLocationName", "-iptc:Keywords"}
 	return out
 }

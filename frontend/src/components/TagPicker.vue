@@ -69,7 +69,7 @@ function hideMenu() {
    menuOpen.value = false
 }
 async function selectTag( tag ) {
-   await unitStore.setTag({file: props.masterFile.path, tag: tag})
+   await unitStore.updateMasterFileMetadata( props.masterFile.fileName, "tag", tag )
    hideMenu()
 }
 </script>
@@ -159,6 +159,10 @@ async function selectTag( tag ) {
       height: 20px;
       border: 1px solid var(--uvalib-grey);
       background: white;
+      border-radius: 15px;
+   }
+   .tag.wide {
+      border-radius: 0;
    }
    .tag.rescan {
       background: var(--uvalib-red);

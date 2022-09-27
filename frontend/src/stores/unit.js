@@ -37,12 +37,40 @@ export const useUnitStore = defineStore('unit', {
       },
       totalFiles: state => {
          return state.masterFiles.length
+      },
+      allPageImagesSelected: state => {
+         if (state.rangeStartIdx == -1 || state.rangeEndIdx == -1) return false
+         let pageStart = (state.currPage-1)*state.pageSize
+         if (state.rangeStartIdx !=  pageStart) return false
+         let endIdx = pageStart+state.pageSize
+         if (endIdx >= state.masterFiles.length) {
+            endIdx = state.masterFiles.length-1
+         }
+         if (state.rangeEndIdx != endIdx) return false
+
+         return true
       }
    },
    actions: {
+      selectPage() {
+         this.rangeStartIdx = this.pageStartIdx
+         this.rangeEndIdx = this.rangeStartIdx + this.pageSize
+         if (this.rangeEndIdx >= this.masterFiles.length) {
+            this.rangeEndIdx = this.masterFiles.length-1
+         }
+         for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+            this.masterFiles[i].selected = true
+         }
+      },
       selectAll() {
          this.rangeStartIdx = 0
          this.rangeEndIdx = this.masterFiles.length - 1
+         this.masterFiles.forEach( mf => mf.selected = true)
+      },
+      deselectAll() {
+         this.rangeStartIdx = -1
+         this.rangeEndIdx = - 1
+         this.masterFiles.forEach( mf => mf.selected = false)
       },
       async setPage(startPageNum) {
          this.currPage = startPageNum
@@ -51,22 +79,6 @@ export const useUnitStore = defineStore('unit', {
       setPageSize(newSize) {
          this.pageSize = newSize
          this.setPage(1)
-      },
-
-      applyMasterFileMetadataUpdate(data) {
-         // data is an array of {file, title, description}
-         data.forEach( d => {
-            let mfIdx = this.masterFiles.findIndex( mf => mf.path == d.file)
-            if (mfIdx > -1) {
-               let mf = this.masterFiles[mfIdx]
-               mf.title = d.title
-               mf.description = d.description
-               mf.status = d.status
-               mf.componentID = d.componentID
-               mf.error = ""
-               this.masterFiles.splice(mfIdx,1, mf)
-            }
-         })
       },
 
       setMasterFileProblems(data) {
@@ -78,13 +90,6 @@ export const useUnitStore = defineStore('unit', {
                this.masterFiles.splice(mfIdx,1, mf)
             }
          })
-      },
-
-      removeMasterFile(fn) {
-         let mfIdx = this.masterFiles.findIndex( mf => mf.fileName == fn)
-         if (mfIdx > -1) {
-            this.masterFiles.splice(mfIdx,1)
-         }
       },
 
       setComponentInfo(data) {
@@ -112,6 +117,32 @@ export const useUnitStore = defineStore('unit', {
          this.viewMode = "list"
       },
 
+      masterFileSelected(idx) {
+         if (this.masterFiles[idx].selected) {
+            this.masterFiles.forEach( mf => mf.selected = false)
+            this.rangeStartIdx = -1
+            this.rangeEndIdx = -1
+         } else {
+            let priorSelIdx = this.masterFiles.findIndex( mf => mf.selected)
+            if (priorSelIdx == -1) {
+               this.masterFiles[idx].selected = true
+               this.rangeStartIdx = idx
+               this.rangeEndIdx = idx
+            } else {
+               if (priorSelIdx < idx) {
+                  this.rangeStartIdx = priorSelIdx
+                  this.rangeEndIdx = idx
+               } else {
+                  this.rangeStartIdx = idx
+                  this.rangeEndIdx = priorSelIdx
+               }
+               for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+                  this.masterFiles[i].selected = true
+               }
+            }
+         }
+      },
+
       async getUnitMasterFiles(unit) {
          // dont try to reload a unit if the data is already present
          let intUnit = parseInt(unit, 10)
@@ -125,6 +156,7 @@ export const useUnitStore = defineStore('unit', {
             this.masterFiles.splice(0, this.masterFiles.length)
             response.data.masterFiles.forEach( mf =>{
                mf.error = ""
+               mf.selected = false
                this.masterFiles.push(mf)
             })
             this.problems = response.data.problems
@@ -184,6 +216,7 @@ export const useUnitStore = defineStore('unit', {
 
          const system = useSystemStore()
          system.working = true
+         console.log("getMetadataPage")
          let mdURL = `/api/units/${ this.currUnit}/masterfiles/metadata?page=${this.currPage}&pagesize=${this.pageSize}`
          return axios.get(mdURL).then(response => {
             system.working = false
@@ -198,6 +231,8 @@ export const useUnitStore = defineStore('unit', {
                mf.width = md.width
                mf.height = md.height
                mf.status = md.status
+               mf.box = md.box
+               mf.folder = md.folder
                mf.componentID = md.componentID
             })
             this.pageMasterFiles = this.masterFiles.slice(startIdx, startIdx+this.pageSize)
@@ -207,7 +242,7 @@ export const useUnitStore = defineStore('unit', {
          })
       },
 
-      updatePageNumbers( {start, verso} ) {
+      updatePageNumbers( start, verso ) {
          const system = useSystemStore()
          system.working = true
          let data = []
@@ -226,12 +261,15 @@ export const useUnitStore = defineStore('unit', {
             } else {
                page+=1
             }
-            data.push( {file: mf.path, title: title, description: mf.description, status: mf.status, componentID: mf.componentID})
+            data.push( {file: mf.path, field: "title", value: title})
             pageCnt+=1
          }
 
-         axios.post(`/api/units/${this.currUnit}/update?field=title`, data).then( resp => {
-            this.applyMasterFileMetadataUpdate(data)
+         axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
+            for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+               let update = data.shift()
+               this.masterFiles[i].title = update.value
+            }
             system.working = false
             if (resp.data.success == false) {
                system.setError("Some images were not renumbered")
@@ -248,10 +286,13 @@ export const useUnitStore = defineStore('unit', {
          let data = []
          for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
             let mf = this.masterFiles[i]
-            data.push( {file: mf.path, title: mf.title.trim(), description: mf.description.trim(), status: mf.status, componentID: componentID})
+            data.push( {file: mf.path, field: "component", value: componentID})
          }
-         return axios.post(`/api/units/${this.currUnit}/update?field=component`, data).then( resp => {
-            this.applyMasterFileMetadataUpdate(data)
+         return axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
+            for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+               let update = data.shift()
+               this.masterFiles[i].componentID = update.value
+            }
             system.working = false
             if (resp.data.success == false) {
                system.setError("Some images could not be linked with component "+componentID)
@@ -262,63 +303,57 @@ export const useUnitStore = defineStore('unit', {
          })
       },
 
-      async updateMasterFileMetadata({file, title, description, status, componentID}) {
+      async setLocation(field, value) {
          const system = useSystemStore()
          system.working = true
-         let cleanTitle = title
-         if (cleanTitle) {
-            cleanTitle = cleanTitle.trim()
-         } else {
-            cleanTitle = ""
+         let data = []
+         for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+            let mf = this.masterFiles[i]
+            data.push( {file: mf.path, field: field, value: value})
          }
-         let cleanDesc = description
-         if (cleanDesc) {
-            cleanDesc = cleanDesc.trim()
-         } else {
-            cleanDesc = ""
-         }
-         let data = [{file: file, title: cleanTitle, description: cleanDesc, status: status, componentID: componentID}]
-         if (data)
          return axios.post(`/api/units/${this.currUnit}/update`, data).then( resp => {
-            this.applyMasterFileMetadataUpdate(data)
+            for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+               let update = data.shift()
+               if (field == "folder") {
+                  this.masterFiles[i].folder = update.value
+               } else {
+                  this.masterFiles[i].box = update.value
+               }
+            }
+            system.working = false
+            if (resp.data.success == false) {
+               system.setError("Faolder assignment failed for some images")
+               this.setMasterFileProblems(resp.data.problems)
+            }
+         }).catch( e => {
+            system.setError(e)
+         })
+      },
+
+      async updateMasterFileMetadata(file, field, value) {
+         const system = useSystemStore()
+         system.working = true
+         if (field == "tag" && value == "none") {
+            value = ""
+         }
+         return axios.post(`/api/units/${this.currUnit}/${file}/update?field=${field}&value=${encodeURIComponent(value.trim())}`).then( resp => {
+            let tgtMF = this.masterFiles.find( mf => mf.fileName == file)
+            if (field == "title") {
+               tgtMF.title = value
+            } else if (field == "description") {
+               tgtMF.description = value
+            } else if (field == "box") {
+               tgtMF.box = value
+            } else if (field == "folder") {
+               tgtMF.folder = value
+            } else if (field == "tag") {
+               tgtMF.status = value
+            }
             system.working = false
             if (resp.data.success == false) {
                system.setError("Unable to update image metadata")
                this.setMasterFileProblems(resp.data.problems)
             }
-         }).catch( e => {
-            system.setError(e)
-         })
-      },
-
-      async setTag({file, tag}) {
-         const system = useSystemStore()
-         system.working = true
-         let mf = this.masterFiles.find( mf => mf.path == file)
-         let status = tag
-         if (tag == "none") {
-            status = ""
-         }
-         let data = [{file: file, title: mf.title.trim(), description: mf.description.trim(), status: status}]
-         return axios.post(`/api/units/${this.currUnit}/update?field=tag`, data).then( resp => {
-            this.applyMasterFileMetadataUpdate(data)
-            system.working = false
-            if (resp.data.success == false) {
-               system.setError("Unable to set tag on image")
-               this.setMasterFileProblems(resp.data.problems)
-            }
-         }).catch( e => {
-            system.setError(e)
-         })
-      },
-
-      deleteMasterFile(mf) {
-         const system = useSystemStore()
-         system.working = true
-         axios.delete(`/api/units/${this.currUnit}/${mf}`).then(() => {
-            this.removeMasterFile(mf)
-            system.working = false
-            window.location.reload()
          }).catch( e => {
             system.setError(e)
          })

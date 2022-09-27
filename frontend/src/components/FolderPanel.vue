@@ -1,6 +1,6 @@
 <template>
-   <div class="page-number panel">
-      <h3>Set Page Numbering</h3>
+   <div class="folder panel">
+      <h3>Folder Information</h3>
       <div class="content">
          <span class="entry pad-right">
             <label>Start Image:</label>
@@ -9,23 +9,22 @@
                <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
             </select>
          </span>
-         <span class="entry  pad-right">
+         <span class="entry pad-right">
             <label>End Image:</label>
             <select id="end-page" v-model="unitStore.rangeEndIdx">
                <option disabled :value="-1">Select end page</option>
                <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
             </select>
          </span>
-            <span class="entry">
-            <label>Starting Page:</label>
-            <input id="start-page-num" type="text" v-model="startPage"  @keyup.enter="okPagesClicked"/>
-            </span>
+         <span class="entry">
+            <label>Folder:</label>
+            <input id="folder-id" type="text" v-model="folder"  @keyup.enter="okClicked"/>
+         </span>
       </div>
       <div class="panel-actions">
          <DPGButton @click="selectAllClicked" class="left">Select All</DPGButton>
-         <label class="verso">Unnumbered Verso<input v-model="unnumberVerso" type="checkbox"/></label>
          <DPGButton @click="cancelEditClicked" class="right-pad">Cancel</DPGButton>
-         <DPGButton @click="okPagesClicked">OK</DPGButton>
+         <DPGButton @click="okClicked">OK</DPGButton>
       </div>
    </div>
 </template>
@@ -38,8 +37,7 @@ import { ref, onMounted, nextTick } from 'vue'
 const unitStore = useUnitStore()
 const systemStore = useSystemStore()
 
-const startPage = ref("1")
-const unnumberVerso = ref(false)
+const folder = ref("")
 
 onMounted( async () => {
    nextTick( () => {
@@ -48,26 +46,12 @@ onMounted( async () => {
    })
 })
 
+async function okClicked() {
+   await unitStore.setLocation( "folder", folder.value )
+   cancelEditClicked()
+}
 function cancelEditClicked() {
    systemStore.error = ""
-   unitStore.editMode = ""
-}
-
-function okPagesClicked() {
-   systemStore.error = ""
-   if ( unitStore.rangeStartIdx == -1 || unitStore.rangeEndIdx == -1) {
-      systemStore.error = "Start and end image must be selected"
-      return
-   }
-   if (startPage.value == "") {
-      systemStore.error = "Start page is required"
-      return
-   }
-   if (unnumberVerso.value && (unitStore.rangeEndIdx-unitStore.rangeStartIdx)%2 == 0) {
-      systemStore.error = "An even number of pages is required for unnumbered verso"
-      return
-   }
-   unitStore.updatePageNumbers(startPage.value, !unnumberVerso.value)
    unitStore.editMode = ""
 }
 function selectAllClicked() {
@@ -88,7 +72,7 @@ function selectAllClicked() {
       font-weight: 500;
    }
    .panel-actions {
-      padding: 0 0 20px 0;
+      padding: 5px 0 20px 0;
       display: flex;
       flex-flow: row wrap;
       justify-content: flex-end;
@@ -99,19 +83,6 @@ function selectAllClicked() {
       }
       .left {
          margin-right: auto;
-      }
-   }
-   .verso {
-      cursor: pointer;
-      margin-right: auto;
-      label {
-         vertical-align: middle;
-      }
-      input {
-         width: 16px;
-         height: 16px;
-         margin-left: 10px;
-         vertical-align: middle;
       }
    }
    .content {
@@ -133,11 +104,6 @@ function selectAllClicked() {
       .entry.pad-right {
          padding-right: 25px;
       }
-   }
-   .error {
-      font-style: italic;
-      color: var(--uvalib-red-emergency);
-      margin: 0;
    }
 }
 </style>

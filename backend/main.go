@@ -11,7 +11,7 @@ import (
 )
 
 // Version of the service
-const Version = "4.2.3"
+const Version = "5.0.0"
 
 func main() {
 	// Load cfg
@@ -47,14 +47,14 @@ func main() {
 
 		api.GET("/units/:uid/masterfiles", svc.authMiddleware, svc.getUnitMasterFiles)
 		api.GET("/units/:uid/masterfiles/metadata", svc.authMiddleware, svc.getMasterFilesMetadata)
-		api.POST("/units/:uid/update", svc.authMiddleware, svc.updateMetadata)
+		api.POST("/units/:uid/update", svc.authMiddleware, svc.updateMetadataBatch)
 		api.POST("/units/:uid/rename", svc.authMiddleware, svc.renameFiles)
-		api.DELETE("/units/:uid/:file", svc.authMiddleware, svc.deleteFile)
 		api.POST("/units/:uid/:file/rotate", svc.authMiddleware, svc.rotateFile)
+		api.POST("/units/:uid/:file/update", svc.updateImageMetadata)
 	}
 
 	// Note: in dev mode, this is never actually used. The front end is served
-	// by yarn and it proxies all requests to the API to the routes above
+	// by NPM and it proxies all requests to the API to the routes above
 	router.Use(static.Serve("/", static.LocalFile("./public", true)))
 
 	// add a catchall route that renders the index page.

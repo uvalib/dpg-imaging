@@ -98,6 +98,8 @@ type masterFileMetadata struct {
 	Height       int    `json:"height"`
 	Status       string `json:"status"`
 	ComponentID  string `json:"componentID"`
+	Box          string `json:"box"`
+	Folder       string `json:"folder"`
 }
 
 type unitMasterfiles struct {
@@ -215,7 +217,7 @@ func (svc *serviceContext) getMasterFilesMetadata(c *gin.Context) {
 	}
 	unitDir := path.Join(svc.ImagesDir, uidStr)
 	startSeqNum := (currPage-1)*pageSize + 1
-	log.Printf("INFO: get %d metadata records from %s from masterfile %d", pageSize, unitDir, startSeqNum)
+	log.Printf("INFO: get %d metadata records from %s starting from masterfile index %d", pageSize, unitDir, startSeqNum)
 
 	// use exiftool to get metadata for master files on the current page only
 	start := time.Now()
@@ -255,7 +257,7 @@ func (svc *serviceContext) getMasterFilesMetadata(c *gin.Context) {
 
 	elapsed := time.Since(start)
 	elapsedMS := int64(elapsed / time.Millisecond)
-	log.Printf("INFO: got %d metadata records for unit %s in %dms", pageSize, uidStr, elapsedMS)
+	log.Printf("INFO: got %d metadata records for unit %s in %dms", len(out), uidStr, elapsedMS)
 
 	c.JSON(http.StatusOK, out)
 }

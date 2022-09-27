@@ -352,15 +352,9 @@ func (svc *serviceContext) validateDirectory(proj *project, tgtDir string) error
 	if err != nil {
 		return err
 	}
-	err = svc.validateTifSequence(proj, tgtDir)
+	err = svc.validateImages(proj, tgtDir)
 	if err != nil {
 		return err
-	}
-	if proj.Workflow.Name == "Manuscript" {
-		err = svc.validateDirectoryStructure(proj, tgtDir)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -402,16 +396,17 @@ func (svc *serviceContext) validateDirectoryContent(proj *project, tgtDir string
 	return nil
 }
 
-func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) error {
-	log.Printf("INFO: validate count and tif sequence in %s", tgtDir)
+func (svc *serviceContext) validateImages(proj *project, tgtDir string) error {
+	log.Printf("INFO: validate images info in %s", tgtDir)
 	highest := -1
 	cnt := 0
 
 	pendingFilesCnt := 0
 	chunkSize := 20
-	cmdArray := titleExifCmd()
-	channel := make(chan []titleCheck)
+	cmdArray := qaExifCmd()
+	channel := make(chan []qaCheck)
 	outstandingRequests := 0
+	isManuscript := proj.Workflow.Name == "Manuscript"
 
 	err := filepath.WalkDir(tgtDir, func(fullPath string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() {
@@ -420,7 +415,7 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 
 		lcFN := strings.ToLower(entry.Name())
 		if lcFN == "notes.txt" {
-			if proj.Workflow.Name != "Manuscript" {
+			if isManuscript == false {
 				log.Printf("ERROR: found notes.text for non-manuscript workflow")
 				svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Found unexpected notes: %s</p>", fullPath))
 				return fmt.Errorf("unexpected %s", fullPath)
@@ -451,8 +446,8 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 			pendingFilesCnt++
 			if pendingFilesCnt == chunkSize {
 				outstandingRequests++
-				go checkExifHeaders(cmdArray, channel)
-				cmdArray = titleExifCmd()
+				go checkExifHeaders(cmdArray, isManuscript, channel)
+				cmdArray = qaExifCmd()
 				pendingFilesCnt = 0
 			}
 		}
@@ -462,7 +457,7 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 
 	if pendingFilesCnt > 0 {
 		outstandingRequests++
-		go checkExifHeaders(cmdArray, channel)
+		go checkExifHeaders(cmdArray, isManuscript, channel)
 	}
 
 	if err != nil {
@@ -481,7 +476,6 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 		log.Printf("INFO: await %d outstanding header check requests for  %s", outstandingRequests, tgtDir)
 		for outstandingRequests > 0 {
 			info := <-channel
-			log.Printf("INFO: received header check response")
 			outstandingRequests--
 			if len(info) == 0 {
 				svc.failStep(proj, "Metadata", "<p>Unable to extract metadata from images.</p>")
@@ -489,8 +483,12 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 			}
 			for _, tc := range info {
 				if tc.Valid == false {
-					svc.failStep(proj, "Metadata", fmt.Sprintf("<p>Missing Tile metadata in %s.</p>", tc.File))
-					return fmt.Errorf("Missing Tile metadata in %s", tc.File)
+					msg := ""
+					for _, em := range tc.Errors {
+						msg += fmt.Sprintf("<li>%s</li>", em)
+					}
+					svc.failStep(proj, "Metadata", fmt.Sprintf("%s has the following errors: <ul>%s<ul>", tc.File, msg))
+					return fmt.Errorf("Metadata errors in %s", tc.File)
 				}
 			}
 			if outstandingRequests > 0 {
@@ -500,74 +498,7 @@ func (svc *serviceContext) validateTifSequence(proj *project, tgtDir string) err
 		log.Printf("INFO: all header check requests have completed for %s", tgtDir)
 	}
 
-	log.Printf("INFO: %s sequence is valid", tgtDir)
-	return nil
-}
-
-func (svc *serviceContext) validateDirectoryStructure(proj *project, tgtDir string) error {
-	log.Printf("INFO: validate structure %s", tgtDir)
-	// All manuscripts have a top level directory with any name. If ContainerType is
-	// set to has_folders=true, this must contain folders only. all tif images reside in the folders.
-	// If not, the top-level directory containes the tif images
-	foundContainerDir := false
-	foundFolders := false
-	err := filepath.WalkDir(tgtDir, func(fullPath string, entry fs.DirEntry, err error) error {
-		if err != nil || tgtDir == fullPath {
-			return nil
-		}
-
-		// strip off base dir, leaving just the relative path (minus the starting /)
-		relPath := fullPath[len(tgtDir)+1:]
-		depth := len(strings.Split(relPath, "/"))
-		log.Printf("INFO: validate %s, depth %d", relPath, depth)
-		if entry.IsDir() {
-			if depth > 2 {
-				svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Too many subdirectories: %s</p>", relPath))
-				return fmt.Errorf("too many subdirectories %s", relPath)
-			}
-
-			if depth == 2 {
-				if proj.ContainerType.HasFolders == false {
-					svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Folder directories not allowed in '%s' containers</p>", proj.ContainerType.Name))
-					return fmt.Errorf("folders not allowed in %s", proj.ContainerType.Name)
-				}
-				foundFolders = true
-			}
-
-			if depth == 1 {
-				if foundContainerDir == true {
-					svc.failStep(proj, "Filesystem", "<p>There can only be one box directory</p>")
-					return fmt.Errorf("multiple box directories found in %s", tgtDir)
-				}
-				foundContainerDir = true
-			}
-		} else {
-			// Count slashes to figure out where in the directory tree this file resides.
-			// NOTE: use -1 becase the filename is part of the relative path; EX: box/sample.tif
-			// Validate based on folders flag in the container_type model
-			if depth-1 < 1 && strings.ToLower(entry.Name()) != "notes.txt" {
-				svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Files found in project root directory: %s</p>", fullPath))
-				return fmt.Errorf("files found in root directory %s", fullPath)
-			}
-			if depth-1 == 1 && proj.ContainerType.HasFolders {
-				svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Files found in box directory: %s</p>", relPath))
-				return fmt.Errorf("files found in box directory %s", relPath)
-			}
-		}
-		return nil
-	})
-
-	if err != nil {
-		return err
-	}
-
-	// Validate presence of folders based on container_type
-	if foundFolders == false && proj.ContainerType.HasFolders == true {
-		svc.failStep(proj, "Filesystem", "<p>No folder directories found</p>")
-		return fmt.Errorf("missing required folders within %s", tgtDir)
-	}
-
-	log.Printf("INFO: %s structure is valid", tgtDir)
+	log.Printf("INFO: %s images and metadata are valid", tgtDir)
 	return nil
 }
 
