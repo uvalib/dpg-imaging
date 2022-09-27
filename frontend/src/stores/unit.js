@@ -37,9 +37,31 @@ export const useUnitStore = defineStore('unit', {
       },
       totalFiles: state => {
          return state.masterFiles.length
+      },
+      allPageImagesSelected: state => {
+         if (state.rangeStartIdx == -1 || state.rangeEndIdx == -1) return false
+         let pageStart = (state.currPage-1)*state.pageSize
+         if (state.rangeStartIdx !=  pageStart) return false
+         let endIdx = pageStart+state.pageSize
+         if (endIdx >= state.masterFiles.length) {
+            endIdx = state.masterFiles.length-1
+         }
+         if (state.rangeEndIdx != endIdx) return false
+
+         return true
       }
    },
    actions: {
+      selectPage() {
+         this.rangeStartIdx = this.pageStartIdx
+         this.rangeEndIdx = this.rangeStartIdx + this.pageSize
+         if (this.rangeEndIdx >= this.masterFiles.length) {
+            this.rangeEndIdx = this.masterFiles.length-1
+         }
+         for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+            this.masterFiles[i].selected = true
+         }
+      },
       selectAll() {
          this.rangeStartIdx = 0
          this.rangeEndIdx = this.masterFiles.length - 1
@@ -248,7 +270,6 @@ export const useUnitStore = defineStore('unit', {
                let update = data.shift()
                this.masterFiles[i].title = update.value
             }
-            this.deselectAll()
             system.working = false
             if (resp.data.success == false) {
                system.setError("Some images were not renumbered")
@@ -272,7 +293,6 @@ export const useUnitStore = defineStore('unit', {
                let update = data.shift()
                this.masterFiles[i].componentID = update.value
             }
-            this.deselectAll()
             system.working = false
             if (resp.data.success == false) {
                system.setError("Some images could not be linked with component "+componentID)
@@ -300,7 +320,6 @@ export const useUnitStore = defineStore('unit', {
                   this.masterFiles[i].box = update.value
                }
             }
-            this.deselectAll()
             system.working = false
             if (resp.data.success == false) {
                system.setError("Faolder assignment failed for some images")
