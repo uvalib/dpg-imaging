@@ -23,7 +23,10 @@ app.component("ErrorMessage", ErrorMessage)
 app.component("DPGButton", DPGButton)
 app.component("ConfirmModal", ConfirmModal)
 
+// Styles
 import '@fortawesome/fontawesome-free/css/all.css'
+import './assets/stylesheets/uva-colors.css'
+import './assets/stylesheets/main.scss'
 
 // actually mount to DOM
 app.mount('#app')
