@@ -473,8 +473,6 @@ div.hints {
          left: 0px;
       }
       h2 {
-         color: var(--uvalib-brand-orange);
-         margin: 10px 0;
          .title {
             display: block;
             margin: 0 200px;

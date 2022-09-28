@@ -50,7 +50,9 @@ func main() {
 		api.POST("/units/:uid/update", svc.authMiddleware, svc.updateMetadataBatch)
 		api.POST("/units/:uid/rename", svc.authMiddleware, svc.renameFiles)
 		api.POST("/units/:uid/:file/rotate", svc.authMiddleware, svc.rotateFile)
-		api.POST("/units/:uid/:file/update", svc.updateImageMetadata)
+		api.POST("/units/:uid/:file/update", svc.authMiddleware, svc.updateImageMetadata)
+
+		api.GET("/user/:id/messages", svc.authMiddleware, svc.getMessages)
 	}
 
 	// Note: in dev mode, this is never actually used. The front end is served

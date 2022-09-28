@@ -97,9 +97,9 @@
                         <span v-else class="assigned">{{ownerInfo(p)}}</span>
                      </span>
                      <span class="owner-buttons">
-                        <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)">Claim</DPGButton>
+                        <DPGButton2 v-if="canClaim(p)" @click="claimClicked(p.id)"  class="p-button-secondary">Claim</DPGButton2>
                         <AssignModal  v-if="canAssign" :projectID="p.id" @assign="assignClicked"/>
-                        <DPGButton class="view" @click="viewClicked(p.id)">View</DPGButton>
+                        <DPGButton2  class="view p-button-secondary" @click="viewClicked(p.id)">View</DPGButton2>
                      </span>
                   </div>
                </div>
