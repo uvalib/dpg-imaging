@@ -176,7 +176,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	qWorkflow := c.Query("workflow")
 	if qWorkflow != "" {
 		id, _ := strconv.Atoi(qWorkflow)
-		whereQ += fmt.Sprintf(" AND workflow_id=%d", id)
+		whereQ += fmt.Sprintf(" AND projects.workflow_id=%d", id)
 	}
 	qWorkstation := c.Query("workstation")
 	if qWorkstation != "" {
