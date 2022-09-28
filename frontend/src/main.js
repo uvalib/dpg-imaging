@@ -15,13 +15,9 @@ app.use( pinia )
 
 // Global component registration. All components can use these without import
 import WaitSpinner from "@/components/WaitSpinner.vue"
-import ErrorMessage from "@/components/ErrorMessage.vue"
 import DPGButton from "@/components/DPGButton.vue"
-import ConfirmModal from "@/components/ConfirmModal.vue"
 app.component("WaitSpinner", WaitSpinner)
-app.component("ErrorMessage", ErrorMessage)
 app.component("DPGButton", DPGButton)
-app.component("ConfirmModal", ConfirmModal)
 
 // Primevue setup
 import PrimeVue from 'primevue/config'

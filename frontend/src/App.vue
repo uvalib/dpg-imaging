@@ -28,7 +28,9 @@
          </div>
       </div>
       <router-view />
-      <ErrorMessage v-if="systemStore.error != ''" />
+      <Dialog v-model:visible="systemStore.showError" :modal="true" header="System Error" @hide="errorClosed()" class="error">
+         {{systemStore.error}}
+      </Dialog>
       <ScrollToTop />
    </div>
 </template>
@@ -41,11 +43,16 @@ import {useUserStore} from "@/stores/user"
 import {useMessageStore} from "@/stores/messages"
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
+import Dialog from 'primevue/dialog'
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
 const router = useRouter()
+
+function errorClosed() {
+   systemStore.setError("")
+}
 
 function signout() {
    userStore.signout()

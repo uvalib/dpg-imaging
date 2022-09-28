@@ -6,6 +6,7 @@ export const useSystemStore = defineStore('system', {
       working: false,
 		version: "unknown",
 		error: "",
+      showError: false,
       staffMembers: [],
       agencies: [],
       workstations: [],
@@ -25,6 +26,11 @@ export const useSystemStore = defineStore('system', {
       setError( e ) {
          this.error = e
          this.working = false
+         if (this.error && this.error.length > 0) {
+            this.showError = true
+         } else {
+            this.showError = false
+         }
       },
 		getVersion() {
          axios.get("/version").then(response => {

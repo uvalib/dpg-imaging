@@ -46,10 +46,16 @@
                   <option value="large">Gallery (large)</option>
                </select>
             </span>
-            <ConfirmModal label="Rename" class="right-pad" @confirmed="renameAll" :trigger="showRenameConfirm" @closed="showRenameConfirm=false">
-               <div>All files will be renamed to match the following format:</div>
-               <code>{{paddedUnit()}}_0001.tif - {{paddedUnit()}}_nnnn.tif</code>
-            </ConfirmModal>
+
+            <DPGButton2 @click="renameClicked" class="p-button-secondary right-pad" label="Rename"/>
+            <ConfirmDialog>
+               <template #message>
+                  <div>All files will be renamed to match the following format:</div>
+                  <code>{{paddedUnit()}}_0001.tif - {{paddedUnit()}}_nnnn.tif</code>
+               </template>
+            </ConfirmDialog>
+
+
             <DPGButton id="set-titles" @click="setPageNumbersClicked" class="button right-pad">Set Page Numbers</DPGButton>
             <template v-if="isManuscript">
                <DPGButton id="set-boxes" @click="boxClicked" class="button right-pad">Set Box</DPGButton>
@@ -85,7 +91,7 @@
          <draggable v-model="unitStore.pageMasterFiles" tag="tbody"  @start="dragStarted" item-key="fileName">
             <template #item="{element, index}">
                <tr :id="element.fileName" :key="element.fileName">
-                  <td class="grip"><input type="checkbox" v-model="element.selected" @click="masterFileCheckboxClicked(index)"/></td>
+                  <td><input type="checkbox" v-model="element.selected" @click="masterFileCheckboxClicked(index)"/></td>
                   <td class="thumb">
                      <router-link :to="imageViewerURL(index)"><img :src="element.thumbURL"/></router-link>
                   </td>
@@ -217,12 +223,14 @@ import {useUnitStore} from "@/stores/unit"
 import { computed, ref, onBeforeMount, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DPGPagination from '../components/DPGPagination.vue'
+import { useConfirm } from "primevue/useconfirm"
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
 const unitStore = useUnitStore()
 const route = useRoute()
 const router = useRouter()
+const confirm = useConfirm()
 
 // local data
 const editMF = ref(null)
@@ -330,8 +338,13 @@ function hoverExit() {
 function hoverEnter(f) {
    showError.value = f
 }
-function renameAll() {
-   unitStore.renameAll()
+function renameClicked() {
+   confirm.require({
+      header: 'Confirm Rename',
+      accept: () => {
+         unitStore.renameAll()
+      }
+   })
 }
 function boxClicked() {
    unitStore.editMode = "box"
@@ -542,10 +555,6 @@ div.hints {
          width:max-content;
       }
 
-      .pager {
-         margin-right: auto;
-      }
-
       .actions {
          margin-left: auto;
          display: flex;
@@ -593,39 +602,6 @@ div.hints {
       justify-content: flex-start;
       align-content: flex-start;
 
-      .edit-md {
-         float: right;
-         cursor: pointer;
-         font-size: 1.25em;
-         font-weight: bold;
-         &:hover {
-            color: var(--uvalib-blue-alt);
-         }
-      }
-      .edit-ctls {
-         position: relative;
-         top: 10px;
-         right: -5px;
-         font-size: 1.25em;
-         text-align: right;
-         i {
-            display: inline-block;
-         }
-         .cancel {
-            color: var(--uvalib-red-darker);
-            margin-right: 5px;
-            &:hover {
-               color: var(--uvalib-red-emergency);
-            }
-         }
-         .accept {
-            color: var(--uvalib-green-dark);
-            &:hover {
-               color: var(--uvalib-green-lightest);
-            }
-         }
-      }
-
       div.card {
          position: relative;
          border: 1px solid var(--uvalib-grey-light);
@@ -671,9 +647,6 @@ div.hints {
             background-color: #f5f5f5;
          }
       }
-      div.card.selected {
-         background: var(--uvalib-blue-alt-light);
-      }
    }
 
    div.gallery.medium {
@@ -697,7 +670,7 @@ div.hints {
          padding: 5px 10px;
          text-align: left;
          border-bottom: 1px solid var(--uvalib-grey-lightest);
-         cursor: grab;
+         cursor:  default;
       }
       td.thumb {
          padding: 5px 5px 2px 5px;
@@ -707,25 +680,10 @@ div.hints {
       }
       td.grip {
          color: var(--uvalib-grey);
+         cursor:  grab;
       }
       th {
          border-bottom: 1px solid var(--uvalib-grey);
-      }
-      tr {
-         &:hover {
-            background: aliceblue;
-         }
-      }
-      tr.selected {
-         &:hover {
-            background: aliceblue;
-         }
-      }
-      .selected {
-         background: var(--uvalib-blue-alt-light);
-         td {
-            border-bottom: 1px solid  var(--uvalib-blue-alt-light);
-         }
       }
    }
    .editable {
@@ -737,31 +695,6 @@ div.hints {
    }
    .nowrap {
       white-space: nowrap;
-   }
-   .popupmenu {
-      position: absolute;
-      background: var(--uvalib-blue-alt);
-      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-      padding: 0;
-      top: 50px;
-      left: 50px;
-      text-align: left;
-      ul {
-         background: white;
-         list-style: none;
-         margin: 0;
-         padding: 0;
-         border: 1px solid var(--uvalib-blue-alt-dark);
-         li {
-            padding: 4px 15px 4px 5px;
-            white-space: nowrap;
-            outline: 0;
-            cursor:pointer;
-            &:hover {
-               background: var(--uvalib-blue-alt-light);
-            }
-         }
-      }
    }
 }
 </style>

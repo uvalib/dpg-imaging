@@ -22,50 +22,43 @@
          </span>
       </div>
       <div class="panel-actions">
-         <DPGButton @click="selectAllClicked" class="left">Select All</DPGButton>
-         <DPGButton @click="unlinkClicked" class="right-pad">Unlink</DPGButton>
-         <DPGButton @click="cancelEditClicked" class="right-pad">Cancel</DPGButton>
-         <DPGButton @click="okClicked">OK</DPGButton>
+         <DPGButton2 @click="selectAllClicked" class="p-button-secondary left">Select All</DPGButton2>
+         <DPGButton2 @click="unlinkClicked" class="p-button-secondary right-pad">Unlink</DPGButton2>
+         <DPGButton2 @click="cancelEditClicked" class="p-button-secondary right-pad">Cancel</DPGButton2>
+         <DPGButton2 @click="okClicked">OK</DPGButton2>
       </div>
-      <div class="component-dimmer" v-if="unitStore.component.valid">
-         <div role="dialog" aria-labelledby="component-modal-title" id="component-modal" class="component-modal">
-            <div id="component-modal-title" class="component-modal-title">Confirm Component Link</div>
-            <div class="component-modal-content">
-               <table>
-                  <tr>
-                     <td class="label">Title:</td>
-                     <td class="data">{{formatData(unitStore.component.title)}}</td>
-                  </tr>
-                  <tr>
-                     <td class="label">Label:</td>
-                     <td class="data">{{formatData(unitStore.component.label)}}</td>
-                  </tr>
-                  <tr>
-                     <td class="label">Description:</td>
-                     <td class="data">{{formatData(unitStore.component.description)}}</td>
-                  </tr>
-                  <tr>
-                     <td class="label">Date:</td>
-                     <td class="data">{{formatData(unitStore.component.date)}}</td>
-                  </tr>
-                  <tr>
-                     <td class="label">Type:</td>
-                     <td class="data">{{formatData(unitStore.component.type)}}</td>
-                  </tr>
-               </table>
-               <p class="confirm">Link this component to selected images?</p>
-            </div>
-            <div class="component-modal-controls">
-               <DPGButton id="close-confirm" @click="noLinkClicked" @tabback="setFocus('ok-confirm')" :focusBackOverride="true">
-                  No
-               </DPGButton>
-               <span class="spacer"></span>
-               <DPGButton id="ok-confirm" @click="linkConfirmed" @tabnext="setFocus('close-confirm')" :focusNextOverride="true">
-                  Yes
-               </DPGButton>
-            </div>
+      <Dialog v-model:visible="unitStore.component.valid" :modal="true" header="Confirm Component Link">
+         <div class="component-modal-content">
+            <table>
+               <tr>
+                  <td class="label">Title:</td>
+                  <td class="data">{{formatData(unitStore.component.title)}}</td>
+               </tr>
+               <tr>
+                  <td class="label">Label:</td>
+                  <td class="data">{{formatData(unitStore.component.label)}}</td>
+               </tr>
+               <tr>
+                  <td class="label">Description:</td>
+                  <td class="data">{{formatData(unitStore.component.description)}}</td>
+               </tr>
+               <tr>
+                  <td class="label">Date:</td>
+                  <td class="data">{{formatData(unitStore.component.date)}}</td>
+               </tr>
+               <tr>
+                  <td class="label">Type:</td>
+                  <td class="data">{{formatData(unitStore.component.type)}}</td>
+               </tr>
+            </table>
+            <p class="confirm">Link this component to selected images?</p>
          </div>
-      </div>
+         <template #footer>
+            <DPGButton2 class="p-button-secondary" @click="noLinkClicked" label="No"/>
+            <span class="spacer"></span>
+            <DPGButton2 @click="linkConfirmed" label="Yes"/>
+         </template>
+      </Dialog>
    </div>
 </template>
 
@@ -73,6 +66,7 @@
 import {useUnitStore} from "@/stores/unit"
 import {useSystemStore} from "@/stores/system"
 import { ref, onMounted, nextTick } from 'vue'
+import Dialog from 'primevue/dialog'
 
 const unitStore = useUnitStore()
 const systemStore = useSystemStore()
@@ -177,71 +171,20 @@ function selectAllClicked() {
          padding-right: 25px;
       }
    }
-   .error {
-      font-style: italic;
-      color: var(--uvalib-red-emergency);
-      margin: 0;
+}
+:deep(table) {
+   font-size: 0.9em;
+   padding: 15px 15px 0 15px;
+   td {
+      padding: 3px;
+      text-align: left;
    }
-   .component-dimmer {
-      position: fixed;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1000;
-      background: rgba(0, 0, 0, 0.2);
-      div.component-modal {
-         color: var(--uvalib-text);
-         position: fixed;
-         height: auto;
-         z-index: 8000;
-         background: white;
-         top: 30%;
-         left: 50%;
-         transform: translate(-50%, -50%);
-         box-shadow: var(--box-shadow);
-         border-radius: 5px;
-         min-width: 450px;
-         max-width: 50%;
-         border: 1px solid var(--uvalib-grey);
-         div.component-modal-title {
-            background:  var(--uvalib-blue-alt-light);
-            font-size: 1.1em;
-            color: var(--uvalib-text-dark);
-            font-weight: 500;
-            padding: 10px;
-            border-radius: 5px 5px 0 0;
-            border-bottom: 2px solid  var(--uvalib-blue-alt);
-            text-align: left;
-         }
-         .component-modal-content {
-            font-size: 0.9em;
-            padding: 15px 15px 0 15px;
-            .confirm {
-               text-align: right;
-            }
-            td {
-               padding: 3px;
-               text-align: left;
-            }
-            td.label {
-               font-weight: bold;
-               text-align: right;
-            }
-         }
-         div.component-modal-controls {
-            padding: 10px 20px 20px 20px;
-            font-size: 0.9em;
-            margin: 0;
-            display: flex;
-            flex-flow: row wrap;
-            justify-content: flex-end;
-            .spacer {
-               display: inline-block;
-               margin: 0 5px;
-            }
-         }
-      }
+   td.label {
+      font-weight: bold;
+      text-align: right;
    }
+}
+:deep(p.confirm) {
+   text-align: right;
 }
 </style>

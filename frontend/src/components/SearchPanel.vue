@@ -39,8 +39,8 @@
          </select>
       </div>
       <div class="buttons">
-         <DPGButton2  class="p-button-secondary" @click="resetSearch">Reset Search</DPGButton2>
-         <DPGButton2  class="p-button-secondary" @click="doSearch">Search</DPGButton2>
+         <DPGButton2 class="p-button-secondary" @click="resetSearch" label="Reset Search"/>
+         <DPGButton2 class="p-button-secondary" @click="doSearch" label="Search"/>
       </div>
    </div>
 </template>

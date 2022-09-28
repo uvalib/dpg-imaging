@@ -8,8 +8,8 @@
          </span>
       </div>
       <div class="panel-actions">
-         <DPGButton @click="cancelEditClicked" class="right-pad">Cancel</DPGButton>
-         <DPGButton @click="okClicked">OK</DPGButton>
+         <DPGButton2 class="p-button-secondary right-pad" @click="cancelEditClicked">Cancel</DPGButton2>
+         <DPGButton2 @click="okClicked">OK</DPGButton2>
       </div>
    </div>
 </template>
