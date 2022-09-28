@@ -1,5 +1,5 @@
 <template>
-   <DPGButton2 @click="show" label="Asssign" class="p-button-secondary"/>
+   <DPGButton2 @click="show" :label="props.label" class="p-button-secondary"/>
    <Dialog v-model:visible="isOpen" :modal="true" header="Assign Project">
       <div class="assign-modal-content">
          <div class="candidate-scroller">
@@ -31,6 +31,10 @@ const props = defineProps({
          type: Number,
          required: true,
       },
+      label: {
+         type: String,
+         default: "Assign"
+      }
    })
 
 const isOpen = ref(false)

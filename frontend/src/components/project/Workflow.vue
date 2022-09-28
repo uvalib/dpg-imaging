@@ -29,37 +29,30 @@
             <input id="time" type="number" v-model="stepMinutes"  @keyup.enter="timeEntered">
          </div>
          <div class="ok-cancel">
-             <DPGButton @click="cancelFinish">Cancel</DPGButton>
-             <DPGButton @click="timeEntered">OK</DPGButton>
+             <DPGButton2 @click="cancelFinish" class="p-button-secondary" label="Cancel"/>
+             <DPGButton2 @click="timeEntered" label="OK"/>
          </div>
       </div>
       <div class="workflow-btns" v-else-if="isFinalizeRunning(selectedProjectIdx) == false && isFinished(selectedProjectIdx) == false">
+         <DPGButton2 @click="viewerClicked" class="p-button-secondary" v-if="isScanning == false && (isOwner(userStore.computeID) || isSupervisor || isAdmin)" label="Open QA Viewer"/>
+         <DPGButton2 v-if="hasOwner(selectedProjectIdx) && (isAdmin || isSupervisor)"
+            @click="clearClicked()" class="p-button-secondary pad-right" label="Clear Assignment"/>
          <template v-if="isOwner(userStore.computeID)">
-            <DPGButton @click="viewerClicked" class="pad-right" v-if="isScanning == false">Open QA Viewer</DPGButton>
             <template v-if="isWorking(selectedProjectIdx) == false">
-               <AssignModal v-if="(isOwner(userStore.computeID) || isSupervisor || isAdmin) "
-                  :projectID="currProject.id" @assign="assignClicked" label="Reassign"/>
-               <DPGButton v-if="inProgress(selectedProjectIdx) == false" @click="startStep">Start</DPGButton>
-               <DPGButton v-if="inProgress(selectedProjectIdx) == true" :disabled="!isFinishEnabled" @click="finishClicked">
+               <AssignModal v-if="(isOwner(userStore.computeID) || isSupervisor || isAdmin)" :projectID="currProject.id" label="Reassign"/>
+               <DPGButton2 v-if="inProgress(selectedProjectIdx) == false" @click="startStep" label="Start"/>
+               <DPGButton2 v-if="canReject(selectedProjectIdx)" class="p-button-danger" @click="rejectStepClicked" label="Reject"/>
+               <DPGButton2 v-if="inProgress(selectedProjectIdx) == true" :disabled="!isFinishEnabled" @click="finishClicked">
                   <template v-if="isFinalizing &&  hasError(selectedProjectIdx) == true">Retry Finalize</template>
                   <template v-else>Finish</template>
-               </DPGButton>
-               <DPGButton v-if="canReject(selectedProjectIdx)" class="reject"  @click="rejectStepClicked">Reject</DPGButton>
+               </DPGButton2>
             </template>
          </template>
          <template v-else>
-            <DPGButton @click="viewerClicked" class="pad-right" v-if="isScanning == false && (isAdmin || isSupervisor)">Open QA Viewer</DPGButton>
-            <DPGButton
-               v-if="isWorking(selectedProjectIdx) == false && (hasOwner(selectedProjectIdx) == false || isAdmin ||isSupervisor)"
-               @click="claimClicked()"  class="pad-right"
-            >
-               Claim
-            </DPGButton>
-            <AssignModal v-if="(isAdmin || isSupervisor)" :projectID="currProject.id" @assign="assignClicked"/>
+            <DPGButton2 v-if="isWorking(selectedProjectIdx) == false && (hasOwner(selectedProjectIdx) == false || isAdmin ||isSupervisor)"
+               @click="claimClicked()"  class="p-button-secondary pad-right" label="Claim"/>
+            <AssignModal v-if="(isAdmin || isSupervisor)" :projectID="currProject.id" />
          </template>
-         <DPGButton v-if="hasOwner(selectedProjectIdx) && (isAdmin || isSupervisor)" @click="clearClicked()" class="pad-right">
-            Clear Assignment
-         </DPGButton>
       </div>
       <div class="workflow-message" v-if="isOwner(userStore.computeID) && workflowNote">
          {{workflowNote}}
@@ -160,10 +153,6 @@ function clearClicked() {
 function rejectStepClicked() {
    action.value = "reject"
    showTimeEntry()
-}
-
-function assignClicked( info ) {
-   projectStore.assignProject({projectID: currProject.value.id, ownerID: info.ownerID} )
 }
 
 function claimClicked() {
@@ -267,16 +256,9 @@ function unitDirectory(unitID) {
       text-align: right;
       padding: 10px;
       border-top: 1px solid var(--uvalib-grey-light);
-      .dpg-button {
+      button.p-button {
          margin-left: 10px;
       }
-       .dpg-button.reject {
-          background: rgb(178, 34, 34);
-          color: white;
-          &:hover {
-             background: rgb(210, 60, 60);
-          }
-       }
    }
    .workflow-btns.time {
       text-align: left;

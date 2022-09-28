@@ -55,13 +55,12 @@
                </template>
             </ConfirmDialog>
 
-
-            <DPGButton id="set-titles" @click="setPageNumbersClicked" class="button right-pad">Set Page Numbers</DPGButton>
+            <DPGButton2 @click="setPageNumbersClicked" class="p-button-secondary right-pad" label="Set Page Numbers"/>
             <template v-if="isManuscript">
-               <DPGButton id="set-boxes" @click="boxClicked" class="button right-pad">Set Box</DPGButton>
-               <DPGButton id="set-folders" @click="folderClicked" class="button right-pad">Set Folder</DPGButton>
+               <DPGButton2 @click="boxClicked" class="p-button-secondary right-pad" label="Set Box"/>
+               <DPGButton2 @click="folderClicked" class="p-button-secondary right-pad" label="Set Folder"/>
             </template>
-            <DPGButton id="set-titles" @click="componentLinkClicked" class="button">Component Link</DPGButton>
+            <DPGButton2 @click="componentLinkClicked" class="p-button-secondary" label="Component Link"/>
          </span>
       </div>
       <PageNumPanel v-if="unitStore.editMode == 'page'" />
