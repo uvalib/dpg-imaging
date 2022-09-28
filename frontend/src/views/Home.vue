@@ -97,9 +97,9 @@
                         <span v-else class="assigned">{{ownerInfo(p)}}</span>
                      </span>
                      <span class="owner-buttons">
-                        <DPGButton2 v-if="canClaim(p)" @click="claimClicked(p.id)"  class="p-button-secondary">Claim</DPGButton2>
-                        <AssignModal  v-if="canAssign" :projectID="p.id" @assign="assignClicked"/>
-                        <DPGButton2  class="view p-button-secondary" @click="viewClicked(p.id)">View</DPGButton2>
+                        <DPGButton2 v-if="canClaim(p)" @click="claimClicked(p.id)" class="p-button-secondary right-pad" label="Claim"/>
+                        <AssignModal  v-if="canAssign" :projectID="p.id" />
+                        <DPGButton2  class="view p-button-secondary" @click="viewClicked(p.id)" label="View"/>
                      </span>
                   </div>
                </div>
@@ -141,9 +141,6 @@ function viewClicked(projID) {
 }
 function canAssign() {
    return (userStore.isAdmin || userStore.isSupervisor)
-}
-function assignClicked( info ) {
-   projectStore.assignProject( {projectID: info.projectID, ownerID: info.ownerID} )
 }
 function nextClicked() {
    projectStore.setCurrentPage(projectStore.currPage+1 )
