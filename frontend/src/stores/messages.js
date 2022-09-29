@@ -62,6 +62,14 @@ export const useMessageStore = defineStore('message', {
          }).catch( e => {
             system.setError(e)
          })
+      },
+      sendMessage(msg) {
+         const system = useSystemStore()
+         axios.post(`/api/user/${this.userID}/messages/send`, msg).then( resp => {
+            this.sent.push(resp.data)
+         }).catch( e => {
+            system.setError(e)
+         })
       }
    },
 })

@@ -1,6 +1,9 @@
 <template>
    <div class="messages">
       <h2>Messages</h2>
+      <div class="acts">
+         <DPGButton @click="createClicked" class="p-button-secondary" label="Create Message"/>
+      </div>
       <TabView>
          <TabPanel header="Inbox">
             <div v-if="messageStore.inbox.length == 0">
@@ -79,18 +82,73 @@
             </DataTable>
          </TabPanel>
       </TabView>
+      <Dialog v-model:visible="composeOpen" :modal="true" header="New Message" @hide="cancelMessage" style="width:650px;">
+         <div class="row">
+            <label>To</label>
+            <select v-model="newMessage.to">
+               <option disabled :value="0">Select a recipient</option>
+               <option v-for="sm in systemStore.staffMembers" :key="`sm${sm.id}`" :value="sm.id">{{sm.lastName}}, {{sm.firstName}}</option>
+            </select>
+         </div>
+         <div class="row">
+            <label>Subject</label>
+            <input  v-model="newMessage.subject" />
+         </div>
+         <div class="row">
+            <label>Message</label>
+            <textarea :rows="10" v-model="newMessage.message"></textarea>
+         </div>
+         <p class="error">{{error}}</p>
+         <template #footer>
+            <DPGButton @click="cancelMessage" label="Cancel" class="p-button-secondary right-pad"/>
+            <DPGButton @click="sendMessage" label="Send"/>
+         </template>
+      </Dialog>
    </div>
 </template>
 
 <script setup>
 import {useMessageStore} from "@/stores/messages"
+import {useSystemStore} from "@/stores/system"
 import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import Dialog from 'primevue/dialog'
 import dayjs from 'dayjs'
+import { ref } from 'vue'
 
 const messageStore = useMessageStore()
+const systemStore = useSystemStore()
+
+const composeOpen = ref(false)
+const newMessage = ref({to: 0, subject: "", message: ""})
+const error = ref("")
+
+function createClicked() {
+   newMessage.value = {to: 0, subject: "", message: ""}
+   composeOpen.value = true
+   error.value = ""
+}
+function cancelMessage() {
+   composeOpen.value = false
+}
+function sendMessage() {
+   if (newMessage.value.to == 0) {
+      error.value = "Please select a recipient"
+      return
+   }
+   if (newMessage.value.subject == "") {
+      error.value = "Please set a subject"
+      return
+   }
+   if (newMessage.value.message == "") {
+      error.value = "Please add a message"
+      return
+   }
+   messageStore.sendMessage( newMessage.value )
+   composeOpen.value = false
+}
 
 function formatDate( date ) {
    return dayjs(date).format("YYYY-MM-DD hh:mm A")
@@ -110,8 +168,22 @@ function deleteClicked(msgID) {
 </script>
 
 <style scoped lang="scss">
+div.row {
+   margin: 0 0 15px 0;
+   label {
+      font-weight: 500;
+      margin-bottom: 5px;
+      display: inline-block;
+   }
+}
+p.error {
+   color: var(--uvalib-red-emergency);
+}
 .messages {
    padding: 25px;
+   .acts {
+      margin: 15px 0;
+   }
    .email {
       margin-top: 5px;
       padding-left: 10px;

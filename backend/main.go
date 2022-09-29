@@ -55,6 +55,7 @@ func main() {
 		api.GET("/user/:id/messages", svc.authMiddleware, svc.getMessages)
 		api.POST("/user/:id/messages/:msgid/delete", svc.authMiddleware, svc.deleteMessage)
 		api.POST("/user/:id/messages/:msgid/read", svc.authMiddleware, svc.markMessageRead)
+		api.POST("/user/:id/messages/send", svc.authMiddleware, svc.sendMessage)
 	}
 
 	// Note: in dev mode, this is never actually used. The front end is served

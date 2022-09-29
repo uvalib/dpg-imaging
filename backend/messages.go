@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -88,4 +89,48 @@ func (svc *serviceContext) markMessageRead(c *gin.Context) {
 	}
 
 	c.String(http.StatusOK, "read")
+}
+
+func (svc *serviceContext) sendMessage(c *gin.Context) {
+	userID := c.Param("id")
+	log.Printf("INFO: user %s is sending a message", userID)
+
+	var msgRequest struct {
+		To      uint   `json:"to"`
+		Subject string `json:"subject"`
+		Message string `json:"message"`
+	}
+
+	qpErr := c.ShouldBindJSON(&msgRequest)
+	if qpErr != nil {
+		log.Printf("ERROR: invalid message payload from user %s: %s", userID, qpErr)
+		c.String(http.StatusBadRequest, "Invalid request")
+		return
+	}
+
+	var fromUser staffMember
+	err := svc.DB.Find(&fromUser, userID).Error
+	if err != nil {
+		log.Printf("ERROR: sender %s not found: %s", userID, err.Error())
+		c.String(http.StatusBadRequest, fmt.Sprintf("%s is not a valid sender id", userID))
+		return
+	}
+
+	var toUser staffMember
+	err = svc.DB.Find(&toUser, msgRequest.To).Error
+	if err != nil {
+		log.Printf("ERROR: recipient %s not found: %s", userID, err.Error())
+		c.String(http.StatusBadRequest, fmt.Sprintf("%s is not a valid recipient", userID))
+		return
+	}
+
+	newMsg := message{Subject: msgRequest.Subject, Message: msgRequest.Message, SentAt: time.Now(), ToID: int64(toUser.ID), FromID: int64(fromUser.ID)}
+	err = svc.DB.Create(&newMsg).Error
+	if err != nil {
+		log.Printf("ERROR: uable to create message %+v: %s", newMsg, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, newMsg)
 }
