@@ -1,7 +1,7 @@
 <template>
-   <DPGButton2 class="p-button-text" v-if="!manual" @click="show" :id="`${props.id}-trigger`">
+   <DPGButton class="p-button-text" v-if="!manual" @click="show" :id="`${props.id}-trigger`">
       <i class="add fas fa-plus-circle"></i>
-   </DPGButton2>
+   </DPGButton>
    <Dialog v-model:visible="isOpen" :modal="true" header="Create Note" style="width:650px">
       <div class="note-modal-content">
          <div class="instruct" v-if="instructions">{{instructions}}</div>
@@ -28,9 +28,9 @@
       </div>
       <p class="error" v-if="error">{{error}}</p>
       <template #footer>
-         <DPGButton2 @click="hide" class="p-button-secondary" label="Cancel"/>
+         <DPGButton @click="hide" class="p-button-secondary" label="Cancel"/>
          <span class="spacer"></span>
-         <DPGButton2 autofocus @click="createClicked" label="Create"/>
+         <DPGButton autofocus @click="createClicked" label="Create"/>
       </template>
    </Dialog>
 </template>

@@ -5,6 +5,7 @@
       <div class="metadata" v-if="projectStore.selectedProjectIdx > -1">
          <div class="hints">
             <table >
+               <tr><td class="act">Select All:</td><td>ctrl+a</td></tr>
                <tr><td class="act">Rename:</td><td>ctrl+r</td></tr>
                <tr><td class="act">Page Numbers:</td><td>ctrl+p</td></tr>
                <tr v-if="isManuscript"><td class="act">Set Box:</td><td>ctrl+b</td></tr>
@@ -47,7 +48,7 @@
                </select>
             </span>
 
-            <DPGButton2 @click="renameClicked" class="p-button-secondary right-pad" label="Rename"/>
+            <DPGButton @click="renameClicked" class="p-button-secondary right-pad" label="Rename"/>
             <ConfirmDialog>
                <template #message>
                   <div>All files will be renamed to match the following format:</div>
@@ -55,12 +56,12 @@
                </template>
             </ConfirmDialog>
 
-            <DPGButton2 @click="setPageNumbersClicked" class="p-button-secondary right-pad" label="Set Page Numbers"/>
+            <DPGButton @click="setPageNumbersClicked" class="p-button-secondary right-pad" label="Set Page Numbers"/>
             <template v-if="isManuscript">
-               <DPGButton2 @click="boxClicked" class="p-button-secondary right-pad" label="Set Box"/>
-               <DPGButton2 @click="folderClicked" class="p-button-secondary right-pad" label="Set Folder"/>
+               <DPGButton @click="boxClicked" class="p-button-secondary right-pad" label="Set Box"/>
+               <DPGButton @click="folderClicked" class="p-button-secondary right-pad" label="Set Folder"/>
             </template>
-            <DPGButton2 @click="componentLinkClicked" class="p-button-secondary" label="Component Link"/>
+            <DPGButton @click="componentLinkClicked" class="p-button-secondary" label="Component Link"/>
          </span>
       </div>
       <PageNumPanel v-if="unitStore.editMode == 'page'" />
@@ -418,6 +419,8 @@ function keyboardHandler(event) {
       folderClicked()
    } else if (event.key == 'k') {
       componentLinkClicked()
+   }  else if (event.key == 'a') {
+      selectAllClicked()
    }
 }
 

@@ -28,7 +28,7 @@ app.use(ToastService)
 
 import Button from 'primevue/button'
 import ConfirmDialog from 'primevue/confirmdialog'
-app.component("DPGButton2", Button)
+app.component("DPGButton", Button)
 app.component("ConfirmDialog", ConfirmDialog)
 
 import 'primevue/resources/themes/saga-blue/theme.css'

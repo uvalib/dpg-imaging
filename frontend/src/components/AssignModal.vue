@@ -1,5 +1,5 @@
 <template>
-   <DPGButton2 @click="show" :label="props.label" class="p-button-secondary"/>
+   <DPGButton @click="show" :label="props.label" class="p-button-secondary"/>
    <Dialog v-model:visible="isOpen" :modal="true" header="Assign Project">
       <div class="assign-modal-content">
          <div class="candidate-scroller">
@@ -10,9 +10,9 @@
       </div>
       <p class="error">{{error}}</p>
       <template #footer>
-         <DPGButton2 @click="hide" label="Cancel" class="p-button-secondary"/>
+         <DPGButton @click="hide" label="Cancel" class="p-button-secondary"/>
          <span class="spacer"></span>
-         <DPGButton2 @click="assignClicked" label="Assign"/>
+         <DPGButton @click="assignClicked" label="Assign"/>
       </template>
    </Dialog>
 </template>

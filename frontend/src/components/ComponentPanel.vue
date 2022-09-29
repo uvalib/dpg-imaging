@@ -22,10 +22,10 @@
          </span>
       </div>
       <div class="panel-actions">
-         <DPGButton2 @click="selectAllClicked" class="p-button-secondary left">Select All</DPGButton2>
-         <DPGButton2 @click="unlinkClicked" class="p-button-secondary right-pad">Unlink</DPGButton2>
-         <DPGButton2 @click="cancelEditClicked" class="p-button-secondary right-pad">Cancel</DPGButton2>
-         <DPGButton2 @click="okClicked">OK</DPGButton2>
+         <DPGButton @click="selectAllClicked" class="p-button-secondary left">Select All</DPGButton>
+         <DPGButton @click="unlinkClicked" class="p-button-secondary right-pad">Unlink</DPGButton>
+         <DPGButton @click="cancelEditClicked" class="p-button-secondary right-pad">Cancel</DPGButton>
+         <DPGButton @click="okClicked">OK</DPGButton>
       </div>
       <Dialog v-model:visible="unitStore.component.valid" :modal="true" header="Confirm Component Link">
          <div class="component-modal-content">
@@ -54,9 +54,9 @@
             <p class="confirm">Link this component to selected images?</p>
          </div>
          <template #footer>
-            <DPGButton2 class="p-button-secondary" @click="noLinkClicked" label="No"/>
+            <DPGButton class="p-button-secondary" @click="noLinkClicked" label="No"/>
             <span class="spacer"></span>
-            <DPGButton2 @click="linkConfirmed" label="Yes"/>
+            <DPGButton @click="linkConfirmed" label="Yes"/>
          </template>
       </Dialog>
    </div>

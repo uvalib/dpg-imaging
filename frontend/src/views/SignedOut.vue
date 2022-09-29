@@ -12,7 +12,7 @@
             <p>You have successfully signed out of your account.</p>
          </div>
       </template>
-      <div class="buttons"><DPGButton2 @click="signinClick" label="Sign in with NetBadge"/></div>
+      <div class="buttons"><DPGButton @click="signinClick" label="Sign in with NetBadge"/></div>
    </div>
 </template>
 
