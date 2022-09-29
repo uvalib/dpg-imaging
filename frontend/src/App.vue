@@ -19,7 +19,7 @@
             <div class="acts">
                <div class="messages">
                   <router-link to="/messages">
-                     <span class="cnt">{{messageStore.messages.length}}</span>
+                     <span class="cnt">{{messageStore.unreadMessageCount}}</span>
                      <i class="mail fas fa-envelope"></i>
                   </router-link>
                </div>
@@ -31,6 +31,7 @@
       <Dialog v-model:visible="systemStore.showError" :modal="true" header="System Error" @hide="errorClosed()" class="error">
          {{systemStore.error}}
       </Dialog>
+      <MessageModal />
       <ScrollToTop />
    </div>
 </template>
@@ -44,6 +45,7 @@ import {useMessageStore} from "@/stores/messages"
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 import Dialog from 'primevue/dialog'
+import MessageModal from "./components/MessageModal.vue"
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()

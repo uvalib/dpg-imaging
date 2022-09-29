@@ -53,6 +53,8 @@ func main() {
 		api.POST("/units/:uid/:file/update", svc.authMiddleware, svc.updateImageMetadata)
 
 		api.GET("/user/:id/messages", svc.authMiddleware, svc.getMessages)
+		api.POST("/user/:id/messages/:msgid/delete", svc.authMiddleware, svc.deleteMessage)
+		api.POST("/user/:id/messages/:msgid/read", svc.authMiddleware, svc.markMessageRead)
 	}
 
 	// Note: in dev mode, this is never actually used. The front end is served
