@@ -1,21 +1,21 @@
 <template>
    <span class=pager>
       <span class="pages">
-         <DPGButton mode="icon" :disabled="!prevAvailable" @click="$emit('first')" aria-label="first page">
+         <DPGButton2 class="p-button-text right-pad" :disabled="!prevAvailable" @click="$emit('first')" aria-label="first page">
             <i class="fas fa-angle-double-left"></i>
-         </DPGButton>
-         <DPGButton mode="icon" :disabled="!prevAvailable"  @click="$emit('prior')" aria-label="previous page">
+         </DPGButton2>
+         <DPGButton2 class="p-button-text" :disabled="!prevAvailable" @click="$emit('prior')" aria-label="previous page">
             <i class="fas fa-angle-left"></i>
-         </DPGButton>
+         </DPGButton2>
          <span class="page-info" @click="showPageJump">
             {{currPage}} of {{totalPages}}
          </span>
-         <DPGButton mode="icon"  :disabled="!nextAvailable" @click="$emit('next')" aria-label="next page">
+         <DPGButton2 class="p-button-text right-pad" :disabled="!nextAvailable" @click="$emit('next')" aria-label="next page">
             <i class="fas fa-angle-right"></i>
-         </DPGButton>
-         <DPGButton mode="icon" :disabled="!nextAvailable" @click="$emit('last')" aria-label="last page">
+         </DPGButton2>
+         <DPGButton2 class="p-button-text" :disabled="!nextAvailable" @click="$emit('last')" aria-label="last page">
             <i class="fas fa-angle-double-right"></i>
-         </DPGButton>
+         </DPGButton2>
          <div class="page-jump" v-if="pageJumpOpen">
             <label>Jump to page</label>
             <div class="jump-body">
@@ -23,8 +23,8 @@
                   @keydown.stop.prevent.enter="pageJumpSelected" @keydown.stop.prevent.esc="pageJumpCanceled"/>
             </div>
             <div class="button-bar">
-               <DPGButton class="right-margin" @click="pageJumpCanceled">Cancel</DPGButton>
-               <DPGButton  @click="pageJumpSelected">OK</DPGButton>
+               <DPGButton2 class="p-button-secondary right-margin" @click="pageJumpCanceled" label="Cancel"/>
+               <DPGButton2 class="p-button-secondary" @click="pageJumpSelected" label="OK"/>
             </div>
          </div>
       </span>

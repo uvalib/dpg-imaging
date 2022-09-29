@@ -112,10 +112,10 @@
          </tr>
       </table>
       <div class="buttons" v-if="projectStore.isOwner(userStore.computeID)">
-         <DPGButton v-if="!editing" @click="editClicked">Edit</DPGButton>
+         <DPGButton2 v-if="!editing" @click="editClicked" class="p-button-secondary" label="Edit"/>
          <template v-else>
-            <DPGButton @click="cancelClicked">Cancel</DPGButton>
-            <DPGButton @click="saveClicked">Save</DPGButton>
+            <DPGButton2 @click="cancelClicked" class="p-button-secondary" label="Cancel"/>
+            <DPGButton2 @click="saveClicked" label="Save"/>
          </template>
       </div>
    </div>

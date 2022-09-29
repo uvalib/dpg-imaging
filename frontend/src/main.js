@@ -15,9 +15,7 @@ app.use( pinia )
 
 // Global component registration. All components can use these without import
 import WaitSpinner from "@/components/WaitSpinner.vue"
-import DPGButton from "@/components/DPGButton.vue"
 app.component("WaitSpinner", WaitSpinner)
-app.component("DPGButton", DPGButton)
 
 // Primevue setup
 import PrimeVue from 'primevue/config'
