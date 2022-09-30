@@ -209,7 +209,7 @@ onMounted( async () => {
          display: flex;
          flex-flow: row nowrap;
          justify-content: flex-start;
-         align-items: center;
+         align-items: baseline;
 
          label {
             display: flex;
