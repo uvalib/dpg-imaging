@@ -1,5 +1,5 @@
 <template>
-   <div class="panel">
+   <Panel header="Workflow" class="panel">
       <dl>
          <dt>Name:</dt>
          <dd>{{currProject.workflow.name}}</dd>
@@ -60,11 +60,11 @@
       <NoteModal id="problem-modal" :manual="true" :trigger="showRejectNote" :noteType="2"
          @closed="rejectCanceled" @submitted="rejectSubmitted"
          instructions="Rejection requires the addition of a problem note that details the reason why it occurred" />
-   </div>
+   </Panel>
 </template>
 
 <script setup>
-import date from 'date-and-time'
+import dayjs from 'dayjs'
 import AssignModal from "@/components/AssignModal.vue"
 import NoteModal from '@/components/project/NoteModal.vue'
 import {useProjectStore} from "@/stores/project"
@@ -73,6 +73,7 @@ import {useUserStore} from "@/stores/user"
 import { ref, computed, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
+import Panel from 'primevue/panel'
 
 const router = useRouter()
 const projectStore = useProjectStore()
@@ -116,15 +117,15 @@ const workingDir = computed(()=>{
 const assignedAt = computed(()=>{
    let stepID = currProject.value.currentStep.id
    let a = currProject.value.assignments.find( a => a.stepID == stepID)
-   if (a && a.assignments)  {
-      return date.format(new Date(a.assignedAt), "YYYY-MM-DD hh:mm A")
+   if (a && a.assignedAt)  {
+      return dayjs(a.assignedAt).format("YYYY-MM-DD hh:mm A")
    }
    return ""
 })
 const startedAt = computed(()=>{
    let stepID = currProject.value.currentStep.id
    let a = currProject.value.assignments.find( a => a.stepID == stepID)
-   if ( a && a.startedAt) return date.format(new Date(a.startedAt), "YYYY-MM-DD hh:mm A")
+   if ( a && a.startedAt) return dayjs(a.startedAt).format("YYYY-MM-DD hh:mm A")
    return ""
 })
 const workflowNote = computed(()=>{
@@ -225,37 +226,20 @@ function unitDirectory(unitID) {
 
 <style scoped lang="scss">
 .panel {
-   dl {
-      margin: 10px 30px 0 30px;
-      display: inline-grid;
-      grid-template-columns: max-content 2fr;
-      grid-column-gap: 10px;
-      font-size: 0.9em;
-      text-align: left;
-      box-sizing: border-box;
+   width: 100%;
+   box-sizing: border-box;
+   margin: 15px 0;
+   display: inline-block;
+   min-height: 100px;
+   text-align: left;
 
-      dt {
-         font-weight: bold;
-         text-align: right;
-      }
-      dd {
-         margin: 0 0 10px 0;
-         word-break: break-word;
-         -webkit-hyphens: auto;
-         -moz-hyphens: auto;
-         hyphens: auto;
-         .na {
-            color: #999;
-         }
-      }
-   }
    .pad-right {
       margin-right: 10px;
    }
    .workflow-btns {
       text-align: right;
-      padding: 10px;
-      border-top: 1px solid var(--uvalib-grey-light);
+      padding: 0;
+      margin-top: 10px;
       button.p-button {
          margin-left: 10px;
       }

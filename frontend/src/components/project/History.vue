@@ -1,5 +1,5 @@
 <template>
-   <div class="panel">
+   <Panel header="History" class="panel">
       <div class="timing">
          <span>
             <label>Date started:</label>
@@ -65,13 +65,14 @@
             </tr>
          </table>
       </div>
-   </div>
+   </Panel>
 </template>
 
 <script setup>
-import date from 'date-and-time'
+import dayjs from 'dayjs'
 import { useProjectStore } from "@/stores/project"
 import { computed } from 'vue'
+import Panel from 'primevue/panel'
 
 const projectStore = useProjectStore()
 
@@ -97,12 +98,18 @@ function lookupStepName( stepID) {
 }
 
 function formatDate( d ) {
-   return date.format(new Date(d), "YYYY-MM-DD hh:mm A")
+   return dayjs(d).format("YYYY-MM-DD hh:mm A")
 }
 </script>
 
 <style scoped lang="scss">
 .panel {
+   width: 100%;
+   box-sizing: border-box;
+   margin: 15px 0;
+   display: inline-block;
+   min-height: 100px;
+   text-align: left;
    .timing {
       display: flex;
       flex-flow: row nowrap;

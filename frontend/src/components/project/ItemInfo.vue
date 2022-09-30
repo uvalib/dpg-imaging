@@ -1,5 +1,5 @@
 <template>
-   <div class="panel">
+   <Panel header="Item Information" class="panel">
       <dl v-if="!editing">
          <template v-if="currProject.workflow.name == 'Manuscript'">
             <dt>Container Type:</dt>
@@ -118,7 +118,7 @@
             <DPGButton @click="saveClicked" label="Save"/>
          </template>
       </div>
-   </div>
+   </Panel>
 </template>
 
 <script setup>
@@ -127,6 +127,7 @@ import {useSystemStore} from "@/stores/system"
 import {useUserStore} from "@/stores/user"
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import Panel from 'primevue/panel'
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
@@ -191,32 +192,13 @@ async function saveClicked() {
 
 <style scoped lang="scss">
 .panel {
-   padding: 10px;
+   width: 46%;
+   min-width: 600px;
+   margin: 15px;
+   display: inline-block;
+   min-height: 100px;
    text-align: left;
-   .na {
-      color: #999;
-   }
-   dl {
-      margin: 10px 30px 0 30px;
-      display: inline-grid;
-      grid-template-columns: max-content 2fr;
-      grid-column-gap: 10px;
-      font-size: 0.9em;
-      text-align: left;
-      box-sizing: border-box;
 
-      dt {
-         font-weight: bold;
-         text-align: right;
-      }
-      dd {
-         margin: 0 0 10px 0;
-         word-break: break-word;
-         -webkit-hyphens: auto;
-         -moz-hyphens: auto;
-         hyphens: auto;
-      }
-   }
    .edit {
       font-size: 0.9em;
       width: 100%;
@@ -244,12 +226,6 @@ async function saveClicked() {
       }
       .disabled {
          opacity: 0.5;
-      }
-      textarea {
-         width: 100%;
-         box-sizing: border-box;
-         border-color: var(--uvalib-grey-light);
-         border-radius: 5px;;
       }
    }
    .buttons {
