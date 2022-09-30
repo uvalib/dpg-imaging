@@ -74,7 +74,7 @@
       <table class="unit-list" v-if="unitStore.viewMode == 'list'">
          <thead>
             <tr>
-               <th><input type="checkbox" v-model="allChecked" @click="selectAllClicked()"/></th>
+               <th></th>
                <th></th>
                <th>Tag</th>
                <th>File Name</th>
@@ -250,7 +250,6 @@ const newValue = ref("")
 const editField = ref("")
 const showError = ref("")
 const showRenameConfirm = ref(false)
-const allChecked = ref(false)
 
 // computed
 const title = computed(() => {
@@ -277,15 +276,6 @@ const workingDir = computed(()=>{
 const isManuscript = computed(() => {
    return projectStore.currProject.workflow && projectStore.currProject.workflow.name=='Manuscript'
 })
-function selectAllClicked() {
-   if (!unitStore.allPageImagesSelected) {
-      unitStore.selectPage()
-      allChecked.value = true
-   } else {
-      unitStore.deselectAll()
-      allChecked.value = false
-   }
-}
 const showBatchUpdate = computed(() => {
    return ( unitStore.editMode == "box" || unitStore.editMode == "folder" || unitStore.editMode == "title" || unitStore.editMode == "description")
 })
@@ -315,11 +305,6 @@ function truncateTitle(title) {
 }
 function masterFileCheckboxClicked(index) {
    unitStore.masterFileSelected(index)
-   if (unitStore.allPageImagesSelected) {
-      allChecked.value = true
-   } else {
-      allChecked.value = false
-   }
 }
 
 function paddedUnit() {
@@ -485,7 +470,7 @@ function keyboardHandler(event) {
    } else if (event.key == 'k') {
       componentLinkClicked()
    }  else if (event.key == 'a') {
-      selectAllClicked()
+      unitStore.selectPage()
    }  else if (event.key == 'd') {
       handleDelete()
    }

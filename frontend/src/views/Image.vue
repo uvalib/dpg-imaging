@@ -2,7 +2,7 @@
    <div class="viewer">
       <WaitSpinner v-if="systemStore.working" :overlay="true" message="Working..." />
       <div id="iiif-toolbar" class="toolbar">
-         <TagPicker v-if="currMasterFile" :masterFile="currMasterFile" display="large" position="topright" class="top-right"/>
+         <TagPicker v-if="currMasterFile" :masterFile="currMasterFile" display="large" class="top-right"/>
          <table class="info" v-if="projectStore.selectedProjectIdx > -1">
             <tr class="line">
                <td class="label">Image:</td>
@@ -37,25 +37,27 @@
                <td class="data">Pan Image: w,a,s,d or arrow keys. Pagination: &lt; prior, &gt; next (shift key not needed).</td>
             </tr>
          </table>
-         <span class="toolbar-button group back">
-            <i class="fas fa-angle-double-left back-button"></i>
-            <span @click="router.back()">Back to unit</span>
-         </span>
-         <span class="paging group">
-            <span id="previous" title="Previous" class="toolbar-button" :class="{disabled: prevDisabled()}"  @click="prevImage"><i class="fas fa-arrow-left"></i></span>
-            <span class="page">{{page}} of {{unitStore.pageInfoURLs.length}}</span>
-            <span id="next" title="Next" class="toolbar-button" :class="{disabled: nextDisabled()}" @click="nextImage"><i class="fas fa-arrow-right"></i></span>
-         </span>
-         <span class="zoom group">
-            <span id="rotate-left" title="Rotate Left" class="toolbar-button"  @click="rotateImage('left')"><i class="fas fa-undo"></i></span>
-            <span id="rotate-right" title="Rotate Right" class="toolbar-button"  @click="rotateImage('right')"><i class="rotated fas fa-undo"></i></span>
-            <span id="zoom-in" title="Zoom in" class="toolbar-button"><i class="fas fa-search-plus"></i></span>
-            <span class="page">{{Math.round(zoom*100)}} %</span>
-            <span id="zoom-out" title="Zoom in" class="toolbar-button"><i class="fas fa-search-minus"></i></span>
-            <span id="actual-size" title="Reset view" @click="viewActualSize" class="full toolbar-button">1:1</span>
-            <span id="home" title="Reset view" class="toolbar-button"><i class="fas fa-home"></i></span>
-            <span id="full-page" title="Full Screen" class="toolbar-button"><i class="fas fa-expand"></i></span>
-         </span>
+         <div class="acts">
+            <span class="toolbar-button group back">
+               <i class="fas fa-angle-double-left back-button"></i>
+               <span @click="router.back()">Back to unit</span>
+            </span>
+            <span class="paging group">
+               <span id="previous" title="Previous" class="toolbar-button" :class="{disabled: prevDisabled()}"  @click="prevImage"><i class="fas fa-arrow-left"></i></span>
+               <span class="page">{{page}} of {{unitStore.pageInfoURLs.length}}</span>
+               <span id="next" title="Next" class="toolbar-button" :class="{disabled: nextDisabled()}" @click="nextImage"><i class="fas fa-arrow-right"></i></span>
+            </span>
+            <span class="zoom group">
+               <span id="rotate-left" title="Rotate Left" class="toolbar-button"  @click="rotateImage('left')"><i class="fas fa-undo"></i></span>
+               <span id="rotate-right" title="Rotate Right" class="toolbar-button"  @click="rotateImage('right')"><i class="rotated fas fa-undo"></i></span>
+               <span id="zoom-in" title="Zoom in" class="toolbar-button"><i class="fas fa-search-plus"></i></span>
+               <span class="page">{{Math.round(zoom*100)}} %</span>
+               <span id="zoom-out" title="Zoom in" class="toolbar-button"><i class="fas fa-search-minus"></i></span>
+               <span id="actual-size" title="Reset view" @click="viewActualSize" class="full toolbar-button">1:1</span>
+               <span id="home" title="Reset view" class="toolbar-button"><i class="fas fa-home"></i></span>
+               <span id="full-page" title="Full Screen" class="toolbar-button"><i class="fas fa-expand"></i></span>
+            </span>
+         </div>
       </div>
       <div id="iiif-viewer"></div>
    </div>
@@ -241,8 +243,8 @@ onUnmounted( async () => {
       border-bottom: 1px solid var(--uvalib-grey);
       .top-right {
          position: absolute;
-         top: 5px;
-         right: 5px;
+         top: 10px;
+         right:10px;
       }
       .undefined {
          font-style: italic;
@@ -256,13 +258,17 @@ onUnmounted( async () => {
             color: var(--uvalib-blue-alt) !important;
          }
       }
+      .acts {
+         padding-top: 15px;
+         border-top: 1px solid var(--uvalib-grey);
+      }
 
       .info {
-         width: 100%;
+         width: 75%;
          text-align: left;
          padding-bottom: 10px;
-         margin-bottom: 10px;
-         border-bottom: 1px solid var(--uvalib-grey);
+         margin-bottom: 0;
+
          .line {
             td {
                padding: 5px;

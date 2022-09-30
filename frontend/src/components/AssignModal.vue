@@ -1,11 +1,9 @@
 <template>
    <DPGButton @click="show" :label="props.label" class="p-button-secondary"/>
    <Dialog v-model:visible="isOpen" :modal="true" header="Assign Project">
-      <div class="assign-modal-content">
-         <div class="candidate-scroller">
-            <div class="val" v-for="(c,idx) in systemStore.staffMembers" :key="c.id" :class="{selected: idx == selectedIdx}" @click="selectCandidate(idx)">
-               <span class="candidate">{{c.lastName}}, {{c.firstName}}</span> ({{c.computingID}})
-            </div>
+      <div class="candidate-scroller">
+         <div class="val" v-for="(c,idx) in systemStore.staffMembers" :key="c.id" :class="{selected: idx == selectedIdx}" @click="selectCandidate(idx)">
+            <span class="candidate">{{c.lastName}}, {{c.firstName}}</span> ({{c.computingID}})
          </div>
       </div>
       <p class="error">{{error}}</p>
@@ -72,34 +70,29 @@ function show() {
    color: var(--uvalib-red-emergency);
 }
 
-div.assign-modal-content {
-   padding: 10px 10px 0 10px;
-   text-align: left;
-   font-weight: normal;
-   .candidate-scroller {
-      max-height: 300px;
-      overflow: scroll;
-      padding: 0;
-      margin:  10px;
-      border: 1px solid var(--uvalib-grey-light);
-      border-radius: 4px;
-      .val {
-         padding: 2px 10px 3px 10px;
-         cursor: pointer;
-         display: flex;
-         flex-flow: row nowrap;
-         justify-content: space-between;
-         &:hover  {
-            background: var(--uvalib-blue-alt-light);
-         }
+.candidate-scroller {
+   max-height: 300px;
+   overflow: scroll;
+   padding: 0;
+   margin:  0;
+   border: 1px solid var(--uvalib-grey-light);
+   border-radius: 4px;
+   .val {
+      padding: 2px 10px 3px 10px;
+      cursor: pointer;
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: space-between;
+      &:hover  {
+         background: var(--uvalib-blue-alt-light);
       }
-      .val.selected {
-         background: var(--uvalib-blue-alt);
-         color: white;
-      }
-      .candidate {
-         font-weight: bold;
-      }
+   }
+   .val.selected {
+      background: var(--uvalib-blue-alt);
+      color: white;
+   }
+   .candidate {
+      font-weight: bold;
    }
 }
 </style>
