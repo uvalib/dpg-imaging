@@ -14,7 +14,7 @@
             <tr class="line">
                <td class="label">Title:</td>
                <td class="data editable" @click="editMetadata('title')" >
-                  <TitleInput  v-if="isEditing('title')" @canceled="cancelEdit" @accepted="submitEdit" v-model="newTitle"/>
+                  <TitleInput  v-if="isEditing('title')" @canceled="cancelEdit" @accepted="submitEdit" v-model="newValue"/>
                   <template v-else>
                      <span  v-if="currMasterFile && currMasterFile.title">{{currMasterFile.title}}</span>
                      <span v-else class="undefined editable">Undefined</span>
@@ -24,7 +24,7 @@
             <tr class="line">
                <td class="label">Caption:</td>
                <td class="data editable" @click="editMetadata('description')" >
-                  <input  v-if="isEditing('description')" id="edit-desc" type="text" v-model="newDescription"
+                  <input  v-if="isEditing('description')" id="edit-desc" type="text" v-model="newValue"
                      @keyup.enter="submitEdit()" @keyup.esc="cancelEdit" />
                   <template v-else>
                      <span v-if="currMasterFile && currMasterFile.description">{{currMasterFile.description}}</span>
@@ -81,9 +81,8 @@ const router = useRouter()
 var viewer = null
 const page = ref(1)
 const zoom = ref(50)
-const newTitle = ref("")
-const newDescription = ref("")
 const editField = ref("")
+const newValue = ref("")
 
 const currMasterFile = computed(() => {
    return unitStore.masterFiles[page.value-1]
@@ -102,8 +101,12 @@ function isEditing(field = "all") {
 }
 function editMetadata(field) {
    let mf = currMasterFile.value
-   newTitle.value = mf.title
-   newDescription.value = mf.description
+   if (field == "title") {
+      newValue.value = mf.title
+   }
+   if (field == "description") {
+      newValue.value = mf.description
+   }
    editField.value = field
    nextTick( ()=> {
       if ( field == "description") {
@@ -118,11 +121,7 @@ function cancelEdit() {
 }
 async function submitEdit() {
    let mf = currMasterFile.value
-   await unitStore.updateMasterFileMetadata(
-      { file: mf.path, title: newTitle.value, description: newDescription.value,
-        status: mf.status, componentID: mf.componentID
-      }
-   )
+   await unitStore.updateMasterFileMetadata( mf.fileName, editField.value, newValue.value )
    editField.value = ""
 }
 
@@ -235,9 +234,6 @@ onUnmounted( async () => {
    :deep(.openseadragon-container) {
       background: #555555 !important;
    }
-   .load {
-      margin-top: 5%;
-   }
    .toolbar {
       padding: 10px;
       background: var(--uvalib-grey-light);
@@ -259,15 +255,6 @@ onUnmounted( async () => {
             text-decoration: underline;
             color: var(--uvalib-blue-alt) !important;
          }
-      }
-      input {
-         box-sizing: border-box;
-         width:100%;
-         border-radius: 3px;
-         padding: 3px 5px;
-         border: 1px solid var(--uvalib-grey-light);
-         outline: none;
-         background: #f0f0f0;
       }
 
       .info {
@@ -350,14 +337,5 @@ onUnmounted( async () => {
    bottom: 0;
    top: 120px;
    background: black;
-}
-.not-found {
-   display: inline-block;
-   padding: 20px 50px;
-   margin: 4% auto 0 auto;
-   h2 {
-      font-size: 1.5em;
-      color: var(--uvalib-text);
-   }
 }
 </style>
