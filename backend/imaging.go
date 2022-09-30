@@ -8,8 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
-	"regexp"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -50,89 +48,6 @@ type qaCheck struct {
 	File   string   `json:"file"`
 	Valid  bool     `json:"valid"`
 	Errors []string `json:"errors"`
-}
-
-func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse, error) {
-	uid := padLeft(rawUnitID, 9)
-	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
-	log.Printf("INFO: finalize unit %s", unitDir)
-
-	pendingFilesCnt := 0
-	chunkSize := 20
-	fileCommands := make(map[string][]string)
-	channel := make(chan []updateProblem)
-	outstandingRequests := 0
-
-	unitMD, uErr := svc.getUnitMetadata(uid)
-	if uErr != nil {
-		return nil, uErr
-	}
-
-	// walk the unit directory and generate masterFile info for each .tif
-	mfRegex := regexp.MustCompile(`^\d{9}_\w{4,}\.tif$`)
-	tifRegex := regexp.MustCompile(`^.*\.tif$`)
-	hiddenRegex := regexp.MustCompile(`^\..*`)
-	err := filepath.Walk(unitDir, func(path string, f os.FileInfo, err error) error {
-		if err != nil {
-			return nil
-		}
-
-		if f.IsDir() == true {
-			return nil
-		}
-		fName := f.Name()
-		if hiddenRegex.Match([]byte(fName)) || !tifRegex.Match([]byte(fName)) || !mfRegex.Match([]byte(fName)) {
-			return nil
-		}
-
-		cmd := make([]string, 0)
-		id := unitMD.CallNumber
-		if id == "" {
-			id = unitMD.PID
-		}
-		cmd = append(cmd, fmt.Sprintf("-iptc:MasterDocumentID=%s", fmt.Sprintf("UVA Library: %s", id)))
-		cmd = append(cmd, fmt.Sprintf("-iptc:ObjectName=%s", fName))
-		cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%s", ""))
-		cmd = append(cmd, path)
-		fileCommands[path] = cmd
-		pendingFilesCnt++
-		if pendingFilesCnt == chunkSize {
-			outstandingRequests++
-			log.Printf("INFO: finalize %s batch #%d of %d images", uid, outstandingRequests, chunkSize)
-			go batchUpdateExifData(fileCommands, channel)
-			fileCommands = make(map[string][]string)
-			pendingFilesCnt = 0
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if pendingFilesCnt > 0 {
-		outstandingRequests++
-		log.Printf("INFO: finalize %s batch #%d of %d images", uid, outstandingRequests, chunkSize)
-		go batchUpdateExifData(fileCommands, channel)
-	}
-
-	log.Printf("INFO: await all finalization updates for %s", uid)
-	var resp finalizeResponse
-	resp.Success = true
-	resp.Problems = make([]updateProblem, 0)
-	for outstandingRequests > 0 {
-		errs := <-channel
-		outstandingRequests--
-		if len(errs) > 0 {
-			log.Printf("ERROR: finalize %s failed: %+v", uid, errs)
-			resp.Success = false
-			resp.Problems = append(resp.Problems, errs...)
-		}
-	}
-	log.Printf("INFO: all finalization updates for %s are done", uid)
-
-	return &resp, nil
 }
 
 func (svc *serviceContext) updateImageMetadata(c *gin.Context) {

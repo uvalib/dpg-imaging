@@ -1,11 +1,19 @@
 <template>
    <div class="unit">
       <WaitSpinner  v-if="systemStore.working" :overlay="true" message="Working..." />
+      <ConfirmDialog group="delete">
+         <template #message>
+            <div>Delete the selected images? All data will be lost.</div>
+            <div>This is not reversable.</div>
+            <div class="sure">Are you sure?</div>
+         </template>
+      </ConfirmDialog>
 
       <div class="metadata" v-if="projectStore.selectedProjectIdx > -1">
          <div class="hints">
             <table >
                <tr><td class="act">Select All:</td><td>ctrl+a</td></tr>
+               <tr><td class="act">Delete:</td><td>ctrl+d</td></tr>
                <tr><td class="act">Rename:</td><td>ctrl+r</td></tr>
                <tr><td class="act">Page Numbers:</td><td>ctrl+p</td></tr>
                <tr v-if="isManuscript"><td class="act">Set Box:</td><td>ctrl+b</td></tr>
@@ -401,10 +409,25 @@ async function submitEdit(mf) {
    editMF.value = null
 }
 
+function handleDelete() {
+   confirm.require({
+      group: 'delete',
+      header: 'Confirm Image Delete',
+      accept: () => {
+         unitStore.deleteSelectedMasterFiles()
+      }
+   })
+}
+
+
 function keyboardHandler(event) {
    if (event.key == 'Escape') {
       systemStore.error = ""
       unitStore.editMode = ""
+      return
+   }
+   if (event.key == 'Backspace') {
+      handleDelete()
       return
    }
    if ( !event.ctrlKey ) return
@@ -421,6 +444,8 @@ function keyboardHandler(event) {
       componentLinkClicked()
    }  else if (event.key == 'a') {
       selectAllClicked()
+   }  else if (event.key == 'd') {
+      handleDelete()
    }
 }
 
@@ -458,6 +483,10 @@ onBeforeUnmount( async () => {
 </script>
 
 <style lang="scss" scoped>
+   .sure {
+      text-align: right;
+      margin-top: 15px;
+   }
 div.hints {
    font-size: 0.75em;
    position: absolute;

@@ -79,7 +79,6 @@ type unit struct {
 
 type masterFileInfo struct {
 	FileName  string `json:"fileName"`
-	Path      string `json:"path"`
 	ThumbURL  string `json:"thumbURL"`
 	MediumURL string `json:"mediumURL"`
 	LargeURL  string `json:"largeURL"`
@@ -148,7 +147,7 @@ func (svc *serviceContext) getUnitMasterFiles(c *gin.Context) {
 				out.Problems = append(out.Problems, fmt.Sprintf("%s is named incorrectly", path))
 			}
 
-			mf := masterFileInfo{FileName: fName, Path: path}
+			mf := masterFileInfo{FileName: fName}
 			fName = strings.ReplaceAll(fName, ".tif", "")
 
 			if strings.Split(fName, "_")[0] != uidStr {
@@ -262,6 +261,31 @@ func (svc *serviceContext) getMasterFilesMetadata(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+func (svc *serviceContext) deleteFiles(c *gin.Context) {
+	uidStr := padLeft(c.Param("uid"), 9)
+	unitDir := path.Join(svc.ImagesDir, uidStr)
+	var delReq struct {
+		Filenames []string `json:"filenames"`
+	}
+	qpErr := c.ShouldBindJSON(&delReq)
+	if qpErr != nil {
+		log.Printf("ERROR: invalid delete images payload for unit %s: %s", uidStr, qpErr)
+		c.String(http.StatusBadRequest, "Invalid request")
+		return
+	}
+	for _, fn := range delReq.Filenames {
+		delPath := path.Join(unitDir, fn)
+		log.Printf("INFO: delete %s", delPath)
+		err := os.Remove(delPath)
+		if err != nil {
+			log.Printf("ERROR: unable to delete %s: %s", delPath, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+	c.String(http.StatusOK, "deleted")
+}
+
 func (svc *serviceContext) getUnitMetadata(uid string) (*metadata, error) {
 	log.Printf("INFO: get metadata for unit %s", uid)
 	var md metadata
@@ -271,4 +295,87 @@ func (svc *serviceContext) getUnitMetadata(uid string) (*metadata, error) {
 	}
 
 	return &md, nil
+}
+
+func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse, error) {
+	uid := padLeft(rawUnitID, 9)
+	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
+	log.Printf("INFO: finalize unit %s", unitDir)
+
+	pendingFilesCnt := 0
+	chunkSize := 20
+	fileCommands := make(map[string][]string)
+	channel := make(chan []updateProblem)
+	outstandingRequests := 0
+
+	unitMD, uErr := svc.getUnitMetadata(uid)
+	if uErr != nil {
+		return nil, uErr
+	}
+
+	// walk the unit directory and generate masterFile info for each .tif
+	mfRegex := regexp.MustCompile(`^\d{9}_\w{4,}\.tif$`)
+	tifRegex := regexp.MustCompile(`^.*\.tif$`)
+	hiddenRegex := regexp.MustCompile(`^\..*`)
+	err := filepath.Walk(unitDir, func(path string, f os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+
+		if f.IsDir() == true {
+			return nil
+		}
+		fName := f.Name()
+		if hiddenRegex.Match([]byte(fName)) || !tifRegex.Match([]byte(fName)) || !mfRegex.Match([]byte(fName)) {
+			return nil
+		}
+
+		cmd := make([]string, 0)
+		id := unitMD.CallNumber
+		if id == "" {
+			id = unitMD.PID
+		}
+		cmd = append(cmd, fmt.Sprintf("-iptc:MasterDocumentID=%s", fmt.Sprintf("UVA Library: %s", id)))
+		cmd = append(cmd, fmt.Sprintf("-iptc:ObjectName=%s", fName))
+		cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%s", ""))
+		cmd = append(cmd, path)
+		fileCommands[path] = cmd
+		pendingFilesCnt++
+		if pendingFilesCnt == chunkSize {
+			outstandingRequests++
+			log.Printf("INFO: finalize %s batch #%d of %d images", uid, outstandingRequests, chunkSize)
+			go batchUpdateExifData(fileCommands, channel)
+			fileCommands = make(map[string][]string)
+			pendingFilesCnt = 0
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if pendingFilesCnt > 0 {
+		outstandingRequests++
+		log.Printf("INFO: finalize %s batch #%d of %d images", uid, outstandingRequests, chunkSize)
+		go batchUpdateExifData(fileCommands, channel)
+	}
+
+	log.Printf("INFO: await all finalization updates for %s", uid)
+	var resp finalizeResponse
+	resp.Success = true
+	resp.Problems = make([]updateProblem, 0)
+	for outstandingRequests > 0 {
+		errs := <-channel
+		outstandingRequests--
+		if len(errs) > 0 {
+			log.Printf("ERROR: finalize %s failed: %+v", uid, errs)
+			resp.Success = false
+			resp.Problems = append(resp.Problems, errs...)
+		}
+	}
+	log.Printf("INFO: all finalization updates for %s are done", uid)
+
+	return &resp, nil
 }

@@ -242,6 +242,31 @@ export const useUnitStore = defineStore('unit', {
          })
       },
 
+      deleteSelectedMasterFiles() {
+         const system = useSystemStore()
+         system.working = true
+         let data = []
+         for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+            let mf = this.masterFiles[i]
+            data.push( mf.fileName )
+         }
+         axios.post(`/api/units/${this.currUnit}/delete`, {filenames: data}).then( () => {
+            data.forEach( fn => {
+               let idx = this.masterFiles.findIndex( mf => mf.fileName == fn)
+               if (idx > -1 ) {
+                  this.masterFiles.splice(idx, 1)
+               }
+               idx = this.pageMasterFiles.findIndex( mf => mf.fileName == fn)
+               if (idx > -1 ) {
+                  this.pageMasterFiles.splice(idx, 1)
+               }
+            })
+            system.working = false
+         }).catch( e => {
+            system.setError(e)
+         })
+      },
+
       updatePageNumbers( start, verso ) {
          const system = useSystemStore()
          system.working = true
