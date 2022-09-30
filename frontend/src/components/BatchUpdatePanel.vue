@@ -1,28 +1,30 @@
 <template>
-   <div class="folder panel">
-      <h3>Folder Information</h3>
+   <div class="panel">
+      <h3>Batch Update {{props.title}}</h3>
       <div class="content">
-         <span class="entry pad-right">
-            <label>Start Image:</label>
-            <select id="start-page" v-model="unitStore.rangeStartIdx">
-               <option disabled :value="-1">Select start page</option>
-               <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
-            </select>
-         </span>
-         <span class="entry pad-right">
-            <label>End Image:</label>
-            <select id="end-page" v-model="unitStore.rangeEndIdx">
-               <option disabled :value="-1">Select end page</option>
-               <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
-            </select>
-         </span>
+         <template v-if="props.global == false">
+            <span class="entry pad-right">
+               <label>Start Image:</label>
+               <select id="start-page" v-model="unitStore.rangeStartIdx">
+                  <option disabled :value="-1">Select start page</option>
+                  <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
+               </select>
+            </span>
+            <span class="entry pad-right">
+               <label>End Image:</label>
+               <select id="end-page" v-model="unitStore.rangeEndIdx">
+                  <option disabled :value="-1">Select end page</option>
+                  <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
+               </select>
+            </span>
+         </template>
          <span class="entry">
-            <label>Folder:</label>
-            <input id="folder-id" type="text" v-model="folder"  @keyup.enter="okClicked"/>
+            <label>{{props.title}}:</label>
+            <input id="update-value" type="text" v-model="newValue"  @keyup.enter="okClicked"/>
          </span>
       </div>
       <div class="panel-actions">
-         <DPGButton @click="selectAllClicked" class="p-button-secondary left" label="Select All"/>
+         <DPGButton @click="selectAllClicked" class="p-button-secondary left" label="Select All" v-if="props.global == false" />
          <DPGButton @click="cancelEditClicked" class="p-button-secondary right-pad" label="Cancel"/>
          <DPGButton @click="okClicked" label="OK"/>
       </div>
@@ -34,20 +36,41 @@ import {useUnitStore} from "@/stores/unit"
 import {useSystemStore} from "@/stores/system"
 import { ref, onMounted, nextTick } from 'vue'
 
+const props = defineProps({
+   title: {
+      type: String,
+      required: true
+   },
+   field: {
+      type: String,
+      required: true
+   },
+   global: {
+      type: Boolean,
+      default: false
+   }
+})
+
 const unitStore = useUnitStore()
 const systemStore = useSystemStore()
 
-const folder = ref("")
+const newValue = ref("")
 
 onMounted( async () => {
    nextTick( () => {
       let ele = document.getElementById("start-page")
+      if (props.global) {
+         ele = document.getElementById("update-value")
+      }
       ele.focus()
    })
 })
 
 async function okClicked() {
-   await unitStore.setLocation( "folder", folder.value )
+   if ( props.global) {
+      unitStore.selectAll()
+   }
+   await unitStore.batchUpdate( props.field, newValue.value )
    cancelEditClicked()
 }
 function cancelEditClicked() {

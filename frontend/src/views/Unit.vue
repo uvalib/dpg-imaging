@@ -13,12 +13,13 @@
          <div class="hints">
             <table >
                <tr><td class="act">Select All:</td><td>ctrl+a</td></tr>
+               <tr><td class="act">Paging:</td><td>&lt;  &gt;</td></tr>
                <tr><td class="act">Delete:</td><td>ctrl+d</td></tr>
                <tr><td class="act">Rename:</td><td>ctrl+r</td></tr>
                <tr><td class="act">Page Numbers:</td><td>ctrl+p</td></tr>
                <tr v-if="isManuscript"><td class="act">Set Box:</td><td>ctrl+b</td></tr>
                <tr v-if="isManuscript"><td class="act">Set Folder:</td><td>ctrl+f</td></tr>
-               <tr><td class="act">Component Link:</td><td>ctrl+k</td></tr>
+               <tr><td class="act">Component:</td><td>ctrl+k</td></tr>
                <tr><td class="act">Cancel Edit:</td><td>esc</td></tr>
             </table>
          </div>
@@ -40,23 +41,16 @@
       </div>
 
       <div class="toolbar">
-         <DPGPagination :currPage="unitStore.currPage" :pageSize="unitStore.pageSize"
-            :totalPages="unitStore.totalPages" :sizePicker="true"
-            @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
-            @jump="pageJumpClicked" @size="pageSizeChanged"
-         />
-
+         <span class="view-mode">
+            <label>View:</label>
+            <select id="layout" v-model="unitStore.viewMode" @change="viewModeChanged">
+               <option value="list">List</option>
+               <option value="medium">Gallery (medium)</option>
+               <option value="large">Gallery (large)</option>
+            </select>
+         </span>
          <span class="actions">
-            <span class="view-mode">
-               <label>View:</label>
-               <select id="layout" v-model="unitStore.viewMode" @change="viewModeChanged">
-                  <option value="list">List</option>
-                  <option value="medium">Gallery (medium)</option>
-                  <option value="large">Gallery (large)</option>
-               </select>
-            </span>
-
-            <DPGButton @click="renameClicked" class="p-button-secondary right-pad" label="Rename"/>
+            <DPGButton @click="renameClicked" class="p-button-secondary right-pad" label="Rename All"/>
             <ConfirmDialog>
                <template #message>
                   <div>All files will be renamed to match the following format:</div>
@@ -65,17 +59,18 @@
             </ConfirmDialog>
 
             <DPGButton @click="setPageNumbersClicked" class="p-button-secondary right-pad" label="Set Page Numbers"/>
+            <DPGButton @click="titleClicked" class="p-button-secondary right-pad" label="Set Title"/>
+            <DPGButton @click="descClicked" class="p-button-secondary right-pad" label="Set Description"/>
             <template v-if="isManuscript">
                <DPGButton @click="boxClicked" class="p-button-secondary right-pad" label="Set Box"/>
                <DPGButton @click="folderClicked" class="p-button-secondary right-pad" label="Set Folder"/>
             </template>
-            <DPGButton @click="componentLinkClicked" class="p-button-secondary" label="Component Link"/>
+            <DPGButton @click="componentLinkClicked" class="p-button-secondary" label="Set Component"/>
          </span>
       </div>
       <PageNumPanel v-if="unitStore.editMode == 'page'" />
       <ComponentPanel v-if="unitStore.editMode == 'component'" />
-      <BoxPanel v-if="unitStore.editMode == 'box'" />
-      <FolderPanel v-if="unitStore.editMode == 'folder'" />
+      <BatchUpdatePanel v-if="showBatchUpdate" :title="batchUpdateTitle" :field="batchUpdateField" :global="unitStore.editMode=='box'" />
       <table class="unit-list" v-if="unitStore.viewMode == 'list'">
          <thead>
             <tr>
@@ -213,13 +208,19 @@
             </div>
          </template>
       </draggable>
+      <div class="footer">
+         <DPGPagination :currPage="unitStore.currPage" :pageSize="unitStore.pageSize"
+            :totalPages="unitStore.totalPages" :sizePicker="true"
+            @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
+            @jump="pageJumpClicked" @size="pageSizeChanged"
+         />
+      </div>
    </div>
 </template>
 
 <script setup>
 import ComponentPanel from '../components/ComponentPanel.vue'
-import BoxPanel from '../components/BoxPanel.vue'
-import FolderPanel from '../components/FolderPanel.vue'
+import BatchUpdatePanel from '../components/BatchUpdatePanel.vue'
 import PageNumPanel from '../components/PageNumPanel.vue'
 import TagPicker from '../components/TagPicker.vue'
 import TitleInput from '../components/TitleInput.vue'
@@ -282,6 +283,28 @@ function selectAllClicked() {
       allChecked.value = false
    }
 }
+const showBatchUpdate = computed(() => {
+   return ( unitStore.editMode == "box" || unitStore.editMode == "folder" || unitStore.editMode == "title" || unitStore.editMode == "description")
+})
+const batchUpdateTitle = computed(() => {
+   if ( unitStore.editMode == "box") {
+      return "Box"
+   }
+   if ( unitStore.editMode == "folder") {
+      return "Folder"
+   }
+   if ( unitStore.editMode == "title") {
+      return "Title"
+   }
+   if ( unitStore.editMode == "description") {
+      return "Description"
+   }
+
+   return ""
+})
+const batchUpdateField = computed(() => {
+   return unitStore.editMode
+})
 
 function truncateTitle(title) {
    if (title.length < 200) return title
@@ -363,6 +386,12 @@ function folderClicked() {
 function componentLinkClicked() {
    unitStore.editMode = "component"
 }
+function titleClicked() {
+   unitStore.editMode = "title"
+}
+function descClicked() {
+   unitStore.editMode = "description"
+}
 function setPageNumbersClicked() {
    unitStore.editMode = "page"
 }
@@ -430,6 +459,21 @@ function keyboardHandler(event) {
       handleDelete()
       return
    }
+
+   console.log(event)
+   if ( event.key == ',' || event.key == '<') {
+      if (unitStore.currPage > 1) {
+         priorClicked()
+         return
+      }
+   }
+   if ( event.key == '.' || event.key == '>') {
+      if (unitStore.currPage < unitStore.totalPages) {
+         nextClicked()
+         return
+      }
+   }
+
    if ( !event.ctrlKey ) return
 
    if (event.key == 'r') {
@@ -567,6 +611,15 @@ div.hints {
             }
          }
       }
+   }
+
+   .footer {
+      display: flex;
+      flex-flow: row wrap;
+      justify-content: center;
+      align-content: center;
+      padding: 10px;
+      border-top: 1px solid var(--uvalib-grey-light);
    }
    .toolbar {
       display: flex;

@@ -328,7 +328,7 @@ export const useUnitStore = defineStore('unit', {
          })
       },
 
-      async setLocation(field, value) {
+      async batchUpdate(field, value) {
          const system = useSystemStore()
          system.working = true
          let data = []
@@ -341,8 +341,12 @@ export const useUnitStore = defineStore('unit', {
                let update = data.shift()
                if (field == "folder") {
                   this.masterFiles[i].folder = update.value
-               } else {
+               } else if (field == "box") {
                   this.masterFiles[i].box = update.value
+               } else if (field == "title") {
+                  this.masterFiles[i].title = update.value
+               } else if (field == "description") {
+                  this.masterFiles[i].description = update.value
                }
             }
             system.working = false
@@ -354,6 +358,7 @@ export const useUnitStore = defineStore('unit', {
             system.setError(e)
          })
       },
+
 
       async updateMasterFileMetadata(file, field, value) {
          const system = useSystemStore()

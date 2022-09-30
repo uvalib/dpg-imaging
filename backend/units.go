@@ -79,6 +79,7 @@ type unit struct {
 
 type masterFileInfo struct {
 	FileName  string `json:"fileName"`
+	Path      string `json:"path"`
 	ThumbURL  string `json:"thumbURL"`
 	MediumURL string `json:"mediumURL"`
 	LargeURL  string `json:"largeURL"`
@@ -147,7 +148,7 @@ func (svc *serviceContext) getUnitMasterFiles(c *gin.Context) {
 				out.Problems = append(out.Problems, fmt.Sprintf("%s is named incorrectly", path))
 			}
 
-			mf := masterFileInfo{FileName: fName}
+			mf := masterFileInfo{FileName: fName, Path: path}
 			fName = strings.ReplaceAll(fName, ".tif", "")
 
 			if strings.Split(fName, "_")[0] != uidStr {
