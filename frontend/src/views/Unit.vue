@@ -60,7 +60,7 @@
 
             <DPGButton @click="setPageNumbersClicked" class="p-button-secondary right-pad" label="Set Page Numbers"/>
             <DPGButton @click="titleClicked" class="p-button-secondary right-pad" label="Set Title"/>
-            <DPGButton @click="descClicked" class="p-button-secondary right-pad" label="Set Description"/>
+            <DPGButton @click="descClicked" class="p-button-secondary right-pad" label="Set Caption"/>
             <template v-if="isManuscript">
                <DPGButton @click="boxClicked" class="p-button-secondary right-pad" label="Set Box"/>
                <DPGButton @click="folderClicked" class="p-button-secondary right-pad" label="Set Folder"/>
@@ -455,12 +455,7 @@ function keyboardHandler(event) {
       unitStore.editMode = ""
       return
    }
-   if (event.key == 'Backspace') {
-      handleDelete()
-      return
-   }
 
-   console.log(event)
    if ( event.key == ',' || event.key == '<') {
       if (unitStore.currPage > 1) {
          priorClicked()

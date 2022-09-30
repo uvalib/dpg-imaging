@@ -72,6 +72,9 @@ async function okClicked() {
    }
    await unitStore.batchUpdate( props.field, newValue.value )
    cancelEditClicked()
+   if ( props.global) {
+      unitStore.deselectAll()
+   }
 }
 function cancelEditClicked() {
    systemStore.error = ""
