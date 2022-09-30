@@ -149,66 +149,68 @@
 
       <draggable v-else v-model="unitStore.pageMasterFiles" @start="dragStarted" class="gallery" :class="unitStore.viewMode" item-key="fileName">
          <template #item="{element, index}">
-            <div class="card" :id="element.fileName">
-               <div class="card-sel">
-                  <input type="checkbox" v-model="element.selected" @click="masterFileCheckboxClicked(index)"/>
-                  <div class="file">
-                     <span>{{element.fileName}}</span>
-                     <span v-if="element.error">
-                        <i class="image-err fas fa-exclamation-circle" @mouseover="hoverEnter(element.fileName)" @mouseleave="hoverExit()"></i>
-                        <span v-if="showError==element.fileName" class="hover-error">{{element.error}}</span>
-                     </span>
-                  </div>
-               </div>
-               <router-link :to="imageViewerURL(index)">
-                  <img :src="element.mediumURL" v-if="unitStore.viewMode == 'medium'"/>
-                  <img :src="element.largeURL" v-if="unitStore.viewMode == 'large'"/>
-               </router-link>
-               <div class="tag">
-                  <TagPicker :masterFile="element" display="wide"/>
-               </div>
-               <div class="metadata">
-                  <div class="row">
-                     <label>Title</label>
-                     <div tabindex="0" @focus.stop.prevent="editMetadata(element, 'title')" class="data editable" @click="editMetadata(element, 'title')">
-                        <template v-if="isEditing(element, 'title')">
-                           <TitleInput  @canceled="cancelEdit" @accepted="submitEdit(element)" v-model="newValue" @blur.stop.prevent="cancelEdit"/>
-                        </template>
-                        <template v-else>
-                           <template v-if="element.title">{{element.title}}</template>
-                           <span v-else class="undefined">Undefined</span>
-                        </template>
+            <Card class="card" :id="element.fileName">
+               <template #content>
+                  <div class="card-sel">
+                     <input type="checkbox" v-model="element.selected" @click="masterFileCheckboxClicked(index)"/>
+                     <div class="file">
+                        <span>{{element.fileName}}</span>
+                        <span v-if="element.error">
+                           <i class="image-err fas fa-exclamation-circle" @mouseover="hoverEnter(element.fileName)" @mouseleave="hoverExit()"></i>
+                           <span v-if="showError==element.fileName" class="hover-error">{{element.error}}</span>
+                        </span>
                      </div>
                   </div>
-                  <div class="row">
-                     <label>Caption</label>
-                     <div class="data editable" tabindex="0" @focus.stop.prevent="editMetadata(element, 'description')"  @click="editMetadata(element, 'description')">
-                        <template v-if="isEditing(element, 'description')">
-                           <input id="edit-desc" type="text" v-model="newValue" @keyup.enter="submitEdit(element)" @keyup.esc="cancelEdit" @blur.stop.prevent="cancelEdit"/>
-                        </template>
-                        <template v-else>
-                           <template v-if="element.description">{{element.description}}</template>
-                           <span v-else class="undefined">Undefined</span>
-                        </template>
+                  <router-link :to="imageViewerURL(index)">
+                     <img :src="element.mediumURL" v-if="unitStore.viewMode == 'medium'"/>
+                     <img :src="element.largeURL" v-if="unitStore.viewMode == 'large'"/>
+                  </router-link>
+                  <div class="tag">
+                     <TagPicker :masterFile="element" display="wide"/>
+                  </div>
+                  <div class="metadata">
+                     <div class="row">
+                        <label>Title</label>
+                        <div tabindex="0" @focus.stop.prevent="editMetadata(element, 'title')" class="data editable" @click="editMetadata(element, 'title')">
+                           <template v-if="isEditing(element, 'title')">
+                              <TitleInput  @canceled="cancelEdit" @accepted="submitEdit(element)" v-model="newValue" @blur.stop.prevent="cancelEdit"/>
+                           </template>
+                           <template v-else>
+                              <template v-if="element.title">{{element.title}}</template>
+                              <span v-else class="undefined">Undefined</span>
+                           </template>
+                        </div>
+                     </div>
+                     <div class="row">
+                        <label>Caption</label>
+                        <div class="data editable" tabindex="0" @focus.stop.prevent="editMetadata(element, 'description')"  @click="editMetadata(element, 'description')">
+                           <template v-if="isEditing(element, 'description')">
+                              <input id="edit-desc" type="text" v-model="newValue" @keyup.enter="submitEdit(element)" @keyup.esc="cancelEdit" @blur.stop.prevent="cancelEdit"/>
+                           </template>
+                           <template v-else>
+                              <template v-if="element.description">{{element.description}}</template>
+                              <span v-else class="undefined">Undefined</span>
+                           </template>
+                        </div>
+                     </div>
+                     <div class="row" v-if="element.box">
+                        <label>Box</label>
+                        <div class="data">{{element.box}}</div>
+                     </div>
+                     <div class="row" v-if="element.folder">
+                        <label>Folder</label>
+                        <div class="data">{{element.folder}}</div>
+                     </div>
+                     <div class="row" v-if="element.componentID">
+                        <label>Component</label>
+                        <div class="data">{{element.componentID}}</div>
                      </div>
                   </div>
-                  <div class="row" v-if="element.box">
-                     <label>Box</label>
-                     <div class="data">{{element.box}}</div>
-                  </div>
-                  <div class="row" v-if="element.folder">
-                     <label>Folder</label>
-                     <div class="data">{{element.folder}}</div>
-                  </div>
-                  <div class="row" v-if="element.componentID">
-                     <label>Component</label>
-                     <div class="data">{{element.componentID}}</div>
-                  </div>
-               </div>
-            </div>
+               </template>
+            </Card>
          </template>
       </draggable>
-      <div class="footer">
+      <div class="footer" v-if="unitStore.masterFiles.length > 20">
          <DPGPagination :currPage="unitStore.currPage" :pageSize="unitStore.pageSize"
             :totalPages="unitStore.totalPages" :sizePicker="true"
             @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
@@ -233,6 +235,7 @@ import { computed, ref, onBeforeMount, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DPGPagination from '../components/DPGPagination.vue'
 import { useConfirm } from "primevue/useconfirm"
+import Card from 'primevue/card'
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
@@ -625,6 +628,9 @@ div.hints {
       background: var(--uvalib-grey-light);
       border-bottom: 1px solid var(--uvalib-grey);
       border-top: 1px solid var(--uvalib-grey);
+      select {
+         border: 1px solid var(--uvalib-grey);
+      }
 
       label {
          font-weight: bold;
@@ -681,17 +687,13 @@ div.hints {
       justify-content: flex-start;
       align-content: flex-start;
 
-      div.card {
+      .card {
          position: relative;
-         border: 1px solid var(--uvalib-grey-light);
          padding: 0 20px 20px 20px;
-         display: inline-block;
          margin: 5px;
-         background: white;
-         box-shadow:  0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.12);
 
          .card-sel {
-            padding: 20px 0;
+            padding: 0 0 20px 0;
             display: flex;
             flex-flow: row nowrap;
             justify-content: flex-start;
