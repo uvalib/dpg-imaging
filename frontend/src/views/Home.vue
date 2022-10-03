@@ -83,6 +83,10 @@
                      <dd>{{p.category.name}}</dd>
                   </dl>
                </div>
+               <div class="special-instructions" v-if="p.unit.specialInstructions">
+                  <label>Special Instructions:</label>
+                  <p>{{p.unit.specialInstructions}}</p>
+               </div>
                <div class="status" v-if="!p.finishedAt || p.finishedAt == ''">
                   <div class="progress-panel">
                      <span :class="{error: projectStore.hasError(idx)}">{{projectStore.statusText(p.id)}}</span>
@@ -280,7 +284,7 @@ onMounted( async () => {
          font-size: 0.9em;
          box-shadow: rgba(0, 0, 0, 0.14) 0px 2px 2px 0px;
          background: white;
-         padding-bottom: 70px;
+         padding-bottom: 110px;
 
          .top {
             border-bottom: 1px solid var(--uvalib-grey);
@@ -326,6 +330,18 @@ onMounted( async () => {
                   border: 0;
                   border-radius: 5px;
                }
+            }
+         }
+         .special-instructions{
+            margin: 0 30px;
+            font-size: 0.9em;
+            label {
+               display: block;
+               font-weight: bold !important;
+            }
+            p {
+               padding:0;
+               margin: 5px 0;
             }
          }
          .data {
