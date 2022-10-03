@@ -1,5 +1,11 @@
 <template>
-   <div class="panel">
+   <Panel class="panel">
+      <template #header>
+         <div class="panel-header">
+            <span>Notes</span>
+            <NoteModal id="note-modal" />
+         </div>
+      </template>
       <div v-if="!currProject.notes" class="none">
          There are no notes associated with this project
       </div>
@@ -19,13 +25,15 @@
             <div v-html="n.text"></div>
          </div>
       </div>
-   </div>
+   </Panel>
 </template>
 
 <script setup>
 import {useProjectStore} from "@/stores/project"
+import NoteModal from '@/components/project/NoteModal.vue'
 import { storeToRefs } from 'pinia'
-import date from "date-and-time"
+import dayjs from 'dayjs'
+import Panel from 'primevue/panel'
 
 const projectStore = useProjectStore()
 const { currProject } = storeToRefs(projectStore)
@@ -51,13 +59,25 @@ function lookupStepName(stepID) {
 }
 
 function formatDate(d) {
-   return date.format(new Date(d), "YYYY-MM-DD hh:mm A")
+   return dayjs(d).format("YYYY-MM-DD hh:mm A")
 }
 </script>
 
 <style scoped lang="scss">
 .panel {
-   padding: 10px;
+   width: 46%;
+   min-width: 600px;
+   margin: 15px;
+   display: inline-block;
+   min-height: 100px;
+   text-align: left;
+   .panel-header {
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: space-between;
+      width: 100%;
+   }
+
    .none {
       font-size: 1.15em;
       text-align: center;

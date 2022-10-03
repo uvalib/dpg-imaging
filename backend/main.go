@@ -49,8 +49,14 @@ func main() {
 		api.GET("/units/:uid/masterfiles/metadata", svc.authMiddleware, svc.getMasterFilesMetadata)
 		api.POST("/units/:uid/update", svc.authMiddleware, svc.updateMetadataBatch)
 		api.POST("/units/:uid/rename", svc.authMiddleware, svc.renameFiles)
+		api.POST("/units/:uid/delete", svc.authMiddleware, svc.deleteFiles)
 		api.POST("/units/:uid/:file/rotate", svc.authMiddleware, svc.rotateFile)
-		api.POST("/units/:uid/:file/update", svc.updateImageMetadata)
+		api.POST("/units/:uid/:file/update", svc.authMiddleware, svc.updateImageMetadata)
+
+		api.GET("/user/:id/messages", svc.authMiddleware, svc.getMessages)
+		api.POST("/user/:id/messages/:msgid/delete", svc.authMiddleware, svc.deleteMessage)
+		api.POST("/user/:id/messages/:msgid/read", svc.authMiddleware, svc.markMessageRead)
+		api.POST("/user/:id/messages/send", svc.authMiddleware, svc.sendMessage)
 	}
 
 	// Note: in dev mode, this is never actually used. The front end is served

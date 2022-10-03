@@ -242,6 +242,31 @@ export const useUnitStore = defineStore('unit', {
          })
       },
 
+      deleteSelectedMasterFiles() {
+         const system = useSystemStore()
+         system.working = true
+         let data = []
+         for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+            let mf = this.masterFiles[i]
+            data.push( mf.fileName )
+         }
+         axios.post(`/api/units/${this.currUnit}/delete`, {filenames: data}).then( () => {
+            data.forEach( fn => {
+               let idx = this.masterFiles.findIndex( mf => mf.fileName == fn)
+               if (idx > -1 ) {
+                  this.masterFiles.splice(idx, 1)
+               }
+               idx = this.pageMasterFiles.findIndex( mf => mf.fileName == fn)
+               if (idx > -1 ) {
+                  this.pageMasterFiles.splice(idx, 1)
+               }
+            })
+            system.working = false
+         }).catch( e => {
+            system.setError(e)
+         })
+      },
+
       updatePageNumbers( start, verso ) {
          const system = useSystemStore()
          system.working = true
@@ -303,7 +328,7 @@ export const useUnitStore = defineStore('unit', {
          })
       },
 
-      async setLocation(field, value) {
+      async batchUpdate(field, value) {
          const system = useSystemStore()
          system.working = true
          let data = []
@@ -316,8 +341,12 @@ export const useUnitStore = defineStore('unit', {
                let update = data.shift()
                if (field == "folder") {
                   this.masterFiles[i].folder = update.value
-               } else {
+               } else if (field == "box") {
                   this.masterFiles[i].box = update.value
+               } else if (field == "title") {
+                  this.masterFiles[i].title = update.value
+               } else if (field == "description") {
+                  this.masterFiles[i].description = update.value
                }
             }
             system.working = false
@@ -329,6 +358,7 @@ export const useUnitStore = defineStore('unit', {
             system.setError(e)
          })
       },
+
 
       async updateMasterFileMetadata(file, field, value) {
          const system = useSystemStore()

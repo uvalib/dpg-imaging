@@ -10,6 +10,7 @@ import SignedOut from '../views/SignedOut.vue'
 import VueCookies from 'vue-cookies'
 
 import { useUserStore } from '@/stores/user'
+import { useMessageStore } from '@/stores/messages'
 
 const routes = [
    {
@@ -32,6 +33,11 @@ const routes = [
       name: 'image',
       component: Image
    },
+   {
+      path: '/messages',
+      name: 'messages',
+      component: () => import('../views/Messages.vue')
+    },
    {
       path: '/forbidden',
       name: 'forbidden',
@@ -56,14 +62,17 @@ const router = createRouter({
 
 router.beforeEach((to, _from, next) => {
    const userStore = useUserStore()
+   const messageStore = useMessageStore()
    if (to.path === '/granted') {
       let jwtStr = VueCookies.get("dpg_jwt")
       userStore.setJWT(jwtStr)
+      messageStore.getMessages( userStore.ID )
       next( "/" )
    } else if (to.name !== 'not_found' && to.name !== 'forbidden' && to.name !== "signedout") {
       let jwtStr = localStorage.getItem('dpg_jwt')
       if ( jwtStr) {
          userStore.setJWT(jwtStr)
+         messageStore.getMessages( userStore.ID )
          next()
       } else {
          window.location.href = "/authenticate"

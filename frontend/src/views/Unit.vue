@@ -1,15 +1,25 @@
 <template>
    <div class="unit">
       <WaitSpinner  v-if="systemStore.working" :overlay="true" message="Working..." />
+      <ConfirmDialog group="delete">
+         <template #message>
+            <div>Delete the selected images? All data will be lost.</div>
+            <div>This is not reversable.</div>
+            <div class="sure">Are you sure?</div>
+         </template>
+      </ConfirmDialog>
 
       <div class="metadata" v-if="projectStore.selectedProjectIdx > -1">
          <div class="hints">
             <table >
+               <tr><td class="act">Select All:</td><td>ctrl+a</td></tr>
+               <tr><td class="act">Paging:</td><td>&lt;  &gt;</td></tr>
+               <tr><td class="act">Delete:</td><td>ctrl+d</td></tr>
                <tr><td class="act">Rename:</td><td>ctrl+r</td></tr>
                <tr><td class="act">Page Numbers:</td><td>ctrl+p</td></tr>
                <tr v-if="isManuscript"><td class="act">Set Box:</td><td>ctrl+b</td></tr>
                <tr v-if="isManuscript"><td class="act">Set Folder:</td><td>ctrl+f</td></tr>
-               <tr><td class="act">Component Link:</td><td>ctrl+k</td></tr>
+               <tr><td class="act">Component:</td><td>ctrl+k</td></tr>
                <tr><td class="act">Cancel Edit:</td><td>esc</td></tr>
             </table>
          </div>
@@ -31,41 +41,40 @@
       </div>
 
       <div class="toolbar">
-         <DPGPagination :currPage="unitStore.currPage" :pageSize="unitStore.pageSize"
-            :totalPages="unitStore.totalPages" :sizePicker="true"
-            @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
-            @jump="pageJumpClicked" @size="pageSizeChanged"
-         />
-
+         <span class="view-mode">
+            <label>View:</label>
+            <select id="layout" v-model="unitStore.viewMode" @change="viewModeChanged">
+               <option value="list">List</option>
+               <option value="medium">Gallery (medium)</option>
+               <option value="large">Gallery (large)</option>
+            </select>
+         </span>
          <span class="actions">
-            <span class="view-mode">
-               <label>View:</label>
-               <select id="layout" v-model="unitStore.viewMode" @change="viewModeChanged">
-                  <option value="list">List</option>
-                  <option value="medium">Gallery (medium)</option>
-                  <option value="large">Gallery (large)</option>
-               </select>
-            </span>
-            <ConfirmModal label="Rename" class="right-pad" @confirmed="renameAll" :trigger="showRenameConfirm" @closed="showRenameConfirm=false">
-               <div>All files will be renamed to match the following format:</div>
-               <code>{{paddedUnit()}}_0001.tif - {{paddedUnit()}}_nnnn.tif</code>
-            </ConfirmModal>
-            <DPGButton id="set-titles" @click="setPageNumbersClicked" class="button right-pad">Set Page Numbers</DPGButton>
+            <DPGButton @click="renameClicked" class="p-button-secondary right-pad" label="Rename All"/>
+            <ConfirmDialog>
+               <template #message>
+                  <div>All files will be renamed to match the following format:</div>
+                  <code>{{paddedUnit()}}_0001.tif - {{paddedUnit()}}_nnnn.tif</code>
+               </template>
+            </ConfirmDialog>
+
+            <DPGButton @click="setPageNumbersClicked" class="p-button-secondary right-pad" label="Set Page Numbers"/>
+            <DPGButton @click="titleClicked" class="p-button-secondary right-pad" label="Set Title"/>
+            <DPGButton @click="descClicked" class="p-button-secondary right-pad" label="Set Caption"/>
             <template v-if="isManuscript">
-               <DPGButton id="set-boxes" @click="boxClicked" class="button right-pad">Set Box</DPGButton>
-               <DPGButton id="set-folders" @click="folderClicked" class="button right-pad">Set Folder</DPGButton>
+               <DPGButton @click="boxClicked" class="p-button-secondary right-pad" label="Set Box"/>
+               <DPGButton @click="folderClicked" class="p-button-secondary right-pad" label="Set Folder"/>
             </template>
-            <DPGButton id="set-titles" @click="componentLinkClicked" class="button">Component Link</DPGButton>
+            <DPGButton @click="componentLinkClicked" class="p-button-secondary" label="Set Component"/>
          </span>
       </div>
       <PageNumPanel v-if="unitStore.editMode == 'page'" />
       <ComponentPanel v-if="unitStore.editMode == 'component'" />
-      <BoxPanel v-if="unitStore.editMode == 'box'" />
-      <FolderPanel v-if="unitStore.editMode == 'folder'" />
+      <BatchUpdatePanel v-if="showBatchUpdate" :title="batchUpdateTitle" :field="batchUpdateField" :global="unitStore.editMode=='box'" />
       <table class="unit-list" v-if="unitStore.viewMode == 'list'">
          <thead>
             <tr>
-               <th><input type="checkbox" v-model="allChecked" @click="selectAllClicked()"/></th>
+               <th></th>
                <th></th>
                <th>Tag</th>
                <th>File Name</th>
@@ -85,7 +94,7 @@
          <draggable v-model="unitStore.pageMasterFiles" tag="tbody"  @start="dragStarted" item-key="fileName">
             <template #item="{element, index}">
                <tr :id="element.fileName" :key="element.fileName">
-                  <td class="grip"><input type="checkbox" v-model="element.selected" @click="masterFileCheckboxClicked(index)"/></td>
+                  <td><input type="checkbox" v-model="element.selected" @click="masterFileCheckboxClicked(index)"/></td>
                   <td class="thumb">
                      <router-link :to="imageViewerURL(index)"><img :src="element.thumbURL"/></router-link>
                   </td>
@@ -140,72 +149,80 @@
 
       <draggable v-else v-model="unitStore.pageMasterFiles" @start="dragStarted" class="gallery" :class="unitStore.viewMode" item-key="fileName">
          <template #item="{element, index}">
-            <div class="card" :id="element.fileName">
-               <div class="card-sel">
-                  <input type="checkbox" v-model="element.selected" @click="masterFileCheckboxClicked(index)"/>
-                  <div class="file">
-                     <span>{{element.fileName}}</span>
-                     <span v-if="element.error">
-                        <i class="image-err fas fa-exclamation-circle" @mouseover="hoverEnter(element.fileName)" @mouseleave="hoverExit()"></i>
-                        <span v-if="showError==element.fileName" class="hover-error">{{element.error}}</span>
-                     </span>
-                  </div>
-               </div>
-               <router-link :to="imageViewerURL(index)">
-                  <img :src="element.mediumURL" v-if="unitStore.viewMode == 'medium'"/>
-                  <img :src="element.largeURL" v-if="unitStore.viewMode == 'large'"/>
-               </router-link>
-               <div class="tag">
-                  <TagPicker :masterFile="element" display="wide"/>
-               </div>
-               <div class="metadata">
-                  <div class="row">
-                     <label>Title</label>
-                     <div tabindex="0" @focus.stop.prevent="editMetadata(element, 'title')" class="data editable" @click="editMetadata(element, 'title')">
-                        <template v-if="isEditing(element, 'title')">
-                           <TitleInput  @canceled="cancelEdit" @accepted="submitEdit(element)" v-model="newValue" @blur.stop.prevent="cancelEdit"/>
-                        </template>
-                        <template v-else>
-                           <template v-if="element.title">{{element.title}}</template>
-                           <span v-else class="undefined">Undefined</span>
-                        </template>
+            <Card class="card" :id="element.fileName">
+               <template #content>
+                  <div class="card-sel">
+                     <input type="checkbox" v-model="element.selected" @click="masterFileCheckboxClicked(index)"/>
+                     <div class="file">
+                        <span>{{element.fileName}}</span>
+                        <span v-if="element.error">
+                           <i class="image-err fas fa-exclamation-circle" @mouseover="hoverEnter(element.fileName)" @mouseleave="hoverExit()"></i>
+                           <span v-if="showError==element.fileName" class="hover-error">{{element.error}}</span>
+                        </span>
                      </div>
                   </div>
-                  <div class="row">
-                     <label>Caption</label>
-                     <div class="data editable" tabindex="0" @focus.stop.prevent="editMetadata(element, 'description')"  @click="editMetadata(element, 'description')">
-                        <template v-if="isEditing(element, 'description')">
-                           <input id="edit-desc" type="text" v-model="newValue" @keyup.enter="submitEdit(element)" @keyup.esc="cancelEdit" @blur.stop.prevent="cancelEdit"/>
-                        </template>
-                        <template v-else>
-                           <template v-if="element.description">{{element.description}}</template>
-                           <span v-else class="undefined">Undefined</span>
-                        </template>
+                  <router-link :to="imageViewerURL(index)">
+                     <img :src="element.mediumURL" v-if="unitStore.viewMode == 'medium'"/>
+                     <img :src="element.largeURL" v-if="unitStore.viewMode == 'large'"/>
+                  </router-link>
+                  <div class="tag">
+                     <TagPicker :masterFile="element" display="wide"/>
+                  </div>
+                  <div class="metadata">
+                     <div class="row">
+                        <label>Title</label>
+                        <div tabindex="0" @focus.stop.prevent="editMetadata(element, 'title')" class="data editable" @click="editMetadata(element, 'title')">
+                           <template v-if="isEditing(element, 'title')">
+                              <TitleInput  @canceled="cancelEdit" @accepted="submitEdit(element)" v-model="newValue" @blur.stop.prevent="cancelEdit"/>
+                           </template>
+                           <template v-else>
+                              <template v-if="element.title">{{element.title}}</template>
+                              <span v-else class="undefined">Undefined</span>
+                           </template>
+                        </div>
+                     </div>
+                     <div class="row">
+                        <label>Caption</label>
+                        <div class="data editable" tabindex="0" @focus.stop.prevent="editMetadata(element, 'description')"  @click="editMetadata(element, 'description')">
+                           <template v-if="isEditing(element, 'description')">
+                              <input id="edit-desc" type="text" v-model="newValue" @keyup.enter="submitEdit(element)" @keyup.esc="cancelEdit" @blur.stop.prevent="cancelEdit"/>
+                           </template>
+                           <template v-else>
+                              <template v-if="element.description">{{element.description}}</template>
+                              <span v-else class="undefined">Undefined</span>
+                           </template>
+                        </div>
+                     </div>
+                     <div class="row" v-if="element.box">
+                        <label>Box</label>
+                        <div class="data">{{element.box}}</div>
+                     </div>
+                     <div class="row" v-if="element.folder">
+                        <label>Folder</label>
+                        <div class="data">{{element.folder}}</div>
+                     </div>
+                     <div class="row" v-if="element.componentID">
+                        <label>Component</label>
+                        <div class="data">{{element.componentID}}</div>
                      </div>
                   </div>
-                  <div class="row" v-if="element.box">
-                     <label>Box</label>
-                     <div class="data">{{element.box}}</div>
-                  </div>
-                  <div class="row" v-if="element.folder">
-                     <label>Folder</label>
-                     <div class="data">{{element.folder}}</div>
-                  </div>
-                  <div class="row" v-if="element.componentID">
-                     <label>Component</label>
-                     <div class="data">{{element.componentID}}</div>
-                  </div>
-               </div>
-            </div>
+               </template>
+            </Card>
          </template>
       </draggable>
+      <div class="footer" v-if="unitStore.masterFiles.length > 20">
+         <DPGPagination :currPage="unitStore.currPage" :pageSize="unitStore.pageSize"
+            :totalPages="unitStore.totalPages" :sizePicker="true"
+            @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
+            @jump="pageJumpClicked" @size="pageSizeChanged"
+         />
+      </div>
    </div>
 </template>
 
 <script setup>
 import ComponentPanel from '../components/ComponentPanel.vue'
-import BoxPanel from '../components/BoxPanel.vue'
-import FolderPanel from '../components/FolderPanel.vue'
+import BatchUpdatePanel from '../components/BatchUpdatePanel.vue'
 import PageNumPanel from '../components/PageNumPanel.vue'
 import TagPicker from '../components/TagPicker.vue'
 import TitleInput from '../components/TitleInput.vue'
@@ -217,12 +234,15 @@ import {useUnitStore} from "@/stores/unit"
 import { computed, ref, onBeforeMount, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DPGPagination from '../components/DPGPagination.vue'
+import { useConfirm } from "primevue/useconfirm"
+import Card from 'primevue/card'
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
 const unitStore = useUnitStore()
 const route = useRoute()
 const router = useRouter()
+const confirm = useConfirm()
 
 // local data
 const editMF = ref(null)
@@ -230,7 +250,6 @@ const newValue = ref("")
 const editField = ref("")
 const showError = ref("")
 const showRenameConfirm = ref(false)
-const allChecked = ref(false)
 
 // computed
 const title = computed(() => {
@@ -257,15 +276,28 @@ const workingDir = computed(()=>{
 const isManuscript = computed(() => {
    return projectStore.currProject.workflow && projectStore.currProject.workflow.name=='Manuscript'
 })
-function selectAllClicked() {
-   if (!unitStore.allPageImagesSelected) {
-      unitStore.selectPage()
-      allChecked.value = true
-   } else {
-      unitStore.deselectAll()
-      allChecked.value = false
+const showBatchUpdate = computed(() => {
+   return ( unitStore.editMode == "box" || unitStore.editMode == "folder" || unitStore.editMode == "title" || unitStore.editMode == "description")
+})
+const batchUpdateTitle = computed(() => {
+   if ( unitStore.editMode == "box") {
+      return "Box"
    }
-}
+   if ( unitStore.editMode == "folder") {
+      return "Folder"
+   }
+   if ( unitStore.editMode == "title") {
+      return "Title"
+   }
+   if ( unitStore.editMode == "description") {
+      return "Description"
+   }
+
+   return ""
+})
+const batchUpdateField = computed(() => {
+   return unitStore.editMode
+})
 
 function truncateTitle(title) {
    if (title.length < 200) return title
@@ -273,11 +305,6 @@ function truncateTitle(title) {
 }
 function masterFileCheckboxClicked(index) {
    unitStore.masterFileSelected(index)
-   if (unitStore.allPageImagesSelected) {
-      allChecked.value = true
-   } else {
-      allChecked.value = false
-   }
 }
 
 function paddedUnit() {
@@ -330,8 +357,13 @@ function hoverExit() {
 function hoverEnter(f) {
    showError.value = f
 }
-function renameAll() {
-   unitStore.renameAll()
+function renameClicked() {
+   confirm.require({
+      header: 'Confirm Rename',
+      accept: () => {
+         unitStore.renameAll()
+      }
+   })
 }
 function boxClicked() {
    unitStore.editMode = "box"
@@ -341,6 +373,12 @@ function folderClicked() {
 }
 function componentLinkClicked() {
    unitStore.editMode = "component"
+}
+function titleClicked() {
+   unitStore.editMode = "title"
+}
+function descClicked() {
+   unitStore.editMode = "description"
 }
 function setPageNumbersClicked() {
    unitStore.editMode = "page"
@@ -388,12 +426,37 @@ async function submitEdit(mf) {
    editMF.value = null
 }
 
+function handleDelete() {
+   confirm.require({
+      group: 'delete',
+      header: 'Confirm Image Delete',
+      accept: () => {
+         unitStore.deleteSelectedMasterFiles()
+      }
+   })
+}
+
+
 function keyboardHandler(event) {
    if (event.key == 'Escape') {
       systemStore.error = ""
       unitStore.editMode = ""
       return
    }
+
+   if ( event.key == ',' || event.key == '<') {
+      if (unitStore.currPage > 1) {
+         priorClicked()
+         return
+      }
+   }
+   if ( event.key == '.' || event.key == '>') {
+      if (unitStore.currPage < unitStore.totalPages) {
+         nextClicked()
+         return
+      }
+   }
+
    if ( !event.ctrlKey ) return
 
    if (event.key == 'r') {
@@ -406,6 +469,10 @@ function keyboardHandler(event) {
       folderClicked()
    } else if (event.key == 'k') {
       componentLinkClicked()
+   }  else if (event.key == 'a') {
+      unitStore.selectPage()
+   }  else if (event.key == 'd') {
+      handleDelete()
    }
 }
 
@@ -443,6 +510,10 @@ onBeforeUnmount( async () => {
 </script>
 
 <style lang="scss" scoped>
+   .sure {
+      text-align: right;
+      margin-top: 15px;
+   }
 div.hints {
    font-size: 0.75em;
    position: absolute;
@@ -473,8 +544,6 @@ div.hints {
          left: 0px;
       }
       h2 {
-         color: var(--uvalib-brand-orange);
-         margin: 10px 0;
          .title {
             display: block;
             margin: 0 200px;
@@ -526,6 +595,15 @@ div.hints {
          }
       }
    }
+
+   .footer {
+      display: flex;
+      flex-flow: row wrap;
+      justify-content: center;
+      align-content: center;
+      padding: 10px;
+      border-top: 1px solid var(--uvalib-grey-light);
+   }
    .toolbar {
       display: flex;
       flex-flow: row wrap;
@@ -535,6 +613,9 @@ div.hints {
       background: var(--uvalib-grey-light);
       border-bottom: 1px solid var(--uvalib-grey);
       border-top: 1px solid var(--uvalib-grey);
+      select {
+         border: 1px solid var(--uvalib-grey);
+      }
 
       label {
          font-weight: bold;
@@ -542,10 +623,6 @@ div.hints {
       }
       select {
          width:max-content;
-      }
-
-      .pager {
-         margin-right: auto;
       }
 
       .actions {
@@ -595,50 +672,13 @@ div.hints {
       justify-content: flex-start;
       align-content: flex-start;
 
-      .edit-md {
-         float: right;
-         cursor: pointer;
-         font-size: 1.25em;
-         font-weight: bold;
-         &:hover {
-            color: var(--uvalib-blue-alt);
-         }
-      }
-      .edit-ctls {
+      .card {
          position: relative;
-         top: 10px;
-         right: -5px;
-         font-size: 1.25em;
-         text-align: right;
-         i {
-            display: inline-block;
-         }
-         .cancel {
-            color: var(--uvalib-red-darker);
-            margin-right: 5px;
-            &:hover {
-               color: var(--uvalib-red-emergency);
-            }
-         }
-         .accept {
-            color: var(--uvalib-green-dark);
-            &:hover {
-               color: var(--uvalib-green-lightest);
-            }
-         }
-      }
-
-      div.card {
-         position: relative;
-         border: 1px solid var(--uvalib-grey-light);
          padding: 0 20px 20px 20px;
-         display: inline-block;
          margin: 5px;
-         background: white;
-         box-shadow:  0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.12);
 
          .card-sel {
-            padding: 20px 0;
+            padding: 0 0 20px 0;
             display: flex;
             flex-flow: row nowrap;
             justify-content: flex-start;
@@ -673,9 +713,6 @@ div.hints {
             background-color: #f5f5f5;
          }
       }
-      div.card.selected {
-         background: var(--uvalib-blue-alt-light);
-      }
    }
 
    div.gallery.medium {
@@ -699,7 +736,7 @@ div.hints {
          padding: 5px 10px;
          text-align: left;
          border-bottom: 1px solid var(--uvalib-grey-lightest);
-         cursor: grab;
+         cursor:  default;
       }
       td.thumb {
          padding: 5px 5px 2px 5px;
@@ -709,25 +746,10 @@ div.hints {
       }
       td.grip {
          color: var(--uvalib-grey);
+         cursor:  grab;
       }
       th {
          border-bottom: 1px solid var(--uvalib-grey);
-      }
-      tr {
-         &:hover {
-            background: aliceblue;
-         }
-      }
-      tr.selected {
-         &:hover {
-            background: aliceblue;
-         }
-      }
-      .selected {
-         background: var(--uvalib-blue-alt-light);
-         td {
-            border-bottom: 1px solid  var(--uvalib-blue-alt-light);
-         }
       }
    }
    .editable {
@@ -739,31 +761,6 @@ div.hints {
    }
    .nowrap {
       white-space: nowrap;
-   }
-   .popupmenu {
-      position: absolute;
-      background: var(--uvalib-blue-alt);
-      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-      padding: 0;
-      top: 50px;
-      left: 50px;
-      text-align: left;
-      ul {
-         background: white;
-         list-style: none;
-         margin: 0;
-         padding: 0;
-         border: 1px solid var(--uvalib-blue-alt-dark);
-         li {
-            padding: 4px 15px 4px 5px;
-            white-space: nowrap;
-            outline: 0;
-            cursor:pointer;
-            &:hover {
-               background: var(--uvalib-blue-alt-light);
-            }
-         }
-      }
    }
 }
 </style>

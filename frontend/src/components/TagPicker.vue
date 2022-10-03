@@ -1,11 +1,7 @@
 <template>
    <div class="tag-picker">
       <span tabindex="0" @click="showMenu" @keydown.enter="showMenu" class="tag current" :class="[masterFile.status, props.display]"></span>
-      <div class="popup-list" v-if="menuOpen" :class="props.position">
-         <div class="title">
-            <span>Select a tag</span>
-            <span tabindex="0" @click.stop.prevent="hideMenu()" class="close">X</span>
-         </div>
+      <OverlayPanel ref="picker" :dismissable="true">
          <ul>
             <li @click.stop.prevent="selectTag('rescan')">
                <span class="tag rescan"></span>
@@ -36,16 +32,17 @@
                <span class="label">Remove Tag</span>
             </li>
          </ul>
-      </div>
+      </OverlayPanel>
    </div>
 </template>
 
 <script setup>
+import OverlayPanel from 'primevue/overlaypanel'
 import {useUnitStore} from "@/stores/unit"
 import { ref } from 'vue'
 
 const unitStore = useUnitStore()
-const menuOpen = ref(false)
+const picker = ref()
 
 const props = defineProps({
    masterFile: {
@@ -56,17 +53,13 @@ const props = defineProps({
       type: String,
       default: "default"
    },
-   position: {
-      type: String,
-      default: "default"
-   }
 })
 
-function showMenu() {
-   menuOpen.value = true
+function showMenu(event) {
+   picker.value.toggle(event)
 }
 function hideMenu() {
-   menuOpen.value = false
+   picker.value.toggle()
 }
 async function selectTag( tag ) {
    await unitStore.updateMasterFileMetadata( props.masterFile.fileName, "tag", tag )
@@ -75,71 +68,33 @@ async function selectTag( tag ) {
 </script>
 
 <style lang="scss" scoped>
-.tag-picker {
-   position: relative;
-   .popup-list.topright {
-      right:0;
-   }
-   .popup-list {
-      position: absolute;
-      background: white;
-      z-index: 1000;
-      border: 1px solid var(--uvalib-blue-alt-dark);
-      box-shadow: var(--box-shadow);
-      top: 0;
 
-      .title {
-         background: var(--uvalib-grey-light);
-         padding: 5px;
-         border-bottom: 1px solid var(--uvalib-grey);
-         display: flex;
-         flex-flow: flex nowrap;
-         justify-content: space-between;
-         .close {
-            background: var(--uvalib-red-dark);
-            font-size: 16px;
-            color: white;
-            font-weight: bolder;
-            border: 1px solid var(--uvalib-red-darker);
-            height: 16px;
-            width: 16px;
-            text-align: center;
-            border-radius: 10px;
-            cursor: pointer;
-            &:hover {
-               background: firebrick;
-            }
-         }
+ul {
+   list-style: none;
+   margin: 0;
+   padding: 0;
+   li {
+      white-space: nowrap;
+      display: flex;
+      flex-flow: row nowrap;
+      align-content: center;
+      padding: 10px;
+      cursor: pointer;
+      border-radius: 5px;
+
+      .label {
+         display: block;
+         margin: 0 10px;
+         position: relative;
+         top: 3px;
       }
 
-      ul {
-         list-style: none;
-         margin: 0;
-         padding: 0;
-         li {
-            white-space: nowrap;
-            display: flex;
-            flex-flow: row nowrap;
-            align-content: center;
-            margin: 10px;
-            cursor: pointer;
-            border: 1px solid  white;
-
-            .label {
-               display: block;
-               margin: 0 10px;
-               position: relative;
-               top: 3px;
-            }
-
-            &:hover {
-               background: var(--uvalib-blue-alt-light);
-               border: 1px solid var(--uvalib-blue-alt);
-
-            }
-         }
+      &:hover {
+         background: var(--uvalib-blue-alt-light);
       }
    }
+}
+
    .current {
       cursor: pointer;
       display: none;
@@ -194,5 +149,4 @@ async function selectTag( tag ) {
       font-weight: 100;
       color: var(--uvalib-grey-light);
    }
-}
 </style>

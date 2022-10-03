@@ -17,6 +17,7 @@ type staffMember struct {
 	FirstName   string `json:"firstName"`
 	LastName    string `json:"lastName"`
 	Role        uint   `json:"role"`
+	Email       string `json:"email"`
 }
 
 func (sm *staffMember) roleString() string {

@@ -42,32 +42,13 @@
             </span>
          </div>
          <div class="project-main">
-            <div class="info-block">
-               <h4>Item Information</h4>
-               <ItemInfo />
-            </div>
-            <div class="info-block">
-               <h4>Equipment</h4>
-               <Equipment />
-            </div>
+            <ItemInfo />
+            <Equipment />
             <div class="double">
-               <div class="info-block nested">
-                  <h4>Workflow</h4>
-                  <Workflow />
-               </div>
-               <div class="info-block nested">
-                  <h4>History</h4>
-                  <History />
-               </div>
+               <Workflow />
+               <History />
             </div>
-
-            <div class="info-block">
-               <h4 class="notes">
-                  <span>Notes</span>
-                  <NoteModal id="note-modal" />
-               </h4>
-               <Notes />
-            </div>
+            <Notes />
          </div>
       </template>
    </div>
@@ -79,7 +60,6 @@ import Workflow from "@/components/project/Workflow.vue"
 import History from "@/components/project/History.vue"
 import Notes from "@/components/project/Notes.vue"
 import Equipment from "@/components/project/Equipment.vue"
-import NoteModal from '@/components/project/NoteModal.vue'
 import {useSystemStore} from "@/stores/system"
 import {useProjectStore} from "@/stores/project"
 import { onMounted, computed } from 'vue'
@@ -112,21 +92,18 @@ onMounted( async () => {
 .project {
    position: relative;
    padding: 25px;
-   h2 {
-      color: var(--uvalib-brand-orange);
-      margin-bottom: 25px;
-      position: relative;
-      .due {
-         position: absolute;
-         right: 0;
-         color: var(--uvalib-text);
-         font-size: 16px;
-         font-weight: 500;
-         background: var(--uvalib-blue-alt-light);
-         border: 1px solid var(--uvalib-blue-alt);
-         padding: 5px 15px;
-      }
+
+   .due {
+      position: absolute;
+      right: 0;
+      color: var(--uvalib-text);
+      font-size: 16px;
+      font-weight: 500;
+      background: var(--uvalib-blue-alt-light);
+      border: 1px solid var(--uvalib-blue-alt);
+      padding: 5px 15px;
    }
+
    label {
       font-weight: bold;
       margin-right: 5px;
@@ -144,10 +121,6 @@ onMounted( async () => {
          font-weight: 500;
          font-size: 1.25em;
          margin: 5px auto 10px auto;
-         .icon {
-            display: inline-block;
-            margin-left: 10px;
-         }
       }
       h4 {
          font-size: 0.9em;
@@ -199,63 +172,6 @@ onMounted( async () => {
       .double {
          width: 46%;
          min-width: 600px;
-      }
-      .info-block.nested {
-         width: 100%;
-         box-sizing: border-box;
-         margin: 15px 0;
-      }
-      .info-block {
-         width: 46%;
-         min-width: 600px;
-         border: 1px solid var(--uvalib-grey-light);
-         margin: 15px;
-         display: inline-block;
-         min-height: 100px;
-         box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.12);
-         text-align: left;
-         .na {
-            color: #999;
-         }
-         h4 {
-            text-align: center;
-            color: var(--uvalib-text);
-            font-size: 1em;
-            margin: 0;
-            padding: 5px;
-            background: var(--uvalib-grey-lightest);
-            border-bottom: 1px solid var(--uvalib-grey-light);
-         }
-         h4.notes {
-            display: flex;
-            flex-flow: row nowrap;
-            justify-content: center;
-            align-items: center;
-            span {
-               flex-grow: 1;
-            }
-         }
-         dl {
-            margin: 10px 30px 0 30px;
-            display: inline-grid;
-            grid-template-columns: max-content 2fr;
-            grid-column-gap: 10px;
-            font-size: 0.9em;
-            text-align: left;
-            box-sizing: border-box;
-
-            dt {
-               font-weight: bold;
-               text-align: right;
-            }
-            dd {
-               margin: 0 0 10px 0;
-               word-break: break-word;
-               -webkit-hyphens: auto;
-               -moz-hyphens: auto;
-               hyphens: auto;
-            }
-         }
       }
    }
 }
