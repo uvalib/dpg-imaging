@@ -10,19 +10,7 @@
       </ConfirmDialog>
 
       <div class="metadata" v-if="projectStore.selectedProjectIdx > -1">
-         <div class="hints">
-            <table >
-               <tr><td class="act">Select All:</td><td>ctrl+a</td></tr>
-               <tr><td class="act">Paging:</td><td>&lt;  &gt;</td></tr>
-               <tr><td class="act">Delete:</td><td>ctrl+d</td></tr>
-               <tr><td class="act">Rename:</td><td>ctrl+r</td></tr>
-               <tr><td class="act">Page Numbers:</td><td>ctrl+p</td></tr>
-               <tr v-if="isManuscript"><td class="act">Set Box:</td><td>ctrl+b</td></tr>
-               <tr v-if="isManuscript"><td class="act">Set Folder:</td><td>ctrl+f</td></tr>
-               <tr><td class="act">Component:</td><td>ctrl+k</td></tr>
-               <tr><td class="act">Cancel Edit:</td><td>esc</td></tr>
-            </table>
-         </div>
+         <KeyboardShortcutHelp />
          <h2>
             <ProblemsDisplay class="topleft" />
             <span class="title"><router-link :to="`/projects/${projectStore.currProject.id}`">{{truncateTitle(title)}}</router-link></span>
@@ -41,23 +29,9 @@
       </div>
 
       <div class="toolbar">
-         <span class="view-mode">
-            <label>View:</label>
-            <select id="layout" v-model="unitStore.viewMode" @change="viewModeChanged">
-               <option value="list">List</option>
-               <option value="medium">Gallery (medium)</option>
-               <option value="large">Gallery (large)</option>
-            </select>
-         </span>
+         <ViewMode />
          <span class="actions">
-            <DPGButton @click="renameClicked" class="p-button-secondary right-pad" label="Rename All"/>
-            <ConfirmDialog>
-               <template #message>
-                  <div>All files will be renamed to match the following format:</div>
-                  <code>{{paddedUnit()}}_0001.tif - {{paddedUnit()}}_nnnn.tif</code>
-               </template>
-            </ConfirmDialog>
-
+            <RenameFiles />
             <DPGButton @click="setPageNumbersClicked" class="p-button-secondary right-pad" label="Set Page Numbers"/>
             <DPGButton @click="titleClicked" class="p-button-secondary right-pad" label="Set Title"/>
             <DPGButton @click="descClicked" class="p-button-secondary right-pad" label="Set Caption"/>
@@ -236,6 +210,9 @@ import { useRoute, useRouter } from 'vue-router'
 import DPGPagination from '../components/DPGPagination.vue'
 import { useConfirm } from "primevue/useconfirm"
 import Card from 'primevue/card'
+import ViewMode from '../components/ViewMode.vue'
+import KeyboardShortcutHelp from '../components/KeyboardShortcutHelp.vue'
+import RenameFiles from '../components/RenameFiles.vue'
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
@@ -249,7 +226,6 @@ const editMF = ref(null)
 const newValue = ref("")
 const editField = ref("")
 const showError = ref("")
-const showRenameConfirm = ref(false)
 
 // computed
 const title = computed(() => {
@@ -346,24 +322,11 @@ function pageChanged() {
    query.page = unitStore.currPage
    router.push({query})
 }
-function viewModeChanged() {
-   let query = Object.assign({},route.query)
-   query.view = unitStore.viewMode
-   router.push({query})
-}
 function hoverExit() {
    showError.value = ""
 }
 function hoverEnter(f) {
    showError.value = f
-}
-function renameClicked() {
-   confirm.require({
-      header: 'Confirm Rename',
-      accept: () => {
-         unitStore.renameAll()
-      }
-   })
 }
 function boxClicked() {
    unitStore.editMode = "box"
@@ -459,9 +422,7 @@ function keyboardHandler(event) {
 
    if ( !event.ctrlKey ) return
 
-   if (event.key == 'r') {
-      showRenameConfirm.value = true
-   } else if (event.key == 'p') {
+   if (event.key == 'p') {
       setPageNumbersClicked()
    } else if (event.key == 'b') {
       boxClicked()
@@ -514,14 +475,6 @@ onBeforeUnmount( async () => {
       text-align: right;
       margin-top: 15px;
    }
-div.hints {
-   font-size: 0.75em;
-   position: absolute;
-   right: 10px;
-   top: 0px;
-   text-align: left;
-   td.act { text-align: right;}
-}
 .unit {
    padding: 0;
    input[type=checkbox] {
@@ -607,23 +560,12 @@ div.hints {
    .toolbar {
       display: flex;
       flex-flow: row wrap;
-      justify-content: center;
+      justify-content: space-between;
       align-content: center;
       padding: 10px;
       background: var(--uvalib-grey-light);
       border-bottom: 1px solid var(--uvalib-grey);
       border-top: 1px solid var(--uvalib-grey);
-      select {
-         border: 1px solid var(--uvalib-grey);
-      }
-
-      label {
-         font-weight: bold;
-         margin-right: 10px;
-      }
-      select {
-         width:max-content;
-      }
 
       .actions {
          margin-left: auto;
@@ -631,13 +573,6 @@ div.hints {
          flex-flow: row wrap;
          justify-content: flex-end;
          align-content: center;
-         .right-pad {
-            margin-right: 10px;
-         }
-         .view-mode {
-            margin-right: 15px;
-            display: inline-block;
-         }
       }
    }
    .undefined {
