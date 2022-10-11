@@ -74,6 +74,8 @@ export const useUnitStore = defineStore('unit', {
       },
       async setPage(startPageNum) {
          this.currPage = startPageNum
+         this.deselectAll()
+         this.editMode = ""
          return this.getMetadataPage()
       },
       setPageSize(newSize) {
@@ -118,22 +120,23 @@ export const useUnitStore = defineStore('unit', {
       },
 
       masterFileSelected(idx) {
-         if (this.masterFiles[idx].selected) {
+         let actualIdx =  (this.currPage-1) * this.pageSize + idx
+         if (this.masterFiles[actualIdx].selected) {
             this.masterFiles.forEach( mf => mf.selected = false)
             this.rangeStartIdx = -1
             this.rangeEndIdx = -1
          } else {
             let priorSelIdx = this.masterFiles.findIndex( mf => mf.selected)
             if (priorSelIdx == -1) {
-               this.masterFiles[idx].selected = true
-               this.rangeStartIdx = idx
-               this.rangeEndIdx = idx
+               this.masterFiles[actualIdx].selected = true
+               this.rangeStartIdx = actualIdx
+               this.rangeEndIdx = actualIdx
             } else {
-               if (priorSelIdx < idx) {
+               if (priorSelIdx < actualIdx) {
                   this.rangeStartIdx = priorSelIdx
-                  this.rangeEndIdx = idx
+                  this.rangeEndIdx = actualIdx
                } else {
-                  this.rangeStartIdx = idx
+                  this.rangeStartIdx = actualIdx
                   this.rangeEndIdx = priorSelIdx
                }
                for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
