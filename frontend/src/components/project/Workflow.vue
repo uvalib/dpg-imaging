@@ -100,6 +100,7 @@ const isScanning = computed(()=>{
    return (currStepName.value == 'Scan' || currStepName.value == 'Process')
 })
 const isFinishEnabled = computed(()=>{
+   if ( currProject.value.workflow.name == "Manuscript" && currStepName.value == "Scan" && currProject.value.containerTypeID == null) return false
    if ( currStepName.value == "Scan" && currProject.value.workstation.id == 0) return false
    if ( currStepName.value == "Finalize") {
       if ( currProject.value.unit.metadata.ocrHint.id == 0) return false
@@ -131,6 +132,9 @@ const startedAt = computed(()=>{
 const workflowNote = computed(()=>{
    if ( currStepName.value == "Scan" && currProject.value.workstation.id == 0) {
       return "Assignment cannot be finished until the workstation has been set."
+   }
+   if ( currProject.value.workflow.name == "Manuscript" && currStepName.value == "Scan" && currProject.value.containerTypeID == null) {
+      return "Assignment cannot be finished until container type is set."
    }
    if ( currStepName.value == "Finalize" && currProject.value.unit.metadata.ocrHint.id == 0) {
       return "Assignment cannot be finished until the OCR hint has been set."
@@ -268,7 +272,8 @@ function unitDirectory(unitID) {
       }
    }
    .workflow-message {
-      padding: 10px;
+      padding: 15px 0 0 0;
+      margin-top: 15px;
       border-top: 1px solid var(--uvalib-grey-light);
       text-align: center;
       color: var(--uvalib-red-emergency);
