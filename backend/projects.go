@@ -105,7 +105,7 @@ type project struct {
 	ItemCondition     uint           `json:"itemCondition"`
 	ConditionNote     string         `json:"conditionNote,omitempty"`
 	ContainerTypeID   *uint          `json:"-"`
-	ContainerType     *containerType `gorm:"foreignKey:ContainerTypeID" json:"containerType,omitempty"`
+	ContainerType     *containerType `gorm:"foreignKey:ContainerTypeID" json:"containerType"`
 	Notes             []*note        `gorm:"foreignKey:ProjectID" json:"notes,omitempty"`
 	Equipment         []*equipment   `gorm:"many2many:project_equipment" json:"equipment,omitempty"`
 }
@@ -428,13 +428,24 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 		c.String(http.StatusInternalServerError, r.Error.Error())
 		return
 	}
-	proj.Unit.Metadata.OCRHintID = updateData.OCRHintID
-	proj.Unit.Metadata.OCRLanguageHint = updateData.OCRLanguageHint
-	r = svc.DB.Model(&proj.Unit.Metadata).Select("OCRHintID", "OCRLanguageHint").Updates(proj.Unit.Metadata)
-	if r.Error != nil {
-		log.Printf("ERROR: unable to update OCR settings for project %s: %s", projID, r.Error.Error())
-		c.String(http.StatusInternalServerError, r.Error.Error())
-		return
+	if updateData.OCRHintID > 0 {
+		proj.Unit.Metadata.OCRHintID = updateData.OCRHintID
+		r = svc.DB.Model(&proj.Unit.Metadata).Select("OCRHintID").Updates(proj.Unit.Metadata)
+		if r.Error != nil {
+			log.Printf("ERROR: unable to update OCR Hint for project %s: %s", projID, r.Error.Error())
+			c.String(http.StatusInternalServerError, r.Error.Error())
+			return
+		}
+
+	}
+	if updateData.OCRLanguageHint != "" {
+		proj.Unit.Metadata.OCRLanguageHint = updateData.OCRLanguageHint
+		r = svc.DB.Model(&proj.Unit.Metadata).Select("OCRLanguageHint").Updates(proj.Unit.Metadata)
+		if r.Error != nil {
+			log.Printf("ERROR: unable to update OCR Language for project %s: %s", projID, r.Error.Error())
+			c.String(http.StatusInternalServerError, r.Error.Error())
+			return
+		}
 	}
 
 	dbReq.First(&proj)

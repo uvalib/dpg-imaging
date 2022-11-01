@@ -100,7 +100,7 @@ const isScanning = computed(()=>{
    return (currStepName.value == 'Scan' || currStepName.value == 'Process')
 })
 const isFinishEnabled = computed(()=>{
-   if ( currProject.value.workflow.name == "Manuscript" && currStepName.value == "Scan" && currProject.value.containerTypeID == null) return false
+   if ( currProject.value.workflow.name == "Manuscript" && currStepName.value == "Scan" && currProject.value.containerType == null) return false
    if ( currStepName.value == "Scan" && currProject.value.workstation.id == 0) return false
    if ( currStepName.value == "Finalize") {
       if ( currProject.value.unit.metadata.ocrHint.id == 0) return false
@@ -133,7 +133,7 @@ const workflowNote = computed(()=>{
    if ( currStepName.value == "Scan" && currProject.value.workstation.id == 0) {
       return "Assignment cannot be finished until the workstation has been set."
    }
-   if ( currProject.value.workflow.name == "Manuscript" && currStepName.value == "Scan" && currProject.value.containerTypeID == null) {
+   if ( currProject.value.workflow.name == "Manuscript" && currStepName.value == "Scan" && currProject.value.containerType == null) {
       return "Assignment cannot be finished until container type is set."
    }
    if ( currStepName.value == "Finalize" && currProject.value.unit.metadata.ocrHint.id == 0) {
