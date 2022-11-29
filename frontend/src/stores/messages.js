@@ -42,6 +42,11 @@ export const useMessageStore = defineStore('message', {
          })
       },
       markMessageRead() {
+         // the message modal can call this when OK is clicked or when the close callback is triggered
+         // this can result in this call being made twice. Only handle the call when the target
+         // message ID is not -1
+         if ( this.targetMessageID == -1) return
+
          const system = useSystemStore()
          axios.post(`/api/user/${this.userID}/messages/${this.targetMessageID}/read`).then( () => {
             let m = this.inbox.find( m => m.id == this.targetMessageID)

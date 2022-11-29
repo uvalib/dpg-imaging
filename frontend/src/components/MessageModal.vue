@@ -1,5 +1,5 @@
 <template>
-   <Dialog v-model:visible="messageStore.viewMesage" :modal="true" header="Message Viewer" @hide="hide" style="width: 650px">
+   <Dialog v-model:visible="messageStore.viewMesage" :modal="true" header="Message Viewer"  :closable="false" style="width: 650px">
       <dl>
          <dt>Sent:</dt>
          <dd>{{formatDate(message.sentAt)}}</dd>

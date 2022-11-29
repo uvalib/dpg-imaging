@@ -158,7 +158,7 @@ function truncateMessage(msg) {
    return msg.slice(0,100)+"..."
 }
 function viewClicked(msgID) {
-   messageStore.viewMessageID = msgID
+   messageStore.targetMessageID = msgID
    messageStore.viewMesage = true
 }
 function deleteClicked(msgID) {
