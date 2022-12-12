@@ -181,8 +181,8 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 		return
 	}
 
-	log.Printf("INFO: load workstations")
-	dbResp = svc.DB.Order("name asc").Find(&resp.Workstations)
+	log.Printf("INFO: load active workstations")
+	dbResp = svc.DB.Where("status=?", 0).Order("name asc").Find(&resp.Workstations)
 	if dbResp.Error != nil {
 		log.Printf("ERROR: unable to load workstations: %s", dbResp.Error.Error())
 		c.String(http.StatusInternalServerError, dbResp.Error.Error())
