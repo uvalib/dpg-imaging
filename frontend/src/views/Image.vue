@@ -165,6 +165,9 @@ function focusViewer() {
 }
 
 function keyboardHandler(event) {
+   if (event.target.id == "edit-desc" || event.target.id == "title-input-box") {
+      return
+   }
    if ( event.key == ',' || event.key == '<') {
       if (prevDisabled() == false ) {
          prevImage()

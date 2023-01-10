@@ -407,6 +407,10 @@ function keyboardHandler(event) {
       return
    }
 
+   if (event.target.id == "edit-desc" || event.target.id == "title-input-box") {
+      return
+   }
+
    if ( event.key == ',' || event.key == '<') {
       if (unitStore.currPage > 1) {
          priorClicked()
