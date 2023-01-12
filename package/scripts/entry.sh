@@ -11,6 +11,7 @@ cd bin; ./imagingsvc -url $DPG_SERVICE_URL \
    -finalize $DPG_FINALIZE_PATH \
    -iiif $IIIF_SERVICE_URL \
    -finalizeurl $DPG_FINALIZE_URL \
+   -tsurl $DPG_TRACKSYS_URL \
    -jwtkey $DPG_JWT_KEY \
    -dbhost $DBHOST \
    -dbport $DBPORT \
