@@ -144,7 +144,7 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 		OCRHints         []ocrHint         `json:"ocrHints"`
 		OCRLanguageHints []ocrLanguageHint `json:"ocrLanguageHints"`
 	}
-	resp := cfgData{TrackSysURL: fmt.Sprintf("%s/admin", svc.TrackSysURL),
+	resp := cfgData{TrackSysURL: svc.TrackSysURL,
 		QAImageDir: svc.ImagesDir,
 		ScanDir:    svc.ScanDir,
 	}
