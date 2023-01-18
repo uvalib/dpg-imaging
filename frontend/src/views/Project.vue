@@ -73,11 +73,7 @@ const route = useRoute()
 const { currProject } = storeToRefs(projectStore)
 
 const metadataLink = computed(() => {
-   let mdType = "sirsi_metadata"
-   if (currProject.value.unit.metadata.type == "XmlMetadata") {
-      mdType = "xml_metadata"
-   }
-   return `${systemStore.adminURL}/${mdType}/${currProject.value.unit.metadata.id}`
+   return `${systemStore.adminURL}/metadata/${currProject.value.unit.metadata.id}`
 })
 
 onMounted( async () => {
