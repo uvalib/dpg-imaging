@@ -116,6 +116,62 @@ func (svc *serviceContext) rejectProjectStep(c *gin.Context) {
 	c.JSON(http.StatusOK, proj)
 }
 
+func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
+	projID := c.Param("id")
+	claims := getJWTClaims(c)
+	var req struct {
+		Workflow uint `json:"workflow"`
+	}
+
+	qpErr := c.ShouldBindJSON(&req)
+	if qpErr != nil {
+		log.Printf("ERROR: invalid update workflow payload: %v", qpErr)
+		c.String(http.StatusBadRequest, qpErr.Error())
+		return
+	}
+	log.Printf("INFO: user %s is changing project %s workflow to %d", claims.ComputeID, projID, req.Workflow)
+	var proj project
+	projReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
+	err := projReq.First(&proj).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// load target workflow and associated steps
+	var newWF workflow
+	err = svc.DB.Preload("Steps").Find(&newWF, req.Workflow).Error
+	if err != nil {
+		log.Printf("ERROR: unable to load new workflow %d: %s", req.Workflow, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// update project workflow and first step ID
+	proj.WorkflowID = req.Workflow
+	proj.CurrentStepID = newWF.Steps[0].ID
+	err = svc.DB.Debug().Model(&proj).Select("workflow_id", "current_step_id").Updates(proj).Error
+	if err != nil {
+		log.Printf("ERROR: unable to update workflow for project %d to %d: %s", proj.ID, req.Workflow, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// update all assignmens step_id
+	err = svc.DB.Debug().Model(assignment{}).Where("project_id = ?", proj.ID).Updates(assignment{StepID: proj.CurrentStepID}).Error
+	if err != nil {
+		log.Printf("ERROR: unable to update project %d assignment steps to %d: %s", proj.ID, proj.CurrentStepID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// reload the updated project / assignments / workdlow data
+	projReq.First(&proj)
+	c.JSON(http.StatusOK, proj)
+
+}
+
 func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)

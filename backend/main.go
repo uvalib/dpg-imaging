@@ -11,7 +11,7 @@ import (
 )
 
 // Version of the service
-const Version = "5.1.10"
+const Version = "5.2.0"
 
 func main() {
 	// Load cfg
@@ -44,6 +44,7 @@ func main() {
 		api.POST("/projects/:id/start", svc.authMiddleware, svc.startProjectStep)
 		api.POST("/projects/:id/finish", svc.authMiddleware, svc.finishProjectStep)
 		api.POST("/projects/:id/reject", svc.authMiddleware, svc.rejectProjectStep)
+		api.POST("/projects/:id/workflow", svc.authMiddleware, svc.changeProjectWorkflow)
 
 		api.GET("/units/:uid/masterfiles", svc.authMiddleware, svc.getUnitMasterFiles)
 		api.GET("/units/:uid/masterfiles/metadata", svc.authMiddleware, svc.getMasterFilesMetadata)

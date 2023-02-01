@@ -34,25 +34,28 @@
          </div>
       </div>
       <div class="workflow-btns" v-else-if="isFinalizeRunning(selectedProjectIdx) == false && isFinished(selectedProjectIdx) == false">
-         <DPGButton @click="viewerClicked" class="p-button-secondary" v-if="isScanning == false && (isOwner(userStore.computeID) || isSupervisor || isAdmin)" label="Open QA Viewer"/>
-         <DPGButton v-if="hasOwner(selectedProjectIdx) && (isAdmin || isSupervisor)"
-            @click="clearClicked()" class="p-button-secondary pad-right" label="Clear Assignment"/>
-         <template v-if="isOwner(userStore.computeID)">
-            <template v-if="isWorking(selectedProjectIdx) == false">
-               <AssignModal v-if="(isOwner(userStore.computeID) || isSupervisor || isAdmin)" :projectID="currProject.id" label="Reassign"/>
-               <DPGButton v-if="inProgress(selectedProjectIdx) == false" @click="startStep" label="Start"/>
-               <DPGButton v-if="canReject(selectedProjectIdx)" class="p-button-danger" @click="rejectStepClicked" label="Reject"/>
-               <DPGButton v-if="inProgress(selectedProjectIdx) == true" :disabled="!isFinishEnabled" @click="finishClicked">
-                  <template v-if="isFinalizing &&  hasError(selectedProjectIdx) == true">Retry Finalize</template>
-                  <template v-else>Finish</template>
-               </DPGButton>
+         <DPGButton @click="changeWorkflowClicked()" class="p-button-secondary" v-if="projectStore.canChangeWorkflow &&  (isSupervisor || isAdmin)" label="Change Workflow"/>
+         <span class="right-buttons">
+            <DPGButton @click="viewerClicked" class="p-button-secondary" v-if="isScanning == false && (isOwner(userStore.computeID) || isSupervisor || isAdmin)" label="Open QA Viewer"/>
+            <DPGButton v-if="hasOwner(selectedProjectIdx) && (isAdmin || isSupervisor)"
+               @click="clearClicked()" class="p-button-secondary pad-right" label="Clear Assignment"/>
+            <template v-if="isOwner(userStore.computeID)">
+               <template v-if="isWorking(selectedProjectIdx) == false">
+                  <AssignModal v-if="(isOwner(userStore.computeID) || isSupervisor || isAdmin)" :projectID="currProject.id" label="Reassign"/>
+                  <DPGButton v-if="inProgress(selectedProjectIdx) == false" @click="startStep" label="Start"/>
+                  <DPGButton v-if="canReject(selectedProjectIdx)" class="p-button-danger" @click="rejectStepClicked" label="Reject"/>
+                  <DPGButton v-if="inProgress(selectedProjectIdx) == true" :disabled="!isFinishEnabled" @click="finishClicked">
+                     <template v-if="isFinalizing &&  hasError(selectedProjectIdx) == true">Retry Finalize</template>
+                     <template v-else>Finish</template>
+                  </DPGButton>
+               </template>
             </template>
-         </template>
-         <template v-else>
-            <DPGButton v-if="isWorking(selectedProjectIdx) == false && (hasOwner(selectedProjectIdx) == false || isAdmin ||isSupervisor)"
-               @click="claimClicked()"  class="p-button-secondary pad-right" label="Claim"/>
-            <AssignModal v-if="(isAdmin || isSupervisor)" :projectID="currProject.id" />
-         </template>
+            <template v-else>
+               <DPGButton v-if="isWorking(selectedProjectIdx) == false && (hasOwner(selectedProjectIdx) == false || isAdmin ||isSupervisor)"
+                  @click="claimClicked()"  class="p-button-secondary pad-right" label="Claim"/>
+               <AssignModal v-if="(isAdmin || isSupervisor)" :projectID="currProject.id" />
+            </template>
+         </span>
       </div>
       <div class="workflow-message" v-if="isOwner(userStore.computeID) && workflowNote">
          {{workflowNote}}
@@ -61,6 +64,22 @@
          @closed="rejectCanceled" @submitted="rejectSubmitted"
          instructions="Rejection requires the addition of a problem note that details the reason why it occurred" />
    </Panel>
+   <Dialog v-model:visible="showWorkflowPicker" :modal="true" header="Change Workflow" style="width:300px">
+      <div class="workflow-picker">
+         <p>Current workflow: {{ currProject.workflow.name }}</p>
+         <p>Select a new workflow:</p>
+         <div class="workflow-list">
+            <div class="workflow-val" v-for="(w,idx) in systemStore.workflows" :key="w.id" :class="{selected: idx == selectedWorkflowIdx}" @click="selectWorkflow(idx)">
+               {{  w.name }}
+            </div>
+         </div>
+      </div>
+      <template #footer>
+         <DPGButton @click="cancelWorkflowChange()" label="Cancel" class="p-button-secondary"/>
+         <span class="spacer"></span>
+         <DPGButton @click="submitWorkflowChange()" label="Submit"/>
+      </template>
+   </Dialog>
 </template>
 
 <script setup>
@@ -74,6 +93,7 @@ import { ref, computed, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import Panel from 'primevue/panel'
+import Dialog from 'primevue/dialog'
 
 const router = useRouter()
 const projectStore = useProjectStore()
@@ -89,6 +109,8 @@ const timeEntry = ref(false)
 const stepMinutes = ref(0)
 const action = ref("finish")
 const showRejectNote = ref(false)
+const showWorkflowPicker = ref(false)
+const selectedWorkflowIdx = ref(-1)
 
 const currStepName = computed(()=>{
    return currProject.value.currentStep.name
@@ -150,6 +172,22 @@ const workflowNote = computed(()=>{
    }
    return ""
 })
+
+function changeWorkflowClicked() {
+   selectedWorkflowIdx.value = -1
+   showWorkflowPicker.value = true
+}
+function cancelWorkflowChange() {
+   showWorkflowPicker.value = false
+}
+async function submitWorkflowChange()  {
+   let workflowID = systemStore.workflows[selectedWorkflowIdx.value].id
+   await projectStore.changeWorkflow( workflowID )
+   showWorkflowPicker.value = false
+}
+function selectWorkflow( idx ) {
+   selectedWorkflowIdx.value = idx
+}
 
 function clearClicked() {
    projectStore.assignProject({projectID: currProject.value.id, ownerID: 0} )
@@ -241,11 +279,16 @@ function unitDirectory(unitID) {
       margin-right: 10px;
    }
    .workflow-btns {
-      text-align: right;
       padding: 0;
       margin-top: 10px;
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: space-between;
       button.p-button {
          margin-left: 10px;
+      }
+      .right-buttons {
+         margin-left: auto;
       }
    }
    .workflow-btns.time {
@@ -277,6 +320,32 @@ function unitDirectory(unitID) {
       border-top: 1px solid var(--uvalib-grey-light);
       text-align: center;
       color: var(--uvalib-red-emergency);
+   }
+}
+div.workflow-picker {
+   p {
+      margin: 0 0 10px 0;
+      color: #999;
+   }
+   .workflow-list {
+      margin: 0 0 15px 0;
+      background: white;
+      border: 1px solid var(--uvalib-grey-light);
+      padding: 5px 0;
+      .workflow-val {
+         padding: 2px 10px 3px 10px;
+         cursor: pointer;
+         display: flex;
+         flex-flow: row nowrap;
+         justify-content: space-between;
+         &:hover  {
+            background: var(--uvalib-blue-alt-light);
+         }
+      }
+      .workflow-val.selected {
+         background: var(--uvalib-blue-alt);
+         color: white;
+      }
    }
 }
 </style>
