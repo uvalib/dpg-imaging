@@ -325,7 +325,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 	}
 
 	if proj.OwnerID != nil && *proj.OwnerID == owner.ID {
-		log.Printf("INFO: project %d owner is already %d, no change needed", proj.ID, proj.OwnerID)
+		log.Printf("INFO: project %d owner is already %d, no change needed", proj.ID, *proj.OwnerID)
 		c.JSON(http.StatusOK, proj)
 		return
 	}

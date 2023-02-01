@@ -77,9 +77,7 @@ const metadataLink = computed(() => {
 })
 
 onMounted( async () => {
-   if (projectStore.selectedProjectIdx == -1) {
-      await projectStore.getProject(route.params.id)
-   }
+   await projectStore.getProject(route.params.id)
 })
 
 </script>

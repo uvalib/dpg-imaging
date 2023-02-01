@@ -200,6 +200,7 @@ export const useProjectStore = defineStore('project', {
          data.currPage = data.page
          this.projects.splice(0, this.projects.length)
          data.projects.forEach( p => this.projects.push(p))
+        this.selectedProjectIdx = -1
       },
       selectProject(projID) {
          this.selectedProjectIdx = this.projects.findIndex( p => p.id == projID)
