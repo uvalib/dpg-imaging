@@ -16,5 +16,5 @@ require (
 	github.com/ugorji/go/codec v1.2.8 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gorm.io/driver/mysql v1.4.5
-	gorm.io/gorm v1.24.3
+	gorm.io/gorm v1.24.4
 )
