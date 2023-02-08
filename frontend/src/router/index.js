@@ -67,8 +67,18 @@ router.beforeEach((to, _from, next) => {
       let jwtStr = VueCookies.get("dpg_jwt")
       userStore.setJWT(jwtStr)
       messageStore.getMessages( userStore.ID )
-      next( "/" )
+      let priorURL = localStorage.getItem('dpgImagingPriorURL')
+      console.log("RESTORE LAST PATH "+to.fullPath)
+      localStorage.removeItem("dpgImagingPriorURL")
+      if ( priorURL && priorURL != "/granted" && priorURL != "/") {
+         console.log("RESTORE "+priorURL)
+         next(priorURL)
+      } else {
+         next("/")
+      }
    } else if (to.name !== 'not_found' && to.name !== 'forbidden' && to.name !== "signedout") {
+      console.log("SAVE LAST PATH "+to.fullPath)
+      localStorage.setItem("dpgImagingPriorURL", to.fullPath)
       let jwtStr = localStorage.getItem('dpg_jwt')
       if ( jwtStr) {
          userStore.setJWT(jwtStr)

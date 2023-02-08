@@ -35,6 +35,7 @@ export const useUserStore = defineStore('user', {
    actions: {
       signout() {
          localStorage.removeItem("dpg_jwt")
+         localStorage.removeItem("dpgImagingPriorURL")
          this.jwt = ""
          this.firstName = ""
          this.lastName = ""

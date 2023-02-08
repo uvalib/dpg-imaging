@@ -13,8 +13,9 @@ require (
 	github.com/goccy/go-json v0.10.0 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/ugorji/go/codec v1.2.8 // indirect
+	github.com/ugorji/go/codec v1.2.9 // indirect
+	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	gorm.io/driver/mysql v1.4.5
-	gorm.io/gorm v1.24.4
+	gorm.io/driver/mysql v1.4.6
+	gorm.io/gorm v1.24.5
 )

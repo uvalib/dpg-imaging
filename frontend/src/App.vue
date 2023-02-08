@@ -58,7 +58,7 @@ function errorClosed() {
 
 function signout() {
    userStore.signout()
-   router.push("signedout")
+   router.push("/signedout")
 }
 
 onMounted( async () => {

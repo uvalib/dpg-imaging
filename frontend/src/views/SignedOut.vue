@@ -17,10 +17,8 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-const router = useRouter()
 function signinClick() {
-   router.push("/")
+   window.location.href = "/authenticate"
 }
 </script>
 
