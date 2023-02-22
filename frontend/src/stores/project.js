@@ -395,12 +395,12 @@ export const useProjectStore = defineStore('project', {
             this.working = false
          })
       },
-      async changeWorkflow( newWorkflowID ) {
+      async changeWorkflow( newWorkflowID, newContainerTypeID ) {
          if (this.selectedProjectIdx == -1) {
             return
          }
          this.working = true
-         return axios.post(`/api/projects/${this.currProject.id}/workflow`, {workflow: newWorkflowID}).then(response => {
+         return axios.post(`/api/projects/${this.currProject.id}/workflow`, {workflow: newWorkflowID, containerType: newContainerTypeID}).then(response => {
             this.updateProjectData(response.data)
             this.working = false
          }).catch( e => {

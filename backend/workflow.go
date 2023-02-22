@@ -120,7 +120,8 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)
 	var req struct {
-		Workflow uint `json:"workflow"`
+		Workflow      uint `json:"workflow"`
+		ContainerType int  `json:"containerType"`
 	}
 
 	qpErr := c.ShouldBindJSON(&req)
@@ -129,7 +130,7 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 		c.String(http.StatusBadRequest, qpErr.Error())
 		return
 	}
-	log.Printf("INFO: user %s is changing project %s workflow to %d", claims.ComputeID, projID, req.Workflow)
+	log.Printf("INFO: user %s is changing project %s workflow to %d and container type %d", claims.ComputeID, projID, req.Workflow, req.ContainerType)
 	var proj project
 	projReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
 	err := projReq.First(&proj).Error
@@ -151,7 +152,13 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 	// update project workflow and first step ID
 	proj.WorkflowID = req.Workflow
 	proj.CurrentStepID = newWF.Steps[0].ID
-	err = svc.DB.Debug().Model(&proj).Select("workflow_id", "current_step_id").Updates(proj).Error
+	if req.ContainerType > -1 {
+		newTypeID := uint(req.ContainerType)
+		proj.ContainerTypeID = &newTypeID
+	} else {
+		proj.ContainerTypeID = nil
+	}
+	err = svc.DB.Debug().Model(&proj).Select("workflow_id", "current_step_id", "container_type_id").Updates(proj).Error
 	if err != nil {
 		log.Printf("ERROR: unable to update workflow for project %d to %d: %s", proj.ID, req.Workflow, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())

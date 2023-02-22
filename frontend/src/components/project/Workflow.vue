@@ -69,15 +69,27 @@
          <p>Current workflow: {{ currProject.workflow.name }}</p>
          <p>Select a new workflow:</p>
          <div class="workflow-list">
-            <div class="workflow-val" v-for="(w,idx) in systemStore.workflows" :key="w.id" :class="{selected: idx == selectedWorkflowIdx}" @click="selectWorkflow(idx)">
+            <div class="workflow-val" v-for="(w,idx) in systemStore.workflows" :key="w.id"
+               :class="{selected: idx == selectedWorkflowIdx}" @click="selectWorkflow(idx)"
+            >
                {{  w.name }}
+            </div>
+         </div>
+         <div class="container-types" v-if="isManuscriptSelected">
+            <p>Select container type:</p>
+            <div class="workflow-list">
+               <div class="workflow-val" v-for="(ct,idx) in systemStore.containerTypes" :key="ct.id"
+                  :class="{selected: idx == selectedContainerTypeIdx}" @click="selectContainerType(idx)"
+               >
+                  {{  ct.name }}
+               </div>
             </div>
          </div>
       </div>
       <template #footer>
          <DPGButton @click="cancelWorkflowChange()" label="Cancel" class="p-button-secondary"/>
          <span class="spacer"></span>
-         <DPGButton @click="submitWorkflowChange()" label="Submit"/>
+         <DPGButton @click="submitWorkflowChange()" label="Submit" :disabled="isWorkflowChangeDisabled"/>
       </template>
    </Dialog>
 </template>
@@ -111,7 +123,23 @@ const action = ref("finish")
 const showRejectNote = ref(false)
 const showWorkflowPicker = ref(false)
 const selectedWorkflowIdx = ref(-1)
+const selectedContainerTypeIdx = ref(-1)
 
+const isWorkflowChangeDisabled = computed(() => {
+   if ( selectedWorkflowIdx.value == -1 ) return true
+   if (isManuscriptSelected.value) {
+      if ( selectedContainerTypeIdx.value == -1 ) return true
+   }
+   return false
+})
+const isManuscriptSelected = computed(()=>{
+   if ( selectedWorkflowIdx.value == -1 ) return false
+   let wf = systemStore.workflows[selectedWorkflowIdx.value]
+   if (wf) {
+      return wf.name == "Manuscript"
+   }
+   return false
+})
 const currStepName = computed(()=>{
    return currProject.value.currentStep.name
 })
@@ -175,6 +203,7 @@ const workflowNote = computed(()=>{
 
 function changeWorkflowClicked() {
    selectedWorkflowIdx.value = -1
+   selectedContainerTypeIdx.value = -1
    showWorkflowPicker.value = true
 }
 function cancelWorkflowChange() {
@@ -182,11 +211,19 @@ function cancelWorkflowChange() {
 }
 async function submitWorkflowChange()  {
    let workflowID = systemStore.workflows[selectedWorkflowIdx.value].id
-   await projectStore.changeWorkflow( workflowID )
+   let containerTypeID = -1
+   if ( isManuscriptSelected.value ) {
+      containerTypeID = systemStore.containerTypes[selectedContainerTypeIdx.value].id
+   }
+   await projectStore.changeWorkflow( workflowID, containerTypeID )
    showWorkflowPicker.value = false
 }
 function selectWorkflow( idx ) {
    selectedWorkflowIdx.value = idx
+   selectedContainerTypeIdx.value = -1
+}
+function selectContainerType( idx ) {
+   selectedContainerTypeIdx.value = idx
 }
 
 function clearClicked() {

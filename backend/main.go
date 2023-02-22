@@ -11,7 +11,7 @@ import (
 )
 
 // Version of the service
-const Version = "5.2.1"
+const Version = "5.2.2"
 
 func main() {
 	// Load cfg
@@ -31,33 +31,33 @@ func main() {
 	router.GET("/version", svc.getVersion)
 	router.GET("/healthcheck", svc.healthCheck)
 	router.GET("/authenticate", svc.authenticate)
-	api := router.Group("/api")
+	api := router.Group("/api", svc.authMiddleware)
 	{
-		api.GET("/components/:id", svc.authMiddleware, svc.getComponent)
+		api.GET("/components/:id", svc.getComponent)
 
-		api.GET("/projects", svc.authMiddleware, svc.getProjects)
-		api.GET("/projects/:id", svc.authMiddleware, svc.getProject)
-		api.PUT("/projects/:id", svc.authMiddleware, svc.updateProject)
-		api.POST("/projects/:id/assign/:uid", svc.authMiddleware, svc.assignProject)
-		api.POST("/projects/:id/equipment", svc.authMiddleware, svc.setProjectEquipment)
-		api.POST("/projects/:id/note", svc.authMiddleware, svc.addNote)
-		api.POST("/projects/:id/start", svc.authMiddleware, svc.startProjectStep)
-		api.POST("/projects/:id/finish", svc.authMiddleware, svc.finishProjectStep)
-		api.POST("/projects/:id/reject", svc.authMiddleware, svc.rejectProjectStep)
-		api.POST("/projects/:id/workflow", svc.authMiddleware, svc.changeProjectWorkflow)
+		api.GET("/projects", svc.getProjects)
+		api.GET("/projects/:id", svc.getProject)
+		api.PUT("/projects/:id", svc.updateProject)
+		api.POST("/projects/:id/assign/:uid", svc.assignProject)
+		api.POST("/projects/:id/equipment", svc.setProjectEquipment)
+		api.POST("/projects/:id/note", svc.addNote)
+		api.POST("/projects/:id/start", svc.startProjectStep)
+		api.POST("/projects/:id/finish", svc.finishProjectStep)
+		api.POST("/projects/:id/reject", svc.rejectProjectStep)
+		api.POST("/projects/:id/workflow", svc.changeProjectWorkflow)
 
-		api.GET("/units/:uid/masterfiles", svc.authMiddleware, svc.getUnitMasterFiles)
-		api.GET("/units/:uid/masterfiles/metadata", svc.authMiddleware, svc.getMasterFilesMetadata)
-		api.POST("/units/:uid/update", svc.authMiddleware, svc.updateMetadataBatch)
-		api.POST("/units/:uid/rename", svc.authMiddleware, svc.renameFiles)
-		api.POST("/units/:uid/delete", svc.authMiddleware, svc.deleteFiles)
-		api.POST("/units/:uid/:file/rotate", svc.authMiddleware, svc.rotateFile)
-		api.POST("/units/:uid/:file/update", svc.authMiddleware, svc.updateImageMetadata)
+		api.GET("/units/:uid/masterfiles", svc.getUnitMasterFiles)
+		api.GET("/units/:uid/masterfiles/metadata", svc.getMasterFilesMetadata)
+		api.POST("/units/:uid/update", svc.updateMetadataBatch)
+		api.POST("/units/:uid/rename", svc.renameFiles)
+		api.POST("/units/:uid/delete", svc.deleteFiles)
+		api.POST("/units/:uid/:file/rotate", svc.rotateFile)
+		api.POST("/units/:uid/:file/update", svc.updateImageMetadata)
 
-		api.GET("/user/:id/messages", svc.authMiddleware, svc.getMessages)
-		api.POST("/user/:id/messages/:msgid/delete", svc.authMiddleware, svc.deleteMessage)
-		api.POST("/user/:id/messages/:msgid/read", svc.authMiddleware, svc.markMessageRead)
-		api.POST("/user/:id/messages/send", svc.authMiddleware, svc.sendMessage)
+		api.GET("/user/:id/messages", svc.getMessages)
+		api.POST("/user/:id/messages/:msgid/delete", svc.deleteMessage)
+		api.POST("/user/:id/messages/:msgid/read", svc.markMessageRead)
+		api.POST("/user/:id/messages/send", svc.sendMessage)
 	}
 
 	// Note: in dev mode, this is never actually used. The front end is served
