@@ -13,6 +13,7 @@
     "dayjs": "^1.11.5",
     "openseadragon": "^2.4.2",
     "pinia": "^2.0.12",
+    "primeicons": "^6.0.1",
     "primevue": "^3.17.0",
     "vue": "^3.1.0",
     "vue-cookies": "^1.7.4",

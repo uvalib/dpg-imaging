@@ -95,6 +95,7 @@ type project struct {
 	AddedAt           *time.Time     `json:"addedAt,omitempty"`
 	StartedAt         *time.Time     `json:"startedAt,omitempty"`
 	FinishedAt        *time.Time     `json:"finishedAt,omitempty"`
+	TotalDurationMins *int64         `json:"totalDuration,omitempty"`
 	CategoryID        uint           `json:"-"`
 	Category          category       `gorm:"foreignKey:CategoryID" json:"category"`
 	CaptureResolution uint           `json:"captureResolution"`

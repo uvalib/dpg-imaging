@@ -51,7 +51,13 @@
                         <span class="status-msg overdue" v-if="isOverdue(p) && !p.finishedAt">OVERDUE</span>
                         <i v-if="projectStore.hasError(idx)" class="error-icon fas fa-exclamation-triangle"></i>
                      </span>
-                     <span v-if="p.finishedAt"><label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span></span>
+                     <span v-if="p.finishedAt">
+                        <label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span>
+                        <div class="time" v-if="p.totalDuration">
+                           <label>Duration:</label>
+                           <span>{{ p.totalDuration }} mins</span>
+                        </div>
+                     </span>
                   </div>
                   <router-link @click="projectStore.selectProject(p.id)" :to="`/projects/${p.id}`">
                      <div class="title">
@@ -307,7 +313,7 @@ onMounted( async () => {
                display: flex;
                flex-flow: row nowrap;
                justify-content: space-between;
-               align-items: center;
+               align-items: flex-start;
                .error-icon {
                   display: inline-block;
                   color: var(--uvalib-red-emergency);
