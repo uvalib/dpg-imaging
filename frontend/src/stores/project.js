@@ -51,7 +51,8 @@ export const useProjectStore = defineStore('project', {
             if (p.assignments.length == 0) return false
             let currA = p.assignments[0]
             let step = p.workflow.steps.find( s => s.id == currA.stepID)
-            return step.failStepID > 0 && currA.status == 1
+            if ( step ) return step.failStepID > 0 && currA.status == 1
+            return false
          }
       },
       isFinalizeRunning: state => {
@@ -154,7 +155,11 @@ export const useProjectStore = defineStore('project', {
             let a = p.assignments.find(a => a.stepID == p.currentStep.id)
             if ( a ) {
                if (a.startedAt != null) {
-                  out += " In progress"
+                  if (a.status == 4) {
+                     out += " Failed"
+                  } else {
+                     out += " In progress"
+                  }
                } else {
                   out += " Not started"
                }
