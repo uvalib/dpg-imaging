@@ -35,7 +35,7 @@ type assignment struct {
 	StartedAt       *time.Time  `json:"startedAt,omitempty"`
 	FinishedAt      *time.Time  `json:"finishedAt,omitempty"`
 	DurationMinutes uint        `json:"durationMinutes"`
-	Status          uint        `json:"status"`
+	Status          uint        `json:"status"` //enum status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing]
 }
 
 type step struct {
@@ -248,9 +248,13 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		}
 	}
 
+	orderStr := "due_on asc"
+	if filter == "finished" {
+		orderStr = "finished_at desc"
+	}
 	whereQ = filterQ[filterIdx] + whereQ
 	resp := svc.getBaseProjectQuery().Distinct().
-		Offset(offset).Limit(pageSize).Order("due_on asc").
+		Offset(offset).Limit(pageSize).Order(orderStr).
 		Where(whereQ).
 		Find(&out.Projects)
 	if resp.Error != nil {

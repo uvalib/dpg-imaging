@@ -73,6 +73,7 @@ func initializeService(version string, cfg *configData) *serviceContext {
 	if existErr != nil {
 		err := os.Mkdir(tmpDir, 0777)
 		if err != nil {
+			log.Printf("ERROR: unable to create tmp directory")
 			log.Fatal(fmt.Sprintf("unable to make tmp dir %s: %s", tmpDir, err.Error()))
 		}
 		log.Printf("INFO: tmp directory created")
@@ -108,9 +109,49 @@ func (svc *serviceContext) healthCheck(c *gin.Context) {
 		Message string `json:"message,omitempty"`
 	}
 	hcMap := make(map[string]hcResp)
-	hcMap["circulation"] = hcResp{Healthy: true}
+	serviceOK := true
+
+	hcMap["database"] = hcResp{Healthy: true}
+	sqlDB, err := svc.DB.DB()
+	if err != nil {
+		hcMap["database"] = hcResp{Healthy: false, Message: err.Error()}
+		serviceOK = false
+	} else {
+		err := sqlDB.Ping()
+		if err != nil {
+			hcMap["database"] = hcResp{Healthy: false, Message: err.Error()}
+		}
+	}
+
+	if pathExists(svc.ImagesDir) {
+		hcMap["images-dir"] = hcResp{Healthy: true}
+	} else {
+		hcMap["images-dir"] = hcResp{Healthy: false, Message: fmt.Sprintf("%s not found", svc.ImagesDir)}
+		serviceOK = false
+	}
+	if pathExists(svc.ScanDir) {
+		hcMap["scan-dir"] = hcResp{Healthy: true}
+	} else {
+		hcMap["scan-dir"] = hcResp{Healthy: false, Message: fmt.Sprintf("%s not found", svc.ScanDir)}
+		serviceOK = false
+	}
+	if pathExists(svc.FinalizeDir) {
+		hcMap["finalize-dir"] = hcResp{Healthy: true}
+	} else {
+		hcMap["finalize-dir"] = hcResp{Healthy: false, Message: fmt.Sprintf("%s not found", svc.FinalizeDir)}
+		serviceOK = false
+	}
+
+	hcMap["service"] = hcResp{Healthy: serviceOK}
 
 	c.JSON(http.StatusOK, hcMap)
+}
+
+func pathExists(path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+	return true
 }
 
 func (svc *serviceContext) getVersion(c *gin.Context) {
