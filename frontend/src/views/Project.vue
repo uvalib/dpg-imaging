@@ -12,34 +12,35 @@
             <h3>
                <a target="_blank" :href="metadataLink">{{currProject.unit.metadata.title}}</a>
             </h3>
-            <h4 class="proj-data">
-               <div class="column right-pad">
-                  <div>
-                     <label>Unit:</label>
-                     <a target="_blank" :href="`${systemStore.adminURL}/units/${currProject.unit.id}`">{{currProject.unit.id}}</a>
-                  </div>
-                  <div>
-                     <label>Order:</label>
-                     <a target="_blank" :href="`${systemStore.adminURL}/orders/${currProject.unit.orderID}`">{{currProject.unit.orderID}}</a>
-                  </div>
+            <div class="row">
+               <div>
+                  <label>Customer:</label>
+                  <span class="data">{{currProject.unit.order.customer.firstName}} {{currProject.unit.order.customer.lastName}}</span>
                </div>
-               <div class="column">
-                  <div>
-                     <label>Customer:</label>
-                     <a target="_blank" :href="`${systemStore.adminURL}/customers/${currProject.unit.order.customer.id}`">
-                        {{currProject.unit.order.customer.firstName}} {{currProject.unit.order.customer.lastName}}
-                     </a>
-                  </div>
-                  <div>
-                     <label>Intended Use:</label>
-                     <span class="data">{{currProject.unit.intendedUse.description}}</span>
-                  </div>
+               <div v-if="currProject.unit.order.agency.id > 0">
+                  <label>Agency:</label>
+                  <span class="data">{{currProject.unit.order.agency.name}}</span>
                </div>
-            </h4>
-            <span class="back">
+               <div>
+                  <label>Intended Use:</label>
+                  <span class="data">{{currProject.unit.intendedUse.description}}</span>
+               </div>
+            </div>
+            <div class="row right-pad">
+               <div>
+                  <label>Unit:</label>
+                  <a target="_blank" :href="`${systemStore.adminURL}/units/${currProject.unit.id}`">{{currProject.unit.id}}</a>
+               </div>
+               <div>
+                  <label>Order:</label>
+                  <a target="_blank" :href="`${systemStore.adminURL}/orders/${currProject.unit.orderID}`">{{currProject.unit.orderID}}</a>
+               </div>
+            </div>
+
+            <div class="back">
                <i class="fas fa-angle-double-left back-button"></i>
                <router-link to="/">Back to projects</router-link>
-            </span>
+            </div>
          </div>
          <div class="project-main">
             <ItemInfo />
@@ -108,7 +109,7 @@ onMounted( async () => {
       padding-bottom: 15px;
       border-bottom: 1px solid var(--uvalib-grey-light);
       position: relative;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       h3  {
          max-width: 90%;
          text-align: center;
@@ -121,12 +122,6 @@ onMounted( async () => {
          display: flex;
          flex-flow: row nowrap;
          justify-content: center;
-         .column {
-            text-align: left;
-         }
-         .column.right-pad {
-             margin-right: 25px;
-         }
          label {
             margin-right: 10px;
             width: 100px;
@@ -141,10 +136,17 @@ onMounted( async () => {
             margin: 5px 0;
          }
       }
+      .row  {
+         display: flex;
+         flex-flow: row nowrap;
+         justify-content: center;
+         padding: 5px 0 5px 0;
+         label {
+            margin-left: 15px;
+         }
+      }
       .back {
-         position: absolute;
-         left: 0px;
-         bottom: 10px;
+         text-align: left;
          a {
             font-weight: normal;
             text-decoration: none;

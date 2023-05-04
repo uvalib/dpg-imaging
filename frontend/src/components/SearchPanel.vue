@@ -3,40 +3,31 @@
       <h3>Search</h3>
       <div class="form">
          <label for="workflow">Workflow</label>
-         <select id="workflow"  v-model="projectStore.search.workflow">
-            <option :value="0">Any</option>
-            <option v-for="w in systemStore.workflows" :key="`wf${w.id}`" :value="w.id">{{w.name}}</option>
-         </select>
-
+         <Dropdown id="workflow" v-model="projectStore.search.workflow" :options="workflows"
+            optionLabel="name" optionValue="id" @change="doSearch()" />
          <label for="assigned">Assigned To</label>
-         <select id="assigned" v-model="projectStore.search.assignedTo">
-            <option :value="0">Any</option>
-            <option v-for="sm in systemStore.staffMembers" :key="`sm${sm.id}`" :value="sm.id">{{sm.lastName}}, {{sm.firstName}}</option>
-         </select>
+         <Dropdown id="assigned" v-model="projectStore.search.assignedTo" :options="staffMembers"
+            optionLabel="name" optionValue="id" filter  @change="doSearch()" />
 
          <label for="unit">Order</label>
-         <input id="unit" v-model="projectStore.search.orderID">
+         <input id="unit" v-model="projectStore.search.orderID" @keyup.enter="doSearch()">
 
          <label for="unit">Unit</label>
-         <input id="unit" v-model="projectStore.search.unitID">
+         <input id="unit" v-model="projectStore.search.unitID" @keyup.enter="doSearch()">
 
          <label for="call">Call Number</label>
-         <input id="call" v-model="projectStore.search.callNumber">
+         <input id="call" v-model="projectStore.search.callNumber" @keyup.enter="doSearch()">
 
          <label for="customer">Customer Last Name</label>
-         <input id="customer" v-model="projectStore.search.customer">
+         <input id="customer" v-model="projectStore.search.customer" @keyup.enter="doSearch()">
 
          <label for="agency">Agency</label>
-         <select id="agency" v-model="projectStore.search.agency">
-            <option :value="0">Any</option>
-            <option v-for="a in systemStore.agencies" :key="`agency${a.id}`" :value="a.id">{{a.name}}</option>
-         </select>
+         <Dropdown id="agency" v-model="projectStore.search.agency" :options="agencies"
+            optionLabel="name" optionValue="id" filter  @change="doSearch()" />
 
          <label for="workstation">Workstation</label>
-         <select id="workstation" v-model="projectStore.search.workstation">
-            <option :value="0">Any</option>
-            <option v-for="ws in systemStore.workstations" :key="`ws${ws.id}`" :value="ws.id">{{ws.name}}</option>
-         </select>
+         <Dropdown id="workflow" v-model="projectStore.search.workflow" :options="workflows"
+            optionLabel="name" optionValue="id" @change="doSearch()" />
       </div>
       <div class="buttons">
          <DPGButton class="p-button-secondary" @click="resetSearch" label="Reset Search"/>
@@ -46,14 +37,45 @@
 </template>
 
 <script setup>
-import {useProjectStore} from '@/stores/project'
+import { useProjectStore } from '@/stores/project'
 import {useSystemStore} from '@/stores/system'
 import { useRoute, useRouter } from 'vue-router'
+import Dropdown from 'primevue/dropdown'
+import { computed } from 'vue'
 
 const route = useRoute()
 const router = useRouter()
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
+
+const staffMembers = computed( () => {
+   let out = [ {name: "Any", id: 0} ]
+   systemStore.staffMembers.forEach( sm => {
+      out.push( { name: `${sm.lastName}, ${sm.firstName}`, code: sm.id})
+   })
+   return out
+})
+const workflows = computed( () => {
+   let out = [ {name: "Any", id: 0} ]
+   systemStore.workflows.forEach( sm => {
+      out.push( { name: sm.name, id: sm.id})
+   })
+   return out
+})
+const agencies = computed( () => {
+   let out = [ {name: "Any", id: 0} ]
+   systemStore.agencies.forEach( sm => {
+      out.push( { name: sm.name, id: sm.id})
+   })
+   return out
+})
+const workstations = computed( () => {
+   let out = [ {name: "Any", id: 0} ]
+   systemStore.workstations.forEach( sm => {
+      out.push( { name: sm.name, id: sm.id})
+   })
+   return out
+})
 
 async function resetSearch() {
    let query = Object.assign({}, route.query)
@@ -72,11 +94,27 @@ function doSearch() {
 </script>
 
 <style scoped lang="scss">
+:deep(span.p-dropdown-label.p-inputtext) {
+   font-size: 0.9em;
+   padding: 5px 8px;
+   color: var(--uvalib-text);
+}
+:deep(div.p-dropdown-trigger) {
+   width: auto;
+   margin-right: 8px;
+}
 .search {
    width: 20%;
    min-width: 270px;
    border: 1px solid var(--uvalib-grey);
    box-shadow: rgba(0, 0, 0, 0.14) 0px 2px 2px 0px;
+   div.p-dropdown.p-component {
+      width: 100%;
+      margin-bottom: 15px;
+      margin-top: 2px;
+      font-size: 0.9em;
+   }
+
    h3 {
       text-align: center;
       padding: 5px;

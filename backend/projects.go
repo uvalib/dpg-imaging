@@ -613,6 +613,7 @@ func (svc *serviceContext) getBaseProjectQuery() (tx *gorm.DB) {
 		Preload("Unit." + clause.Associations).  // this is a shorthand to load all associations directy under unit
 		Preload("Unit.Metadata.OCRHint").        // OCRHint is deeply nested, so need to preload explicitly
 		Preload("Unit.Order.Customer").          // customer is deeply nested, so need to preload explicitly
+		Preload("Unit.Order.Agency").            // agency is deeply nested, so need to preload explicitly
 		Preload("Notes." + clause.Associations). // preload all associations under notes
 		Preload("Workflow.Steps")                // explicitly preload nested workflow steps
 }

@@ -70,6 +70,10 @@
                   <dl>
                      <dt>Customer:</dt>
                      <dd>{{p.unit.order.customer.firstName}} {{p.unit.order.customer.lastName}}</dd>
+                     <template v-if="p.unit.order.agency.id > 0">
+                        <dt>Agency:</dt>
+                        <dd>{{p.unit.order.agency.name}}</dd>
+                     </template>
                      <dt>Call Number:</dt>
                      <dd>
                         <span v-if="p.unit.metadata.callNumber">{{p.unit.metadata.callNumber}}</span>
