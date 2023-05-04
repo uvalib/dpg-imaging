@@ -18,6 +18,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
+	"golang.org/x/sys/unix"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -123,22 +124,24 @@ func (svc *serviceContext) healthCheck(c *gin.Context) {
 		}
 	}
 
-	if pathExists(svc.ImagesDir) {
-		hcMap["images-dir"] = hcResp{Healthy: true}
-	} else {
-		hcMap["images-dir"] = hcResp{Healthy: false, Message: fmt.Sprintf("%s not found", svc.ImagesDir)}
+	hcMap["images-dir"] = hcResp{Healthy: true}
+	err = validatePath(svc.ImagesDir)
+	if err != nil {
+		hcMap["images-dir"] = hcResp{Healthy: false, Message: err.Error()}
 		serviceOK = false
 	}
-	if pathExists(svc.ScanDir) {
-		hcMap["scan-dir"] = hcResp{Healthy: true}
-	} else {
-		hcMap["scan-dir"] = hcResp{Healthy: false, Message: fmt.Sprintf("%s not found", svc.ScanDir)}
+
+	hcMap["scan-dir"] = hcResp{Healthy: true}
+	err = validatePath(svc.ScanDir)
+	if err != nil {
+		hcMap["scan-dir"] = hcResp{Healthy: false, Message: err.Error()}
 		serviceOK = false
 	}
-	if pathExists(svc.FinalizeDir) {
-		hcMap["finalize-dir"] = hcResp{Healthy: true}
-	} else {
-		hcMap["finalize-dir"] = hcResp{Healthy: false, Message: fmt.Sprintf("%s not found", svc.FinalizeDir)}
+
+	hcMap["finalize-dir"] = hcResp{Healthy: true}
+	err = validatePath(svc.FinalizeDir)
+	if err != nil {
+		hcMap["finalize-dir"] = hcResp{Healthy: false, Message: err.Error()}
 		serviceOK = false
 	}
 
@@ -147,11 +150,15 @@ func (svc *serviceContext) healthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, hcMap)
 }
 
-func pathExists(path string) bool {
+func validatePath(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return false
+		return fmt.Errorf("%s does not exist", path)
 	}
-	return true
+	// NOTE: logic pulled from https://stackoverflow.com/questions/20026320/how-to-tell-if-folder-exists-and-is-writable
+	if unix.Access(path, unix.W_OK) != nil {
+		return fmt.Errorf("%s is not writable", path)
+	}
+	return nil
 }
 
 func (svc *serviceContext) getVersion(c *gin.Context) {
