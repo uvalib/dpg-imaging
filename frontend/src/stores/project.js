@@ -27,7 +27,8 @@ export const useProjectStore = defineStore('project', {
          callNumber: "",
          unitID: "",
          orderID: ""
-      }
+      },
+      lastSearchURL: "/",
    }),
    getters: {
       canChangeWorkflow: state => {
@@ -258,6 +259,8 @@ export const useProjectStore = defineStore('project', {
          this.search.unitID = ""
          this.search.orderID = ""
          this.currPage = 1
+         this.lastSearchURL = "/"
+         this.filter = "active"
          this.getProjects()
       },
       getProjects() {

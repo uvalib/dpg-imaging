@@ -131,7 +131,7 @@ import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUserStore} from "@/stores/user"
 import { useRoute, useRouter } from 'vue-router'
-import { onMounted } from 'vue'
+import { onBeforeMount } from 'vue'
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
@@ -139,59 +139,92 @@ const userStore = useUserStore()
 const route = useRoute()
 const router = useRouter()
 
-function filterChanged() {
+onBeforeMount( () => {
+   if ( route.query.workflow) {
+      projectStore.search.workflow = parseInt(route.query.workflow,10)
+   }
+   if ( route.query.owner) {
+      projectStore.search.assignedTo = parseInt(route.query.owner,10)
+   }
+   if ( route.query.order) {
+      projectStore.search.orderID = route.query.order
+   }
+   if ( route.query.unit) {
+      projectStore.search.unitID = route.query.unit
+   }
+   if ( route.query.callnum) {
+      projectStore.search.callNumber = route.query.callnum
+   }
+   if ( route.query.customer) {
+      projectStore.search.customer = route.query.customer
+   }
+   if ( route.query.agency) {
+      projectStore.search.agency = parseInt(route.query.agency,10)
+   }
+   if ( route.query.workstation) {
+      projectStore.search.workstation = parseInt(route.query.workstation,10)
+   }
+   if ( route.query.filter) {
+      projectStore.filter = route.query.filter
+   }
+
    projectStore.getProjects()
-}
-function canClaim(p) {
+})
+
+const filterChanged = ( async () => {
+   let query = Object.assign({}, route.query)
+   query.filter = projectStore.filter
+   await router.push({query})
+   projectStore.lastSearchURL = route.fullPath
+
+   projectStore.getProjects()
+})
+
+const canClaim = ((p) => {
    if ( !p.owner ) return true
    if ( (userStore.isAdmin || userStore.isSupervisor ) && p.owner.computingID != userStore.computeID) return true
    return false
-}
-function claimClicked(projID) {
+})
+
+const claimClicked = ((projID) => {
    projectStore.assignProject( {projectID: projID, ownerID: userStore.ID} )
-}
-function viewClicked(projID) {
+})
+
+const viewClicked = ((projID) => {
    router.push(`/projects/${projID}`)
-}
-function canAssign() {
+})
+
+const canAssign = (() => {
    return (userStore.isAdmin || userStore.isSupervisor)
-}
-function nextClicked() {
+})
+
+const nextClicked = (() => {
    projectStore.setCurrentPage(projectStore.currPage+1 )
-}
-function priorClicked() {
+})
+
+const priorClicked = (() => {
    projectStore.setCurrentPage(projectStore.currPage-1 )
-}
-function firstClicked() {
+})
+const firstClicked = (() => {
    projectStore.setCurrentPage( 1 )
-}
-function lastClicked() {
+})
+
+const lastClicked = (() => {
    projectStore.setCurrentPage(projectStore.totalPages )
-}
-function pageJumpClicked(p) {
+})
+
+const pageJumpClicked = ((p) => {
    projectStore.setCurrentPage( p )
-}
-function ownerInfo(p) {
+})
+
+const ownerInfo = ((p) => {
    return `${p.owner.firstName} ${p.owner.lastName} (${p.owner.computingID})`
-}
-function isOverdue(p) {
-   let due =  new Date(p.dueOn)
+})
+
+const isOverdue = ((p) => {
+   let due = new Date(p.dueOn)
    let now = new Date()
    return now > due
-}
-
-onMounted( async () => {
-   if ( route.query.order ) {
-      projectStore.orderID = route.query.order
-      projectStore.getProjects()
-   } else if ( route.query.unit ) {
-      projectStore.unitID = route.query.unit
-      projectStore.getProjects()
-   } else {
-      if (userStore.jwt != "" && projectStore.projects.length <= 1) {
-         projectStore.getProjects()
-      }
-   }
 })
 </script>
 

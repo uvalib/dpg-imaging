@@ -39,7 +39,7 @@
 
             <div class="back">
                <i class="fas fa-angle-double-left back-button"></i>
-               <router-link to="/">Back to projects</router-link>
+               <span class="text-button" @click="backClicked">Back to projects</span>
             </div>
          </div>
          <div class="project-main">
@@ -64,12 +64,13 @@ import Equipment from "@/components/project/Equipment.vue"
 import {useSystemStore} from "@/stores/system"
 import {useProjectStore} from "@/stores/project"
 import { onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 
 const systemStore = useSystemStore()
 const projectStore = useProjectStore()
 const route = useRoute()
+const router = useRouter()
 
 const { currProject } = storeToRefs(projectStore)
 
@@ -79,6 +80,10 @@ const metadataLink = computed(() => {
 
 onMounted( async () => {
    await projectStore.getProject(route.params.id)
+})
+
+const backClicked = (() => {
+   router.push( projectStore.lastSearchURL )
 })
 
 </script>
@@ -147,12 +152,16 @@ onMounted( async () => {
       }
       .back {
          text-align: left;
-         a {
+         .back-button {
+            color: var(--color-link);
+         }
+         .text-button {
             font-weight: normal;
             text-decoration: none;
-            color: var(--uvalib-text) !important;
+            color: var(--color-link);
             display: inline-block;
             margin-left: 5px;
+            cursor: pointer;
             &:hover {
                text-decoration: underline ;
             }
