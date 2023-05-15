@@ -8,7 +8,11 @@ export const useMessageStore = defineStore('message', {
       sent: [],
       targetMessageID: -1,
       viewMesage: false,
-      userID: -1
+      showCreateModal: false,
+      newMessage:  {to: 0, subject: "", message: ""},
+      isResponse: false,
+      userID: -1,
+      error: ""
    }),
    getters: {
       unreadMessageCount: state => {
@@ -22,6 +26,27 @@ export const useMessageStore = defineStore('message', {
       }
    },
    actions: {
+      beginMessageCreate() {
+         this.showCreateModal = true
+         this.newMessage = {to: 0, subject: "", message: ""}
+         this.error = ""
+         this.isResponse = false
+      },
+      beginReply() {
+         if ( this.targetMessageID == -1) return
+
+         let srcMsg = this.inbox.find( m => m.id == this.targetMessageID)
+         this.viewMesage = false
+
+         this.isResponse = true
+         this.showCreateModal = true
+         this.newMessage = {to: srcMsg.from.id, subject: `RE: ${srcMsg.subject}`, message: ""}
+         this.error = ""
+      },
+      cancelMessage() {
+         this.showCreateModal = false
+         this.error = ""
+      },
       getMessages(userID) {
          const system = useSystemStore()
          this.userID = userID
@@ -57,6 +82,7 @@ export const useMessageStore = defineStore('message', {
             system.setError(e)
          })
       },
+
       deleteMessage(id) {
          const system = useSystemStore()
          axios.post(`/api/user/${this.userID}/messages/${id}/delete`).then( () => {
@@ -68,12 +94,32 @@ export const useMessageStore = defineStore('message', {
             system.setError(e)
          })
       },
-      sendMessage(msg) {
-         const system = useSystemStore()
-         axios.post(`/api/user/${this.userID}/messages/send`, msg).then( resp => {
+
+      sendMessage() {
+         if (this.newMessage.to == 0) {
+            this.error = "Please select a recipient"
+            return
+         }
+         if (this.newMessage.subject == "") {
+            this.error = "Please set a subject"
+            return
+         }
+         if (this.newMessage.message == "") {
+            this.error = "Please add a message"
+            return
+         }
+
+         if (this.isResponse) {
+            let srcMsg = this.inbox.find( m => m.id == this.targetMessageID)
+            this.newMessage.message = `${this.newMessage.message}\n\n>>>>\n${srcMsg.message}\n<<<<`
+         }
+
+         axios.post(`/api/user/${this.userID}/messages/send`, this.newMessage).then( resp => {
+            this.error = ""
+            this.showCreateModal = false
             this.sent.push(resp.data)
          }).catch( e => {
-            system.setError(e)
+            this.error = e
          })
       }
    },

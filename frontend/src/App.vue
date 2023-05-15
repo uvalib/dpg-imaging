@@ -32,6 +32,7 @@
          {{systemStore.error}}
       </Dialog>
       <MessageModal />
+      <CreateMessageModal />
       <ScrollToTop />
    </div>
 </template>
@@ -45,7 +46,8 @@ import {useMessageStore} from "@/stores/messages"
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 import Dialog from 'primevue/dialog'
-import MessageModal from "./components/MessageModal.vue"
+import MessageModal from "./components/messages/MessageModal.vue"
+import CreateMessageModal from "./components/messages/CreateMessageModal.vue"
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()

@@ -10,6 +10,7 @@
       </dl>
       <div class="msg">{{message.message}}</div>
       <template #footer>
+         <DPGButton @click="replyClicked" label="Reply" class="p-button-secondary"/>
          <DPGButton @click="hide" label="OK" class="p-button-secondary"/>
       </template>
    </Dialog>
@@ -27,13 +28,17 @@ const message = computed( () => {
    return messageStore.inbox.find(m => m.id == messageStore.targetMessageID)
 })
 
-function formatDate( date ) {
+const formatDate = (( date ) => {
    return dayjs(date).format("YYYY-MM-DD hh:mm A")
-}
+})
 
-function hide() {
+const replyClicked = (() => {
+   messageStore.beginReply()
+})
+
+const hide =(() => {
    messageStore.markMessageRead()
-}
+})
 </script>
 
 <style lang="scss" scoped>
@@ -41,6 +46,7 @@ function hide() {
       margin-top: 5px;
       padding: 15px;
       border-top: 1px solid var(--uvalib-grey-light);
+      white-space: pre-wrap;
    }
    dl {
       margin: 10px 30px 0 30px;
