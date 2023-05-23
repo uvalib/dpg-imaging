@@ -207,6 +207,7 @@ onBeforeMount( async () => {
          visibilityRatio: 0.95,
          constrainDuringPan: true,
          imageSmoothingEnabled: false,
+         smoothTileEdgesMinZoom: Infinity,
          maxZoomPixelRatio: 2.0,
          placeholderFillStyle: '#555555',
          navigatorPosition: "BOTTOM_RIGHT",
