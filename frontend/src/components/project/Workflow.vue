@@ -294,7 +294,6 @@ const timeEnterSuccess = (() => {
       timeEntry.value = false
       stepMinutes.value = 0
    } else {
-      console.log("SHOW NOTE")
       showRejectNote.value = true
       timeEntry.value = false
    }
