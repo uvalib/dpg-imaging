@@ -30,6 +30,9 @@
       <router-view />
       <Dialog v-model:visible="systemStore.showError" :modal="true" header="System Error" @hide="errorClosed()" class="error">
          {{systemStore.error}}
+         <template #footer>
+            <DPGButton @click="errorClosed()" label="OK" class="p-button-secondary"/>
+         </template>
       </Dialog>
       <MessageModal />
       <CreateMessageModal />

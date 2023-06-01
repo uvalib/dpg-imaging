@@ -1,4 +1,5 @@
 <template>
+   <ConfirmDialog position="top"/>
    <Panel header="Workflow" class="panel">
       <dl>
          <dt>Name:</dt>
@@ -98,14 +99,17 @@
 import dayjs from 'dayjs'
 import AssignModal from "@/components/AssignModal.vue"
 import NoteModal from '@/components/project/NoteModal.vue'
-import {useProjectStore} from "@/stores/project"
-import {useSystemStore} from "@/stores/system"
-import {useUserStore} from "@/stores/user"
+import { useProjectStore } from "@/stores/project"
+import { useSystemStore } from "@/stores/system"
+import { useUserStore } from "@/stores/user"
 import { ref, computed, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import Panel from 'primevue/panel'
 import Dialog from 'primevue/dialog'
+import { useConfirm } from "primevue/useconfirm"
+
+const confirm = useConfirm()
 
 const router = useRouter()
 const projectStore = useProjectStore()
@@ -262,15 +266,39 @@ function showTimeEntry() {
 }
 
 function timeEntered() {
+   let threshold = 100
+   if (currProject.value.currentStep.name == "Scan" || currProject.value.currentStep.name == "First QA") {
+      threshold = 500
+   }
+   if (stepMinutes.value == 0 ) {
+      systemStore.setError("A non-zero duration is required")
+      return
+   }
+   if (stepMinutes.value > threshold ) {
+      confirm.require({
+         message: `The duration entered (${stepMinutes.value} minutes) is very large. Are you sure?`,
+         header: 'Confirm Duration',
+         rejectClass: 'p-button-secondary',
+         accept: () => {
+            timeEnterSuccess()
+         }
+      })
+   } else {
+      timeEnterSuccess()
+   }
+}
+
+const timeEnterSuccess = (() => {
    if ( action.value == "finish")  {
       projectStore.finishStep(stepMinutes.value)
       timeEntry.value = false
       stepMinutes.value = 0
    } else {
+      console.log("SHOW NOTE")
       showRejectNote.value = true
       timeEntry.value = false
    }
-}
+})
 
 function rejectCanceled() {
    showRejectNote.value = false
