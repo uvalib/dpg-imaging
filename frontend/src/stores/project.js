@@ -51,8 +51,7 @@ export const useProjectStore = defineStore('project', {
             let p = state.projects[projIdx]
             if (p.assignments.length == 0) return false
             let currA = p.assignments[0]
-            let step = p.workflow.steps.find( s => s.id == currA.stepID)
-            if ( step ) return step.failStepID > 0 && currA.status == 1
+            return currA.step.failStepID > 0 && currA.status == 1
             return false
          }
       },
@@ -82,11 +81,8 @@ export const useProjectStore = defineStore('project', {
             if (p.assignments.length == 0) return false
             let currA = p.assignments[0]
             if (currA.status == 4) return true
+            if (currA.step.stepType == 2) return true
 
-            let step = p.workflow.steps.find( s => s.id == currA.stepID)
-            if (step) {
-               if (step.stepType == 2) return true
-            }
 
             return false
          }
@@ -176,8 +172,10 @@ export const useProjectStore = defineStore('project', {
             // NOTE: enum values...
             //    assign status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing]
             //    step types [:start, :end, :error, :normal]
+            const system = useSystemStore()
             let p = state.projects.find( p => p.id == pID)
-            let nonErrSteps =  p.workflow.steps.filter( s => s.stepType != 2)
+            let tgtWorkflow = system.workflows.find( w => w.id == p.workflow.id)
+            let nonErrSteps =  tgtWorkflow.steps.filter( s => s.stepType != 2)
             let numSteps = nonErrSteps.length*3 // each non-error step has 3 parts, assigned, in-process and done
 
             let stepCount = 0
@@ -185,15 +183,12 @@ export const useProjectStore = defineStore('project', {
             p.assignments.forEach( a => {
                if ( stepIDs.includes(a.stepID) ) return
 
-               let step = p.workflow.steps.find( s => s.id == a.stepID )
-               if (!step) return
-
-               if (step.stepType != 2 && a.status != 4 && a.status != 5) {
+               if (a.step.stepType != 2 && a.status != 4 && a.status != 5) {
                   // Rejections generally count as a completion as they finish the step. Per team, reject moves to a rescan.
                   // When rescan is done, the workflow proceeds to the step AFTER the one that was rejected.
                   // The exception to this is the last step. If rejected, completing the rescan returns
                   // to that step, not the next. This is the case we need to skip when computing percentage complete.
-                  let failStep =  p.workflow.steps.find( s => s.id == step.failStepID )
+                  let failStep =  tgtWorkflow.steps.find( s => s.id == a.step.failStepID )
                   if (a.status == 3 && failStep.nextStepID == a.stepID) return
 
                   stepIDs.push(a.stepID)           // make sure each step only gets counted once

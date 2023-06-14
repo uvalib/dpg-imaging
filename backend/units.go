@@ -59,11 +59,12 @@ type customer struct {
 }
 
 type order struct {
-	ID         uint     `json:"id"`
-	CustomerID uint     `json:"customerID"`
-	Customer   customer `gorm:"foreignKey:CustomerID" json:"customer"`
-	AgencyID   uint     `json:"-"`
-	Agency     agency   `gorm:"foreignKey:AgencyID" json:"agency"`
+	ID         uint      `json:"id"`
+	CustomerID uint      `json:"customerID"`
+	Customer   customer  `gorm:"foreignKey:CustomerID" json:"customer"`
+	AgencyID   uint      `json:"-"`
+	Agency     agency    `gorm:"foreignKey:AgencyID" json:"agency"`
+	DateDue    time.Time `json:"dateDue"`
 }
 
 type unit struct {

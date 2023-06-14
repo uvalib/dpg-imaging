@@ -62,7 +62,9 @@ const staffMembers = computed( () => {
 const workflows = computed( () => {
    let out = [ {name: "Any", id: 0} ]
    systemStore.workflows.forEach( sm => {
-      out.push( { name: sm.name, id: sm.id})
+      if (sm.isActive ) {
+         out.push( { name: sm.name, id: sm.id})
+      }
    })
    return out
 })

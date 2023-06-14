@@ -238,7 +238,7 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 	}
 
 	log.Printf("INFO: load workflows")
-	dbResp = svc.DB.Order("name asc").Where("active=1").Find(&resp.Workflows)
+	dbResp = svc.DB.Order("name asc").Preload("Steps").Find(&resp.Workflows)
 	if dbResp.Error != nil {
 		log.Printf("ERROR: unable to load workflows: %s", dbResp.Error.Error())
 		c.String(http.StatusInternalServerError, dbResp.Error.Error())

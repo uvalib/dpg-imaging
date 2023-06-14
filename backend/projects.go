@@ -16,6 +16,7 @@ type workflow struct {
 	ID          uint   `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	Active      bool   `json:"isActive"`
 	Steps       []step `gorm:"foreignKey:WorkflowID" json:"steps"`
 }
 
@@ -28,7 +29,8 @@ type containerType struct {
 type assignment struct {
 	ID              uint        `json:"id"`
 	ProjectID       uint        `json:"projectID"`
-	StepID          uint        `json:"stepID"`
+	StepID          uint        `json:"-"`
+	Step            step        `gorm:"foreignKey:StepID" json:"step"`
 	StaffMemberID   uint        `json:"-"`
 	StaffMember     staffMember `gorm:"foreignKey:StaffMemberID" json:"staffMember"`
 	AssignedAt      *time.Time  `json:"assignedAt,omitempty"`
@@ -83,7 +85,7 @@ type workstation struct {
 type project struct {
 	ID                uint           `json:"id"`
 	WorkflowID        uint           `json:"-"`
-	Workflow          workflow       `json:"workflow"`
+	Workflow          workflow       `gorm:"foreignKey:WorkflowID" json:"workflow"`
 	UnitID            uint           `json:"-"`
 	Unit              unit           `gorm:"foreignKey:UnitID" json:"unit"`
 	OwnerID           *uint          `json:"-"`
@@ -169,10 +171,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	log.Printf("INFO: user %s requests projects page %d", claims.ComputeID, page)
 
 	// ALWAYS exclude caneled projects. exclude done projects when filter is not finished.
-	whereQ := " AND units.unit_status != 'canceled'"
-	if filterIdx != 3 {
-		whereQ += " AND units.unit_status != 'done'"
-	}
+	whereQ := " AND unit_status != 'canceled'"
 
 	qWorkflow := c.Query("workflow")
 	if qWorkflow != "" {
@@ -191,48 +190,51 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	}
 	qCallNum := c.Query("callnum")
 	if qCallNum != "" {
-		whereQ += fmt.Sprintf(" AND metadata.call_number like \"%%%s%%\"", qCallNum)
+		whereQ += fmt.Sprintf(" AND call_number like \"%%%s%%\"", qCallNum)
 	}
 	qCustomer := c.Query("customer")
 	if qCustomer != "" {
-		whereQ += fmt.Sprintf(" AND customers.last_name like \"%%%s%%\"", qCustomer)
+		whereQ += fmt.Sprintf(" AND Unit__Order__Customer.last_name like \"%%%s%%\"", qCustomer)
 	}
 	qAgency := c.Query("agency")
 	if qAgency != "" {
 		id, _ := strconv.Atoi(qAgency)
-		whereQ += fmt.Sprintf(" AND agencies.id = %d", id)
+		whereQ += fmt.Sprintf(" AND agency_id = %d", id)
 	}
 	qUnitID := c.Query("unit")
 	if qUnitID != "" {
 		id, _ := strconv.Atoi(qUnitID)
-		whereQ += fmt.Sprintf(" AND units.id = %d", id)
+		whereQ += fmt.Sprintf(" AND unit_id = %d", id)
 		log.Printf("INFO: query for unit %d", id)
 	}
 	qOrderID := c.Query("order")
 	if qOrderID != "" {
 		id, _ := strconv.Atoi(qOrderID)
-		whereQ += fmt.Sprintf(" AND orders.id = %d", id)
+		whereQ += fmt.Sprintf(" AND order_id = %d", id)
 		log.Printf("INFO: query for order %d", id)
 	}
 
 	type projResp struct {
-		TotalMe         int64     `json:"totalMe"`
-		TotalActive     int64     `json:"totalActive"`
-		TotalError      int64     `json:"totalError"`
-		TotalUnassigned int64     `json:"totalUnassigned"`
-		TotalFinished   int64     `json:"totalFinished"`
-		Page            uint      `json:"page"`
-		PageSize        uint      `json:"pageSize"`
-		Projects        []project `json:"projects"`
+		TotalMe         int64      `json:"totalMe"`
+		TotalActive     int64      `json:"totalActive"`
+		TotalError      int64      `json:"totalError"`
+		TotalUnassigned int64      `json:"totalUnassigned"`
+		TotalFinished   int64      `json:"totalFinished"`
+		Page            uint       `json:"page"`
+		PageSize        uint       `json:"pageSize"`
+		Projects        []*project `json:"projects"`
 	}
 	out := projResp{Page: uint(page), PageSize: uint(pageSize)}
 
 	for idx, q := range filterQ {
 		var total int64
 		countQ := q + whereQ
-		cr := svc.getBaseCountsQuery().Model(&project{}).Distinct("projects.id").Where(countQ).Count(&total)
-		if cr.Error != nil {
-			log.Printf("WARNING: unable to get count of projects: %s", cr.Error.Error())
+		if idx != 3 {
+			countQ += " AND unit_status != 'done'"
+		}
+		err = svc.getBaseSearchQuery().Where(countQ).Count(&total).Error
+		if err != nil {
+			log.Printf("WARNING: unable to get count of projects: %s", err.Error())
 			total = 0
 		}
 		if idx == 0 {
@@ -252,15 +254,24 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	if filter == "finished" {
 		orderStr = "finished_at desc"
 	}
-	whereQ = filterQ[filterIdx] + whereQ
-	resp := svc.getBaseProjectQuery().Distinct().
+	whereQ = filterQ[filterIdx] + whereQ + " AND unit_status != 'done'"
+	err = svc.getBaseSearchQuery().
 		Offset(offset).Limit(pageSize).Order(orderStr).
 		Where(whereQ).
-		Find(&out.Projects)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get projects: %s", resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+		Find(&out.Projects).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get projects: %s", err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
+	}
+
+	for _, p := range out.Projects {
+		err = svc.DB.Where("project_id=?", p.ID).Joins("Step").Joins("StaffMember").Find(&p.Assignments).Error
+		if err != nil {
+			log.Printf("ERROR: unable to get project %d assignments: %s", p.ID, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -615,18 +626,15 @@ func (svc *serviceContext) getBaseProjectQuery() (tx *gorm.DB) {
 		Preload("Unit.Order.Customer").          // customer is deeply nested, so need to preload explicitly
 		Preload("Unit.Order.Agency").            // agency is deeply nested, so need to preload explicitly
 		Preload("Notes." + clause.Associations). // preload all associations under notes
-		Preload("Workflow.Steps")                // explicitly preload nested workflow steps
+		Preload("Assignments.Step")              // explicitly preload nested workflow steps
 }
 
-func (svc *serviceContext) getBaseCountsQuery() (tx *gorm.DB) {
-	return svc.DB.
+func (svc *serviceContext) getBaseSearchQuery() (tx *gorm.DB) {
+	return svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").InnerJoins("Unit").
+		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").
+		Joins("Unit.Order.Customer").Joins("Unit.Order.Agency").
+		Joins("Owner").Joins("CurrentStep").
 		Joins("LEFT OUTER JOIN assignments on assignments.project_id=projects.id").
 		Joins("LEFT OUTER JOIN steps as assignstep on assignments.step_id=assignstep.id").
-		Joins("LEFT OUTER JOIN staff_members on assignments.staff_member_id=staff_members.id").
-		Joins("INNER JOIN units on units.id=projects.unit_id").
-		Joins("INNER JOIN metadata on metadata.id=units.metadata_id").
-		Joins("INNER JOIN orders on orders.id=units.order_id").
-		Joins("INNER JOIN customers on customers.id=orders.customer_id").
-		Joins("LEFT OUTER JOIN agencies on agencies.id=orders.agency_id").
-		Joins("LEFT OUTER JOIN notes on notes.project_id = projects.id")
+		Group("projects.id")
 }
