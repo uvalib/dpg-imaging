@@ -266,7 +266,9 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	}
 
 	for _, p := range out.Projects {
-		err = svc.DB.Where("project_id=?", p.ID).Joins("Step").Joins("StaffMember").Find(&p.Assignments).Error
+		err = svc.DB.Where("project_id=?", p.ID).
+			Joins("Step").Joins("StaffMember").
+			Order("assigned_at DESC").Find(&p.Assignments).Error
 		if err != nil {
 			log.Printf("ERROR: unable to get project %d assignments: %s", p.ID, err.Error())
 			c.String(http.StatusInternalServerError, err.Error())
