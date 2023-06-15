@@ -304,6 +304,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+// FIXME
 func (svc *serviceContext) assignProject(c *gin.Context) {
 	projID := c.Param("id")
 	userID := c.Param("uid")
@@ -419,6 +420,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 	c.JSON(http.StatusOK, proj)
 }
 
+// FIXME
 func (svc *serviceContext) updateProject(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)
@@ -514,28 +516,27 @@ func (svc *serviceContext) setProjectEquipment(c *gin.Context) {
 	log.Printf("INFO: user %s is setting project %s equipment: %+v", claims.ComputeID, projID, equipPost)
 
 	var proj project
-	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
-	resp := dbReq.First(&proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	err := svc.DB.Find(&proj, projID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %s for equipment update: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	log.Printf("INFO: get current equipment for workstation %d", equipPost.WorkstationID)
 	var ws workstation
-	resp = svc.DB.Preload("Equipment").First(&ws, equipPost.WorkstationID)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get workstation %d: %s", equipPost.WorkstationID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	err = svc.DB.Preload("Equipment").First(&ws, equipPost.WorkstationID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get workstation %d: %s", equipPost.WorkstationID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	log.Printf("INFO: remove all equipment for project %s", projID)
-	dbErr := svc.DB.Model(&proj).Association("Equipment").Clear()
-	if dbErr != nil {
-		log.Printf("ERROR: unable to clear existing equipment from project %s: %s", projID, dbErr.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	err = svc.DB.Model(&proj).Association("Equipment").Clear()
+	if err != nil {
+		log.Printf("ERROR: unable to clear existing equipment from project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -555,14 +556,20 @@ func (svc *serviceContext) setProjectEquipment(c *gin.Context) {
 	proj.CaptureResolution = equipPost.CaptureResolution
 	proj.ResizedResolution = equipPost.ResizeResolution
 	proj.ResolutionNote = equipPost.ResolutionNote
-	r := svc.DB.Model(&proj).Select("WorkstationID", "CaptureResolution", "ResizedResolution", "ResolutionNote").Updates(proj)
-	if r.Error != nil {
-		log.Printf("ERROR: unable to set workstation for project %s: %s", projID, r.Error.Error())
-		c.String(http.StatusInternalServerError, r.Error.Error())
+	err = svc.DB.Model(&proj).Select("WorkstationID", "CaptureResolution", "ResizedResolution", "ResolutionNote").Updates(proj).Error
+	if err != nil {
+		log.Printf("ERROR: unable to set workstation for project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	dbReq.First(&proj)
+	log.Printf("INFO: load updated equipment for project %d", proj.ID)
+	err = svc.DB.Find(&proj, projID).Preload("Equipment").Preload("Workstation").Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %s for equipment update: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
 	c.JSON(http.StatusOK, proj)
 }
 

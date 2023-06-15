@@ -322,7 +322,11 @@ export const useProjectStore = defineStore('project', {
          // data contains { workstationID, captureResolution, resizeResolution, resolutionNote }
          this.working = true
          return axios.post(`/api/projects/${this.currProject.id}/equipment`, data).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].equipment = response.data.equipment
+            this.projects[this.selectedProjectIdx].workstation = response.data.workstation
+            this.projects[this.selectedProjectIdx].captureResolution = response.data.captureResolution
+            this.projects[this.selectedProjectIdx].resizedResolution = response.data.resizedResolution
+            this.projects[this.selectedProjectIdx].resolutionNote = response.data.resolutionNote
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
