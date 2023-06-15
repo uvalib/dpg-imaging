@@ -118,14 +118,39 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 	claims := getJWTClaims(c)
 	log.Printf("INFO: user %s is requesting project %s details", claims.ComputeID, projID)
 
-	var proj project
-	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
-	resp := dbReq.First(&proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	var proj *project
+	projQ := svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").InnerJoins("Unit").
+		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").
+		Joins("Unit.Order.Customer").Joins("Unit.Order.Agency").
+		Joins("Owner").Joins("CurrentStep").Preload("Equipment").Preload("Workstation")
+
+	err := projQ.Where("projects.id=?", projID).First(&proj).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	log.Printf("INFO: get project %d assignments", proj.ID)
+	err = svc.DB.Where("project_id=?", proj.ID).
+		Joins("Step").Joins("StaffMember").
+		Order("assigned_at DESC").Find(&proj.Assignments).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %d assignments: %s", proj.ID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: get project %d notes", proj.ID)
+	err = svc.DB.Where("project_id=?", proj.ID).
+		Joins("Step").Joins("StaffMember").Preload("Problems").
+		Order("notes.created_at DESC").Find(&proj.Notes).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %d notes: %s", proj.ID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	c.JSON(http.StatusOK, proj)
 }
 

@@ -17,7 +17,7 @@
             </div>
             <div class="right">
                <p class="note-type">{{noteTypeString(n.type)}}</p>
-               <p v-if="n.stepID > 0" class="note-step"><b>Step: </b>{{lookupStepName(n.stepID)}}</p>
+               <p v-if="n.stepID > 0" class="note-step"><b>Step: </b>{{n.step.name}}</p>
             </div>
          </div>
          <div class="note-text">
@@ -38,29 +38,21 @@ import Panel from 'primevue/panel'
 const projectStore = useProjectStore()
 const { currProject } = storeToRefs(projectStore)
 
-function problemsString(probs) {
+const problemsString = ((probs) => {
    let out = []
    probs.forEach(p => out.push(p.label) )
    return out.join(", ")
-}
+})
 
-function noteTypeString(typeID) {
+const noteTypeString =((typeID) => {
    let types = ["COMMENT", "SUGGESTION", "PROBLEM", "ITEM CONDITION"]
    if ( typeID < 0 || typeID > types.length-1) return "COMMENT"
    return types[typeID]
-}
+})
 
-function lookupStepName(stepID) {
-   let s = currProject.value.workflow.steps.find((s) => s.id == stepID)
-   if (s) {
-      return s.name
-   }
-   return "Unknown"
-}
-
-function formatDate(d) {
+const formatDate =((d) => {
    return dayjs(d).format("YYYY-MM-DD hh:mm A")
-}
+})
 </script>
 
 <style scoped lang="scss">

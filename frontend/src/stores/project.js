@@ -151,6 +151,13 @@ export const useProjectStore = defineStore('project', {
             let out = `${p.currentStep.name}: `
             let a = p.assignments.find(a => a.step.id == p.currentStep.id)
             if ( a ) {
+               if (a.finishedAt != null) {
+                  if (a.status == 4) {
+                     out += " Failed"
+                  } else {
+                     out += " Finished"
+                  }
+               }
                if (a.startedAt != null) {
                   if (a.status == 4) {
                      out += " Failed"
@@ -181,25 +188,19 @@ export const useProjectStore = defineStore('project', {
             let stepCount = 0
             let stepIDs = []
             p.assignments.forEach( a => {
+               // only check steps once, don't care about error steps (stepType == 2)  and don't count reassigns or errors
                if ( stepIDs.includes(a.step.id) ) return
+               if (a.step.stepType == 2 ) return
+               if ( a.status == 5 || a.status == 4) return
 
-               console.log(a)
-
-               if (a.step.stepType != 2 && a.status != 4 && a.status != 5) {
-                  // Rejections generally count as a completion as they finish the step. Per team, reject moves to a rescan.
-                  // When rescan is done, the workflow proceeds to the step AFTER the one that was rejected.
-                  // The exception to this is the last step. If rejected, completing the rescan returns
-                  // to that step, not the next. This is the case we need to skip when computing percentage complete.
-                  let failStep =  tgtWorkflow.steps.find( s => s.id == a.step.failStepID )
-                  if (a.status == 3 && failStep.nextStepID == a.step.id) return
-
-                  stepIDs.push(a.step.id)           // make sure each step only gets counted once
-                  stepCount++                      // if an assignment is here, that is the first count: Assigned
-                  if (a.startedAt) stepCount++     // Started
-                  if (a.finishedAt) stepCount++    // Finished
-               }
+               stepIDs.push(a.step.id)          // make sure each step only gets counted once
+               stepCount++                      // if an assignment is here, that is the first count: Assigned
+               if (a.startedAt) stepCount++     // Started
+               if (a.finishedAt) stepCount++    // Finished
             })
+
             let percent = Math.round((stepCount/numSteps)*100.0)
+            percent = Math.min(100, percent)
             return percent+"%"
          }
       }
@@ -348,7 +349,7 @@ export const useProjectStore = defineStore('project', {
          let p = this.currProject
          data.stepID = p.currentStep.id
          return axios.post(`/api/projects/${p.id}/note`, data).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].notes = response.data
             this.working = false
          }).catch( e => {
             const system = useSystemStore()

@@ -19,7 +19,8 @@ type problem struct {
 type note struct {
 	ID            uint        `json:"id"`
 	ProjectID     uint        `json:"-"`
-	StepID        uint        `json:"stepID"`
+	StepID        uint        `json:"-"`
+	Step          step        `gorm:"foreignKey:StepID" json:"step"`
 	NoteType      uint        `json:"type"`
 	Note          string      `json:"text"`
 	CreatedAt     *time.Time  `json:"createdAt,omitempty"`
@@ -48,16 +49,15 @@ func (svc *serviceContext) addNote(c *gin.Context) {
 	log.Printf("INFO: user %s is adding a note to project %s: %+v", claims.ComputeID, projID, noteReq)
 
 	var proj project
-	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
-	resp := dbReq.First(&proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	err := svc.DB.Find(&proj, projID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	newNote := note{ProjectID: proj.ID, StepID: noteReq.StepID, StaffMemberID: claims.UserID, NoteType: noteReq.TypeID, Note: noteReq.Note}
-	err := svc.DB.Model(&proj).Association("Notes").Append(&newNote)
+	err = svc.DB.Model(&proj).Association("Notes").Append(&newNote)
 	if err != nil {
 		log.Printf("ERROR: unable to add note to project %s: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -77,8 +77,15 @@ func (svc *serviceContext) addNote(c *gin.Context) {
 		}
 	}
 
-	// reload
-	dbReq.First(&proj)
+	var notes []note
+	err = svc.DB.Where("project_id=?", proj.ID).
+		Joins("Step").Joins("StaffMember").Preload("Problems").
+		Order("notes.created_at DESC").Find(&notes).Error
+	if err != nil {
+		log.Printf("ERROR: unable to refresh project %d notes: %s", proj.ID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
 
-	c.JSON(http.StatusOK, proj)
+	c.JSON(http.StatusOK, notes)
 }
