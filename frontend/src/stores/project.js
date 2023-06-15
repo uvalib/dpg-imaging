@@ -149,7 +149,7 @@ export const useProjectStore = defineStore('project', {
                return `Finished at ${p.finishedAt.split("T")[0]}`
             }
             let out = `${p.currentStep.name}: `
-            let a = p.assignments.find(a => a.stepID == p.currentStep.id)
+            let a = p.assignments.find(a => a.step.id == p.currentStep.id)
             if ( a ) {
                if (a.startedAt != null) {
                   if (a.status == 4) {
@@ -181,7 +181,9 @@ export const useProjectStore = defineStore('project', {
             let stepCount = 0
             let stepIDs = []
             p.assignments.forEach( a => {
-               if ( stepIDs.includes(a.stepID) ) return
+               if ( stepIDs.includes(a.step.id) ) return
+
+               console.log(a)
 
                if (a.step.stepType != 2 && a.status != 4 && a.status != 5) {
                   // Rejections generally count as a completion as they finish the step. Per team, reject moves to a rescan.
@@ -189,9 +191,9 @@ export const useProjectStore = defineStore('project', {
                   // The exception to this is the last step. If rejected, completing the rescan returns
                   // to that step, not the next. This is the case we need to skip when computing percentage complete.
                   let failStep =  tgtWorkflow.steps.find( s => s.id == a.step.failStepID )
-                  if (a.status == 3 && failStep.nextStepID == a.stepID) return
+                  if (a.status == 3 && failStep.nextStepID == a.step.id) return
 
-                  stepIDs.push(a.stepID)           // make sure each step only gets counted once
+                  stepIDs.push(a.step.id)           // make sure each step only gets counted once
                   stepCount++                      // if an assignment is here, that is the first count: Assigned
                   if (a.startedAt) stepCount++     // Started
                   if (a.finishedAt) stepCount++    // Finished
