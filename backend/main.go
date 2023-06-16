@@ -40,7 +40,7 @@ func main() {
 		api.PUT("/projects/:id", svc.updateProject)
 		api.POST("/projects/:id/assign/:uid", svc.assignProject)
 		api.POST("/projects/:id/equipment", svc.setProjectEquipment)
-		api.POST("/projects/:id/note", svc.addNote)
+		api.POST("/projects/:id/note", svc.addNoteRequest)
 		api.POST("/projects/:id/start", svc.startProjectStep)
 		api.POST("/projects/:id/finish", svc.finishProjectStep)
 		api.POST("/projects/:id/reject", svc.rejectProjectStep)

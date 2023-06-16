@@ -33,8 +33,11 @@ export const useProjectStore = defineStore('project', {
    getters: {
       canChangeWorkflow: state => {
          if (state.selectedProjectIdx == -1) return false
+         let assignments = state.projects[state.selectedProjectIdx].assignments
+         if ( assignments == null || assignments === undefined) return false
+
          let canChange = true
-         state.projects[state.selectedProjectIdx].assignments.some( a => {
+         assignments.some( a => {
             if (a.finishedAt) {
                canChange = false
             }
@@ -49,6 +52,7 @@ export const useProjectStore = defineStore('project', {
          return (projIdx) => {
             if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
             let p = state.projects[projIdx]
+            if ( p.assignments == null || p.assignments === undefined) return false
             if (p.assignments.length == 0) return false
             let currA = p.assignments[0]
             return currA.step.failStepID > 0 && currA.status == 1
@@ -59,7 +63,8 @@ export const useProjectStore = defineStore('project', {
          return (projIdx) => {
             if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
             let p = state.projects[projIdx]
-            if (p.assignments.length == 0) return false
+            if ( p.assignments == null || p.assignments === undefined) return false
+            if ( p.assignments.length == 0 ) return false
             let currA = p.assignments[0]
             return currA.status == 6 // finalizing
          }
@@ -78,6 +83,7 @@ export const useProjectStore = defineStore('project', {
          return (projIdx) => {
             if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
             let p = state.projects[projIdx]
+            if ( p.assignments == null || p.assignments === undefined) return false
             if (p.assignments.length == 0) return false
             let currA = p.assignments[0]
             if (currA.status == 4) return true
@@ -91,13 +97,14 @@ export const useProjectStore = defineStore('project', {
          return (projIdx) => {
             if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
             let p = state.projects[projIdx]
-            return p.owner !== undefined
+            return (p.owner !== undefined && p.owner != null)
          }
       },
       inProgress: state => {
          return (projIdx) => {
             if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
             let p = state.projects[projIdx]
+            if ( p.assignments == null || p.assignments === undefined) return false
             if (p.assignments.length == 0) return false
             let currA = p.assignments[0]
             return  currA.status == 1 ||  currA.status == 4 ||  currA.status == 6 ||  currA.status == 7
@@ -107,6 +114,7 @@ export const useProjectStore = defineStore('project', {
          return (projIdx) => {
             if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
             let p = state.projects[projIdx]
+            if ( p.assignments == null || p.assignments === undefined) return false
             if (p.assignments.length == 0) return false
             let currA = p.assignments[0]
             return currA.status == 7
@@ -403,7 +411,9 @@ export const useProjectStore = defineStore('project', {
       assignProject({projectID, ownerID}) {
          this.working = true
          axios.post(`/api/projects/${projectID}/assign/${ownerID}`).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].notes = response.data.notes
+            this.projects[this.selectedProjectIdx].assignments = response.data.assignments
+            this.projects[this.selectedProjectIdx].owner = response.data.owner
             this.working = false
          }).catch( e => {
             const system = useSystemStore()

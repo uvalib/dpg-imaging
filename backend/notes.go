@@ -30,7 +30,7 @@ type note struct {
 	StaffMember   staffMember `gorm:"foreignKey:StaffMemberID" json:"staffMember"`
 }
 
-func (svc *serviceContext) addNote(c *gin.Context) {
+func (svc *serviceContext) addNoteRequest(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)
 	var noteReq struct {
@@ -57,17 +57,28 @@ func (svc *serviceContext) addNote(c *gin.Context) {
 	}
 
 	newNote := note{ProjectID: proj.ID, StepID: noteReq.StepID, StaffMemberID: claims.UserID, NoteType: noteReq.TypeID, Note: noteReq.Note}
-	err = svc.DB.Model(&proj).Association("Notes").Append(&newNote)
+	notes, err := svc.addNote(proj, newNote, noteReq.ProblemIDs)
 	if err != nil {
-		log.Printf("ERROR: unable to add note to project %s: %s", projID, err.Error())
+		log.Printf("ERROR: add note to project %d failed: %s", proj.ID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	if len(noteReq.ProblemIDs) > 0 {
+	c.JSON(http.StatusOK, notes)
+}
+
+func (svc *serviceContext) addNote(proj project, newNote note, problemIDs []uint) ([]note, error) {
+	log.Printf("INFO: add note to project %d", proj.ID)
+	var notes []note
+	err := svc.DB.Model(&proj).Association("Notes").Append(&newNote)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(problemIDs) > 0 {
 		pq := "insert into notes_problems (note_id, problem_id) values "
 		var vals []string
-		for _, pid := range noteReq.ProblemIDs {
+		for _, pid := range problemIDs {
 			vals = append(vals, fmt.Sprintf("(%d,%d)", newNote.ID, pid))
 		}
 		pq += strings.Join(vals, ",")
@@ -77,15 +88,11 @@ func (svc *serviceContext) addNote(c *gin.Context) {
 		}
 	}
 
-	var notes []note
 	err = svc.DB.Where("project_id=?", proj.ID).
 		Joins("Step").Joins("StaffMember").Preload("Problems").
 		Order("notes.created_at DESC").Find(&notes).Error
 	if err != nil {
-		log.Printf("ERROR: unable to refresh project %d notes: %s", proj.ID, err.Error())
-		c.String(http.StatusInternalServerError, err.Error())
-		return
+		return nil, err
 	}
-
-	c.JSON(http.StatusOK, notes)
+	return notes, nil
 }
