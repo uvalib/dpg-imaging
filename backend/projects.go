@@ -21,7 +21,7 @@ type workflow struct {
 }
 
 type containerType struct {
-	ID         int64  `json:"id"`
+	ID         uint   `json:"id"`
 	Name       string `json:"name"`
 	HasFolders bool   `json:"hasFolders"`
 }
@@ -120,7 +120,7 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 
 	var proj *project
 	projQ := svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").InnerJoins("Unit").
-		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").
+		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").Joins("ContainerType").
 		Joins("Unit.Order.Customer").Joins("Unit.Order.Agency").
 		Joins("Owner").Joins("CurrentStep").Preload("Equipment").Preload("Workstation")
 

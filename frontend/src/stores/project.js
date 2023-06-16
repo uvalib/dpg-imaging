@@ -34,7 +34,7 @@ export const useProjectStore = defineStore('project', {
       canChangeWorkflow: state => {
          if (state.selectedProjectIdx == -1) return false
          let assignments = state.projects[state.selectedProjectIdx].assignments
-         if ( assignments == null || assignments === undefined) return false
+         if ( assignments == null || assignments === undefined) return true
 
          let canChange = true
          assignments.some( a => {
@@ -427,7 +427,10 @@ export const useProjectStore = defineStore('project', {
          }
          this.working = true
          return axios.post(`/api/projects/${this.currProject.id}/workflow`, {workflow: newWorkflowID, containerType: newContainerTypeID}).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].workflow = response.data.workflow
+            this.projects[this.selectedProjectIdx].currentStep = response.data.step
+            this.projects[this.selectedProjectIdx].containerType = response.data.containerType
+            this.projects[this.selectedProjectIdx].assignments = response.data.assignments
             this.working = false
          }).catch( e => {
             this.working = false

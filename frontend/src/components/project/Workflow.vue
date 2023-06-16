@@ -70,7 +70,7 @@
          <p>Current workflow: {{ currProject.workflow.name }}</p>
          <p>Select a new workflow:</p>
          <div class="workflow-list">
-            <div class="workflow-val" v-for="(w,idx) in systemStore.workflows" :key="w.id"
+            <div class="workflow-val" v-for="(w,idx) in activeWorkflows" :key="w.id"
                :class="{selected: idx == selectedWorkflowIdx}" @click="selectWorkflow(idx)"
             >
                {{  w.name }}
@@ -129,6 +129,10 @@ const showWorkflowPicker = ref(false)
 const selectedWorkflowIdx = ref(-1)
 const selectedContainerTypeIdx = ref(-1)
 
+const activeWorkflows = computed(() => {
+   return systemStore.workflows.filter( wf => wf.isActive == true)
+})
+
 const isWorkflowChangeDisabled = computed(() => {
    if ( selectedWorkflowIdx.value == -1 ) return true
    if (isManuscriptSelected.value) {
@@ -138,7 +142,7 @@ const isWorkflowChangeDisabled = computed(() => {
 })
 const isManuscriptSelected = computed(()=>{
    if ( selectedWorkflowIdx.value == -1 ) return false
-   let wf = systemStore.workflows[selectedWorkflowIdx.value]
+   let wf = activeWorkflows.value[selectedWorkflowIdx.value]
    if (wf) {
       return wf.name == "Manuscript"
    }
@@ -214,8 +218,8 @@ function cancelWorkflowChange() {
    showWorkflowPicker.value = false
 }
 async function submitWorkflowChange()  {
-   let workflowID = systemStore.workflows[selectedWorkflowIdx.value].id
-   let containerTypeID = -1
+   let workflowID = activeWorkflows.value[selectedWorkflowIdx.value].id
+   let containerTypeID = 0
    if ( isManuscriptSelected.value ) {
       containerTypeID = systemStore.containerTypes[selectedContainerTypeIdx.value].id
    }

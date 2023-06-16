@@ -121,7 +121,7 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 	claims := getJWTClaims(c)
 	var req struct {
 		Workflow      uint `json:"workflow"`
-		ContainerType int  `json:"containerType"`
+		ContainerType uint `json:"containerType"`
 	}
 
 	qpErr := c.ShouldBindJSON(&req)
@@ -130,31 +130,50 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 		c.String(http.StatusBadRequest, qpErr.Error())
 		return
 	}
+
 	log.Printf("INFO: user %s is changing project %s workflow to %d and container type %d", claims.ComputeID, projID, req.Workflow, req.ContainerType)
 	var proj project
-	projReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
-	err := projReq.First(&proj).Error
+	err := svc.DB.Joins("CurrentStep").Joins("Owner").Find(&proj, projID).Error
 	if err != nil {
-		log.Printf("ERROR: unable to get project %s: %s", projID, err.Error())
+		log.Printf("ERROR: unable to get project %s for workflow change: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
+	// init the respose
+	out := struct {
+		Workflow      workflow       `json:"workflow"`
+		CurrentStep   step           `json:"step"`
+		ContainerType *containerType `json:"containerType"`
+		Assignments   []assignment   `json:"assignments"`
+	}{}
+
 	// load target workflow and associated steps
-	var newWF workflow
-	err = svc.DB.Preload("Steps").Find(&newWF, req.Workflow).Error
+	err = svc.DB.Preload("Steps").Find(&out.Workflow, req.Workflow).Error
 	if err != nil {
 		log.Printf("ERROR: unable to load new workflow %d: %s", req.Workflow, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+	out.CurrentStep = out.Workflow.Steps[0]
+
+	// load container type if non-zero container type specified
+	if req.ContainerType > 0 {
+		log.Printf("INFO: lookup container type %d", req.ContainerType)
+		err = svc.DB.Find(&out.ContainerType, req.ContainerType).Error
+		if err != nil {
+			log.Printf("ERROR: unable to load new container type %d: %s", req.ContainerType, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
 
 	// update project workflow and first step ID
 	proj.WorkflowID = req.Workflow
-	proj.CurrentStepID = newWF.Steps[0].ID
-	if req.ContainerType > -1 {
-		newTypeID := uint(req.ContainerType)
-		proj.ContainerTypeID = &newTypeID
+	proj.CurrentStepID = out.CurrentStep.ID
+	if out.ContainerType != nil {
+		log.Printf("INFO: update container type in project %d to %d", proj.ID, out.ContainerType.ID)
+		proj.ContainerTypeID = &out.ContainerType.ID
 	} else {
 		proj.ContainerTypeID = nil
 	}
@@ -165,17 +184,22 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 		return
 	}
 
-	// update all assignmens step_id
-	err = svc.DB.Debug().Model(assignment{}).Where("project_id = ?", proj.ID).Updates(assignment{StepID: proj.CurrentStepID}).Error
+	// update all assignments step_id, then refresh assignments list
+	err = svc.DB.Model(assignment{}).Where("project_id = ?", proj.ID).Updates(assignment{StepID: proj.CurrentStepID}).Error
 	if err != nil {
 		log.Printf("ERROR: unable to update project %d assignment steps to %d: %s", proj.ID, proj.CurrentStepID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// reload the updated project / assignments / workdlow data
-	projReq.First(&proj)
-	c.JSON(http.StatusOK, proj)
+	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").Order("assigned_at DESC").Find(&out.Assignments).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %d assignments: %s", proj.ID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, out)
 
 }
 
