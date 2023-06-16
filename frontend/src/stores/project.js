@@ -336,10 +336,16 @@ export const useProjectStore = defineStore('project', {
       },
 
       async updateProject(data) {
-         // data contains { categoryID, condition, note, ocrHintID, ocrLangage, ocrMasterFiles }
+         // data contains { categoryID, containerTypeID, condition, note, ocrHintID, ocrLangage, ocrMasterFiles }
          this.working = true
          return axios.put(`/api/projects/${this.currProject.id}`, data).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].category = response.data.category
+            this.projects[this.selectedProjectIdx].containerType = response.data.containerType
+            this.projects[this.selectedProjectIdx].itemCondition = response.data.condition
+            this.projects[this.selectedProjectIdx].conditionNote = response.data.note
+            this.projects[this.selectedProjectIdx].unit.ocrMasterFiles = response.data.ocrMasterFiles
+            this.projects[this.selectedProjectIdx].unit.metadata.ocrHint = response.data.ocrHint
+            this.projects[this.selectedProjectIdx].unit.metadata.ocrLanguageHint = response.data.ocrLangage
             this.working = false
          }).catch( e => {
             const system = useSystemStore()

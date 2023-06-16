@@ -420,18 +420,20 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 	c.JSON(http.StatusOK, proj)
 }
 
-// FIXME
 func (svc *serviceContext) updateProject(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)
 	var updateData struct {
-		ContainerTypeID uint   `json:"containerTypeID"`
-		CategoryID      uint   `json:"categoryID"`
-		Condition       uint   `json:"condition"`
-		Note            string `json:"note"`
-		OCRHintID       uint   `json:"ocrHintID"`
-		OCRLanguageHint string `json:"ocrLangage"`
-		OCRMasterFiles  bool   `json:"ocrMasterFiles"`
+		ContainerTypeID uint          `json:"containerTypeID"`
+		ContainerType   containerType `json:"containerType"`
+		CategoryID      uint          `json:"categoryID"`
+		Category        category      `json:"category"`
+		Condition       uint          `json:"condition"`
+		Note            string        `json:"note"`
+		OCRHintID       uint          `json:"ocrHintID"`
+		OCRHint         ocrHint       `json:"ocrHint"`
+		OCRLanguageHint string        `json:"ocrLangage"`
+		OCRMasterFiles  bool          `json:"ocrMasterFiles"`
 	}
 
 	qpErr := c.ShouldBindJSON(&updateData)
@@ -442,12 +444,36 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	}
 	log.Printf("INFO: user %s is updating project %s: %+v", claims.ComputeID, projID, updateData)
 
+	log.Printf("INFO: lookup project %s", projID)
 	var proj project
-	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
-	resp := dbReq.First(&proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	err := svc.DB.Joins("Unit").Find(&proj, projID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %s update: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: lookup container type %d", updateData.ContainerTypeID)
+	err = svc.DB.Find(&updateData.ContainerType, updateData.ContainerTypeID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get container type %d project %s update: %s", updateData.ContainerTypeID, projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: lookup category %d", updateData.CategoryID)
+	err = svc.DB.Find(&updateData.Category, updateData.CategoryID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get category %d project %s update: %s", updateData.CategoryID, projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: lookup ocr hint %d", updateData.OCRHintID)
+	err = svc.DB.Find(&updateData.OCRHint, updateData.OCRHintID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get ocr hint %d project %s update: %s", updateData.OCRHintID, projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -458,43 +484,42 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	if updateData.ContainerTypeID > 0 && proj.Workflow.Name == "Manuscript" {
 		proj.ContainerTypeID = &updateData.ContainerTypeID
 	}
-	r := svc.DB.Model(&proj).Select("ContainerTypeID", "CategoryID", "ItemCondition", "ConditionNote").Updates(proj)
-	if r.Error != nil {
-		log.Printf("ERROR: unable to update data for project %s: %s", projID, r.Error.Error())
-		c.String(http.StatusInternalServerError, r.Error.Error())
+	err = svc.DB.Model(&proj).Select("ContainerTypeID", "CategoryID", "ItemCondition", "ConditionNote").Updates(proj).Error
+	if err != nil {
+		log.Printf("ERROR: unable to update data for project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	log.Printf("INFO: update OCR settings for project %s", projID)
-	proj.Unit.OCRMasterFiles = updateData.OCRMasterFiles
-	r = svc.DB.Model(&proj.Unit).Select("OCRMasterFiles").Updates(proj.Unit)
-	if r.Error != nil {
-		log.Printf("ERROR: unable to update unit OCR settings for project %s: %s", projID, r.Error.Error())
-		c.String(http.StatusInternalServerError, r.Error.Error())
+	tgtUnit := unit{ID: proj.UnitID, OCRMasterFiles: updateData.OCRMasterFiles}
+	err = svc.DB.Model(&tgtUnit).Select("OCRMasterFiles").Updates(tgtUnit).Error
+	if err != nil {
+		log.Printf("ERROR: unable to update unit OCR settings for project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 	if updateData.OCRHintID > 0 {
-		proj.Unit.Metadata.OCRHintID = updateData.OCRHintID
-		r = svc.DB.Model(&proj.Unit.Metadata).Select("OCRHintID").Updates(proj.Unit.Metadata)
-		if r.Error != nil {
-			log.Printf("ERROR: unable to update OCR Hint for project %s: %s", projID, r.Error.Error())
-			c.String(http.StatusInternalServerError, r.Error.Error())
+		tgtMD := metadata{ID: proj.Unit.MetadataID, OCRHintID: updateData.OCRHintID}
+		err = svc.DB.Model(&tgtMD).Select("OCRHintID").Updates(tgtMD).Error
+		if err != nil {
+			log.Printf("ERROR: unable to update OCR Hint for project %s: %s", projID, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
 
 	}
 	if updateData.OCRLanguageHint != "" {
-		proj.Unit.Metadata.OCRLanguageHint = updateData.OCRLanguageHint
-		r = svc.DB.Model(&proj.Unit.Metadata).Select("OCRLanguageHint").Updates(proj.Unit.Metadata)
-		if r.Error != nil {
-			log.Printf("ERROR: unable to update OCR Language for project %s: %s", projID, r.Error.Error())
-			c.String(http.StatusInternalServerError, r.Error.Error())
+		tgtMD := metadata{ID: proj.Unit.MetadataID, OCRLanguageHint: updateData.OCRLanguageHint}
+		err = svc.DB.Model(&tgtMD).Select("OCRLanguageHint").Updates(tgtMD).Error
+		if err != nil {
+			log.Printf("ERROR: unable to update OCR Language for project %s: %s", projID, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
 	}
 
-	dbReq.First(&proj)
-	c.JSON(http.StatusOK, proj)
+	c.JSON(http.StatusOK, updateData)
 }
 
 func (svc *serviceContext) setProjectEquipment(c *gin.Context) {
