@@ -75,7 +75,7 @@ func initializeService(version string, cfg *configData) *serviceContext {
 		err := os.Mkdir(tmpDir, 0777)
 		if err != nil {
 			log.Printf("ERROR: unable to create tmp directory")
-			log.Fatal(fmt.Sprintf("unable to make tmp dir %s: %s", tmpDir, err.Error()))
+			log.Fatalf("unable to make tmp dir %s: %s", tmpDir, err.Error())
 		}
 		log.Printf("INFO: tmp directory created")
 	} else {
@@ -303,8 +303,8 @@ func (svc *serviceContext) postRequest(url string, payload interface{}) ([]byte,
 	httpClient := svc.HTTPClient
 	rawResp, rawErr := httpClient.Do(req)
 	resp, err := handleAPIResponse(url, rawResp, rawErr)
-	elapsedNanoSec := time.Since(startTime)
-	elapsedMS := int64(elapsedNanoSec / time.Millisecond)
+	elapsed := time.Since(startTime)
+	elapsedMS := int64(elapsed / time.Millisecond)
 
 	if err != nil {
 		log.Printf("ERROR: Failed response from POST %s - %d:%s. Elapsed Time: %d (ms)",
@@ -340,10 +340,20 @@ func handleAPIResponse(logURL string, resp *http.Response, err error) ([]byte, *
 	return bodyBytes, nil
 }
 
+func dirExist(tgtDir string) bool {
+	log.Printf("INFO: check existance of %s", tgtDir)
+	_, err := os.Stat(tgtDir)
+	if err != nil {
+		log.Printf("ERROR: check %s failed: %s", tgtDir, err.Error())
+		return false
+	}
+	return true
+}
+
 func findFile(basePath, tgtFileName string) string {
 	fullPath := ""
 	filepath.WalkDir(basePath, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil || entry.IsDir() == true {
+		if err != nil || entry.IsDir() {
 			return nil
 		}
 		if entry.Name() == tgtFileName {

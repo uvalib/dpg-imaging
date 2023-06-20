@@ -379,7 +379,9 @@ function unitDirectory(unitID) {
          }
       }
       .ok-cancel {
-         text-align: right;
+         display: flex;
+         flex-flow: row nowrap;
+         justify-content: flex-end;
       }
    }
    .workflow-message {

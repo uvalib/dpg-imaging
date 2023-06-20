@@ -31,6 +31,13 @@ export const useProjectStore = defineStore('project', {
       lastSearchURL: "/",
    }),
    getters: {
+      dueDate: state => {
+         return (projIdx) => {
+            if (projIdx < 0 || projIdx > state.projects.length-1 ) return "Unknown"
+            let p = state.projects[projIdx]
+            return  p.unit.order.dateDue.split("T")[0]
+         }
+      },
       canChangeWorkflow: state => {
          if (state.selectedProjectIdx == -1) return false
          let assignments = state.projects[state.selectedProjectIdx].assignments
@@ -226,15 +233,11 @@ export const useProjectStore = defineStore('project', {
          data.projects.forEach( p => this.projects.push(p))
         this.selectedProjectIdx = -1
       },
+
       selectProject(projID) {
          this.selectedProjectIdx = this.projects.findIndex( p => p.id == projID)
       },
-      updateProjectData(data) {
-         let pIdx = this.projects.findIndex( p => p.id == data.id)
-         if (pIdx > -1) {
-            this.projects.splice(pIdx, 1, data)
-         }
-      },
+
       setPage(pg) {
          let total = this.totals.active
          if (this.filter == "me") {
@@ -378,7 +381,8 @@ export const useProjectStore = defineStore('project', {
       startStep() {
          this.working = true
          axios.post(`/api/projects/${this.currProject.id}/start`).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].startedAt = response.data.startedAt
+            this.projects[this.selectedProjectIdx].assignments =  response.data.assignments
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
@@ -389,7 +393,10 @@ export const useProjectStore = defineStore('project', {
       finishStep(durationMins) {
          this.working = true
          axios.post(`/api/projects/${this.currProject.id}/finish`, {durationMins: durationMins} ).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].owner = response.data.owner
+            this.projects[this.selectedProjectIdx].currentStep = response.data.currentStep
+            this.projects[this.selectedProjectIdx].assignments = response.data.assignments
+            this.projects[this.selectedProjectIdx].notes = response.data.notes
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
@@ -400,7 +407,10 @@ export const useProjectStore = defineStore('project', {
       rejectStep(durationMins) {
          this.working = true
          axios.post(`/api/projects/${this.currProject.id}/reject`, {durationMins: durationMins} ).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].owner = response.data.owner
+            this.projects[this.selectedProjectIdx].currentStep = response.data.currentStep
+            this.projects[this.selectedProjectIdx].assignments = response.data.assignments
+            this.projects[this.selectedProjectIdx].notes = response.data.notes
             this.working = false
          }).catch( e => {
             const system = useSystemStore()

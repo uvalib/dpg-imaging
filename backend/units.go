@@ -128,7 +128,7 @@ func (svc *serviceContext) getUnitMasterFiles(c *gin.Context) {
 			return nil
 		}
 
-		if f.IsDir() == false {
+		if !f.IsDir() {
 			fName := f.Name()
 			if hiddenRegex.Match([]byte(fName)) {
 				log.Printf("INFO: skipping hidden file %s", fName)
@@ -326,7 +326,7 @@ func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse
 			return nil
 		}
 
-		if f.IsDir() == true {
+		if f.IsDir() {
 			return nil
 		}
 		fName := f.Name()

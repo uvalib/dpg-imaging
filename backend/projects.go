@@ -9,7 +9,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type workflow struct {
@@ -93,7 +92,6 @@ type project struct {
 	Assignments       []*assignment  `gorm:"foreignKey:ProjectID" json:"assignments"`
 	CurrentStepID     uint           `json:"-"`
 	CurrentStep       step           `gorm:"foreignKey:CurrentStepID" json:"currentStep"`
-	DueOn             *time.Time     `json:"dueOn,omitempty"`
 	AddedAt           *time.Time     `json:"addedAt,omitempty"`
 	StartedAt         *time.Time     `json:"startedAt,omitempty"`
 	FinishedAt        *time.Time     `json:"finishedAt,omitempty"`
@@ -120,8 +118,8 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 
 	var proj *project
 	projQ := svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").InnerJoins("Unit").
-		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").Joins("ContainerType").
-		Joins("Unit.Order.Customer").Joins("Unit.Order.Agency").
+		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").Joins("Unit.Metadata.OCRHint").
+		Joins("Unit.Order.Customer").Joins("Unit.Order.Agency").Joins("ContainerType").
 		Joins("Owner").Joins("CurrentStep").Preload("Equipment").Preload("Workstation")
 
 	err := projQ.Where("projects.id=?", projID).First(&proj).Error
@@ -325,7 +323,8 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 
 	log.Printf("INFO: lookup active assignent for project %s", projID)
 	var activeAssign assignment
-	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").Order("assigned_at DESC").First(&activeAssign).Error
+	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").
+		Order("assigned_at DESC").Limit(1).Find(&activeAssign).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get active assignment project %s reassign: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -609,7 +608,7 @@ func (svc *serviceContext) setProjectEquipment(c *gin.Context) {
 	}
 
 	log.Printf("INFO: load updated equipment for project %d", proj.ID)
-	err = svc.DB.Find(&proj, projID).Preload("Equipment").Preload("Workstation").Error
+	err = svc.DB.Preload("Equipment").Preload("Workstation").First(&proj, projID).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get project %s for equipment update: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -638,7 +637,7 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 		if lastAssign.StaffMember.ComputingID != assignee.ComputingID {
 			log.Printf("INFO: project %d requires prior owner %s to claim, not %s",
 				proj.ID, lastAssign.StaffMember.ComputingID, assignee.ComputingID)
-			return fmt.Errorf("This project requires prior owner %s, not %s", lastAssign.StaffMember.ComputingID, assignee.ComputingID)
+			return fmt.Errorf("this project requires prior owner %s, not %s", lastAssign.StaffMember.ComputingID, assignee.ComputingID)
 		}
 		return nil
 	}
@@ -648,7 +647,7 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 		for _, a := range proj.Assignments {
 			if a.StaffMember.ComputingID == assignee.ComputingID {
 				log.Printf("INFO: project %d requires a unique owner, but %s has previously claimed it", proj.ID, assignee.ComputingID)
-				return fmt.Errorf("This project requires a unique owner, and %s has previously owned it", assignee.ComputingID)
+				return fmt.Errorf("this project requires a unique owner, and %s has previously owned it", assignee.ComputingID)
 			}
 		}
 		return nil
@@ -660,7 +659,7 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 		if origAssign.StaffMember.ComputingID != assignee.ComputingID {
 			log.Printf("INFO: project %d requires original owner %s to claim, not %s",
 				proj.ID, origAssign.StaffMember.ComputingID, assignee.ComputingID)
-			return fmt.Errorf("This project can only be claimed by the original owner %s", origAssign.StaffMember.ComputingID)
+			return fmt.Errorf("this project can only be claimed by the original owner %s", origAssign.StaffMember.ComputingID)
 		}
 		return nil
 	}
@@ -671,41 +670,11 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 			return nil
 		}
 		log.Printf("INFO: project %d requries a supervisor owner, and %s is not a supervisor", proj.ID, assignee.ComputingID)
-		return fmt.Errorf("This project requires a supervisor to claim, and %s is not one", assignee.ComputingID)
+		return fmt.Errorf("this project requires a supervisor to claim, and %s is not one", assignee.ComputingID)
 	}
 
 	log.Printf("ERROR: unrecognized owner type: %d", proj.CurrentStep.OwnerType)
 	return fmt.Errorf("%s cannot claim this project (internal error)", assignee.ComputingID)
-}
-
-func (svc *serviceContext) getBaseProjectQuery() (tx *gorm.DB) {
-	// NOTES:
-	//  The Joins() calls all allow association table names to be used in nested where clauses by the caller.
-	//  The Preload() calls preload all models with DB data
-	//  LEFT OUTER joins are for data that is optional
-	return svc.DB.Preload(clause.Associations).
-		Joins("LEFT OUTER JOIN assignments on assignments.project_id=projects.id").
-		Joins("LEFT OUTER JOIN steps as assignstep on assignments.step_id=assignstep.id").
-		Joins("LEFT OUTER JOIN staff_members on assignments.staff_member_id=staff_members.id").
-		Joins("INNER JOIN units on units.id=projects.unit_id").
-		Joins("INNER JOIN metadata on metadata.id=units.metadata_id").
-		Joins("INNER JOIN orders on orders.id=units.order_id").
-		Joins("INNER JOIN customers on customers.id=orders.customer_id").
-		Joins("LEFT OUTER JOIN agencies on agencies.id=orders.agency_id").
-		Joins("LEFT OUTER JOIN notes on notes.project_id = projects.id").
-		Preload("Assignments", func(db *gorm.DB) *gorm.DB { // specify the order of the associations in  Preload, not Joins
-			return db.Order("assignments.assigned_at DESC")
-		}).
-		Preload("Notes", func(db *gorm.DB) *gorm.DB { // specify the order of the associations in  Preload, not Joins
-			return db.Order("notes.created_at DESC")
-		}).
-		Preload("Assignments.StaffMember").      // explicitly preload nested assignment owner
-		Preload("Unit." + clause.Associations).  // this is a shorthand to load all associations directy under unit
-		Preload("Unit.Metadata.OCRHint").        // OCRHint is deeply nested, so need to preload explicitly
-		Preload("Unit.Order.Customer").          // customer is deeply nested, so need to preload explicitly
-		Preload("Unit.Order.Agency").            // agency is deeply nested, so need to preload explicitly
-		Preload("Notes." + clause.Associations). // preload all associations under notes
-		Preload("Assignments.Step")              // explicitly preload nested workflow steps
 }
 
 func (svc *serviceContext) getBaseSearchQuery() (tx *gorm.DB) {

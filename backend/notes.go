@@ -96,3 +96,36 @@ func (svc *serviceContext) addNote(proj project, newNote note, problemIDs []uint
 	}
 	return notes, nil
 }
+
+func (svc *serviceContext) failStep(proj *project, problemName string, message string) {
+	log.Printf("INFO: flag project %d step %s with an error", proj.ID, proj.CurrentStep.Name)
+	currA := proj.Assignments[0]
+	currA.Status = StepError
+	svc.DB.Model(&currA).Select("Status").Updates(currA)
+
+	log.Printf("INFO: adding problem(%s) note to project %d step %s", problemName, proj.ID, proj.CurrentStep.Name)
+	now := time.Now()
+	newNote := note{ProjectID: proj.ID, StepID: proj.CurrentStepID, StaffMemberID: *proj.OwnerID,
+		NoteType: 2, Note: message, CreatedAt: &now, UpdatedAt: &now}
+	err := svc.DB.Model(&proj).Association("Notes").Append(&newNote)
+	if err != nil {
+		log.Printf("ERROR: unable to add note to project %d: %s", proj.ID, err.Error())
+		return
+	}
+
+	var p problem
+	resp := svc.DB.Where("label = ?", problemName).First(&p)
+	if resp.Error != nil {
+		p.ID = 7 // other
+	}
+
+	pq := "insert into notes_problems (note_id, problem_id) values "
+	var vals []string
+	vals = append(vals, fmt.Sprintf("(%d,%d)", newNote.ID, p.ID))
+
+	pq += strings.Join(vals, ",")
+	resp = svc.DB.Exec(pq)
+	if resp.Error != nil {
+		log.Printf("ERROR: unable to add problems to note: %s", resp.Error.Error())
+	}
+}

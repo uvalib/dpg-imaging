@@ -2,8 +2,8 @@
    <div class="project">
       <h2>
          <span>Digitization Project #{{route.params.id}}</span>
-         <span v-if="projectStore.working == false && currProject.dueOn" class="due">
-            <label>Due:</label><span>{{currProject.dueOn.split("T")[0]}}</span>
+         <span v-if="projectStore.working == false" class="due">
+            <label>Due:</label><span>{{projectStore.dueDate(0)}}</span>
          </span>
       </h2>
       <WaitSpinner v-if="projectStore.working" :overlay="true" message="Working..." />
