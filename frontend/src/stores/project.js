@@ -31,10 +31,20 @@ export const useProjectStore = defineStore('project', {
       lastSearchURL: "/",
    }),
    getters: {
+      dueDate: state => {
+         return (projIdx) => {
+            if (projIdx < 0 || projIdx > state.projects.length-1 ) return "Unknown"
+            let p = state.projects[projIdx]
+            return  p.unit.order.dateDue.split("T")[0]
+         }
+      },
       canChangeWorkflow: state => {
          if (state.selectedProjectIdx == -1) return false
+         let assignments = state.projects[state.selectedProjectIdx].assignments
+         if ( assignments == null || assignments === undefined) return true
+
          let canChange = true
-         state.projects[state.selectedProjectIdx].assignments.some( a => {
+         assignments.some( a => {
             if (a.finishedAt) {
                canChange = false
             }
@@ -49,10 +59,10 @@ export const useProjectStore = defineStore('project', {
          return (projIdx) => {
             if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
             let p = state.projects[projIdx]
+            if ( p.assignments == null || p.assignments === undefined) return false
             if (p.assignments.length == 0) return false
             let currA = p.assignments[0]
-            let step = p.workflow.steps.find( s => s.id == currA.stepID)
-            if ( step ) return step.failStepID > 0 && currA.status == 1
+            return currA.step.failStepID > 0 && currA.status == 1
             return false
          }
       },
@@ -60,7 +70,8 @@ export const useProjectStore = defineStore('project', {
          return (projIdx) => {
             if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
             let p = state.projects[projIdx]
-            if (p.assignments.length == 0) return false
+            if ( p.assignments == null || p.assignments === undefined) return false
+            if ( p.assignments.length == 0 ) return false
             let currA = p.assignments[0]
             return currA.status == 6 // finalizing
          }
@@ -79,14 +90,12 @@ export const useProjectStore = defineStore('project', {
          return (projIdx) => {
             if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
             let p = state.projects[projIdx]
+            if ( p.assignments == null || p.assignments === undefined) return false
             if (p.assignments.length == 0) return false
             let currA = p.assignments[0]
             if (currA.status == 4) return true
+            if (currA.step.stepType == 2) return true
 
-            let step = p.workflow.steps.find( s => s.id == currA.stepID)
-            if (step) {
-               if (step.stepType == 2) return true
-            }
 
             return false
          }
@@ -95,13 +104,14 @@ export const useProjectStore = defineStore('project', {
          return (projIdx) => {
             if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
             let p = state.projects[projIdx]
-            return p.owner !== undefined
+            return (p.owner !== undefined && p.owner != null)
          }
       },
       inProgress: state => {
          return (projIdx) => {
             if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
             let p = state.projects[projIdx]
+            if ( p.assignments == null || p.assignments === undefined) return false
             if (p.assignments.length == 0) return false
             let currA = p.assignments[0]
             return  currA.status == 1 ||  currA.status == 4 ||  currA.status == 6 ||  currA.status == 7
@@ -111,6 +121,7 @@ export const useProjectStore = defineStore('project', {
          return (projIdx) => {
             if (projIdx < 0 || projIdx > state.projects.length-1 ) return false
             let p = state.projects[projIdx]
+            if ( p.assignments == null || p.assignments === undefined) return false
             if (p.assignments.length == 0) return false
             let currA = p.assignments[0]
             return currA.status == 7
@@ -153,8 +164,15 @@ export const useProjectStore = defineStore('project', {
                return `Finished at ${p.finishedAt.split("T")[0]}`
             }
             let out = `${p.currentStep.name}: `
-            let a = p.assignments.find(a => a.stepID == p.currentStep.id)
+            let a = p.assignments.find(a => a.step.id == p.currentStep.id)
             if ( a ) {
+               if (a.finishedAt != null) {
+                  if (a.status == 4) {
+                     out += " Failed"
+                  } else {
+                     out += " Finished"
+                  }
+               }
                if (a.startedAt != null) {
                   if (a.status == 4) {
                      out += " Failed"
@@ -176,33 +194,28 @@ export const useProjectStore = defineStore('project', {
             // NOTE: enum values...
             //    assign status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing]
             //    step types [:start, :end, :error, :normal]
+            const system = useSystemStore()
             let p = state.projects.find( p => p.id == pID)
-            let nonErrSteps =  p.workflow.steps.filter( s => s.stepType != 2)
+            let tgtWorkflow = system.workflows.find( w => w.id == p.workflow.id)
+            let nonErrSteps =  tgtWorkflow.steps.filter( s => s.stepType != 2)
             let numSteps = nonErrSteps.length*3 // each non-error step has 3 parts, assigned, in-process and done
 
             let stepCount = 0
             let stepIDs = []
             p.assignments.forEach( a => {
-               if ( stepIDs.includes(a.stepID) ) return
+               // only check steps once, don't care about error steps (stepType == 2)  and don't count reassigns or errors
+               if ( stepIDs.includes(a.step.id) ) return
+               if (a.step.stepType == 2 ) return
+               if ( a.status == 5 || a.status == 4) return
 
-               let step = p.workflow.steps.find( s => s.id == a.stepID )
-               if (!step) return
-
-               if (step.stepType != 2 && a.status != 4 && a.status != 5) {
-                  // Rejections generally count as a completion as they finish the step. Per team, reject moves to a rescan.
-                  // When rescan is done, the workflow proceeds to the step AFTER the one that was rejected.
-                  // The exception to this is the last step. If rejected, completing the rescan returns
-                  // to that step, not the next. This is the case we need to skip when computing percentage complete.
-                  let failStep =  p.workflow.steps.find( s => s.id == step.failStepID )
-                  if (a.status == 3 && failStep.nextStepID == a.stepID) return
-
-                  stepIDs.push(a.stepID)           // make sure each step only gets counted once
-                  stepCount++                      // if an assignment is here, that is the first count: Assigned
-                  if (a.startedAt) stepCount++     // Started
-                  if (a.finishedAt) stepCount++    // Finished
-               }
+               stepIDs.push(a.step.id)          // make sure each step only gets counted once
+               stepCount++                      // if an assignment is here, that is the first count: Assigned
+               if (a.startedAt) stepCount++     // Started
+               if (a.finishedAt) stepCount++    // Finished
             })
+
             let percent = Math.round((stepCount/numSteps)*100.0)
+            percent = Math.min(100, percent)
             return percent+"%"
          }
       }
@@ -220,15 +233,11 @@ export const useProjectStore = defineStore('project', {
          data.projects.forEach( p => this.projects.push(p))
         this.selectedProjectIdx = -1
       },
+
       selectProject(projID) {
          this.selectedProjectIdx = this.projects.findIndex( p => p.id == projID)
       },
-      updateProjectData(data) {
-         let pIdx = this.projects.findIndex( p => p.id == data.id)
-         if (pIdx > -1) {
-            this.projects.splice(pIdx, 1, data)
-         }
-      },
+
       setPage(pg) {
          let total = this.totals.active
          if (this.filter == "me") {
@@ -324,7 +333,11 @@ export const useProjectStore = defineStore('project', {
          // data contains { workstationID, captureResolution, resizeResolution, resolutionNote }
          this.working = true
          return axios.post(`/api/projects/${this.currProject.id}/equipment`, data).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].equipment = response.data.equipment
+            this.projects[this.selectedProjectIdx].workstation = response.data.workstation
+            this.projects[this.selectedProjectIdx].captureResolution = response.data.captureResolution
+            this.projects[this.selectedProjectIdx].resizedResolution = response.data.resizedResolution
+            this.projects[this.selectedProjectIdx].resolutionNote = response.data.resolutionNote
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
@@ -334,10 +347,16 @@ export const useProjectStore = defineStore('project', {
       },
 
       async updateProject(data) {
-         // data contains { categoryID, condition, note, ocrHintID, ocrLangage, ocrMasterFiles }
+         // data contains { categoryID, containerTypeID, condition, note, ocrHintID, ocrLangage, ocrMasterFiles }
          this.working = true
          return axios.put(`/api/projects/${this.currProject.id}`, data).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].category = response.data.category
+            this.projects[this.selectedProjectIdx].containerType = response.data.containerType
+            this.projects[this.selectedProjectIdx].itemCondition = response.data.condition
+            this.projects[this.selectedProjectIdx].conditionNote = response.data.note
+            this.projects[this.selectedProjectIdx].unit.ocrMasterFiles = response.data.ocrMasterFiles
+            this.projects[this.selectedProjectIdx].unit.metadata.ocrHint = response.data.ocrHint
+            this.projects[this.selectedProjectIdx].unit.metadata.ocrLanguageHint = response.data.ocrLangage
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
@@ -351,7 +370,7 @@ export const useProjectStore = defineStore('project', {
          let p = this.currProject
          data.stepID = p.currentStep.id
          return axios.post(`/api/projects/${p.id}/note`, data).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].notes = response.data
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
@@ -362,7 +381,8 @@ export const useProjectStore = defineStore('project', {
       startStep() {
          this.working = true
          axios.post(`/api/projects/${this.currProject.id}/start`).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].startedAt = response.data.startedAt
+            this.projects[this.selectedProjectIdx].assignments =  response.data.assignments
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
@@ -373,7 +393,10 @@ export const useProjectStore = defineStore('project', {
       finishStep(durationMins) {
          this.working = true
          axios.post(`/api/projects/${this.currProject.id}/finish`, {durationMins: durationMins} ).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].owner = response.data.owner
+            this.projects[this.selectedProjectIdx].currentStep = response.data.currentStep
+            this.projects[this.selectedProjectIdx].assignments = response.data.assignments
+            this.projects[this.selectedProjectIdx].notes = response.data.notes
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
@@ -384,7 +407,10 @@ export const useProjectStore = defineStore('project', {
       rejectStep(durationMins) {
          this.working = true
          axios.post(`/api/projects/${this.currProject.id}/reject`, {durationMins: durationMins} ).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].owner = response.data.owner
+            this.projects[this.selectedProjectIdx].currentStep = response.data.currentStep
+            this.projects[this.selectedProjectIdx].assignments = response.data.assignments
+            this.projects[this.selectedProjectIdx].notes = response.data.notes
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
@@ -395,7 +421,9 @@ export const useProjectStore = defineStore('project', {
       assignProject({projectID, ownerID}) {
          this.working = true
          axios.post(`/api/projects/${projectID}/assign/${ownerID}`).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].notes = response.data.notes
+            this.projects[this.selectedProjectIdx].assignments = response.data.assignments
+            this.projects[this.selectedProjectIdx].owner = response.data.owner
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
@@ -409,7 +437,10 @@ export const useProjectStore = defineStore('project', {
          }
          this.working = true
          return axios.post(`/api/projects/${this.currProject.id}/workflow`, {workflow: newWorkflowID, containerType: newContainerTypeID}).then(response => {
-            this.updateProjectData(response.data)
+            this.projects[this.selectedProjectIdx].workflow = response.data.workflow
+            this.projects[this.selectedProjectIdx].currentStep = response.data.step
+            this.projects[this.selectedProjectIdx].containerType = response.data.containerType
+            this.projects[this.selectedProjectIdx].assignments = response.data.assignments
             this.working = false
          }).catch( e => {
             this.working = false

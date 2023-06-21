@@ -87,7 +87,7 @@ const captureResolution = ref("")
 const resizedResolution = ref("")
 const resolutionNote = ref("")
 
-function editClicked() {
+const editClicked = (() => {
    workstationID.value = currProject.value.workstation.id
    captureResolution.value = ""
    resizedResolution.value = ""
@@ -99,13 +99,13 @@ function editClicked() {
    }
    resolutionNote.value = currProject.value.resolutionNote
    editing.value = true
-}
+})
 
-function cancelClicked() {
+const cancelClicked =(() => {
    editing.value = false
-}
+})
 
-async function saveClicked() {
+const saveClicked = ( async () => {
    let data = {
       workstationID: workstationID.value,
       captureResolution: parseInt(captureResolution.value, 10),
@@ -114,7 +114,7 @@ async function saveClicked() {
    }
    await projectStore.setEquipment(data)
    editing.value = false
-}
+})
 </script>
 
 <style scoped lang="scss">

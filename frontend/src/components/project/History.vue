@@ -18,12 +18,12 @@
                <th>Date</th><th>Step</th><th>Activity</th><th>Owner</th>
             </tr>
             <template v-for="a in projectStore.currProject.assignments" :key="`a${a.id}`">
-               <template v-if="lookupStepName(a.stepID) != 'Unknown'">
+               <template v-if="a.step.name != 'Unknown'">
                   <template v-if="a.finishedAt">
                      <!-- status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing, :working] -->
                      <tr :class="{success: a.status != 3, reject: a.status==3}">
                         <td>{{formatDate(a.finishedAt)}}</td>
-                        <td>{{lookupStepName(a.stepID)}}</td>
+                        <td>{{a.step.name}}</td>
                         <td>
                            <span>
                               <template v-if="a.status==3">Rejected</template>
@@ -39,7 +39,7 @@
                   <template v-if="a.startedAt">
                      <tr :class="{error: a.status == 4, finalize: a.status == 6, working: a.status == 7}">
                         <td>{{formatDate(a.startedAt)}}</td>
-                        <td>{{lookupStepName(a.stepID)}}</td>
+                        <td>{{a.step.name}}</td>
                         <td v-if="a.status == 4">Error</td>
                         <td v-else-if="a.status == 6">Finalizing...</td>
                         <td v-else-if="a.status == 7">Working...</td>
@@ -49,7 +49,7 @@
                   </template>
                   <tr v-else :class="{reassign: a.status == 5}">
                      <td>{{formatDate(a.assignedAt)}}</td>
-                     <td>{{lookupStepName(a.stepID)}}</td>
+                     <td>{{a.step.name}}</td>
                      <td v-if="a.status == 5">Reassigned</td>
                      <td v-else>Assigned</td>
                      <td>{{a.staffMember.firstName}} {{a.staffMember.lastName}}</td>
@@ -89,17 +89,9 @@ const totalWorkTime = computed(() => {
    return `${(""+h).padStart(2,"0")}:${(""+mins).padStart(2,"0")}`
 })
 
-function lookupStepName( stepID) {
-   let s = projectStore.currProject.workflow.steps.find( s => s.id == stepID)
-   if (s) {
-      return s.name
-   }
-   return "Unknown"
-}
-
-function formatDate( d ) {
+const formatDate = ( (d) => {
    return dayjs(d).format("YYYY-MM-DD hh:mm A")
-}
+})
 </script>
 
 <style scoped lang="scss">

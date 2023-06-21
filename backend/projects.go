@@ -9,18 +9,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type workflow struct {
 	ID          uint   `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	Active      bool   `json:"isActive"`
 	Steps       []step `gorm:"foreignKey:WorkflowID" json:"steps"`
 }
 
 type containerType struct {
-	ID         int64  `json:"id"`
+	ID         uint   `json:"id"`
 	Name       string `json:"name"`
 	HasFolders bool   `json:"hasFolders"`
 }
@@ -28,7 +28,8 @@ type containerType struct {
 type assignment struct {
 	ID              uint        `json:"id"`
 	ProjectID       uint        `json:"projectID"`
-	StepID          uint        `json:"stepID"`
+	StepID          uint        `json:"-"`
+	Step            step        `gorm:"foreignKey:StepID" json:"step"`
 	StaffMemberID   uint        `json:"-"`
 	StaffMember     staffMember `gorm:"foreignKey:StaffMemberID" json:"staffMember"`
 	AssignedAt      *time.Time  `json:"assignedAt,omitempty"`
@@ -83,7 +84,7 @@ type workstation struct {
 type project struct {
 	ID                uint           `json:"id"`
 	WorkflowID        uint           `json:"-"`
-	Workflow          workflow       `json:"workflow"`
+	Workflow          workflow       `gorm:"foreignKey:WorkflowID" json:"workflow"`
 	UnitID            uint           `json:"-"`
 	Unit              unit           `gorm:"foreignKey:UnitID" json:"unit"`
 	OwnerID           *uint          `json:"-"`
@@ -91,7 +92,6 @@ type project struct {
 	Assignments       []*assignment  `gorm:"foreignKey:ProjectID" json:"assignments"`
 	CurrentStepID     uint           `json:"-"`
 	CurrentStep       step           `gorm:"foreignKey:CurrentStepID" json:"currentStep"`
-	DueOn             *time.Time     `json:"dueOn,omitempty"`
 	AddedAt           *time.Time     `json:"addedAt,omitempty"`
 	StartedAt         *time.Time     `json:"startedAt,omitempty"`
 	FinishedAt        *time.Time     `json:"finishedAt,omitempty"`
@@ -116,14 +116,39 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 	claims := getJWTClaims(c)
 	log.Printf("INFO: user %s is requesting project %s details", claims.ComputeID, projID)
 
-	var proj project
-	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
-	resp := dbReq.First(&proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	var proj *project
+	projQ := svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").InnerJoins("Unit").
+		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").Joins("Unit.Metadata.OCRHint").
+		Joins("Unit.Order.Customer").Joins("Unit.Order.Agency").Joins("ContainerType").
+		Joins("Owner").Joins("CurrentStep").Preload("Equipment").Preload("Workstation")
+
+	err := projQ.Where("projects.id=?", projID).First(&proj).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	log.Printf("INFO: get project %d assignments", proj.ID)
+	err = svc.DB.Where("project_id=?", proj.ID).
+		Joins("Step").Joins("StaffMember").
+		Order("assigned_at DESC").Find(&proj.Assignments).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %d assignments: %s", proj.ID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: get project %d notes", proj.ID)
+	err = svc.DB.Where("project_id=?", proj.ID).
+		Joins("Step").Joins("StaffMember").Preload("Problems").
+		Order("notes.created_at DESC").Find(&proj.Notes).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %d notes: %s", proj.ID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	c.JSON(http.StatusOK, proj)
 }
 
@@ -169,10 +194,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	log.Printf("INFO: user %s requests projects page %d", claims.ComputeID, page)
 
 	// ALWAYS exclude caneled projects. exclude done projects when filter is not finished.
-	whereQ := " AND units.unit_status != 'canceled'"
-	if filterIdx != 3 {
-		whereQ += " AND units.unit_status != 'done'"
-	}
+	whereQ := " AND unit_status != 'canceled'"
 
 	qWorkflow := c.Query("workflow")
 	if qWorkflow != "" {
@@ -191,48 +213,51 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	}
 	qCallNum := c.Query("callnum")
 	if qCallNum != "" {
-		whereQ += fmt.Sprintf(" AND metadata.call_number like \"%%%s%%\"", qCallNum)
+		whereQ += fmt.Sprintf(" AND call_number like \"%%%s%%\"", qCallNum)
 	}
 	qCustomer := c.Query("customer")
 	if qCustomer != "" {
-		whereQ += fmt.Sprintf(" AND customers.last_name like \"%%%s%%\"", qCustomer)
+		whereQ += fmt.Sprintf(" AND Unit__Order__Customer.last_name like \"%%%s%%\"", qCustomer)
 	}
 	qAgency := c.Query("agency")
 	if qAgency != "" {
 		id, _ := strconv.Atoi(qAgency)
-		whereQ += fmt.Sprintf(" AND agencies.id = %d", id)
+		whereQ += fmt.Sprintf(" AND agency_id = %d", id)
 	}
 	qUnitID := c.Query("unit")
 	if qUnitID != "" {
 		id, _ := strconv.Atoi(qUnitID)
-		whereQ += fmt.Sprintf(" AND units.id = %d", id)
+		whereQ += fmt.Sprintf(" AND unit_id = %d", id)
 		log.Printf("INFO: query for unit %d", id)
 	}
 	qOrderID := c.Query("order")
 	if qOrderID != "" {
 		id, _ := strconv.Atoi(qOrderID)
-		whereQ += fmt.Sprintf(" AND orders.id = %d", id)
+		whereQ += fmt.Sprintf(" AND order_id = %d", id)
 		log.Printf("INFO: query for order %d", id)
 	}
 
 	type projResp struct {
-		TotalMe         int64     `json:"totalMe"`
-		TotalActive     int64     `json:"totalActive"`
-		TotalError      int64     `json:"totalError"`
-		TotalUnassigned int64     `json:"totalUnassigned"`
-		TotalFinished   int64     `json:"totalFinished"`
-		Page            uint      `json:"page"`
-		PageSize        uint      `json:"pageSize"`
-		Projects        []project `json:"projects"`
+		TotalMe         int64      `json:"totalMe"`
+		TotalActive     int64      `json:"totalActive"`
+		TotalError      int64      `json:"totalError"`
+		TotalUnassigned int64      `json:"totalUnassigned"`
+		TotalFinished   int64      `json:"totalFinished"`
+		Page            uint       `json:"page"`
+		PageSize        uint       `json:"pageSize"`
+		Projects        []*project `json:"projects"`
 	}
 	out := projResp{Page: uint(page), PageSize: uint(pageSize)}
 
 	for idx, q := range filterQ {
 		var total int64
 		countQ := q + whereQ
-		cr := svc.getBaseCountsQuery().Model(&project{}).Distinct("projects.id").Where(countQ).Count(&total)
-		if cr.Error != nil {
-			log.Printf("WARNING: unable to get count of projects: %s", cr.Error.Error())
+		if idx != 3 {
+			countQ += " AND unit_status != 'done'"
+		}
+		err = svc.getBaseSearchQuery().Where(countQ).Count(&total).Error
+		if err != nil {
+			log.Printf("WARNING: unable to get count of projects: %s", err.Error())
 			total = 0
 		}
 		if idx == 0 {
@@ -252,15 +277,26 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	if filter == "finished" {
 		orderStr = "finished_at desc"
 	}
-	whereQ = filterQ[filterIdx] + whereQ
-	resp := svc.getBaseProjectQuery().Distinct().
+	whereQ = filterQ[filterIdx] + whereQ + " AND unit_status != 'done'"
+	err = svc.getBaseSearchQuery().
 		Offset(offset).Limit(pageSize).Order(orderStr).
 		Where(whereQ).
-		Find(&out.Projects)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get projects: %s", resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+		Find(&out.Projects).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get projects: %s", err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
+	}
+
+	for _, p := range out.Projects {
+		err = svc.DB.Where("project_id=?", p.ID).
+			Joins("Step").Joins("StaffMember").
+			Order("assigned_at DESC").Find(&p.Assignments).Error
+		if err != nil {
+			log.Printf("ERROR: unable to get project %d assignments: %s", p.ID, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -278,27 +314,42 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 
 	log.Printf("INFO: looking up project %s", projID)
 	var proj project
-	pTx := svc.getBaseProjectQuery().Where("projects.id=?", projID)
-	resp := pTx.First(&proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	err := svc.DB.Joins("CurrentStep").Joins("Owner").Find(&proj, projID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %s for reassign: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// In a clear POST, userID will be 0
+	log.Printf("INFO: lookup active assignent for project %s", projID)
+	var activeAssign assignment
+	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").
+		Order("assigned_at DESC").Limit(1).Find(&activeAssign).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get active assignment project %s reassign: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	out := struct {
+		Owner       *staffMember `json:"owner"`
+		Assignments []assignment `json:"assignments"`
+		Notes       []note       `json:"notes"`
+	}{}
+
 	if userID == "0" {
+		// In a clear POST, userID will be 0 and all owner lookups and error checks are skipped
 		now := time.Now()
 		msg := fmt.Sprintf("<p>Admin user canceled assignment to %s</p>", proj.Owner.ComputingID)
 		newNote := note{ProjectID: proj.ID, StepID: proj.CurrentStepID, StaffMemberID: *proj.OwnerID,
 			NoteType: 0, Note: msg, CreatedAt: &now, UpdatedAt: &now}
-		err := svc.DB.Model(&proj).Association("Notes").Append(&newNote)
+		problemIDs := make([]uint, 0)
+		_, err = svc.addNote(proj, newNote, problemIDs)
 		if err != nil {
 			log.Printf("ERROR: unable to add note to project %d: %s", proj.ID, err.Error())
 			return
 		}
 
-		activeAssign := proj.Assignments[0]
 		log.Printf("INFO: mark assignment %d as reassigied", activeAssign.ID)
 		activeAssign.Status = StepReassigned
 		r := svc.DB.Model(&activeAssign).Select("Status").Updates(activeAssign)
@@ -316,82 +367,92 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-		c.JSON(http.StatusOK, proj)
-		return
-	}
-
-	log.Printf("INFO: looking up new project %s owner %s", projID, userID)
-	var owner staffMember
-	resp = svc.DB.First(&owner, userID)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get new owner %s for project %s: %s", userID, projID, resp.Error.Error())
-		c.String(http.StatusBadRequest, resp.Error.Error())
-		return
-	}
-
-	if proj.OwnerID != nil && *proj.OwnerID == owner.ID {
-		log.Printf("INFO: project %d owner is already %d, no change needed", proj.ID, *proj.OwnerID)
-		c.JSON(http.StatusOK, proj)
-		return
-	}
-
-	err := svc.canAssignProject(&owner, claims, &proj)
-	if err != nil {
-		c.String(http.StatusBadRequest, err.Error())
-		return
-	}
-
-	log.Printf("INFO: user %s can assign project %d to %s; updating data", claims.ComputeID, proj.ID, owner.ComputingID)
-
-	// If someone else has this assignment, flag it as reassigned. Do not mark the finished time as it was never actually finished
-	if proj.OwnerID != nil {
-		activeAssign := proj.Assignments[0]
-		log.Printf("INFO: marking assignment %d as reassigned", activeAssign.ID)
-		activeAssign.Status = StepReassigned
-		r := svc.DB.Model(&activeAssign).Select("Status").Updates(activeAssign)
-		if r.Error != nil {
-			log.Printf("ERROR: unable to mark project %d active assignment as reassigned: %s", proj.ID, r.Error.Error())
-			c.String(http.StatusInternalServerError, r.Error.Error())
+	} else {
+		log.Printf("INFO: lookup new owner %s", projID)
+		err = svc.DB.Find(&out.Owner, userID).Error
+		if err != nil {
+			log.Printf("ERROR: unable to get new owner %s for project %s reassign: %s", userID, projID, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
 			return
+		}
+
+		if proj.OwnerID != nil && *proj.OwnerID == out.Owner.ID {
+			log.Printf("INFO: project %d owner is already %d, no change needed", proj.ID, *proj.OwnerID)
+		} else {
+			err = svc.canAssignProject(out.Owner, claims, &proj)
+			if err != nil {
+				c.String(http.StatusBadRequest, err.Error())
+				return
+			}
+
+			log.Printf("INFO: user %s can assign project %d to %s; updating data", claims.ComputeID, proj.ID, out.Owner.ComputingID)
+
+			// If someone else has this assignment, flag it as reassigned. Do not mark the finished time as it was never actually finished
+			if proj.OwnerID != nil {
+				log.Printf("INFO: marking assignment %d as reassigned", activeAssign.ID)
+				activeAssign.Status = StepReassigned
+				r := svc.DB.Model(&activeAssign).Select("Status").Updates(activeAssign)
+				if r.Error != nil {
+					log.Printf("ERROR: unable to mark project %d active assignment as reassigned: %s", proj.ID, r.Error.Error())
+					c.String(http.StatusInternalServerError, r.Error.Error())
+					return
+				}
+			}
+
+			log.Printf("INFO: create assigmment for new owner %d", out.Owner.ID)
+			now := time.Now()
+			newA := assignment{ProjectID: proj.ID, StepID: proj.CurrentStepID, StaffMemberID: out.Owner.ID, AssignedAt: &now}
+			err = svc.DB.Create(&newA).Error
+			if err != nil {
+				log.Printf("ERROR: unable to create new assignment for project %d step %d: %s", proj.ID, proj.CurrentStepID, err.Error())
+				c.String(http.StatusInternalServerError, err.Error())
+				return
+			}
+
+			log.Printf("INFO: new owner %d for project %d", out.Owner.ID, proj.ID)
+			proj.OwnerID = &out.Owner.ID
+			proj.Owner = out.Owner
+			err = svc.DB.Model(&proj).Select("OwnerID").Updates(proj).Error
+			if err != nil {
+				log.Printf("ERROR: unable set project %d owner to %d: %s", proj.ID, out.Owner.ID, err.Error())
+				c.String(http.StatusInternalServerError, err.Error())
+				return
+			}
+			log.Printf("INFO: project %d assigned to user %d", proj.ID, out.Owner.ID)
 		}
 	}
 
-	log.Printf("INFO: create assigmment for new owner %d", owner.ID)
-	now := time.Now()
-	newA := assignment{ProjectID: proj.ID, StepID: proj.CurrentStepID, StaffMemberID: owner.ID, AssignedAt: &now}
-	resp = svc.DB.Create(&newA)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to create new assignment for project %d step %d: %s", proj.ID, proj.CurrentStepID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	log.Printf("INFO: update data for reassigned project %d", proj.ID)
+	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").Order("assigned_at DESC").Find(&out.Assignments).Error
+	if err != nil {
+		log.Printf("ERROR: unable to refresh assigned project %s assignments: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").Preload("Problems").Order("notes.created_at DESC").Find(&out.Notes).Error
+	if err != nil {
+		log.Printf("ERROR: unable to refresh assigned project %s notes: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	log.Printf("INFO: new owner %d for project %d", owner.ID, proj.ID)
-	proj.OwnerID = &owner.ID
-	proj.Owner = nil
-	resp = svc.DB.Model(&proj).Select("OwnerID").Updates(proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable set project %d owner to %d: %s", proj.ID, owner.ID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
-		return
-	}
-
-	log.Printf("INFO: project %d assigned to user %d", proj.ID, owner.ID)
-	resp = pTx.First(&proj)
-	c.JSON(http.StatusOK, proj)
+	c.JSON(http.StatusOK, out)
 }
 
 func (svc *serviceContext) updateProject(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)
 	var updateData struct {
-		ContainerTypeID uint   `json:"containerTypeID"`
-		CategoryID      uint   `json:"categoryID"`
-		Condition       uint   `json:"condition"`
-		Note            string `json:"note"`
-		OCRHintID       uint   `json:"ocrHintID"`
-		OCRLanguageHint string `json:"ocrLangage"`
-		OCRMasterFiles  bool   `json:"ocrMasterFiles"`
+		ContainerTypeID uint          `json:"containerTypeID"`
+		ContainerType   containerType `json:"containerType"`
+		CategoryID      uint          `json:"categoryID"`
+		Category        category      `json:"category"`
+		Condition       uint          `json:"condition"`
+		Note            string        `json:"note"`
+		OCRHintID       uint          `json:"ocrHintID"`
+		OCRHint         ocrHint       `json:"ocrHint"`
+		OCRLanguageHint string        `json:"ocrLangage"`
+		OCRMasterFiles  bool          `json:"ocrMasterFiles"`
 	}
 
 	qpErr := c.ShouldBindJSON(&updateData)
@@ -402,12 +463,36 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	}
 	log.Printf("INFO: user %s is updating project %s: %+v", claims.ComputeID, projID, updateData)
 
+	log.Printf("INFO: lookup project %s", projID)
 	var proj project
-	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
-	resp := dbReq.First(&proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	err := svc.DB.Joins("Unit").Find(&proj, projID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %s update: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: lookup container type %d", updateData.ContainerTypeID)
+	err = svc.DB.Find(&updateData.ContainerType, updateData.ContainerTypeID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get container type %d project %s update: %s", updateData.ContainerTypeID, projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: lookup category %d", updateData.CategoryID)
+	err = svc.DB.Find(&updateData.Category, updateData.CategoryID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get category %d project %s update: %s", updateData.CategoryID, projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: lookup ocr hint %d", updateData.OCRHintID)
+	err = svc.DB.Find(&updateData.OCRHint, updateData.OCRHintID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get ocr hint %d project %s update: %s", updateData.OCRHintID, projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -418,43 +503,42 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	if updateData.ContainerTypeID > 0 && proj.Workflow.Name == "Manuscript" {
 		proj.ContainerTypeID = &updateData.ContainerTypeID
 	}
-	r := svc.DB.Model(&proj).Select("ContainerTypeID", "CategoryID", "ItemCondition", "ConditionNote").Updates(proj)
-	if r.Error != nil {
-		log.Printf("ERROR: unable to update data for project %s: %s", projID, r.Error.Error())
-		c.String(http.StatusInternalServerError, r.Error.Error())
+	err = svc.DB.Model(&proj).Select("ContainerTypeID", "CategoryID", "ItemCondition", "ConditionNote").Updates(proj).Error
+	if err != nil {
+		log.Printf("ERROR: unable to update data for project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	log.Printf("INFO: update OCR settings for project %s", projID)
-	proj.Unit.OCRMasterFiles = updateData.OCRMasterFiles
-	r = svc.DB.Model(&proj.Unit).Select("OCRMasterFiles").Updates(proj.Unit)
-	if r.Error != nil {
-		log.Printf("ERROR: unable to update unit OCR settings for project %s: %s", projID, r.Error.Error())
-		c.String(http.StatusInternalServerError, r.Error.Error())
+	tgtUnit := unit{ID: proj.UnitID, OCRMasterFiles: updateData.OCRMasterFiles}
+	err = svc.DB.Model(&tgtUnit).Select("OCRMasterFiles").Updates(tgtUnit).Error
+	if err != nil {
+		log.Printf("ERROR: unable to update unit OCR settings for project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 	if updateData.OCRHintID > 0 {
-		proj.Unit.Metadata.OCRHintID = updateData.OCRHintID
-		r = svc.DB.Model(&proj.Unit.Metadata).Select("OCRHintID").Updates(proj.Unit.Metadata)
-		if r.Error != nil {
-			log.Printf("ERROR: unable to update OCR Hint for project %s: %s", projID, r.Error.Error())
-			c.String(http.StatusInternalServerError, r.Error.Error())
+		tgtMD := metadata{ID: proj.Unit.MetadataID, OCRHintID: updateData.OCRHintID}
+		err = svc.DB.Model(&tgtMD).Select("OCRHintID").Updates(tgtMD).Error
+		if err != nil {
+			log.Printf("ERROR: unable to update OCR Hint for project %s: %s", projID, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
 
 	}
 	if updateData.OCRLanguageHint != "" {
-		proj.Unit.Metadata.OCRLanguageHint = updateData.OCRLanguageHint
-		r = svc.DB.Model(&proj.Unit.Metadata).Select("OCRLanguageHint").Updates(proj.Unit.Metadata)
-		if r.Error != nil {
-			log.Printf("ERROR: unable to update OCR Language for project %s: %s", projID, r.Error.Error())
-			c.String(http.StatusInternalServerError, r.Error.Error())
+		tgtMD := metadata{ID: proj.Unit.MetadataID, OCRLanguageHint: updateData.OCRLanguageHint}
+		err = svc.DB.Model(&tgtMD).Select("OCRLanguageHint").Updates(tgtMD).Error
+		if err != nil {
+			log.Printf("ERROR: unable to update OCR Language for project %s: %s", projID, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
 	}
 
-	dbReq.First(&proj)
-	c.JSON(http.StatusOK, proj)
+	c.JSON(http.StatusOK, updateData)
 }
 
 func (svc *serviceContext) setProjectEquipment(c *gin.Context) {
@@ -476,28 +560,27 @@ func (svc *serviceContext) setProjectEquipment(c *gin.Context) {
 	log.Printf("INFO: user %s is setting project %s equipment: %+v", claims.ComputeID, projID, equipPost)
 
 	var proj project
-	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
-	resp := dbReq.First(&proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	err := svc.DB.Find(&proj, projID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %s for equipment update: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	log.Printf("INFO: get current equipment for workstation %d", equipPost.WorkstationID)
 	var ws workstation
-	resp = svc.DB.Preload("Equipment").First(&ws, equipPost.WorkstationID)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get workstation %d: %s", equipPost.WorkstationID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	err = svc.DB.Preload("Equipment").First(&ws, equipPost.WorkstationID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get workstation %d: %s", equipPost.WorkstationID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	log.Printf("INFO: remove all equipment for project %s", projID)
-	dbErr := svc.DB.Model(&proj).Association("Equipment").Clear()
-	if dbErr != nil {
-		log.Printf("ERROR: unable to clear existing equipment from project %s: %s", projID, dbErr.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	err = svc.DB.Model(&proj).Association("Equipment").Clear()
+	if err != nil {
+		log.Printf("ERROR: unable to clear existing equipment from project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -517,14 +600,20 @@ func (svc *serviceContext) setProjectEquipment(c *gin.Context) {
 	proj.CaptureResolution = equipPost.CaptureResolution
 	proj.ResizedResolution = equipPost.ResizeResolution
 	proj.ResolutionNote = equipPost.ResolutionNote
-	r := svc.DB.Model(&proj).Select("WorkstationID", "CaptureResolution", "ResizedResolution", "ResolutionNote").Updates(proj)
-	if r.Error != nil {
-		log.Printf("ERROR: unable to set workstation for project %s: %s", projID, r.Error.Error())
-		c.String(http.StatusInternalServerError, r.Error.Error())
+	err = svc.DB.Model(&proj).Select("WorkstationID", "CaptureResolution", "ResizedResolution", "ResolutionNote").Updates(proj).Error
+	if err != nil {
+		log.Printf("ERROR: unable to set workstation for project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	dbReq.First(&proj)
+	log.Printf("INFO: load updated equipment for project %d", proj.ID)
+	err = svc.DB.Preload("Equipment").Preload("Workstation").First(&proj, projID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %s for equipment update: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
 	c.JSON(http.StatusOK, proj)
 }
 
@@ -548,7 +637,7 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 		if lastAssign.StaffMember.ComputingID != assignee.ComputingID {
 			log.Printf("INFO: project %d requires prior owner %s to claim, not %s",
 				proj.ID, lastAssign.StaffMember.ComputingID, assignee.ComputingID)
-			return fmt.Errorf("This project requires prior owner %s, not %s", lastAssign.StaffMember.ComputingID, assignee.ComputingID)
+			return fmt.Errorf("this project requires prior owner %s, not %s", lastAssign.StaffMember.ComputingID, assignee.ComputingID)
 		}
 		return nil
 	}
@@ -558,7 +647,7 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 		for _, a := range proj.Assignments {
 			if a.StaffMember.ComputingID == assignee.ComputingID {
 				log.Printf("INFO: project %d requires a unique owner, but %s has previously claimed it", proj.ID, assignee.ComputingID)
-				return fmt.Errorf("This project requires a unique owner, and %s has previously owned it", assignee.ComputingID)
+				return fmt.Errorf("this project requires a unique owner, and %s has previously owned it", assignee.ComputingID)
 			}
 		}
 		return nil
@@ -570,7 +659,7 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 		if origAssign.StaffMember.ComputingID != assignee.ComputingID {
 			log.Printf("INFO: project %d requires original owner %s to claim, not %s",
 				proj.ID, origAssign.StaffMember.ComputingID, assignee.ComputingID)
-			return fmt.Errorf("This project can only be claimed by the original owner %s", origAssign.StaffMember.ComputingID)
+			return fmt.Errorf("this project can only be claimed by the original owner %s", origAssign.StaffMember.ComputingID)
 		}
 		return nil
 	}
@@ -581,52 +670,19 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 			return nil
 		}
 		log.Printf("INFO: project %d requries a supervisor owner, and %s is not a supervisor", proj.ID, assignee.ComputingID)
-		return fmt.Errorf("This project requires a supervisor to claim, and %s is not one", assignee.ComputingID)
+		return fmt.Errorf("this project requires a supervisor to claim, and %s is not one", assignee.ComputingID)
 	}
 
 	log.Printf("ERROR: unrecognized owner type: %d", proj.CurrentStep.OwnerType)
 	return fmt.Errorf("%s cannot claim this project (internal error)", assignee.ComputingID)
 }
 
-func (svc *serviceContext) getBaseProjectQuery() (tx *gorm.DB) {
-	// NOTES:
-	//  The Joins() calls all allow association table names to be used in nested where clauses by the caller.
-	//  The Preload() calls preload all models with DB data
-	//  LEFT OUTER joins are for data that is optional
-	return svc.DB.Preload(clause.Associations).
+func (svc *serviceContext) getBaseSearchQuery() (tx *gorm.DB) {
+	return svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").InnerJoins("Unit").
+		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").
+		Joins("Unit.Order.Customer").Joins("Unit.Order.Agency").
+		Joins("Owner").Joins("CurrentStep").
 		Joins("LEFT OUTER JOIN assignments on assignments.project_id=projects.id").
 		Joins("LEFT OUTER JOIN steps as assignstep on assignments.step_id=assignstep.id").
-		Joins("LEFT OUTER JOIN staff_members on assignments.staff_member_id=staff_members.id").
-		Joins("INNER JOIN units on units.id=projects.unit_id").
-		Joins("INNER JOIN metadata on metadata.id=units.metadata_id").
-		Joins("INNER JOIN orders on orders.id=units.order_id").
-		Joins("INNER JOIN customers on customers.id=orders.customer_id").
-		Joins("LEFT OUTER JOIN agencies on agencies.id=orders.agency_id").
-		Joins("LEFT OUTER JOIN notes on notes.project_id = projects.id").
-		Preload("Assignments", func(db *gorm.DB) *gorm.DB { // specify the order of the associations in  Preload, not Joins
-			return db.Order("assignments.assigned_at DESC")
-		}).
-		Preload("Notes", func(db *gorm.DB) *gorm.DB { // specify the order of the associations in  Preload, not Joins
-			return db.Order("notes.created_at DESC")
-		}).
-		Preload("Assignments.StaffMember").      // explicitly preload nested assignment owner
-		Preload("Unit." + clause.Associations).  // this is a shorthand to load all associations directy under unit
-		Preload("Unit.Metadata.OCRHint").        // OCRHint is deeply nested, so need to preload explicitly
-		Preload("Unit.Order.Customer").          // customer is deeply nested, so need to preload explicitly
-		Preload("Unit.Order.Agency").            // agency is deeply nested, so need to preload explicitly
-		Preload("Notes." + clause.Associations). // preload all associations under notes
-		Preload("Workflow.Steps")                // explicitly preload nested workflow steps
-}
-
-func (svc *serviceContext) getBaseCountsQuery() (tx *gorm.DB) {
-	return svc.DB.
-		Joins("LEFT OUTER JOIN assignments on assignments.project_id=projects.id").
-		Joins("LEFT OUTER JOIN steps as assignstep on assignments.step_id=assignstep.id").
-		Joins("LEFT OUTER JOIN staff_members on assignments.staff_member_id=staff_members.id").
-		Joins("INNER JOIN units on units.id=projects.unit_id").
-		Joins("INNER JOIN metadata on metadata.id=units.metadata_id").
-		Joins("INNER JOIN orders on orders.id=units.order_id").
-		Joins("INNER JOIN customers on customers.id=orders.customer_id").
-		Joins("LEFT OUTER JOIN agencies on agencies.id=orders.agency_id").
-		Joins("LEFT OUTER JOIN notes on notes.project_id = projects.id")
+		Group("projects.id")
 }

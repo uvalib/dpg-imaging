@@ -29,16 +29,39 @@ const (
 	StepWorking    = 7 // finish has been clicked, step validations in-progress
 )
 
+func (svc *serviceContext) getProjectInfo(projID string) (*project, error) {
+	log.Printf("INFO: look up basic info for project %s", projID)
+	var tgtProject *project
+	err := svc.DB.Joins("CurrentStep").Joins("Owner").First(&tgtProject, projID).Error
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("INFO: get project %d assignments", tgtProject.ID)
+	err = svc.DB.Where("project_id=?", tgtProject.ID).Joins("Step").Joins("StaffMember").
+		Order("assigned_at DESC").Find(&tgtProject.Assignments).Error
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("INFO: get project %d notes", tgtProject.ID)
+	err = svc.DB.Where("project_id=?", tgtProject.ID).Joins("Step").Joins("StaffMember").Preload("Problems").
+		Order("notes.created_at DESC").Find(&tgtProject.Notes).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return tgtProject, nil
+}
+
 func (svc *serviceContext) startProjectStep(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)
 	log.Printf("INFO: user %s is looking for project %s to start active step", claims.ComputeID, projID)
-	var proj project
-	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
-	resp := dbReq.First(&proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	proj, err := svc.getProjectInfo(projID)
+	if err != nil {
+		log.Printf("ERROR: unable to getp project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 	log.Printf("INFO: user %s is starting [%s] for project %s", claims.ComputeID, proj.CurrentStep.Name, projID)
@@ -47,10 +70,10 @@ func (svc *serviceContext) startProjectStep(c *gin.Context) {
 	if proj.StartedAt == nil {
 		log.Printf("INFO: setting project %s step %s start time to %v", projID, proj.CurrentStep.Name, startTime)
 		proj.StartedAt = &startTime
-		r := svc.DB.Model(&proj).Select("started_at").Updates(proj)
-		if r.Error != nil {
-			log.Printf("ERROR: unable to update project %d start time: %s", proj.ID, r.Error.Error())
-			c.String(http.StatusInternalServerError, r.Error.Error())
+		err := svc.DB.Model(&proj).Select("started_at").Updates(proj).Error
+		if err != nil {
+			log.Printf("ERROR: unable to update project %d start time: %s", proj.ID, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
 	}
@@ -59,10 +82,10 @@ func (svc *serviceContext) startProjectStep(c *gin.Context) {
 	log.Printf("INFO: start project %d assignment %d", proj.ID, currA.ID)
 	currA.StartedAt = &startTime
 	currA.Status = StepStarted
-	r := svc.DB.Model(&currA).Select("StartedAt", "Status").Updates(currA)
-	if r.Error != nil {
-		log.Printf("ERROR: unable to update project %d step %d start time: %s", proj.ID, currA.StepID, r.Error.Error())
-		c.String(http.StatusInternalServerError, r.Error.Error())
+	err = svc.DB.Model(&currA).Select("StartedAt", "Status").Updates(currA).Error
+	if err != nil {
+		log.Printf("ERROR: unable to update project %d step %d start time: %s", proj.ID, currA.StepID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, proj)
@@ -82,12 +105,10 @@ func (svc *serviceContext) rejectProjectStep(c *gin.Context) {
 		return
 	}
 	log.Printf("INFO: user %s is rejecting active step in project %s with duration %d", claims.ComputeID, projID, doneReq.DurationMins)
-	var proj project
-	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
-	resp := dbReq.First(&proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	proj, err := svc.getProjectInfo(projID)
+	if err != nil {
+		log.Printf("ERROR: unable to get project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -96,10 +117,10 @@ func (svc *serviceContext) rejectProjectStep(c *gin.Context) {
 	currA.DurationMinutes = doneReq.DurationMins
 	currA.FinishedAt = &now
 	currA.Status = StepRejected
-	resp = svc.DB.Model(&currA).Select("DurationMinutes", "FinishedAt", "Status").Updates(currA)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to reject assignment: %s", resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	err = svc.DB.Model(&currA).Select("DurationMinutes", "FinishedAt", "Status").Updates(currA).Error
+	if err != nil {
+		log.Printf("ERROR: unable to reject assignment: %s", err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -112,7 +133,7 @@ func (svc *serviceContext) rejectProjectStep(c *gin.Context) {
 	newAssign := assignment{ProjectID: proj.ID, StepID: failStepID, StaffMemberID: firstA.StaffMemberID, AssignedAt: &now}
 	svc.DB.Create(&newAssign)
 
-	dbReq.First(&proj)
+	proj, _ = svc.getProjectInfo(projID)
 	c.JSON(http.StatusOK, proj)
 }
 
@@ -121,7 +142,7 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 	claims := getJWTClaims(c)
 	var req struct {
 		Workflow      uint `json:"workflow"`
-		ContainerType int  `json:"containerType"`
+		ContainerType uint `json:"containerType"`
 	}
 
 	qpErr := c.ShouldBindJSON(&req)
@@ -130,31 +151,50 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 		c.String(http.StatusBadRequest, qpErr.Error())
 		return
 	}
+
 	log.Printf("INFO: user %s is changing project %s workflow to %d and container type %d", claims.ComputeID, projID, req.Workflow, req.ContainerType)
 	var proj project
-	projReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
-	err := projReq.First(&proj).Error
+	err := svc.DB.Joins("CurrentStep").Joins("Owner").Find(&proj, projID).Error
 	if err != nil {
-		log.Printf("ERROR: unable to get project %s: %s", projID, err.Error())
+		log.Printf("ERROR: unable to get project %s for workflow change: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
+	// init the respose
+	out := struct {
+		Workflow      workflow       `json:"workflow"`
+		CurrentStep   step           `json:"step"`
+		ContainerType *containerType `json:"containerType"`
+		Assignments   []assignment   `json:"assignments"`
+	}{}
+
 	// load target workflow and associated steps
-	var newWF workflow
-	err = svc.DB.Preload("Steps").Find(&newWF, req.Workflow).Error
+	err = svc.DB.Preload("Steps").Find(&out.Workflow, req.Workflow).Error
 	if err != nil {
 		log.Printf("ERROR: unable to load new workflow %d: %s", req.Workflow, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+	out.CurrentStep = out.Workflow.Steps[0]
+
+	// load container type if non-zero container type specified
+	if req.ContainerType > 0 {
+		log.Printf("INFO: lookup container type %d", req.ContainerType)
+		err = svc.DB.Find(&out.ContainerType, req.ContainerType).Error
+		if err != nil {
+			log.Printf("ERROR: unable to load new container type %d: %s", req.ContainerType, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
 
 	// update project workflow and first step ID
 	proj.WorkflowID = req.Workflow
-	proj.CurrentStepID = newWF.Steps[0].ID
-	if req.ContainerType > -1 {
-		newTypeID := uint(req.ContainerType)
-		proj.ContainerTypeID = &newTypeID
+	proj.CurrentStepID = out.CurrentStep.ID
+	if out.ContainerType != nil {
+		log.Printf("INFO: update container type in project %d to %d", proj.ID, out.ContainerType.ID)
+		proj.ContainerTypeID = &out.ContainerType.ID
 	} else {
 		proj.ContainerTypeID = nil
 	}
@@ -165,17 +205,22 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 		return
 	}
 
-	// update all assignmens step_id
-	err = svc.DB.Debug().Model(assignment{}).Where("project_id = ?", proj.ID).Updates(assignment{StepID: proj.CurrentStepID}).Error
+	// update all assignments step_id, then refresh assignments list
+	err = svc.DB.Model(assignment{}).Where("project_id = ?", proj.ID).Updates(assignment{StepID: proj.CurrentStepID}).Error
 	if err != nil {
 		log.Printf("ERROR: unable to update project %d assignment steps to %d: %s", proj.ID, proj.CurrentStepID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// reload the updated project / assignments / workdlow data
-	projReq.First(&proj)
-	c.JSON(http.StatusOK, proj)
+	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").Order("assigned_at DESC").Find(&out.Assignments).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %d assignments: %s", proj.ID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, out)
 
 }
 
@@ -193,12 +238,10 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		return
 	}
 
-	var proj project
-	dbReq := svc.getBaseProjectQuery().Where("projects.id=?", projID)
-	resp := dbReq.First(&proj)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get project %s: %s", projID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	proj, err := svc.getProjectInfo(projID)
+	if err != nil {
+		log.Printf("ERROR: unable to getp project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 	log.Printf("INFO: user %s is finishing [%s] step in project [%s] with duration %d", claims.ComputeID, proj.CurrentStep.Name, projID, doneReq.DurationMins)
@@ -230,10 +273,10 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 	// is this the last step of a workflow?
 	if proj.CurrentStep.StepType == 1 {
 		if proj.Unit.UnitStatus != "error" {
-			err := svc.validateFinishStep(&proj)
+			err := svc.validateFinishStep(proj)
 			if err != nil {
 				log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, err.Error())
-				dbReq.First(&proj)
+				proj, _ = svc.getProjectInfo(projID)
 				c.JSON(http.StatusOK, proj)
 				return
 			}
@@ -251,14 +294,15 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 
 		currA.Status = StepFinalizing
 		svc.DB.Model(&currA).Select("Status").Updates(currA)
+		proj, _ = svc.getProjectInfo(projID)
 		c.JSON(http.StatusOK, proj)
 		return
 	}
 
-	validateErr := svc.validateFinishStep(&proj)
+	validateErr := svc.validateFinishStep(proj)
 	if validateErr != nil {
 		log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, validateErr.Error())
-		dbReq.First(&proj)
+		proj, _ = svc.getProjectInfo(projID)
 		c.JSON(http.StatusOK, proj)
 		return
 	}
@@ -267,39 +311,38 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 	nowTimeStamp := time.Now()
 	currA.FinishedAt = &nowTimeStamp
 	currA.Status = StepFinished
-	resp = svc.DB.Model(&currA).Select("FinishedAt", "Status").Updates(currA)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to update project %d step %d finish time: %s", proj.ID, currA.StepID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	err = svc.DB.Model(&currA).Select("FinishedAt", "Status").Updates(currA).Error
+	if err != nil {
+		log.Printf("ERROR: unable to update project %d step %d finish time: %s", proj.ID, currA.StepID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	var nextStep step
 	nextStepID := proj.CurrentStep.NextStepID
 	log.Printf("INFO: advance to next step: %d", nextStepID)
-	resp = svc.DB.Find(&nextStep, nextStepID)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to get project %d next step %d: %s", proj.ID, nextStepID, resp.Error.Error())
-		c.String(http.StatusInternalServerError, resp.Error.Error())
+	err = svc.DB.Find(&nextStep, nextStepID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %d next step %d: %s", proj.ID, nextStepID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	log.Printf("INFO: enforce next step %s owner type %d", nextStep.Name, nextStep.OwnerType)
-	var err error
 	if nextStep.OwnerType == 1 { // prior owner
 		log.Printf("INFO: project %s workflow %s advancing to new step %s with current owner %s",
 			projID, proj.Workflow.Name, nextStep.Name, proj.Owner.ComputingID)
-		err = svc.nextStep(&proj, nextStepID, proj.OwnerID)
+		err = svc.nextStep(proj, nextStepID, proj.OwnerID)
 	} else if nextStep.OwnerType == 3 { // original owner
 		firstA := proj.Assignments[len(proj.Assignments)-1]
 		log.Printf("INFO: project %s workflow %s advancing to new step %s with originial owner %s",
 			projID, proj.Workflow.Name, nextStep.Name, firstA.StaffMember.ComputingID)
-		err = svc.nextStep(&proj, nextStepID, &firstA.StaffMemberID)
+		err = svc.nextStep(proj, nextStepID, &firstA.StaffMemberID)
 	} else {
 		// any, unique or supervisor for this step. Someone must claim it, so set owner nil.
 		log.Printf("INFO: project %s workflow %s advancing to new step %s with no owner set", projID, proj.Workflow.Name, nextStep.Name)
 		proj.Owner = nil
-		err = svc.nextStep(&proj, nextStepID, nil)
+		err = svc.nextStep(proj, nextStepID, nil)
 	}
 
 	if err != nil {
@@ -309,7 +352,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 	}
 
 	// reload project to reflect changes and send result to client
-	dbReq.First(&proj)
+	proj, _ = svc.getProjectInfo(projID)
 	c.JSON(http.StatusOK, proj)
 }
 
@@ -354,7 +397,7 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 			return fmt.Errorf("unable to prep unit for finalization: %s", err.Error())
 		}
 
-		if resp.Success == false {
+		if !resp.Success {
 			log.Printf("INFO: unit %d has finalize errors: %v", proj.UnitID, resp.Problems)
 			msg := "<p>Prep for finalization failed</p>"
 			for _, p := range resp.Problems {
@@ -400,7 +443,7 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 func (svc *serviceContext) validateDirectory(proj *project, tgtDir string) error {
 	log.Printf("INFO: validate project %d directory %s", proj.ID, tgtDir)
 
-	if dirExist(tgtDir) == false {
+	if !dirExist(tgtDir) {
 		svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Directory %s does not exist</p>", tgtDir))
 		return fmt.Errorf("%s does not exist", tgtDir)
 	}
@@ -478,7 +521,7 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string) error {
 
 		lcFN := strings.ToLower(entry.Name())
 		if lcFN == "notes.txt" {
-			if isManuscript == false {
+			if !isManuscript {
 				log.Printf("ERROR: found notes.text for non-manuscript workflow")
 				svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Found unexpected notes: %s</p>", fullPath))
 				return fmt.Errorf("unexpected %s", fullPath)
@@ -545,13 +588,13 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string) error {
 				return fmt.Errorf("unable to extract metadata from images")
 			}
 			for _, tc := range info {
-				if tc.Valid == false {
+				if !tc.Valid {
 					msg := ""
 					for _, em := range tc.Errors {
 						msg += fmt.Sprintf("<li>%s</li>", em)
 					}
 					svc.failStep(proj, "Metadata", fmt.Sprintf("%s has the following errors: <ul>%s<ul>", tc.File, msg))
-					return fmt.Errorf("Metadata errors in %s", tc.File)
+					return fmt.Errorf("metadata errors in %s", tc.File)
 				}
 			}
 			if outstandingRequests > 0 {
@@ -567,7 +610,7 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string) error {
 
 func (svc *serviceContext) moveFiles(proj *project, srcDir string, destDir string) error {
 	log.Printf("INFO: move project %d files from %s to %s", proj.ID, srcDir, destDir)
-	if dirExist(srcDir) == false && dirExist(destDir) == false {
+	if !dirExist(srcDir) && !dirExist(destDir) {
 		svc.failStep(proj, "Filesystem", "<p>Neither start nor finsh directory exists</p>")
 		return fmt.Errorf("neither source %s or destination %s exists", srcDir, destDir)
 	}
@@ -579,7 +622,7 @@ func (svc *serviceContext) moveFiles(proj *project, srcDir string, destDir strin
 	}
 
 	// Source is gone but dest exists. No move needed
-	if dirExist(srcDir) == false && dirExist(destDir) {
+	if !dirExist(srcDir) && dirExist(destDir) {
 		log.Printf("source %s is missing (of has DELETE.ME) and destination %s already exists; no meve needed", srcDir, destDir)
 		return nil
 	}
@@ -619,58 +662,4 @@ func (svc *serviceContext) nextStepName(proj *project) string {
 		return "Unknown"
 	}
 	return nextStep.Name
-}
-
-func (svc *serviceContext) failStep(proj *project, problemName string, message string) {
-	log.Printf("INFO: flag project %d step %s with an error", proj.ID, proj.CurrentStep.Name)
-	currA := proj.Assignments[0]
-	currA.Status = StepError
-	svc.DB.Model(&currA).Select("Status").Updates(currA)
-
-	log.Printf("INFO: adding problem(%s) note to project %d step %s", problemName, proj.ID, proj.CurrentStep.Name)
-	now := time.Now()
-	newNote := note{ProjectID: proj.ID, StepID: proj.CurrentStepID, StaffMemberID: *proj.OwnerID,
-		NoteType: 2, Note: message, CreatedAt: &now, UpdatedAt: &now}
-	err := svc.DB.Model(&proj).Association("Notes").Append(&newNote)
-	if err != nil {
-		log.Printf("ERROR: unable to add note to project %d: %s", proj.ID, err.Error())
-		return
-	}
-
-	var p problem
-	resp := svc.DB.Where("label = ?", problemName).First(&p)
-	if resp.Error != nil {
-		p.ID = 7 // other
-	}
-
-	pq := "insert into notes_problems (note_id, problem_id) values "
-	var vals []string
-	vals = append(vals, fmt.Sprintf("(%d,%d)", newNote.ID, p.ID))
-
-	pq += strings.Join(vals, ",")
-	resp = svc.DB.Exec(pq)
-	if resp.Error != nil {
-		log.Printf("ERROR: unable to add problems to note: %s", resp.Error.Error())
-	}
-}
-
-func dirExist(tgtDir string) bool {
-	log.Printf("INFO: check existance of %s", tgtDir)
-	_, err := os.Stat(tgtDir)
-	if err != nil {
-		log.Printf("ERROR: check %s failed: %s", tgtDir, err.Error())
-		return false
-	}
-	return true
-}
-
-func fileExists(rootDir string, tgtFile string) bool {
-	exist := false
-	filepath.WalkDir(rootDir, func(path string, entry fs.DirEntry, err error) error {
-		if err == nil && entry.Name() == tgtFile {
-			exist = true
-		}
-		return nil
-	})
-	return exist
 }

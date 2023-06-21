@@ -45,10 +45,10 @@
                <div class="top">
                   <div class="due">
                      <span>
-                        <label>Date Due:</label><span>{{p.dueOn.split("T")[0]}}</span>
+                        <label>Date Due:</label><span>{{projectStore.dueDate(idx)}}</span>
                      </span>
                      <span>
-                        <span class="status-msg overdue" v-if="isOverdue(p) && !p.finishedAt">OVERDUE</span>
+                        <span class="status-msg overdue" v-if="isOverdue(idx) && !p.finishedAt">OVERDUE</span>
                         <i v-if="projectStore.hasError(idx)" class="error-icon fas fa-exclamation-triangle"></i>
                      </span>
                      <span v-if="p.finishedAt">
@@ -221,8 +221,8 @@ const ownerInfo = ((p) => {
    return `${p.owner.firstName} ${p.owner.lastName} (${p.owner.computingID})`
 })
 
-const isOverdue = ((p) => {
-   let due = new Date(p.dueOn)
+const isOverdue = ((projIdx) => {
+   let due = new Date(projectStore.dueDate(projIdx))
    let now = new Date()
    return now > due
 })

@@ -22,7 +22,7 @@ type staffMember struct {
 
 func (sm *staffMember) roleString() string {
 	roles := []string{"admin", "supervisor", "student", "viewer"}
-	if sm.Role < 0 || sm.Role > uint(len(roles)-1) {
+	if sm.Role > uint(len(roles)-1) {
 		return "viewer"
 	}
 	return roles[sm.Role]
@@ -143,7 +143,7 @@ func (svc *serviceContext) authMiddleware(c *gin.Context) {
 
 func getJWTClaims(c *gin.Context) *jwtClaims {
 	claims, signedIn := c.Get("claims")
-	if signedIn == false {
+	if !signedIn {
 		return nil
 	}
 	jwtClaims, ok := claims.(*jwtClaims)
@@ -159,7 +159,7 @@ func getBearerToken(authorization string) (string, error) {
 
 	// must have two components, the first of which is "Bearer", and the second a non-empty token
 	if len(components) != 2 || components[0] != "Bearer" || components[1] == "" {
-		return "", fmt.Errorf("Invalid Authorization header: [%s]", authorization)
+		return "", fmt.Errorf("invalid authorization header: [%s]", authorization)
 	}
 
 	return components[1], nil
