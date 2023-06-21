@@ -13,7 +13,7 @@ export const useProjectStore = defineStore('project', {
          unassigned: 0,
          finished: 0
       },
-      pageSize: 10,
+      pageSize: 20,
       currPage: 1,
       candidates: [],
       working: false,
@@ -236,6 +236,12 @@ export const useProjectStore = defineStore('project', {
 
       selectProject(projID) {
          this.selectedProjectIdx = this.projects.findIndex( p => p.id == projID)
+      },
+
+      changeFilter( newFilter ) {
+         this.pageSize =  20
+         this.currPage = 1
+         this.filter = newFilter
       },
 
       setPage(pg) {

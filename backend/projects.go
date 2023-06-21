@@ -122,7 +122,7 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 		Joins("Unit.Order.Customer").Joins("Unit.Order.Agency").Joins("ContainerType").
 		Joins("Owner").Joins("CurrentStep").Preload("Equipment").Preload("Workstation")
 
-	err := projQ.Where("projects.id=?", projID).First(&proj).Error
+	err := projQ.First(&proj, projID).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get project %s: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -314,7 +314,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 
 	log.Printf("INFO: looking up project %s", projID)
 	var proj project
-	err := svc.DB.Joins("CurrentStep").Joins("Owner").Find(&proj, projID).Error
+	err := svc.DB.Joins("CurrentStep").Joins("Owner").First(&proj, projID).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get project %s for reassign: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -324,7 +324,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 	log.Printf("INFO: lookup active assignent for project %s", projID)
 	var activeAssign assignment
 	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").
-		Order("assigned_at DESC").Limit(1).Find(&activeAssign).Error
+		Order("assigned_at DESC").First(&activeAssign).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get active assignment project %s reassign: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -369,7 +369,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 		}
 	} else {
 		log.Printf("INFO: lookup new owner %s", projID)
-		err = svc.DB.Find(&out.Owner, userID).Error
+		err = svc.DB.First(&out.Owner, userID).Error
 		if err != nil {
 			log.Printf("ERROR: unable to get new owner %s for project %s reassign: %s", userID, projID, err.Error())
 			c.String(http.StatusInternalServerError, err.Error())
@@ -465,7 +465,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 
 	log.Printf("INFO: lookup project %s", projID)
 	var proj project
-	err := svc.DB.Joins("Unit").Find(&proj, projID).Error
+	err := svc.DB.Joins("Unit").First(&proj, projID).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get project %s update: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -473,7 +473,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	}
 
 	log.Printf("INFO: lookup container type %d", updateData.ContainerTypeID)
-	err = svc.DB.Find(&updateData.ContainerType, updateData.ContainerTypeID).Error
+	err = svc.DB.First(&updateData.ContainerType, updateData.ContainerTypeID).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get container type %d project %s update: %s", updateData.ContainerTypeID, projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -481,7 +481,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	}
 
 	log.Printf("INFO: lookup category %d", updateData.CategoryID)
-	err = svc.DB.Find(&updateData.Category, updateData.CategoryID).Error
+	err = svc.DB.First(&updateData.Category, updateData.CategoryID).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get category %d project %s update: %s", updateData.CategoryID, projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -489,7 +489,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	}
 
 	log.Printf("INFO: lookup ocr hint %d", updateData.OCRHintID)
-	err = svc.DB.Find(&updateData.OCRHint, updateData.OCRHintID).Error
+	err = svc.DB.First(&updateData.OCRHint, updateData.OCRHintID).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get ocr hint %d project %s update: %s", updateData.OCRHintID, projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -560,7 +560,7 @@ func (svc *serviceContext) setProjectEquipment(c *gin.Context) {
 	log.Printf("INFO: user %s is setting project %s equipment: %+v", claims.ComputeID, projID, equipPost)
 
 	var proj project
-	err := svc.DB.Find(&proj, projID).Error
+	err := svc.DB.First(&proj, projID).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get project %s for equipment update: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())

@@ -7,23 +7,23 @@
       <div class="toolbar">
          <div class="filter">
             <label for="me">
-               <input id="me" type="radio" value="me" name="filter" v-model="projectStore.filter" @change="filterChanged">
+               <input id="me" type="radio" value="me" name="filter" v-model="activeFilter" @change="filterChanged">
                <span>Assigned to me <span class="count">({{projectStore.totals.me}})</span></span>
             </label>
             <label for="active">
-               <input id="active" type="radio" value="active" name="filter" v-model="projectStore.filter" @change="filterChanged">
+               <input id="active" type="radio" value="active" name="filter" v-model="activeFilter" @change="filterChanged">
                <span>Active <span class="count">({{projectStore.totals.active}})</span></span>
             </label>
             <label for="errors">
-               <input id="errors" type="radio" value="errors" name="filter" v-model="projectStore.filter" @change="filterChanged">
+               <input id="errors" type="radio" value="errors" name="filter" v-model="activeFilter" @change="filterChanged">
                <span>Problems <span class="count">({{projectStore.totals.errors}})</span></span>
             </label>
             <label for="unassigned">
-               <input id="unassigned" type="radio" value="unassigned" name="filter" v-model="projectStore.filter" @change="filterChanged">
+               <input id="unassigned" type="radio" value="unassigned" name="filter" v-model="activeFilter" @change="filterChanged">
                <span>Unassigned <span class="count">({{projectStore.totals.unassigned}})</span></span>
             </label>
             <label for="finished">
-               <input id="finished" type="radio" value="finished" name="filter" v-model="projectStore.filter" @change="filterChanged">
+               <input id="finished" type="radio" value="finished" name="filter" v-model="activeFilter" @change="filterChanged">
                <span>Finished <span class="count">({{projectStore.totals.finished}})</span></span>
             </label>
          </div>
@@ -69,7 +69,7 @@
                <div class="data">
                   <dl>
                      <dt>Customer:</dt>
-                     <dd>{{p.unit.order.customer.firstName}} {{p.unit.order.customer.lastName}}</dd>
+                     <dd>{{p.unit.order.customer.lastName}}, {{p.unit.order.customer.firstName}} </dd>
                      <template v-if="p.unit.order.agency.id > 0">
                         <dt>Agency:</dt>
                         <dd>{{p.unit.order.agency.name}}</dd>
@@ -131,13 +131,15 @@ import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUserStore} from "@/stores/user"
 import { useRoute, useRouter } from 'vue-router'
-import { onBeforeMount } from 'vue'
+import { onBeforeMount, ref } from 'vue'
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
 const userStore = useUserStore()
 const route = useRoute()
 const router = useRouter()
+
+const activeFilter = ref("active")
 
 onBeforeMount( () => {
    if ( route.query.workflow) {
@@ -165,6 +167,7 @@ onBeforeMount( () => {
       projectStore.search.workstation = parseInt(route.query.workstation,10)
    }
    if ( route.query.filter) {
+      activeFilter.value = route.query.filter
       projectStore.filter = route.query.filter
    }
 
@@ -173,7 +176,8 @@ onBeforeMount( () => {
 
 const filterChanged = ( async () => {
    let query = Object.assign({}, route.query)
-   query.filter = projectStore.filter
+   query.filter = activeFilter.value
+   projectStore.changeFilter(activeFilter.value)
    await router.push({query})
    projectStore.lastSearchURL = route.fullPath
 

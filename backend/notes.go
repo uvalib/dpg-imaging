@@ -49,7 +49,7 @@ func (svc *serviceContext) addNoteRequest(c *gin.Context) {
 	log.Printf("INFO: user %s is adding a note to project %s: %+v", claims.ComputeID, projID, noteReq)
 
 	var proj project
-	err := svc.DB.Find(&proj, projID).Error
+	err := svc.DB.First(&proj, projID).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get project %s: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())

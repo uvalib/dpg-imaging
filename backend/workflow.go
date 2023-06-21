@@ -154,7 +154,7 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 
 	log.Printf("INFO: user %s is changing project %s workflow to %d and container type %d", claims.ComputeID, projID, req.Workflow, req.ContainerType)
 	var proj project
-	err := svc.DB.Joins("CurrentStep").Joins("Owner").Find(&proj, projID).Error
+	err := svc.DB.Joins("CurrentStep").Joins("Owner").First(&proj, projID).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get project %s for workflow change: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -170,7 +170,7 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 	}{}
 
 	// load target workflow and associated steps
-	err = svc.DB.Preload("Steps").Find(&out.Workflow, req.Workflow).Error
+	err = svc.DB.Preload("Steps").First(&out.Workflow, req.Workflow).Error
 	if err != nil {
 		log.Printf("ERROR: unable to load new workflow %d: %s", req.Workflow, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -181,7 +181,7 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 	// load container type if non-zero container type specified
 	if req.ContainerType > 0 {
 		log.Printf("INFO: lookup container type %d", req.ContainerType)
-		err = svc.DB.Find(&out.ContainerType, req.ContainerType).Error
+		err = svc.DB.First(&out.ContainerType, req.ContainerType).Error
 		if err != nil {
 			log.Printf("ERROR: unable to load new container type %d: %s", req.ContainerType, err.Error())
 			c.String(http.StatusInternalServerError, err.Error())
@@ -321,7 +321,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 	var nextStep step
 	nextStepID := proj.CurrentStep.NextStepID
 	log.Printf("INFO: advance to next step: %d", nextStepID)
-	err = svc.DB.Find(&nextStep, nextStepID).Error
+	err = svc.DB.First(&nextStep, nextStepID).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get project %d next step %d: %s", proj.ID, nextStepID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -657,7 +657,7 @@ func (svc *serviceContext) moveFiles(proj *project, srcDir string, destDir strin
 func (svc *serviceContext) nextStepName(proj *project) string {
 	nextStepID := proj.CurrentStep.NextStepID
 	var nextStep step
-	resp := svc.DB.Find(&nextStep, nextStepID)
+	resp := svc.DB.First(&nextStep, nextStepID)
 	if resp.Error != nil {
 		return "Unknown"
 	}
