@@ -100,7 +100,8 @@ const resetSearch = ( async() => {
 })
 
 const doSearch = ( async () => {
-   projectStore.getProjects()
+   // this will reset the page number and trigger a search
+   projectStore.setCurrentPage(0)
 
    let query = Object.assign({}, route.query)
    delete query.workflow
