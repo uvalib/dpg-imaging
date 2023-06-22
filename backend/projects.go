@@ -324,7 +324,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 	log.Printf("INFO: lookup active assignent for project %s", projID)
 	var activeAssign assignment
 	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").
-		Order("assigned_at DESC").First(&activeAssign).Error
+		Order("assigned_at DESC").Limit(1).Find(&activeAssign).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get active assignment project %s reassign: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -350,7 +350,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 			return
 		}
 
-		log.Printf("INFO: mark assignment %d as reassigied", activeAssign.ID)
+		log.Printf("INFO: mark assignment %d as reassigned", activeAssign.ID)
 		activeAssign.Status = StepReassigned
 		r := svc.DB.Model(&activeAssign).Select("Status").Updates(activeAssign)
 		if r.Error != nil {
