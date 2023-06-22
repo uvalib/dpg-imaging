@@ -443,16 +443,16 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)
 	var updateData struct {
-		ContainerTypeID uint          `json:"containerTypeID"`
-		ContainerType   containerType `json:"containerType"`
-		CategoryID      uint          `json:"categoryID"`
-		Category        category      `json:"category"`
-		Condition       uint          `json:"condition"`
-		Note            string        `json:"note"`
-		OCRHintID       uint          `json:"ocrHintID"`
-		OCRHint         ocrHint       `json:"ocrHint"`
-		OCRLanguageHint string        `json:"ocrLangage"`
-		OCRMasterFiles  bool          `json:"ocrMasterFiles"`
+		ContainerTypeID uint           `json:"containerTypeID"`
+		ContainerType   *containerType `json:"containerType"`
+		CategoryID      uint           `json:"categoryID"`
+		Category        category       `json:"category"`
+		Condition       uint           `json:"condition"`
+		Note            string         `json:"note"`
+		OCRHintID       uint           `json:"ocrHintID"`
+		OCRHint         ocrHint        `json:"ocrHint"`
+		OCRLanguageHint string         `json:"ocrLangage"`
+		OCRMasterFiles  bool           `json:"ocrMasterFiles"`
 	}
 
 	qpErr := c.ShouldBindJSON(&updateData)
@@ -472,12 +472,14 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 		return
 	}
 
-	log.Printf("INFO: lookup container type %d", updateData.ContainerTypeID)
-	err = svc.DB.First(&updateData.ContainerType, updateData.ContainerTypeID).Error
-	if err != nil {
-		log.Printf("ERROR: unable to get container type %d project %s update: %s", updateData.ContainerTypeID, projID, err.Error())
-		c.String(http.StatusInternalServerError, err.Error())
-		return
+	if updateData.ContainerTypeID > 0 {
+		log.Printf("INFO: lookup container type %d", updateData.ContainerTypeID)
+		err = svc.DB.First(&updateData.ContainerType, updateData.ContainerTypeID).Error
+		if err != nil {
+			log.Printf("ERROR: unable to get container type %d project %s update: %s", updateData.ContainerTypeID, projID, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 
 	log.Printf("INFO: lookup category %d", updateData.CategoryID)

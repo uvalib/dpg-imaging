@@ -353,6 +353,7 @@ export const useProjectStore = defineStore('project', {
       },
 
       async updateProject(data) {
+         console.log(data)
          // data contains { categoryID, containerTypeID, condition, note, ocrHintID, ocrLangage, ocrMasterFiles }
          this.working = true
          return axios.put(`/api/projects/${this.currProject.id}`, data).then(response => {
