@@ -1,7 +1,7 @@
 <template>
    <div class="viewer">
       <WaitSpinner v-if="systemStore.working" :overlay="true" message="Working..." />
-      <div id="iiif-toolbar" class="toolbar">
+      <div id="iiif-toolbar" class="toolbar" v-show="fullScreen == false">
          <TagPicker v-if="currMasterFile" :masterFile="currMasterFile" display="large" class="top-right"/>
          <table class="info" v-if="projectStore.selectedProjectIdx > -1">
             <tr class="line">
@@ -34,7 +34,7 @@
             </tr>
             <tr class="line">
                <td class="label">Keybard Shortcuts:</td>
-               <td class="data">Pan Image: w,a,s,d or arrow keys. Pagination: &lt; prior, &gt; next (shift key not needed).</td>
+               <td class="data">Pan Image: w,a,s,d or arrow keys. Pagination: &lt; prior, &gt; next. Full Screen Toggle: z. 100% Zoom: 1.</td>
             </tr>
          </table>
          <div class="acts">
@@ -55,7 +55,6 @@
                <span id="zoom-out" title="Zoom in" class="toolbar-button"><i class="fas fa-search-minus"></i></span>
                <span id="actual-size" title="Reset view" @click="viewActualSize" class="full toolbar-button">1:1</span>
                <span id="home" title="Reset view" class="toolbar-button"><i class="fas fa-home"></i></span>
-               <span id="full-page" title="Full Screen" class="toolbar-button"><i class="fas fa-expand"></i></span>
             </span>
          </div>
       </div>
@@ -85,6 +84,9 @@ const page = ref(1)
 const zoom = ref(50)
 const editField = ref("")
 const newValue = ref("")
+const fullScreen = ref(false)
+const viewerTop = ref()
+const viewerH = ref()
 
 const currMasterFile = computed(() => {
    return unitStore.masterFiles[page.value-1]
@@ -168,14 +170,50 @@ function keyboardHandler(event) {
    if (event.target.id == "edit-desc" || event.target.id == "title-input-box") {
       return
    }
+   if ( event.key == '1') {
+      event.stopPropagation()
+      viewActualSize()
+   }
+
+   if ( event.key == 'z') {
+      event.stopPropagation()
+      let ele = document.getElementById("iiif-viewer")
+      console.log("PRE FULL PAGE "+zoom.value)
+      fullScreen.value = !fullScreen.value
+      let origZoom = zoom.value
+      viewer.setFullPage( fullScreen.value )
+      if (fullScreen.value ) {
+         ele.style.top = `0px`
+         ele.style.height = `100%`
+      } else {
+         ele.style.top = `${viewerTop.value}px`
+         ele.style.height = `${viewerH.value}px`
+      }
+      focusViewer()
+      setTimeout( () => {
+         if (zoom.value != origZoom)  {
+            zoom.value = origZoom
+            viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(origZoom))
+         }
+      }, 50)
+   }
    if ( event.key == ',' || event.key == '<') {
+      event.stopPropagation()
       if (prevDisabled() == false ) {
          prevImage()
+         setTimeout( () => {
+            viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(zoom.value))
+         }, 255)
       }
    } else {
       if ( event.key == '.' || event.key == '>') {
+         event.stopPropagation()
          if (nextDisabled() == false ) {
             nextImage()
+            viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(zoom.value))
+            setTimeout( () => {
+               viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(zoom.value))
+            }, 255) // 255 is just longer that the .25 sec animation timer
          }
       }
    }
@@ -195,11 +233,13 @@ onBeforeMount( async () => {
    nextTick(()=>{
       let hdr = document.getElementById("uva-header")
       let toolbar = document.getElementById("iiif-toolbar")
-      let h = hdr.offsetHeight + toolbar.offsetHeight
-      document.getElementById("iiif-viewer").style.top = `${h}px`
+      viewerTop.value = hdr.offsetHeight + toolbar.offsetHeight
+      let ele =  document.getElementById("iiif-viewer")
+      ele.style.top = `${viewerTop.value}px`
       viewer = OpenSeadragon({
          id: "iiif-viewer",
          toolbar: "iiif-toolbar",
+         animationTime: 0.25,
          showNavigator: true,
          sequenceMode: true,
          preserveViewport: true,
@@ -214,10 +254,10 @@ onBeforeMount( async () => {
          zoomInButton:   "zoom-in",
          zoomOutButton:  "zoom-out",
          homeButton:     "home",
-         fullPageButton: "full-page",
          showSequenceControl: false,
          tileSources: unitStore.pageInfoURLs,
-         initialPage: currPageIndex
+         initialPage: currPageIndex,
+         showFullPageControl: false
       })
       viewer.gestureSettingsMouse.clickToZoom = false
       viewer.addHandler("zoom", (data) => {
@@ -225,6 +265,9 @@ onBeforeMount( async () => {
          focusViewer()
       })
       focusViewer()
+      nextTick( ()=> {
+         viewerH.value = ele.offsetHeight
+      })
    })
 })
 onUnmounted( async () => {
