@@ -43,9 +43,9 @@
                <span @click="router.back()">Back to unit</span>
             </span>
             <span class="paging group">
-               <span id="previous" title="Previous" class="toolbar-button" :class="{disabled: prevDisabled()}"  @click="prevImage"><i class="fas fa-arrow-left"></i></span>
+               <span id="previous" title="Previous" class="toolbar-button" :class="{disabled: prevDisabled}"  @click="prevImage"><i class="fas fa-arrow-left"></i></span>
                <span class="page">{{page}} of {{unitStore.pageInfoURLs.length}}</span>
-               <span id="next" title="Next" class="toolbar-button" :class="{disabled: nextDisabled()}" @click="nextImage"><i class="fas fa-arrow-right"></i></span>
+               <span id="next" title="Next" class="toolbar-button" :class="{disabled: nextDisabled}" @click="nextImage"><i class="fas fa-arrow-right"></i></span>
             </span>
             <span class="zoom group">
                <span id="rotate-left" title="Rotate Left" class="toolbar-button"  @click="rotateImage('left')"><i class="fas fa-undo"></i></span>
@@ -92,18 +92,29 @@ const currMasterFile = computed(() => {
    return unitStore.masterFiles[page.value-1]
 })
 
-async function rotateImage(dir) {
+const prevDisabled = computed(() => {
+   return page.value == 1
+})
+
+const nextDisabled = computed(() => {
+   return page.value == unitStore.totalFiles
+})
+
+const rotateImage = ( async (dir) => {
    await unitStore.rotateImage({file: currMasterFile.value.fileName, dir: dir})
    viewer.world.resetItems()
    viewer.goToPage( viewer.currentPage() )
-}
-function viewActualSize() {
+})
+
+const viewActualSize = (() => {
    viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(1.0))
-}
-function isEditing(field = "all") {
+})
+
+const isEditing = ((field = "all") => {
    return editField.value == field
-}
-function editMetadata(field) {
+})
+
+const editMetadata = ((field) => {
    let mf = currMasterFile.value
    if (field == "title") {
       newValue.value = mf.title
@@ -119,17 +130,19 @@ function editMetadata(field) {
          ele.select()
       }
    })
-}
-function cancelEdit() {
+})
+
+const cancelEdit= (() => {
    editField.value = ""
-}
-async function submitEdit() {
+})
+
+const submitEdit = ( async () => {
    let mf = currMasterFile.value
    await unitStore.updateMasterFileMetadata( mf.fileName, editField.value, newValue.value )
    editField.value = ""
-}
+})
 
-async function nextImage() {
+const nextImage = ( async () => {
    page.value++
    let pgIdx = page.value-1
    await unitStore.getMasterFileMetadata( pgIdx )
@@ -137,15 +150,9 @@ async function nextImage() {
    let url = `/projects/${projectStore.currProject.id}/unit/images/${page.value}`
    router.replace(url)
    focusViewer()
-}
+})
 
-function prevDisabled() {
-   return page.value == 1
-}
-function nextDisabled() {
-   return page.value == unitStore.totalFiles
-}
-async function prevImage() {
+const prevImage = ( async () => {
    if (page.value > 1) {
       page.value--
       let pgIdx = page.value-1
@@ -155,18 +162,18 @@ async function prevImage() {
       router.replace(url)
       focusViewer()
    }
-}
+})
 
-function focusViewer() {
+const focusViewer = (() => {
    nextTick(()=>{
       let viewEle = document.getElementById("iiif-viewer")
       if (viewEle) {
          viewEle.querySelector('.openseadragon-canvas').focus()
       }
    })
-}
+})
 
-function keyboardHandler(event) {
+const keyboardHandler = ((event) => {
    if (event.target.id == "edit-desc" || event.target.id == "title-input-box") {
       return
    }
@@ -199,7 +206,7 @@ function keyboardHandler(event) {
    }
    if ( event.key == ',' || event.key == '<') {
       event.stopPropagation()
-      if (prevDisabled() == false ) {
+      if (prevDisabled.value == false ) {
          prevImage()
          setTimeout( () => {
             viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(zoom.value))
@@ -208,7 +215,7 @@ function keyboardHandler(event) {
    } else {
       if ( event.key == '.' || event.key == '>') {
          event.stopPropagation()
-         if (nextDisabled() == false ) {
+         if (nextDisabled.value == false ) {
             nextImage()
             viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(zoom.value))
             setTimeout( () => {
@@ -217,7 +224,7 @@ function keyboardHandler(event) {
          }
       }
    }
-}
+})
 
 onBeforeMount( async () => {
    window.addEventListener('keydown', keyboardHandler)
