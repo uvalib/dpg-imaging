@@ -21,6 +21,8 @@ import {useSystemStore} from '@/stores/system'
 import {useProjectStore} from '@/stores/project'
 import Dialog from 'primevue/dialog'
 
+const emit = defineEmits( ['assigned' ])
+
 const systemStore = useSystemStore()
 const projectStore = useProjectStore()
 
@@ -39,19 +41,22 @@ const isOpen = ref(false)
 const selectedIdx = ref(-1)
 const error = ref("")
 
-function selectCandidate(idx) {
+const selectCandidate = ((idx) => {
    selectedIdx.value = idx
-}
-function assignClicked() {
+})
+
+const assignClicked = ( async () => {
    error.value = ""
    if ( selectedIdx.value == -1) {
       error.value = "Please select a user"
       return
    }
    let userID = systemStore.staffMembers[selectedIdx.value].id
-   projectStore.assignProject( {projectID: props.projectID, ownerID: userID} )
+   await projectStore.assignProject( {projectID: props.projectID, ownerID: userID} )
    hide()
-}
+   emit('assigned')
+})
+
 function hide() {
    isOpen.value=false
 }

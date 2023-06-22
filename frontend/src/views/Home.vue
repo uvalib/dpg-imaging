@@ -112,7 +112,7 @@
                      </span>
                      <span class="owner-buttons">
                         <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)" class="p-button-secondary right-pad" label="Claim"/>
-                        <AssignModal  v-if="canAssign" :projectID="p.id" />
+                        <AssignModal  v-if="canAssign" :projectID="p.id" @assigned="projectStore.getProjects()" />
                         <DPGButton  class="view p-button-secondary" @click="viewClicked(p.id)" label="View"/>
                      </span>
                   </div>
@@ -190,8 +190,9 @@ const canClaim = ((p) => {
    return false
 })
 
-const claimClicked = ((projID) => {
-   projectStore.assignProject( {projectID: projID, ownerID: userStore.ID} )
+const claimClicked = ( async (projID) => {
+   await projectStore.assignProject( {projectID: projID, ownerID: userStore.ID} )
+   projectStore.getProjects()
 })
 
 const viewClicked = ((projID) => {

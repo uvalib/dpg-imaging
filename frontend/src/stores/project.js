@@ -425,9 +425,9 @@ export const useProjectStore = defineStore('project', {
             this.working = false
          })
       },
-      assignProject({projectID, ownerID}) {
+      async assignProject({projectID, ownerID}) {
          this.working = true
-         axios.post(`/api/projects/${projectID}/assign/${ownerID}`).then(response => {
+         return axios.post(`/api/projects/${projectID}/assign/${ownerID}`).then(response => {
             this.projects[this.selectedProjectIdx].notes = response.data.notes
             this.projects[this.selectedProjectIdx].assignments = response.data.assignments
             this.projects[this.selectedProjectIdx].owner = response.data.owner
