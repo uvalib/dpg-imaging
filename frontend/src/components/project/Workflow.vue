@@ -34,7 +34,10 @@
              <DPGButton @click="timeEntered" label="OK"/>
          </div>
       </div>
-      <div class="workflow-btns" v-else-if="isFinalizeRunning(selectedProjectIdx) == false && isFinished(selectedProjectIdx) == false">
+      <div class="finalizing" v-else-if="isFinalizeRunning(selectedProjectIdx)" >
+         <WaitSpinner :overlay="false" message="Finalization in progress..." />
+      </div>
+      <div class="workflow-btns" v-else-if="isFinished(selectedProjectIdx) == false">
          <DPGButton @click="changeWorkflowClicked()" class="p-button-secondary" v-if="projectStore.canChangeWorkflow &&  (isSupervisor || isAdmin)" label="Change Workflow"/>
          <span class="right-buttons">
             <DPGButton @click="viewerClicked" class="p-button-secondary" v-if="isScanning == false && (isOwner(userStore.computeID) || isSupervisor || isAdmin)" label="Open QA Viewer"/>
@@ -345,6 +348,10 @@ function unitDirectory(unitID) {
 
    .pad-right {
       margin-right: 10px;
+   }
+   .finalizing {
+      text-align: center;
+      font-size: 0.75em;
    }
    .workflow-btns {
       padding: 0;

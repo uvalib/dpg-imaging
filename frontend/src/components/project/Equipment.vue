@@ -57,7 +57,7 @@
             <td class="data"><textarea id="res-note" v-model="resolutionNote"></textarea></td>
          </tr>
       </table>
-      <div class="buttons" v-if="projectStore.isOwner(userStore.computeID)">
+      <div class="buttons" v-if="canEdit">
          <DPGButton v-if="!editing" @click="editClicked" class="p-button-secondary" label="Edit"/>
          <template v-else>
             <DPGButton @click="cancelClicked" label="Cancel" class="p-button-secondary"/>
@@ -71,7 +71,7 @@
 import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUserStore} from "@/stores/user"
-import { ref} from 'vue'
+import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import Panel from 'primevue/panel'
 
@@ -86,6 +86,15 @@ const workstationID = ref(0)
 const captureResolution = ref("")
 const resizedResolution = ref("")
 const resolutionNote = ref("")
+
+const canEdit = computed(() => {
+   if (projectStore.isOwner(userStore.computeID) == false) return false
+   let projIdx = projectStore.selectedProjectIdx
+   if (projectStore.isFinalizeRunning(projIdx) || projectStore.isFinished(projIdx) || projectStore.isWorking(projIdx)) {
+      return false
+   }
+   return true
+})
 
 const editClicked = (() => {
    workstationID.value = currProject.value.workstation.id

@@ -283,7 +283,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		}
 
 		log.Printf("INFO: sending request to dpg-jobs to begin or restart finalization of unit %d", proj.UnitID)
-		_, httpErr := svc.postRequest(fmt.Sprintf("%s/units/%d/finalize", svc.FinalizeURL, proj.UnitID), nil)
+		resp, httpErr := svc.postRequest(fmt.Sprintf("%s/units/%d/finalize", svc.FinalizeURL, proj.UnitID), nil)
 		if httpErr != nil {
 			currA.Status = StepError
 			svc.DB.Model(&currA).Select("Status").Updates(currA)
@@ -295,7 +295,17 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		currA.Status = StepFinalizing
 		svc.DB.Model(&currA).Select("Status").Updates(currA)
 		proj, _ = svc.getProjectInfo(projID)
-		c.JSON(http.StatusOK, proj)
+
+		// extend the project data structure to include the finalize jobID so the status can be checked
+		out := struct {
+			*project
+			JobID string `json:"jobID,omitempty"`
+		}{
+			project: proj,
+			JobID:   string(resp),
+		}
+
+		c.JSON(http.StatusOK, out)
 		return
 	}
 

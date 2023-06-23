@@ -180,6 +180,7 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 	log.Printf("INFO: get service configuration")
 	type cfgData struct {
 		TrackSysURL      string            `json:"tracksysURL"`
+		JobsURL          string            `json:"jobsURL"`
 		QAImageDir       string            `json:"qaImageDir"`
 		ScanDir          string            `json:"scanDir"`
 		Agencies         []agency          `json:"agencies"`
@@ -193,6 +194,7 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 		OCRLanguageHints []ocrLanguageHint `json:"ocrLanguageHints"`
 	}
 	resp := cfgData{TrackSysURL: svc.TrackSysURL,
+		JobsURL:    svc.FinalizeURL,
 		QAImageDir: svc.ImagesDir,
 		ScanDir:    svc.ScanDir,
 	}

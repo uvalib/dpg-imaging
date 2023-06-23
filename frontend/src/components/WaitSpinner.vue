@@ -69,12 +69,12 @@ div.spinner h1 {
    width: 80px;
    text-align: center;
    .dot  {
-      color: var(--uvalib-brand-orange);
+      background: var(--uvalib-brand-orange);
    }
 }
 .spinner-animation > div {
-   width: 18px;
-   height: 18px;
+   width: 12px;
+   height: 12px;
    border-radius: 100%;
    display: inline-block;
    -webkit-animation: sk-bouncedelay 1.4s infinite ease-in-out both;

@@ -6,6 +6,8 @@ export const useProjectStore = defineStore('project', {
    state: () => ({
       projects: [],
       selectedProjectIdx: -1,
+      finalizeJobID: "",
+      statusCheckIntervalID: -1,
       totals: {
          me: 0,
          active: 0,
@@ -236,6 +238,15 @@ export const useProjectStore = defineStore('project', {
 
       selectProject(projID) {
          this.selectedProjectIdx = this.projects.findIndex( p => p.id == projID)
+         this.cancelStatusPolling()
+      },
+
+      cancelStatusPolling() {
+         this.finalizeJobID = ""
+         if (this.statusCheckIntervalID > -1) {
+            clearInterval( this.statusCheckIntervalID )
+            this.statusCheckIntervalID = -1
+         }
       },
 
       changeFilter( newFilter ) {
@@ -404,12 +415,34 @@ export const useProjectStore = defineStore('project', {
             this.projects[this.selectedProjectIdx].currentStep = response.data.currentStep
             this.projects[this.selectedProjectIdx].assignments = response.data.assignments
             this.projects[this.selectedProjectIdx].notes = response.data.notes
+            if ( response.data.jobID) {
+               this.finalizeJobID = response.data.jobID
+               this.startStatusCheck()
+            }
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
             system.error = e
             this.working = false
          })
+      },
+      startStatusCheck() {
+         const system = useSystemStore()
+         this.statusCheckIntervalID =  setInterval( () => {
+            axios.get(`${system.jobsURL}/jobs/${this.finalizeJobID}`).then(response => {
+               if ( response.data.status == "finished" || response.data.status == "failure") {
+                  clearInterval( this.statusCheckIntervalID )
+                  this.statusCheckIntervalID = -1
+                  this.finalizeJobID = ""
+                  this.getProject(this.currProject.id)
+               }
+            }).catch( e => {
+               system.error = e
+               clearInterval( this.statusCheckIntervalID )
+               this.statusCheckIntervalID = -1
+               this.finalizeJobID = ""
+            })
+         }, 1000*30)
       },
       rejectStep(durationMins) {
          this.working = true

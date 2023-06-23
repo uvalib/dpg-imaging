@@ -61,9 +61,9 @@ import Workflow from "@/components/project/Workflow.vue"
 import History from "@/components/project/History.vue"
 import Notes from "@/components/project/Notes.vue"
 import Equipment from "@/components/project/Equipment.vue"
-import {useSystemStore} from "@/stores/system"
-import {useProjectStore} from "@/stores/project"
-import { onMounted, computed } from 'vue'
+import { useSystemStore } from "@/stores/system"
+import { useProjectStore } from "@/stores/project"
+import { onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 
@@ -80,6 +80,10 @@ const metadataLink = computed(() => {
 
 onMounted( async () => {
    await projectStore.getProject(route.params.id)
+})
+
+onBeforeUnmount( async () => {
+   projectStore.cancelStatusPolling()
 })
 
 const backClicked = (() => {
