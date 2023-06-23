@@ -9,17 +9,15 @@
             </div>
             <div class="site-link">
                <router-link to="/">DPG Imaging</router-link>
-               <p class="version">v{{ systemStore.version }}</p>
+               <p class="version">{{ systemStore.version }}</p>
             </div>
          </div>
          <div class="user-banner" v-if="userStore.jwt">
-            <div>
-               <label>Signed in as:</label><span class="user">{{ userStore.signedInUser }}</span>
-            </div>
             <div class="acts">
+               <span class="signed-in-as">{{ userStore.signedInUser }}</span>
                <div class="messages">
+                  <span class="cnt">{{messageStore.unreadMessageCount}}</span>
                   <router-link to="/messages">
-                     <span class="cnt">{{messageStore.unreadMessageCount}}</span>
                      <i class="mail fas fa-envelope"></i>
                   </router-link>
                </div>
@@ -57,14 +55,14 @@ const userStore = useUserStore()
 const messageStore = useMessageStore()
 const router = useRouter()
 
-function errorClosed() {
+const errorClosed = (() => {
    systemStore.setError("")
-}
+})
 
-function signout() {
+const signout = (() => {
    userStore.signout()
    router.push("/signedout")
-}
+})
 
 onMounted( async () => {
    systemStore.getVersion()
@@ -80,6 +78,32 @@ div.header {
    text-align: left;
    position: relative;
    box-sizing: border-box;
+
+   p.version {
+      margin: 5px 0 0 0;
+      font-size: 0.5em;
+      text-align: right;
+      padding: 0;
+      opacity: 0.5;
+   }
+   div.library-link {
+      width: 220px;
+      order: 0;
+      flex: 0 1 auto;
+      align-self: flex-start;
+   }
+   div.site-link {
+      border: 0;
+      font-size: 1.5em;
+      a {
+         color: white !important;
+         text-decoration: none;
+         &:hover {
+            text-decoration: underline;
+         }
+      }
+   }
+
    .main-header {
       display: flex;
       flex-direction: row;
@@ -91,28 +115,35 @@ div.header {
    .user-banner {
       text-align: right;
       padding: 10px 0 0 0;
-      font-size: 0.8em;
+      font-size: 0.9em;
       margin: 0;
-      label {
-         font-weight: bold;
-         margin-right: 5px;
-      }
-      .user {
-         font-weight: 100;
-      }
+
       .acts {
-         margin-top: 10px;
+         margin: 0;
          display: flex;
          flex-flow: row nowrap;
          justify-content: flex-end;
          align-items: center;
 
+         .signed-in-as {
+            display: inline-block;
+            margin-right: 15px;
+         }
+
          .messages {
+            display: flex;
+            flex-flow: row nowrap;
+            justify-content: space-between;
+            align-items: center;
             .mail, .cnt {
                display: inline-block;
                margin-right: 10px;
                font-size: 1.5em;
                color: white;
+            }
+            .cnt {
+               margin-right: 5px;
+               font-size: 1em;
             }
          }
          .signout {

@@ -71,27 +71,5 @@ body {
             text-decoration: underline;
          }
       }
-      p.version {
-         margin: 5px 0 0 0;
-         font-size: 0.5em;
-         text-align: right;
-      }
-      div.library-link {
-         width: 220px;
-         order: 0;
-         flex: 0 1 auto;
-         align-self: flex-start;
-      }
-      div.site-link {
-         order: 0;
-         font-size: 1.5em;
-         a {
-            color: white;
-            text-decoration: none;
-            &:hover {
-               text-decoration: underline;
-            }
-         }
-      }
    }
 }
