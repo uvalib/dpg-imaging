@@ -1,51 +1,51 @@
 <template>
    <Panel header="Item Information" class="panel">
       <dl v-if="!editing">
-         <template v-if="currProject.workflow.name == 'Manuscript'">
+         <template v-if="detail.workflow.name == 'Manuscript'">
             <dt>Container Type:</dt>
             <dd>
-               <span v-if="currProject.containerType && currProject.containerType.id > 0">{{currProject.containerType.name}}</span>
+               <span v-if="detail.containerType && detail.containerType.id > 0">{{detail.containerType.name}}</span>
                <span v-else class="na">EMPTY</span>
             </dd>
          </template>
          <dt>Category:</dt>
-         <dd>{{currProject.category.name}}
+         <dd>{{detail.category.name}}
          </dd>
          <dt>Call Number:</dt>
          <dd>
-            <span v-if="currProject.unit.metadata.callNumber">{{currProject.unit.metadata.callNumber}}</span>
+            <span v-if="detail.unit.metadata.callNumber">{{detail.unit.metadata.callNumber}}</span>
             <span v-else class="na">EMPTY</span>
          </dd>
          <dt>Special Instructions:</dt>
          <dd>
-            <span v-if="currProject.unit.specialInstructions">{{currProject.unit.specialInstructions}}</span>
+            <span v-if="detail.unit.specialInstructions">{{detail.unit.specialInstructions}}</span>
             <span v-else class="na">EMPTY</span>
          </dd>
          <dt>Condition:</dt>
-         <dd>{{conditionText(currProject.itemCondition)}}</dd>
+         <dd>{{conditionText(detail.itemCondition)}}</dd>
          <dt>Condition Notes:</dt>
          <dd>
-            <span v-if="currProject.conditionNote">{{currProject.conditionNote}}</span>
+            <span v-if="detail.conditionNote">{{detail.conditionNote}}</span>
             <span v-else class="na">EMPTY</span>
          </dd>
          <dt>OCR Hint:</dt>
          <dd>
-            <span v-if="currProject.unit.metadata.ocrHint.id > 0">{{currProject.unit.metadata.ocrHint.name}}</span>
+            <span v-if="detail.unit.metadata.ocrHint.id > 0">{{detail.unit.metadata.ocrHint.name}}</span>
             <span v-else class="na">EMPTY</span>
          </dd>
          <dt>OCR Language Hint:</dt>
          <dd>
-            <span v-if="currProject.unit.metadata.ocrLanguageHint">{{currProject.unit.metadata.ocrLanguageHint}}</span>
+            <span v-if="detail.unit.metadata.ocrLanguageHint">{{detail.unit.metadata.ocrLanguageHint}}</span>
             <span v-else class="na">EMPTY</span>
          </dd>
          <dt>OCR Master Files:</dt>
          <dd>
-            <span v-if="currProject.unit.ocrMasterFiles" class="yes-no">Yes</span>
+            <span v-if="detail.unit.ocrMasterFiles" class="yes-no">Yes</span>
             <span v-else class="yes-no">No</span>
          </dd>
       </dl>
       <table class="edit" v-else>
-         <tr v-if="currProject.workflow.name == 'Manuscript'">
+         <tr v-if="detail.workflow.name == 'Manuscript'">
             <td class="label"><label for="container">Container Type:</label></td>
             <td class="data">
                <select id="container" v-model="containerTypeID">
@@ -65,12 +65,12 @@
          </tr>
          <tr class="row">
             <td class="label"><label for="call-numbber">Call Number:</label></td>
-            <td class="data">{{currProject.unit.metadata.callNumber}}</td>
+            <td class="data">{{detail.unit.metadata.callNumber}}</td>
          </tr>
          <tr class="row">
             <td class="label"><label for="instructions">Special Instructions:</label></td>
             <td class="data">
-               <span v-if="currProject.unit.specialInstructions">{{currProject.unit.specialInstructions}}</span>
+               <span v-if="detail.unit.specialInstructions">{{detail.unit.specialInstructions}}</span>
                <span v-else class="na">EMPTY</span>
             </td>
          </tr>
@@ -132,7 +132,7 @@ import Panel from 'primevue/panel'
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
 const userStore = useUserStore()
-const { currProject } = storeToRefs(projectStore)
+const { detail } = storeToRefs(projectStore)
 
 const editing = ref(false)
 const categoryID = ref(0)
@@ -146,8 +146,7 @@ const ocrCandidate = ref(true)
 
 const canEdit = computed(() => {
    if (projectStore.isOwner(userStore.computeID) == false) return false
-   let projIdx = projectStore.selectedProjectIdx
-   if (projectStore.isFinalizeRunning(projIdx) || projectStore.isFinished(projIdx) || projectStore.isWorking(projIdx)) {
+   if (projectStore.isFinalizeRunning || projectStore.isFinished || projectStore.isWorking) {
       return false
    }
    return true
@@ -170,15 +169,15 @@ function conditionText(condID) {
 
 function editClicked() {
    editing.value = true
-   categoryID.value = currProject.value.category.id
+   categoryID.value = detail.value.category.id
    containerTypeID.value = 0
-   if ( currProject.value.containerType ) {
-      containerTypeID.value = currProject.value.containerType.id
+   if ( detail.value.containerType ) {
+      containerTypeID.value = detail.value.containerType.id
    }
-   condition.value = currProject.value.itemCondition
-   note.value = currProject.value.conditionNote
-   ocrHintID.value = currProject.value.unit.metadata.ocrHint.id
-   ocrLangage.value = currProject.value.unit.metadata.ocrLanguageHint
+   condition.value = detail.value.itemCondition
+   note.value = detail.value.conditionNote
+   ocrHintID.value = detail.value.unit.metadata.ocrHint.id
+   ocrLangage.value = detail.value.unit.metadata.ocrLanguageHint
 }
 
 function cancelClicked() {

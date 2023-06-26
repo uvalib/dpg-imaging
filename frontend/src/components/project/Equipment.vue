@@ -3,14 +3,14 @@
       <dl v-if="!editing">
          <dt>Workstation:</dt>
          <dd>
-            <span v-if="currProject.workstation.id > 0">{{currProject.workstation.name}}</span>
+            <span v-if="detail.workstation.id > 0">{{detail.workstation.name}}</span>
             <span v-else class="na">EMPTY</span>
          </dd>
-         <template v-if="currProject.workstation.id > 0">
+         <template v-if="detail.workstation.id > 0">
             <dt>Setup:</dt>
             <dd>
                <table>
-                  <tr v-for="e in currProject.equipment" :key="e.serialNumber">
+                  <tr v-for="e in detail.equipment" :key="e.serialNumber">
                      <td>{{e.type}}</td>
                      <td>{{e.name}}</td>
                      <td>{{e.serialNumber}}</td>
@@ -20,17 +20,17 @@
          </template>
          <dt>Capture resolution:</dt>
          <dd>
-            <span v-if="currProject.captureResolution">{{currProject.captureResolution}}</span>
+            <span v-if="detail.captureResolution">{{detail.captureResolution}}</span>
             <span v-else class="na">EMPTY</span>
          </dd>
          <dt>Resized resolution:</dt>
          <dd>
-            <span v-if="currProject.resizedResolution">{{currProject.resizedResolution}}</span>
+            <span v-if="detail.resizedResolution">{{detail.resizedResolution}}</span>
             <span v-else class="na">EMPTY</span>
          </dd>
          <dt>Resolution note:</dt>
          <dd>
-            <span v-if="currProject.resolutionNote">{{currProject.resolutionNote}}</span>
+            <span v-if="detail.resolutionNote">{{detail.resolutionNote}}</span>
             <span v-else class="na">EMPTY</span>
          </dd>
       </dl>
@@ -79,7 +79,7 @@ const projectStore = useProjectStore()
 const systemStore = useSystemStore()
 const userStore = useUserStore()
 
-const { currProject } = storeToRefs(projectStore)
+const { detail } = storeToRefs(projectStore)
 
 const editing = ref(false)
 const workstationID = ref(0)
@@ -89,24 +89,23 @@ const resolutionNote = ref("")
 
 const canEdit = computed(() => {
    if (projectStore.isOwner(userStore.computeID) == false) return false
-   let projIdx = projectStore.selectedProjectIdx
-   if (projectStore.isFinalizeRunning(projIdx) || projectStore.isFinished(projIdx) || projectStore.isWorking(projIdx)) {
+   if (projectStore.isFinalizeRunning || projectStore.isFinished || projectStore.isWorking) {
       return false
    }
    return true
 })
 
 const editClicked = (() => {
-   workstationID.value = currProject.value.workstation.id
+   workstationID.value = detail.value.workstation.id
    captureResolution.value = ""
    resizedResolution.value = ""
-   if ( currProject.value.captureResolution) {
-      captureResolution.value = currProject.value.captureResolution
+   if ( detail.value.captureResolution) {
+      captureResolution.value = detail.value.captureResolution
    }
-   if (currProject.value.resizedResolution) {
-      resizedResolution.value = currProject.value.resizedResolution
+   if (detail.value.resizedResolution) {
+      resizedResolution.value = detail.value.resizedResolution
    }
-   resolutionNote.value = currProject.value.resolutionNote
+   resolutionNote.value = detail.value.resolutionNote
    editing.value = true
 })
 

@@ -3,32 +3,32 @@
       <h2>
          <span>Digitization Projects</span>
       </h2>
-      <WaitSpinner v-if="projectStore.working" :overlay="true" message="Loading projects..." />
+      <WaitSpinner v-if="searchStore.working" :overlay="true" message="Loading projects..." />
       <div class="toolbar">
          <div class="filter">
             <label for="me">
                <input id="me" type="radio" value="me" name="filter" v-model="activeFilter" @change="filterChanged">
-               <span>Assigned to me <span class="count">({{projectStore.totals.me}})</span></span>
+               <span>Assigned to me <span class="count">({{searchStore.totals.me}})</span></span>
             </label>
             <label for="active">
                <input id="active" type="radio" value="active" name="filter" v-model="activeFilter" @change="filterChanged">
-               <span>Active <span class="count">({{projectStore.totals.active}})</span></span>
+               <span>Active <span class="count">({{searchStore.totals.active}})</span></span>
             </label>
             <label for="errors">
                <input id="errors" type="radio" value="errors" name="filter" v-model="activeFilter" @change="filterChanged">
-               <span>Problems <span class="count">({{projectStore.totals.errors}})</span></span>
+               <span>Problems <span class="count">({{searchStore.totals.errors}})</span></span>
             </label>
             <label for="unassigned">
                <input id="unassigned" type="radio" value="unassigned" name="filter" v-model="activeFilter" @change="filterChanged">
-               <span>Unassigned <span class="count">({{projectStore.totals.unassigned}})</span></span>
+               <span>Unassigned <span class="count">({{searchStore.totals.unassigned}})</span></span>
             </label>
             <label for="finished">
                <input id="finished" type="radio" value="finished" name="filter" v-model="activeFilter" @change="filterChanged">
-               <span>Finished <span class="count">({{projectStore.totals.finished}})</span></span>
+               <span>Finished <span class="count">({{searchStore.totals.finished}})</span></span>
             </label>
          </div>
-         <div class="page-ctl" v-if="!projectStore.working && projectStore.projects.length>0">
-            <DPGPagination :currPage="projectStore.currPage" :pageSize="projectStore.pageSize" :totalPages="projectStore.totalPages"
+         <div class="page-ctl" v-if="!searchStore.working && searchStore.projects.length>0">
+            <DPGPagination :currPage="searchStore.currPage" :pageSize="searchStore.pageSize" :totalPages="searchStore.totalPages"
                @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
                @jump="pageJumpClicked"
             />
@@ -37,19 +37,19 @@
 
       <div class="project-board">
          <SearchPanel />
-         <div class="none" v-if="!projectStore.working && projectStore.projects.length == 0">
+         <div class="none" v-if="!searchStore.working && searchStore.projects.length == 0">
             No projects match your search criteria
          </div>
          <ul v-else class="projects">
-            <li class="card" v-for="(p,idx) in projectStore.projects" :key="`p${p.id}`">
+            <li class="card" v-for="(p,idx) in searchStore.projects" :key="`p${p.id}`">
                <div class="top">
                   <div class="due">
                      <span>
-                        <label>Date Due:</label><span>{{projectStore.dueDate(idx)}}</span>
+                        <label>Date Due:</label><span>{{searchStore.dueDate(idx)}}</span>
                      </span>
                      <span>
                         <span class="status-msg overdue" v-if="isOverdue(idx) && !p.finishedAt">OVERDUE</span>
-                        <i v-if="projectStore.hasError(idx)" class="error-icon fas fa-exclamation-triangle"></i>
+                        <i v-if="searchStore.hasError(idx)" class="error-icon fas fa-exclamation-triangle"></i>
                      </span>
                      <span v-if="p.finishedAt">
                         <label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span>
@@ -59,7 +59,7 @@
                         </div>
                      </span>
                   </div>
-                  <router-link @click="projectStore.selectProject(p.id)" :to="`/projects/${p.id}`">
+                  <router-link :to="`/projects/${p.id}`">
                      <div class="title">
                         <div class="project-id"><label>Project:</label><span>{{p.id}}</span></div>
                         <div>{{p.unit.metadata.title}}</div>
@@ -99,9 +99,9 @@
                </div>
                <div class="status" v-if="!p.finishedAt || p.finishedAt == ''">
                   <div class="progress-panel">
-                     <span :class="{error: projectStore.hasError(idx)}">{{projectStore.statusText(p.id)}}</span>
+                     <span :class="{error: searchStore.hasError(idx)}">{{searchStore.statusText(p.id)}}</span>
                      <div class="progress-bar">
-                        <div class="percentage" :style="{width: projectStore.percentComplete(p.id) }"></div>
+                        <div class="percentage" :style="{width: searchStore.percentComplete(p.id) }"></div>
                      </div>
                   </div>
                   <div class="owner-panel">
@@ -112,7 +112,7 @@
                      </span>
                      <span class="owner-buttons">
                         <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)" class="p-button-secondary right-pad" label="Claim"/>
-                        <AssignModal  v-if="canAssign" :projectID="p.id" @assigned="projectStore.getProjects()" />
+                        <AssignModal  v-if="canAssign" :projectID="p.id" @assigned="searchStore.getProjects()" />
                         <DPGButton  class="view p-button-secondary" @click="viewClicked(p.id)" label="View"/>
                      </span>
                   </div>
@@ -127,15 +127,17 @@
 import DPGPagination from "../components/DPGPagination.vue"
 import AssignModal from "@/components/AssignModal.vue"
 import SearchPanel from "@/components/SearchPanel.vue"
-import {useProjectStore} from "@/stores/project"
-import {useSystemStore} from "@/stores/system"
-import {useUserStore} from "@/stores/user"
+import { useSearchStore } from "@/stores/search"
+import { useSystemStore } from "@/stores/system"
+import { useProjectStore } from "@/stores/project"
+import { useUserStore } from "@/stores/user"
 import { useRoute, useRouter } from 'vue-router'
 import { onBeforeMount, ref } from 'vue'
 
-const projectStore = useProjectStore()
+const searchStore = useSearchStore()
 const systemStore = useSystemStore()
 const userStore = useUserStore()
+const projectStore = useProjectStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -143,45 +145,45 @@ const activeFilter = ref("active")
 
 onBeforeMount( () => {
    if ( route.query.workflow) {
-      projectStore.search.workflow = parseInt(route.query.workflow,10)
+      searchStore.search.workflow = parseInt(route.query.workflow,10)
    }
    if ( route.query.owner) {
-      projectStore.search.assignedTo = parseInt(route.query.owner,10)
+      searchStore.search.assignedTo = parseInt(route.query.owner,10)
    }
    if ( route.query.order) {
-      projectStore.search.orderID = route.query.order
+      searchStore.search.orderID = route.query.order
    }
    if ( route.query.unit) {
-      projectStore.search.unitID = route.query.unit
+      searchStore.search.unitID = route.query.unit
    }
    if ( route.query.callnum) {
-      projectStore.search.callNumber = route.query.callnum
+      searchStore.search.callNumber = route.query.callnum
    }
    if ( route.query.customer) {
-      projectStore.search.customer = route.query.customer
+      searchStore.search.customer = route.query.customer
    }
    if ( route.query.agency) {
-      projectStore.search.agency = parseInt(route.query.agency,10)
+      searchStore.search.agency = parseInt(route.query.agency,10)
    }
    if ( route.query.workstation) {
-      projectStore.search.workstation = parseInt(route.query.workstation,10)
+      searchStore.search.workstation = parseInt(route.query.workstation,10)
    }
    if ( route.query.filter) {
       activeFilter.value = route.query.filter
-      projectStore.filter = route.query.filter
+      searchStore.filter = route.query.filter
    }
 
-   projectStore.getProjects()
+   searchStore.getProjects()
 })
 
 const filterChanged = ( async () => {
    let query = Object.assign({}, route.query)
    query.filter = activeFilter.value
-   projectStore.changeFilter(activeFilter.value)
+   searchStore.changeFilter(activeFilter.value)
    await router.push({query})
-   projectStore.lastSearchURL = route.fullPath
+   searchStore.lastSearchURL = route.fullPath
 
-   projectStore.getProjects()
+   searchStore.getProjects()
 })
 
 const canClaim = ((p) => {
@@ -192,7 +194,7 @@ const canClaim = ((p) => {
 
 const claimClicked = ( async (projID) => {
    await projectStore.assignProject( {projectID: projID, ownerID: userStore.ID} )
-   projectStore.getProjects()
+   searchStore.getProjects()
 })
 
 const viewClicked = ((projID) => {
@@ -204,22 +206,22 @@ const canAssign = (() => {
 })
 
 const nextClicked = (() => {
-   projectStore.setCurrentPage(projectStore.currPage+1 )
+   searchStore.setCurrentPage(searchStore.currPage+1 )
 })
 
 const priorClicked = (() => {
-   projectStore.setCurrentPage(projectStore.currPage-1 )
+   searchStore.setCurrentPage(searchStore.currPage-1 )
 })
 const firstClicked = (() => {
-   projectStore.setCurrentPage( 1 )
+   searchStore.setCurrentPage( 1 )
 })
 
 const lastClicked = (() => {
-   projectStore.setCurrentPage(projectStore.totalPages )
+   searchStore.setCurrentPage(searchStore.totalPages )
 })
 
 const pageJumpClicked = ((p) => {
-   projectStore.setCurrentPage( p )
+   searchStore.setCurrentPage( p )
 })
 
 const ownerInfo = ((p) => {
@@ -227,7 +229,7 @@ const ownerInfo = ((p) => {
 })
 
 const isOverdue = ((projIdx) => {
-   let due = new Date(projectStore.dueDate(projIdx))
+   let due = new Date(searchStore.dueDate(projIdx))
    let now = new Date()
    return now > due
 })

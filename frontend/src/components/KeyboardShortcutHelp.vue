@@ -26,7 +26,7 @@ const hints = ref()
 const projectStore = useProjectStore()
 
 const isManuscript = computed(() => {
-   return projectStore.currProject.workflow && projectStore.currProject.workflow.name=='Manuscript'
+   return projectStore.detail.workflow && projectStore.detail.workflow.name=='Manuscript'
 })
 function showMenu(event) {
    hints.value.toggle(event)

@@ -3,22 +3,22 @@
    <Panel header="Workflow" class="panel">
       <dl>
          <dt>Name:</dt>
-         <dd>{{currProject.workflow.name}}</dd>
+         <dd>{{detail.workflow.name}}</dd>
          <dt>Step:</dt>
-         <dd>{{currProject.currentStep.description}}</dd>
+         <dd>{{detail.currentStep.description}}</dd>
          <dt>Owner:</dt>
          <dd>
-            <span v-if="hasOwner(selectedProjectIdx)">{{currProject.owner.firstName}} {{currProject.owner.lastName}}</span>
+            <span v-if="hasOwner">{{detail.owner.firstName}} {{detail.owner.lastName}}</span>
             <span v-else class="na">Unassigned</span>
          </dd>
          <dt>Assigned:</dt>
          <dd>
-            <span v-if="hasOwner(selectedProjectIdx)">{{assignedAt}}</span>
+            <span v-if="hasOwner">{{assignedAt}}</span>
             <span v-else class="na">N/A</span>
          </dd>
          <dt>Started:</dt>
          <dd>
-            <span v-if="hasOwner(selectedProjectIdx) && startedAt">{{startedAt}}</span>
+            <span v-if="hasOwner && startedAt">{{startedAt}}</span>
             <span v-else class="na">N/A</span>
          </dd>
          <dt>Directory:</dt>
@@ -34,30 +34,30 @@
              <DPGButton @click="timeEntered" label="OK"/>
          </div>
       </div>
-      <div class="finalizing" v-else-if="isFinalizeRunning(selectedProjectIdx)" >
+      <div class="finalizing" v-else-if="isFinalizeRunning" >
          <WaitSpinner :overlay="false" message="Finalization in progress..." />
       </div>
-      <div class="workflow-btns" v-else-if="isFinished(selectedProjectIdx) == false">
+      <div class="workflow-btns" v-else-if="isFinished == false">
          <DPGButton @click="changeWorkflowClicked()" class="p-button-secondary" v-if="projectStore.canChangeWorkflow &&  (isSupervisor || isAdmin)" label="Change Workflow"/>
          <span class="right-buttons">
             <DPGButton @click="viewerClicked" class="p-button-secondary" v-if="isScanning == false && (isOwner(userStore.computeID) || isSupervisor || isAdmin)" label="Open QA Viewer"/>
-            <DPGButton v-if="hasOwner(selectedProjectIdx) && (isAdmin || isSupervisor)"
+            <DPGButton v-if="hasOwner && (isAdmin || isSupervisor)"
                @click="clearClicked()" class="p-button-secondary pad-right" label="Clear Assignment"/>
             <template v-if="isOwner(userStore.computeID)">
-               <template v-if="isWorking(selectedProjectIdx) == false">
-                  <AssignModal v-if="(isOwner(userStore.computeID) || isSupervisor || isAdmin)" :projectID="currProject.id" label="Reassign"/>
-                  <DPGButton v-if="inProgress(selectedProjectIdx) == false" @click="startStep" label="Start"/>
-                  <DPGButton v-if="canReject(selectedProjectIdx)" class="p-button-danger" @click="rejectStepClicked" label="Reject"/>
-                  <DPGButton v-if="inProgress(selectedProjectIdx) == true" :disabled="!isFinishEnabled" @click="finishClicked">
-                     <template v-if="isFinalizing &&  hasError(selectedProjectIdx) == true">Retry Finalize</template>
+               <template v-if="isWorking == false">
+                  <AssignModal v-if="(isOwner(userStore.computeID) || isSupervisor || isAdmin)" :projectID="detail.id" label="Reassign"/>
+                  <DPGButton v-if="inProgress == false" @click="startStep" label="Start"/>
+                  <DPGButton v-if="canReject" class="p-button-danger" @click="rejectStepClicked" label="Reject"/>
+                  <DPGButton v-if="inProgress == true" :disabled="!isFinishEnabled" @click="finishClicked">
+                     <template v-if="isFinalizing &&  hasError == true">Retry Finalize</template>
                      <template v-else>Finish</template>
                   </DPGButton>
                </template>
             </template>
             <template v-else>
-               <DPGButton v-if="isWorking(selectedProjectIdx) == false && (hasOwner(selectedProjectIdx) == false || isAdmin ||isSupervisor)"
+               <DPGButton v-if="isWorking == false && (hasOwner == false || isAdmin ||isSupervisor)"
                   @click="claimClicked()"  class="p-button-secondary pad-right" label="Claim"/>
-               <AssignModal v-if="(isAdmin || isSupervisor)" :projectID="currProject.id" />
+               <AssignModal v-if="(isAdmin || isSupervisor)" :projectID="detail.id" />
             </template>
          </span>
       </div>
@@ -70,7 +70,7 @@
    </Panel>
    <Dialog v-model:visible="showWorkflowPicker" :modal="true" header="Change Workflow" style="width:300px">
       <div class="workflow-picker">
-         <p>Current workflow: {{ currProject.workflow.name }}</p>
+         <p>Current workflow: {{ detail.workflow.name }}</p>
          <p>Select a new workflow:</p>
          <div class="workflow-list">
             <div class="workflow-val" v-for="(w,idx) in activeWorkflows" :key="w.id"
@@ -119,7 +119,7 @@ const projectStore = useProjectStore()
 const systemStore = useSystemStore()
 const userStore = useUserStore()
 const {
-   currProject, selectedProjectIdx, isOwner, hasOwner, hasError,
+   detail, isOwner, hasOwner, hasError,
    isFinalizeRunning, isFinished, inProgress, isWorking, canReject,
 } = storeToRefs(projectStore)
 const {isAdmin, isSupervisor} = storeToRefs(userStore)
@@ -152,7 +152,7 @@ const isManuscriptSelected = computed(()=>{
    return false
 })
 const currStepName = computed(()=>{
-   return currProject.value.currentStep.name
+   return detail.value.currentStep.name
 })
 const isFinalizing = computed(()=>{
    return currStepName.value == 'Finalize'
@@ -161,52 +161,52 @@ const isScanning = computed(()=>{
    return (currStepName.value == 'Scan' || currStepName.value == 'Process')
 })
 const isFinishEnabled = computed(()=>{
-   if ( currProject.value.workflow.name == "Manuscript" && currStepName.value == "Scan" && currProject.value.containerType == null) return false
-   if ( currStepName.value == "Scan" && currProject.value.workstation.id == 0) return false
+   if ( detail.value.workflow.name == "Manuscript" && currStepName.value == "Scan" && detail.value.containerType == null) return false
+   if ( currStepName.value == "Scan" && detail.value.workstation.id == 0) return false
    if ( currStepName.value == "Finalize") {
-      if ( currProject.value.unit.metadata.ocrHint.id == 0) return false
-      if ( currProject.value.unit.metadata.ocrHint.id == 1 && currProject.value.unit.metadata.ocrLanguageHint == "") return false
+      if ( detail.value.unit.metadata.ocrHint.id == 0) return false
+      if ( detail.value.unit.metadata.ocrHint.id == 1 && detail.value.unit.metadata.ocrLanguageHint == "") return false
    }
    return true
 })
 const workingDir = computed(()=>{
-   let unitDir =  unitDirectory(currProject.value.unit.id)
-   if (currProject.value.currentStep.name == "Process" || currProject.value.currentStep.name == "Scan") {
+   let unitDir =  unitDirectory(detail.value.unit.id)
+   if (detail.value.currentStep.name == "Process" || detail.value.currentStep.name == "Scan") {
       return `${systemStore.scanDir}/${unitDir}`
    }
    return `${systemStore.qaDir}/${unitDir}`
 })
 const assignedAt = computed(()=>{
-   let stepID = currProject.value.currentStep.id
-   let a = currProject.value.assignments.find( a => a.stepID == stepID)
+   let stepID = detail.value.currentStep.id
+   let a = detail.value.assignments.find( a => a.stepID == stepID)
    if (a && a.assignedAt)  {
       return dayjs(a.assignedAt).format("YYYY-MM-DD hh:mm A")
    }
    return ""
 })
 const startedAt = computed(()=>{
-   let stepID = currProject.value.currentStep.id
-   let a = currProject.value.assignments.find( a => a.stepID == stepID)
+   let stepID = detail.value.currentStep.id
+   let a = detail.value.assignments.find( a => a.stepID == stepID)
    if ( a && a.startedAt) return dayjs(a.startedAt).format("YYYY-MM-DD hh:mm A")
    return ""
 })
 const workflowNote = computed(()=>{
-   if ( currStepName.value == "Scan" && currProject.value.workstation.id == 0) {
+   if ( currStepName.value == "Scan" && detail.value.workstation.id == 0) {
       return "Assignment cannot be finished until the workstation has been set."
    }
-   if ( currProject.value.workflow.name == "Manuscript" && currStepName.value == "Scan" && currProject.value.containerType == null) {
+   if ( detail.value.workflow.name == "Manuscript" && currStepName.value == "Scan" && detail.value.containerType == null) {
       return "Assignment cannot be finished until container type is set."
    }
-   if ( currStepName.value == "Finalize" && currProject.value.unit.metadata.ocrHint.id == 0) {
+   if ( currStepName.value == "Finalize" && detail.value.unit.metadata.ocrHint.id == 0) {
       return "Assignment cannot be finished until the OCR hint has been set."
    }
-   if ( currProject.value.unit.metadata.ocrHint.id > 1 && currProject.value.unit.ocrMasterFiles == true) {
+   if ( detail.value.unit.metadata.ocrHint.id > 1 && detail.value.unit.ocrMasterFiles == true) {
       return "Cannot OCR items that are not regular text."
    }
-   if ( currProject.value.unit.metadata.ocrHint.id == 1 && currProject.value.unit.metadata.ocrLanguageHint == "" && currStepName.value == "Finalize") {
+   if ( detail.value.unit.metadata.ocrHint.id == 1 && detail.value.unit.metadata.ocrLanguageHint == "" && currStepName.value == "Finalize") {
       return "Assignment cannot be finished until the OCR Language Hint has been set."
    }
-   if ( currProject.value.unit.status == "error" ) {
+   if ( detail.value.unit.status == "error" ) {
       return "Finalization has failed. Correct the problem then click 'Retry Finalization'."
    }
    return ""
@@ -238,7 +238,7 @@ function selectContainerType( idx ) {
 }
 
 function clearClicked() {
-   projectStore.assignProject({projectID: currProject.value.id, ownerID: 0} )
+   projectStore.assignProject({projectID: detail.value.id, ownerID: 0} )
 }
 
 function rejectStepClicked() {
@@ -247,12 +247,12 @@ function rejectStepClicked() {
 }
 
 function claimClicked() {
-   projectStore.assignProject({projectID: currProject.value.id, ownerID: userStore.ID} )
+   projectStore.assignProject({projectID: detail.value.id, ownerID: userStore.ID} )
 }
 
 function finishClicked() {
    action.value = "finish"
-   if ( currProject.value.assignments[0].durationMinutes == 0) {
+   if ( detail.value.assignments[0].durationMinutes == 0) {
       showTimeEntry()
    } else {
       // send a 0 time to indicate that time has already been recorded
@@ -274,7 +274,7 @@ function showTimeEntry() {
 
 function timeEntered() {
    let threshold = 100
-   if (currProject.value.currentStep.name == "Scan" || currProject.value.currentStep.name == "First QA") {
+   if (detail.value.currentStep.name == "Scan" || detail.value.currentStep.name == "First QA") {
       threshold = 500
    }
    if (stepMinutes.value == 0 ) {
@@ -324,7 +324,7 @@ function cancelFinish() {
 }
 
 function viewerClicked() {
-   router.push(`/projects/${currProject.value.id}/unit`)
+   router.push(`/projects/${detail.value.id}/unit`)
 }
 
 function startStep() {

@@ -219,7 +219,6 @@ export const useUnitStore = defineStore('unit', {
 
          const system = useSystemStore()
          system.working = true
-         console.log("getMetadataPage")
          let mdURL = `/api/units/${ this.currUnit}/masterfiles/metadata?page=${this.currPage}&pagesize=${this.pageSize}`
          return axios.get(mdURL).then(response => {
             system.working = false

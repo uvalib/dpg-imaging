@@ -3,12 +3,12 @@
       <div class="timing">
          <span>
             <label>Date started:</label>
-            <span v-if="projectStore.currProject.startedAt">{{formatDate(projectStore.currProject.startedAt)}}</span>
+            <span v-if="projectStore.detail.startedAt">{{formatDate(projectStore.detail.startedAt)}}</span>
             <span v-else class="na">N/A</span>
          </span>
          <span>
             <label>Total work time:</label>
-            <span v-if="projectStore.currProject.startedAt">{{totalWorkTime}}</span>
+            <span v-if="projectStore.detail.startedAt">{{totalWorkTime}}</span>
             <span v-else class="na">N/A</span>
          </span>
       </div>
@@ -17,7 +17,7 @@
             <tr>
                <th>Date</th><th>Step</th><th>Activity</th><th>Owner</th>
             </tr>
-            <template v-for="a in projectStore.currProject.assignments" :key="`a${a.id}`">
+            <template v-for="a in projectStore.detail.assignments" :key="`a${a.id}`">
                <template v-if="a.step.name != 'Unknown'">
                   <template v-if="a.finishedAt">
                      <!-- status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing, :working] -->
@@ -58,8 +58,8 @@
                </template>
             </template>
             <tr class="create">
-               <td>{{formatDate(projectStore.currProject.addedAt)}}</td>
-               <td>Project #{{projectStore.currProject.id}}</td>
+               <td>{{formatDate(projectStore.detail.addedAt)}}</td>
+               <td>Project #{{projectStore.detail.id}}</td>
                <td>Created</td>
                <td></td>
             </tr>
@@ -78,7 +78,7 @@ const projectStore = useProjectStore()
 
 const totalWorkTime = computed(() => {
    let mins = 0
-   projectStore.currProject.assignments.forEach( a => {
+   projectStore.detail.assignments.forEach( a => {
       mins += a.durationMinutes
    })
    let h = 0

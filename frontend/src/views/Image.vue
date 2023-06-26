@@ -3,7 +3,7 @@
       <WaitSpinner v-if="systemStore.working" :overlay="true" message="Working..." />
       <div id="iiif-toolbar" class="toolbar" v-show="fullScreen == false">
          <TagPicker v-if="currMasterFile" :masterFile="currMasterFile" display="large" class="top-right"/>
-         <table class="info" v-if="projectStore.selectedProjectIdx > -1">
+         <table class="info" v-if="projectStore.hasDetail">
             <tr class="line">
                <td class="label">Image:</td>
                <td class="data" v-if="currMasterFile">
@@ -147,7 +147,7 @@ const nextImage = ( async () => {
    let pgIdx = page.value-1
    await unitStore.getMasterFileMetadata( pgIdx )
    viewer.goToPage( pgIdx )
-   let url = `/projects/${projectStore.currProject.id}/unit/images/${page.value}`
+   let url = `/projects/${projectStore.detail.id}/unit/images/${page.value}`
    router.replace(url)
    focusViewer()
 })
@@ -158,7 +158,7 @@ const prevImage = ( async () => {
       let pgIdx = page.value-1
       await unitStore.getMasterFileMetadata( pgIdx )
       viewer.goToPage( pgIdx )
-      let url = `/projects/${projectStore.currProject.id}/unit/images/${page.value}`
+      let url = `/projects/${projectStore.detail.id}/unit/images/${page.value}`
       router.replace(url)
       focusViewer()
    }
@@ -185,7 +185,6 @@ const keyboardHandler = ((event) => {
    if ( event.key == 'z') {
       event.stopPropagation()
       let ele = document.getElementById("iiif-viewer")
-      console.log("PRE FULL PAGE "+zoom.value)
       fullScreen.value = !fullScreen.value
       let origZoom = zoom.value
       viewer.setFullPage( fullScreen.value )
@@ -232,9 +231,9 @@ onBeforeMount( async () => {
    page.value = parseInt(route.params.page, 10)
    let currPageIndex = page.value-1
 
-   if (projectStore.selectedProjectIdx == -1) {
+   if (projectStore.hasDetail == false) {
       await projectStore.getProject(route.params.id)
-      await unitStore.getUnitMasterFiles(projectStore.currProject.unit.id)
+      await unitStore.getUnitMasterFiles(projectStore.detail.unit.id)
       await unitStore.getMasterFileMetadata( currPageIndex )
    }
    nextTick(()=>{

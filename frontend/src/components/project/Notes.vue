@@ -6,10 +6,10 @@
             <NoteModal id="note-modal" />
          </div>
       </template>
-      <div v-if="!currProject.notes" class="none">
+      <div v-if="!detail.notes" class="none">
          There are no notes associated with this project
       </div>
-      <div v-else class="note-card" v-for="n in currProject.notes" :key="`n${n.id}`" :class="noteTypeString(n.type).toLowerCase()">
+      <div v-else class="note-card" v-for="n in detail.notes" :key="`n${n.id}`" :class="noteTypeString(n.type).toLowerCase()">
          <div class="note-info">
             <div>
                <p class="note-date">{{formatDate(n.createdAt)}}</p>
@@ -36,7 +36,7 @@ import dayjs from 'dayjs'
 import Panel from 'primevue/panel'
 
 const projectStore = useProjectStore()
-const { currProject } = storeToRefs(projectStore)
+const { detail } = storeToRefs(projectStore)
 
 const problemsString = ((probs) => {
    let out = []

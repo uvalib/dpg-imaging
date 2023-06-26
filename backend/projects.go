@@ -217,7 +217,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	}
 	qCustomer := c.Query("customer")
 	if qCustomer != "" {
-		whereQ += fmt.Sprintf(" AND Unit__Order__Customer.last_name like \"%%%s%%\"", qCustomer)
+		whereQ += fmt.Sprintf(" AND Unit__Order__Customer.last_name like \"%s%%\"", qCustomer)
 	}
 	qAgency := c.Query("agency")
 	if qAgency != "" {

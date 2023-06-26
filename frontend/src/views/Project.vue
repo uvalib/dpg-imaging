@@ -3,55 +3,53 @@
       <h2>
          <span>Digitization Project #{{route.params.id}}</span>
          <span v-if="projectStore.working == false" class="due">
-            <label>Due:</label><span>{{projectStore.dueDate(0)}}</span>
+            <label>Due:</label><span>{{projectStore.dueDate}}</span>
          </span>
       </h2>
       <WaitSpinner v-if="projectStore.working" :overlay="true" message="Working..." />
-      <template v-if="projectStore.selectedProjectIdx >=0">
-         <div class="project-head">
-            <h3>
-               <a target="_blank" :href="metadataLink">{{currProject.unit.metadata.title}}</a>
-            </h3>
-            <div class="row">
-               <div>
-                  <label>Customer:</label>
-                  <span class="data">{{currProject.unit.order.customer.firstName}} {{currProject.unit.order.customer.lastName}}</span>
-               </div>
-               <div v-if="currProject.unit.order.agency.id > 0">
-                  <label>Agency:</label>
-                  <span class="data">{{currProject.unit.order.agency.name}}</span>
-               </div>
-               <div>
-                  <label>Intended Use:</label>
-                  <span class="data">{{currProject.unit.intendedUse.description}}</span>
-               </div>
+      <div v-if="projectStore.hasDetail" class="project-head">
+         <h3>
+            <a target="_blank" :href="metadataLink">{{detail.unit.metadata.title}}</a>
+         </h3>
+         <div class="row">
+            <div>
+               <label>Customer:</label>
+               <span class="data">{{detail.unit.order.customer.firstName}} {{detail.unit.order.customer.lastName}}</span>
             </div>
-            <div class="row right-pad">
-               <div>
-                  <label>Unit:</label>
-                  <a target="_blank" :href="`${systemStore.adminURL}/units/${currProject.unit.id}`">{{currProject.unit.id}}</a>
-               </div>
-               <div>
-                  <label>Order:</label>
-                  <a target="_blank" :href="`${systemStore.adminURL}/orders/${currProject.unit.orderID}`">{{currProject.unit.orderID}}</a>
-               </div>
+            <div v-if="detail.unit.order.agency.id > 0">
+               <label>Agency:</label>
+               <span class="data">{{detail.unit.order.agency.name}}</span>
             </div>
+            <div>
+               <label>Intended Use:</label>
+               <span class="data">{{detail.unit.intendedUse.description}}</span>
+            </div>
+         </div>
+         <div class="row right-pad">
+            <div>
+               <label>Unit:</label>
+               <a target="_blank" :href="`${systemStore.adminURL}/units/${detail.unit.id}`">{{detail.unit.id}}</a>
+            </div>
+            <div>
+               <label>Order:</label>
+               <a target="_blank" :href="`${systemStore.adminURL}/orders/${detail.unit.orderID}`">{{detail.unit.orderID}}</a>
+            </div>
+         </div>
 
-            <div class="back">
-               <i class="fas fa-angle-double-left back-button"></i>
-               <span class="text-button" @click="backClicked">Back to projects</span>
-            </div>
+         <div class="back">
+            <i class="fas fa-angle-double-left back-button"></i>
+            <span class="text-button" @click="backClicked">Back to projects</span>
          </div>
-         <div class="project-main">
-            <ItemInfo />
-            <Equipment />
-            <div class="double">
-               <Workflow />
-               <History />
-            </div>
-            <Notes />
+      </div>
+      <div  v-if="projectStore.hasDetail" class="project-main">
+         <ItemInfo />
+         <Equipment />
+         <div class="double">
+            <Workflow />
+            <History />
          </div>
-      </template>
+         <Notes />
+      </div>
    </div>
 </template>
 
@@ -63,23 +61,26 @@ import Notes from "@/components/project/Notes.vue"
 import Equipment from "@/components/project/Equipment.vue"
 import { useSystemStore } from "@/stores/system"
 import { useProjectStore } from "@/stores/project"
+import { useSearchStore } from "@/stores/search"
 import { onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 
 const systemStore = useSystemStore()
 const projectStore = useProjectStore()
+const searchStore = useSearchStore()
 const route = useRoute()
 const router = useRouter()
 
-const { currProject } = storeToRefs(projectStore)
+const { detail } = storeToRefs(projectStore)
 
 const metadataLink = computed(() => {
-   return `${systemStore.adminURL}/metadata/${currProject.value.unit.metadata.id}`
+   return `${systemStore.adminURL}/metadata/${detail.value.unit.metadata.id}`
 })
 
 onMounted( async () => {
    await projectStore.getProject(route.params.id)
+   console.log("done request")
 })
 
 onBeforeUnmount( async () => {
@@ -87,7 +88,7 @@ onBeforeUnmount( async () => {
 })
 
 const backClicked = (() => {
-   router.push( projectStore.lastSearchURL )
+   router.push( searchStore.lastSearchURL )
 })
 
 </script>

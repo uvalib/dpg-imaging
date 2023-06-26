@@ -3,34 +3,34 @@
       <h3>Search</h3>
       <div class="form">
          <label for="workflow">Workflow</label>
-         <Dropdown id="workflow" v-model="projectStore.search.workflow" :options="workflows"
+         <Dropdown id="workflow" v-model="searchStore.search.workflow" :options="workflows"
             optionLabel="name" optionValue="id" @change="doSearch()" />
          <label for="assigned">Assigned To</label>
-         <Dropdown id="assigned" v-model="projectStore.search.assignedTo" :options="staffMembers"
+         <Dropdown id="assigned" v-model="searchStore.search.assignedTo" :options="staffMembers"
             optionLabel="name" optionValue="id"
             filter autoFilterFocus resetFilterOnHide filterMatchMode="startsWith"
             @change="doSearch()" />
 
          <label for="unit">Order</label>
-         <input id="unit" v-model="projectStore.search.orderID" @keyup.enter="doSearch()">
+         <input id="unit" v-model="searchStore.search.orderID" @keyup.enter="doSearch()">
 
          <label for="unit">Unit</label>
-         <input id="unit" v-model="projectStore.search.unitID" @keyup.enter="doSearch()">
+         <input id="unit" v-model="searchStore.search.unitID" @keyup.enter="doSearch()">
 
          <label for="call">Call Number</label>
-         <input id="call" v-model="projectStore.search.callNumber" @keyup.enter="doSearch()">
+         <input id="call" v-model="searchStore.search.callNumber" @keyup.enter="doSearch()">
 
          <label for="customer">Customer Last Name</label>
-         <input id="customer" v-model="projectStore.search.customer" @keyup.enter="doSearch()">
+         <input id="customer" v-model="searchStore.search.customer" @keyup.enter="doSearch()">
 
          <label for="agency">Agency</label>
-         <Dropdown id="agency" v-model="projectStore.search.agency" :options="agencies"
+         <Dropdown id="agency" v-model="searchStore.search.agency" :options="agencies"
             optionLabel="name" optionValue="id"
             filter autoFilterFocus resetFilterOnHide  filterMatchMode="startsWith"
             @change="doSearch()" />
 
          <label for="workstation">Workstation</label>
-         <Dropdown id="workstation" v-model="projectStore.search.workstation" :options="workstations"
+         <Dropdown id="workstation" v-model="searchStore.search.workstation" :options="workstations"
             optionLabel="name" optionValue="id" @change="doSearch()" />
       </div>
       <div class="buttons">
@@ -41,15 +41,15 @@
 </template>
 
 <script setup>
-import { useProjectStore } from '@/stores/project'
-import {useSystemStore} from '@/stores/system'
+import { useSearchStore } from '@/stores/search'
+import { useSystemStore } from '@/stores/system'
 import { useRoute, useRouter } from 'vue-router'
 import Dropdown from 'primevue/dropdown'
 import { computed } from 'vue'
 
 const route = useRoute()
 const router = useRouter()
-const projectStore = useProjectStore()
+const searchStore = useSearchStore()
 const systemStore = useSystemStore()
 
 const staffMembers = computed( () => {
@@ -96,58 +96,55 @@ const resetSearch = ( async() => {
    delete query.filter
    router.push({query})
 
-   projectStore.resetSearch()
+   searchStore.resetSearch()
 })
 
 const doSearch = ( async () => {
    // this will reset the page number and trigger a search
-   projectStore.setCurrentPage(0)
+   searchStore.setCurrentPage(0)
 
    let query = Object.assign({}, route.query)
    delete query.workflow
-   if (projectStore.search.workflow != 0) {
-      query.workflow = projectStore.search.workflow
+   if (searchStore.search.workflow != 0) {
+      query.workflow = searchStore.search.workflow
    }
 
    delete query.owner
-   if (projectStore.search.assignedTo > 0 ) {
-      console.log("set owner")
-      query.owner = projectStore.search.assignedTo
-   } else {
-      console.log("fr")
+   if (searchStore.search.assignedTo > 0 ) {
+      query.owner = searchStore.search.assignedTo
    }
 
    delete query.order
-   if (projectStore.search.orderID != "") {
-      query.order = projectStore.search.orderID
+   if (searchStore.search.orderID != "") {
+      query.order = searchStore.search.orderID
    }
 
    delete query.unit
-   if (projectStore.search.unitID != "") {
-      query.unit = projectStore.search.unitID
+   if (searchStore.search.unitID != "") {
+      query.unit = searchStore.search.unitID
    }
 
    delete query.callnum
-   if (projectStore.search.callNumber != "") {
-      query.callnum = projectStore.search.callNumber
+   if (searchStore.search.callNumber != "") {
+      query.callnum = searchStore.search.callNumber
    }
 
    delete query.customer
-   if (projectStore.search.customer != "") {
-      query.customer = projectStore.search.customer
+   if (searchStore.search.customer != "") {
+      query.customer = searchStore.search.customer
    }
 
    delete query.agency
-   if (projectStore.search.agency > 0) {
-      query.agency = projectStore.search.agency
+   if (searchStore.search.agency > 0) {
+      query.agency = searchStore.search.agency
    }
 
    delete query.workstation
-   if (projectStore.search.workstation > 0) {
-      query.workstation =projectStore.search.workstation
+   if (searchStore.search.workstation > 0) {
+      query.workstation =searchStore.search.workstation
    }
    await router.push({query})
-   projectStore.lastSearchURL = route.fullPath
+   searchStore.lastSearchURL = route.fullPath
 })
 </script>
 
