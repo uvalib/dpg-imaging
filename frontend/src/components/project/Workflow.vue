@@ -27,11 +27,11 @@
       <div class="workflow-btns time" v-if="timeEntry">
          <div class="time-form">
             <label for="time">Approximately how many minutes did you spend on this assignment?</label>
-            <input id="time" type="text" v-model="stepMinutes"  @keyup.enter="timeEntered">
-         </div>
-         <div class="ok-cancel">
-             <DPGButton @click="cancelFinish" class="p-button-secondary" label="Cancel"/>
-             <DPGButton @click="timeEntered" label="OK"/>
+            <div class="time-controls">
+               <input id="time" type="text" v-model="stepMinutes"  @keyup.enter="timeEntered">
+               <DPGButton @click="cancelFinish" class="p-button-secondary" label="Cancel"/>
+               <DPGButton @click="timeEntered" label="OK"/>
+            </div>
          </div>
       </div>
       <div class="finalizing" v-else-if="isFinalizeRunning" >
@@ -384,26 +384,25 @@ function unitDirectory(unitID) {
    .workflow-btns.time {
       text-align: left;
       .time-form {
-         display: flex;
-         flex-flow: flex nowrap;
-         justify-content: flex-start;
+         width: 100%;
+         text-align: right;
          margin-bottom: 10px;
-         align-items: center;
          font-size: 0.9em;
          label {
             white-space: nowrap;
-
+            display: block;
+            font-weight: bold;
+            margin-bottom: 10px
          }
-         input {
-            flex-grow: 1;
-            margin-left: 10px;
-            border-color: var(--uvalib-grey-light);
+         .time-controls {
+            display: flex;
+            flex-flow: row nowrap;
+            justify-content: flex-end;
+            input {
+               width: 50px;
+               border-color: var(--uvalib-grey-light);
+            }
          }
-      }
-      .ok-cancel {
-         display: flex;
-         flex-flow: row nowrap;
-         justify-content: flex-end;
       }
    }
    .workflow-message {

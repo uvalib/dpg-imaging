@@ -277,7 +277,10 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	if filter == "finished" {
 		orderStr = "finished_at desc"
 	}
-	whereQ = filterQ[filterIdx] + whereQ + " AND unit_status != 'done'"
+	whereQ = filterQ[filterIdx] + whereQ
+	if filterIdx != 3 {
+		whereQ += " AND unit_status != 'done'"
+	}
 	err = svc.getBaseSearchQuery().
 		Offset(offset).Limit(pageSize).Order(orderStr).
 		Where(whereQ).
