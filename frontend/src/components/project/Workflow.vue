@@ -27,7 +27,7 @@
       <div class="workflow-btns time" v-if="timeEntry">
          <div class="time-form">
             <label for="time">Approximately how many minutes did you spend on this assignment?</label>
-            <input id="time" type="number" v-model="stepMinutes"  @keyup.enter="timeEntered">
+            <input id="time" type="text" v-model="stepMinutes"  @keyup.enter="timeEntered">
          </div>
          <div class="ok-cancel">
              <DPGButton @click="cancelFinish" class="p-button-secondary" label="Cancel"/>
@@ -277,27 +277,33 @@ function timeEntered() {
    if (detail.value.currentStep.name == "Scan" || detail.value.currentStep.name == "First QA") {
       threshold = 500
    }
-   if (stepMinutes.value == 0 ) {
+
+   let intDuration = parseInt(stepMinutes.value, 10)
+   if ( isNaN(intDuration)) {
+      systemStore.setError("Please enter a number")
+      return
+   }
+   if (intDuration <= 0 ) {
       systemStore.setError("A non-zero duration is required")
       return
    }
-   if (stepMinutes.value > threshold ) {
+   if (intDuration > threshold ) {
       confirm.require({
-         message: `The duration entered (${stepMinutes.value} minutes) is very large. Are you sure?`,
+         message: `The duration entered (${intDuration} minutes) is very large. Are you sure?`,
          header: 'Confirm Duration',
          rejectClass: 'p-button-secondary',
          accept: () => {
-            timeEnterSuccess()
+            timeEnterSuccess( intDuration )
          }
       })
    } else {
-      timeEnterSuccess()
+      timeEnterSuccess( intDuration )
    }
 }
 
-const timeEnterSuccess = (() => {
+const timeEnterSuccess = ((intDuration) => {
    if ( action.value == "finish")  {
-      projectStore.finishStep(stepMinutes.value)
+      projectStore.finishStep( intDuration )
       timeEntry.value = false
       stepMinutes.value = 0
    } else {
@@ -313,7 +319,16 @@ function rejectCanceled() {
 }
 
 function rejectSubmitted() {
-   projectStore.rejectStep(stepMinutes.value)
+   let intDuration = parseInt(stepMinutes.value, 10)
+   if ( isNaN(intDuration)) {
+      systemStore.setError("Please enter a number")
+      return
+   }
+   if (intDuration <= 0 ) {
+      systemStore.setError("A non-zero duration is required")
+      return
+   }
+   projectStore.rejectStep( intDuration )
    showRejectNote.value = false
    timeEntry.value = false
    stepMinutes.value = 0
