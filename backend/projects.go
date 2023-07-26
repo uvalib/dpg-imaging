@@ -273,7 +273,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		}
 	}
 
-	orderStr := "due_on asc"
+	orderStr := "date_due asc"
 	if filter == "finished" {
 		orderStr = "finished_at desc"
 	}

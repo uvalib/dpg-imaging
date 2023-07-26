@@ -420,17 +420,31 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 	}
 
 	// Make sure  directory is clean and in proper structure
+	imagesMovedToFinalize := false
 	unitDir := padLeft(fmt.Sprintf("%d", proj.UnitID), 9)
 	tgtDir := path.Join(svc.ImagesDir, unitDir)
 	if proj.CurrentStep.Name == "Scan" || proj.CurrentStep.Name == "Process" {
 		tgtDir = path.Join(svc.ScanDir, unitDir)
 	}
+
+	// finalize is a special case. In it, files are moved to the finalization directory. Since this step can be retried,
+	// the files may be in finalization instead of the standard imaging directory. Handle that here:
+	if proj.CurrentStep.Name == "Finalize" {
+		// see if the starting directory is present. If not switch to finalization.
+		// At this point, no validation is done. Just checking where files reside
+		if !dirExist(tgtDir) {
+			log.Printf("INFO: finalization files do not exist at %s, checking alternate location", tgtDir)
+			tgtDir = path.Join(svc.FinalizeDir, unitDir)
+			imagesMovedToFinalize = true
+		}
+	}
+
 	err := svc.validateDirectory(proj, tgtDir)
 	if err != nil {
 		return err
 	}
 
-	// Files get moved in two places; after Process and Finalization
+	// Files get moved in two places; after Process and Finalization. Handle the case of a retried finalize when files have already been moved
 	var moveErr error
 	if proj.CurrentStep.Name == "Process" {
 		srcDir := path.Join(svc.ScanDir, unitDir)
@@ -438,9 +452,13 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 		moveErr = svc.moveFiles(proj, srcDir, tgtDir)
 	}
 	if proj.CurrentStep.Name == "Finalize" {
-		srcDir := path.Join(svc.ImagesDir, unitDir)
-		tgtDir := path.Join(svc.FinalizeDir, unitDir)
-		moveErr = svc.moveFiles(proj, srcDir, tgtDir)
+		if !imagesMovedToFinalize {
+			srcDir := path.Join(svc.ImagesDir, unitDir)
+			tgtDir := path.Join(svc.FinalizeDir, unitDir)
+			moveErr = svc.moveFiles(proj, srcDir, tgtDir)
+		} else {
+			log.Printf("INFO: files for project %d step %s have already been moved to the finalization directory", proj.ID, proj.CurrentStep.Name)
+		}
 	}
 	if moveErr != nil {
 		return moveErr
