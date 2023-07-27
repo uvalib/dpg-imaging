@@ -272,40 +272,30 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 
 	// is this the last step of a workflow?
 	if proj.CurrentStep.StepType == 1 {
-		if proj.Unit.UnitStatus != "error" {
-			err := svc.validateFinishStep(proj)
-			if err != nil {
-				log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, err.Error())
-				proj, _ = svc.getProjectInfo(projID)
-				c.JSON(http.StatusOK, proj)
-				return
-			}
-		}
-
-		log.Printf("INFO: sending request to dpg-jobs to begin or restart finalization of unit %d", proj.UnitID)
-		resp, httpErr := svc.postRequest(fmt.Sprintf("%s/units/%d/finalize", svc.FinalizeURL, proj.UnitID), nil)
-		if httpErr != nil {
-			currA.Status = StepError
-			svc.DB.Model(&currA).Select("Status").Updates(currA)
-			log.Printf("ERROR: finalize request failed: %s", httpErr.Message)
-			c.String(http.StatusInternalServerError, httpErr.Message)
-			return
-		}
-
 		currA.Status = StepFinalizing
 		svc.DB.Model(&currA).Select("Status").Updates(currA)
+
+		go func() {
+			if proj.Unit.UnitStatus != "error" {
+				err := svc.validateFinishStep(proj)
+				if err != nil {
+					log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, err.Error())
+					return
+				}
+			}
+
+			log.Printf("INFO: sending request to dpg-jobs to begin or restart finalization of unit %d", proj.UnitID)
+			_, httpErr := svc.postRequest(fmt.Sprintf("%s/units/%d/finalize", svc.FinalizeURL, proj.UnitID), nil)
+			if httpErr != nil {
+				log.Printf("ERROR: finalize request failed: %s", httpErr.Message)
+				msg := fmt.Sprintf("<p>Request to start finalization failed: %s</p>", httpErr.Message)
+				svc.failStep(proj, "Other", msg)
+				return
+			}
+		}()
+
 		proj, _ = svc.getProjectInfo(projID)
-
-		// extend the project data structure to include the finalize jobID so the status can be checked
-		out := struct {
-			*project
-			JobID string `json:"jobID,omitempty"`
-		}{
-			project: proj,
-			JobID:   string(resp),
-		}
-
-		c.JSON(http.StatusOK, out)
+		c.JSON(http.StatusOK, proj)
 		return
 	}
 
@@ -445,23 +435,24 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 	}
 
 	// Files get moved in two places; after Process and Finalization. Handle the case of a retried finalize when files have already been moved
-	var moveErr error
 	if proj.CurrentStep.Name == "Process" {
 		srcDir := path.Join(svc.ScanDir, unitDir)
 		tgtDir := path.Join(svc.ImagesDir, unitDir)
-		moveErr = svc.moveFiles(proj, srcDir, tgtDir)
-	}
-	if proj.CurrentStep.Name == "Finalize" {
+		moveErr := svc.moveFiles(proj, srcDir, tgtDir)
+		if moveErr != nil {
+			return moveErr
+		}
+	} else if proj.CurrentStep.Name == "Finalize" {
 		if !imagesMovedToFinalize {
 			srcDir := path.Join(svc.ImagesDir, unitDir)
 			tgtDir := path.Join(svc.FinalizeDir, unitDir)
-			moveErr = svc.moveFiles(proj, srcDir, tgtDir)
+			moveErr := svc.moveFiles(proj, srcDir, tgtDir)
+			if moveErr != nil {
+				log.Printf("ERROR: move files from %s to %s failed: %s", srcDir, tgtDir, moveErr.Error())
+			}
 		} else {
 			log.Printf("INFO: files for project %d step %s have already been moved to the finalization directory", proj.ID, proj.CurrentStep.Name)
 		}
-	}
-	if moveErr != nil {
-		return moveErr
 	}
 
 	log.Printf("INFO: project %d step %s successfully finished", proj.ID, proj.CurrentStep.Name)
@@ -638,20 +629,22 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string) error {
 
 func (svc *serviceContext) moveFiles(proj *project, srcDir string, destDir string) error {
 	log.Printf("INFO: move project %d files from %s to %s", proj.ID, srcDir, destDir)
-	if !dirExist(srcDir) && !dirExist(destDir) {
+	srcExist := dirExist(srcDir)
+	destExist := dirExist(destDir)
+	if !srcExist && !destExist {
 		svc.failStep(proj, "Filesystem", "<p>Neither start nor finsh directory exists</p>")
 		return fmt.Errorf("neither source %s or destination %s exists", srcDir, destDir)
 	}
 
-	// Both exist without DELETE.ME; something is wrong. Fail
-	if dirExist(srcDir) && dirExist(destDir) {
+	// Both exist something is wrong. Fail
+	if srcExist && destExist {
 		svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Both source %s and destination %s exist</p>", srcDir, destDir))
-		return fmt.Errorf("both source %s and destination %s exists", srcDir, destDir)
+		return fmt.Errorf("both source %s and destination %s exist", srcDir, destDir)
 	}
 
 	// Source is gone but dest exists. No move needed
-	if !dirExist(srcDir) && dirExist(destDir) {
-		log.Printf("source %s is missing (of has DELETE.ME) and destination %s already exists; no meve needed", srcDir, destDir)
+	if !srcExist && destExist {
+		log.Printf("source %s is missing and destination %s exists; no move needed", srcDir, destDir)
 		return nil
 	}
 
@@ -664,12 +657,16 @@ func (svc *serviceContext) moveFiles(proj *project, srcDir string, destDir strin
 	}
 
 	log.Printf("INFO: recursively copy %s to %s", srcDir, destDir)
+	startTime := time.Now()
 	cmdArray := []string{"-R", srcDir, destDir}
 	_, err := exec.Command("cp", cmdArray...).Output()
 	if err != nil {
 		svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Move %s to %s failed: %s</p>", srcDir, destDir, err.Error()))
 		return fmt.Errorf("unable to copy source %s to destination %s: %s", srcDir, destDir, err.Error())
 	}
+	elapsed := time.Since(startTime)
+	elapsedMS := int64(elapsed / time.Millisecond)
+	log.Printf("INFO: copy from %s to %s completed in %d ms", srcDir, destDir, elapsedMS)
 
 	log.Printf("INFO: cleanup original %s", srcDir)
 	cmdArray = []string{"-r", srcDir}

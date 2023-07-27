@@ -167,34 +167,12 @@ export const useProjectStore = defineStore('project', {
             this.detail.currentStep = response.data.currentStep
             this.detail.assignments = response.data.assignments
             this.detail.notes = response.data.notes
-            if ( response.data.jobID) {
-               this.finalizeJobID = response.data.jobID
-               this.startStatusCheck()
-            }
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
             system.error = e
             this.working = false
          })
-      },
-      startStatusCheck() {
-         const system = useSystemStore()
-         this.statusCheckIntervalID =  setInterval( () => {
-            axios.get(`${system.jobsURL}/jobs/${this.finalizeJobID}`).then(response => {
-               if ( response.data.status == "finished" || response.data.status == "failure") {
-                  clearInterval( this.statusCheckIntervalID )
-                  this.statusCheckIntervalID = -1
-                  this.finalizeJobID = ""
-                  this.getProject(this.detail.id)
-               }
-            }).catch( e => {
-               system.error = e
-               clearInterval( this.statusCheckIntervalID )
-               this.statusCheckIntervalID = -1
-               this.finalizeJobID = ""
-            })
-         }, 1000*30)
       },
       rejectStep(durationMins) {
          this.working = true

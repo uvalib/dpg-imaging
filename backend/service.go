@@ -346,7 +346,7 @@ func dirExist(tgtDir string) bool {
 	log.Printf("INFO: check existance of %s", tgtDir)
 	_, err := os.Stat(tgtDir)
 	if err != nil {
-		log.Printf("ERROR: check %s failed: %s", tgtDir, err.Error())
+		log.Printf("INFO: %s does not exist", tgtDir)
 		return false
 	}
 	return true
