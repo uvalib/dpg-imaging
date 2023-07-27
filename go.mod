@@ -3,7 +3,7 @@ module github.com/uvalib/dpg-imaging
 go 1.16
 
 require (
-	github.com/bytedance/sonic v1.10.0-rc2 // indirect
+	github.com/bytedance/sonic v1.10.0-rc3 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-contrib/gzip v0.0.6
