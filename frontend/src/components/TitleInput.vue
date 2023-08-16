@@ -25,7 +25,7 @@ const editVal = ref(props.modelValue)
 const dropdownOpen = ref(false)
 const vocab = ref(["Spine", "Front Cover", "Front Cover verso", "Back Cover", "Back Cover recto",
          "Head", "Tail", "Fore-edge", "Front Paste-down Endpaper", "Front Free Endpaper",
-         "Back Paste-down Endpaper", "Back Free Endpaper", "Plate",
+         "Rear Paste-down Endpaper", "Rear Free Endpaper", "Plate",
          "Blank Page", "Half-title", "Frontispiece", "Printer's Imprint", "Copyright",
          "Privilege", "Ad Lectorem",  "Table of Contents", "Titlepage", "Device",
          "Epigraph", "Prologue/Preface", "Dedication", "Errata"].sort())
