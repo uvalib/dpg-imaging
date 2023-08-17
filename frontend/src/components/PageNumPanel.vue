@@ -48,31 +48,32 @@ onMounted( async () => {
    })
 })
 
-function cancelEditClicked() {
+const cancelEditClicked = (() => {
    systemStore.error = ""
    unitStore.editMode = ""
-}
+})
 
-function okPagesClicked() {
+const okPagesClicked = (() => {
    systemStore.error = ""
    if ( unitStore.rangeStartIdx == -1 || unitStore.rangeEndIdx == -1) {
-      systemStore.error = "Start and end image must be selected"
+      systemStore.setError( "Start and end image must be selected" )
       return
    }
    if (startPage.value == "") {
-      systemStore.error = "Start page is required"
+      systemStore.setError( "Start page is required" )
       return
    }
    if (unnumberVerso.value && (unitStore.rangeEndIdx-unitStore.rangeStartIdx)%2 == 0) {
-      systemStore.error = "An even number of pages is required for unnumbered verso"
+      systemStore.setError( "An even number of pages is required for unnumbered verso")
       return
    }
    unitStore.updatePageNumbers(startPage.value, !unnumberVerso.value)
    unitStore.editMode = ""
-}
-function selectAllClicked() {
+})
+
+const selectAllClicked = (() => {
    unitStore.selectAll()
-}
+})
 </script>
 
 <style lang="scss" scoped>

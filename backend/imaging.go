@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -50,6 +51,11 @@ type qaCheck struct {
 	Errors []string `json:"errors"`
 }
 
+type exifFileCommands struct {
+	File     string
+	Commands []string
+}
+
 func (svc *serviceContext) updateImageMetadata(c *gin.Context) {
 	uid := padLeft(c.Param("uid"), 9)
 	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
@@ -80,7 +86,7 @@ func (svc *serviceContext) updateImageMetadata(c *gin.Context) {
 }
 
 func getExifTag(fieldName string) string {
-	log.Printf("INFO: lookup exif tag for field %s", fieldName)
+	// log.Printf("INFO: lookup exif tag for field %s", fieldName)
 	fields := []exifMapping{{FieldName: "title", ExifTag: "iptc:headline"}, {FieldName: "description", ExifTag: "iptc:caption-abstract"},
 		{FieldName: "box", ExifTag: "iptc:Keywords"}, {FieldName: "folder", ExifTag: "iptc:ContentLocationName"},
 		{FieldName: "tag", ExifTag: "iptc:ClassifyState"}, {FieldName: "component", ExifTag: "iptc:OwnerID"},
@@ -92,7 +98,7 @@ func getExifTag(fieldName string) string {
 			break
 		}
 	}
-	log.Printf("INFO: field %s matches exif tag  %s", fieldName, exifTag)
+	// log.Printf("INFO: field %s matches exif tag  %s", fieldName, exifTag)
 	return exifTag
 }
 
@@ -119,51 +125,57 @@ func (svc *serviceContext) updateMetadataBatch(c *gin.Context) {
 		c.String(http.StatusBadRequest, "Invalid request")
 		return
 	}
-	log.Printf("INFO: batch master file metadata in %s", unitDir)
 
 	start := time.Now()
-	pendingFilesCnt := 0
 	chunkSize := 10
-	fileCommands := make(map[string][]string)
-	channel := make(chan []updateProblem)
-	outstandingRequests := 0
+	commandsBatch := make([]exifFileCommands, 0)
+	errChannel := make(chan updateProblem)
+	var updateWG sync.WaitGroup
+
+	log.Printf("INFO: batch master file metadata in %s with batch size %d", unitDir, chunkSize)
 	for _, change := range mdPost {
-		cmd := make([]string, 0)
+		cmd := exifFileCommands{File: change.File, Commands: make([]string, 0)}
 		exifTag := getExifTag(change.Field)
-		cmd = append(cmd, fmt.Sprintf("-%s=%s", exifTag, change.Value))
-		cmd = append(cmd, change.File)
-		fileCommands[change.File] = cmd
-		pendingFilesCnt++
-		if pendingFilesCnt == chunkSize {
-			outstandingRequests++
-			log.Printf("INFO: update batch #%d of %d images", outstandingRequests, chunkSize)
-			go batchUpdateExifData(fileCommands, channel)
-			fileCommands = make(map[string][]string)
-			pendingFilesCnt = 0
+		cmd.Commands = append(cmd.Commands, fmt.Sprintf("-%s=%s", exifTag, change.Value))
+		cmd.Commands = append(cmd.Commands, change.File)
+		commandsBatch = append(commandsBatch, cmd)
+		if len(commandsBatch) == chunkSize {
+			updateWG.Add(1)
+			cmdCopy := make([]exifFileCommands, len(commandsBatch))
+			copy(cmdCopy, commandsBatch)
+			go func() {
+				defer updateWG.Done()
+				batchUpdateExifData(cmdCopy, errChannel)
+			}()
+			commandsBatch = make([]exifFileCommands, 0)
 		}
 	}
 
-	if pendingFilesCnt > 0 {
-		outstandingRequests++
-		log.Printf("INFO: update batch #%d of %d images", outstandingRequests, chunkSize)
-		go batchUpdateExifData(fileCommands, channel)
+	if len(commandsBatch) > 0 {
+		updateWG.Add(1)
+		go func() {
+			defer updateWG.Done()
+			batchUpdateExifData(commandsBatch, errChannel)
+		}()
 	}
 
-	// wait for all metadata updates to complete
 	var resp struct {
 		Success  bool            `json:"success"`
 		Problems []updateProblem `json:"problems"`
 	}
 	resp.Success = true
 	resp.Problems = make([]updateProblem, 0)
-	log.Printf("INFO: await all metadata updates")
-	for outstandingRequests > 0 {
-		errs := <-channel
-		outstandingRequests--
-		if len(errs) > 0 {
-			resp.Success = false
-			resp.Problems = append(resp.Problems, errs...)
-		}
+
+	go func() {
+		log.Printf("INFO: await all metadata updates and collect any problems in the response")
+		updateWG.Wait()
+		close(errChannel)
+		log.Printf("INFO: all batches complete")
+	}()
+
+	for problem := range errChannel {
+		resp.Success = false
+		resp.Problems = append(resp.Problems, problem)
 	}
 
 	elapsed := time.Since(start)
@@ -292,7 +304,7 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 
 	log.Printf("INFO: rotate %s", fullPath)
 	cmd := []string{fullPath, "-rotate", rotateDir, fullPath}
-	_, err = exec.Command("convert", cmd...).Output()
+	_, err = exec.Command("magick", cmd...).Output()
 	if err != nil {
 		log.Printf("ERROR: unable to rotate %s: %s", fullPath, err.Error())
 		c.String(http.StatusInternalServerError, fmt.Sprintf("unable to rotate file: %s", err.Error()))
@@ -324,21 +336,21 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 	c.String(http.StatusOK, "rotated")
 }
 
-// batchUpdateExifData is called as a goroutine. It will update a batch of files, then return true on the channel
-func batchUpdateExifData(fileCommands map[string][]string, channel chan []updateProblem) {
-	errors := make([]updateProblem, 0)
-	for tgtFile, command := range fileCommands {
-		_, err := exec.Command("exiftool", command...).Output()
+func batchUpdateExifData(fileCommands []exifFileCommands, channel chan updateProblem) {
+	log.Printf("INFO: start batch of %d update commands", len(fileCommands))
+	startTime := time.Now()
+	for _, fc := range fileCommands {
+		cmd := exec.Command("exiftool", fc.Commands...)
+		out, err := cmd.CombinedOutput()
 		if err != nil {
-			log.Printf("ERROR: unable to update %s metadata with %v: %s", tgtFile, command, err.Error())
-			errors = append(errors, updateProblem{File: path.Base(tgtFile), Problem: err.Error()})
+			log.Printf("ERROR: unable to update %s metadata with %v: %s", fc.File, cmd, out)
+			channel <- updateProblem{File: path.Base(fc.File), Problem: err.Error()}
 		} else {
-			cleanupExifToolDups(tgtFile)
+			cleanupExifToolDups(fc.File)
 		}
 	}
-
-	// notify caller that the block is done
-	channel <- errors
+	elapsed := time.Since(startTime)
+	log.Printf("INFO: batch of %d update commands has finished in %d ms", len(fileCommands), elapsed.Milliseconds())
 }
 
 func checkExifHeaders(cmdArray []string, checkLocation bool, channel chan []qaCheck) {
