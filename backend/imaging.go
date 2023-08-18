@@ -392,68 +392,86 @@ func checkExifHeaders(files []string, checkLocation bool, channel chan updatePro
 	log.Printf("INFO: batch of %d validate commands has finished in %d ms", len(files), elapsed.Milliseconds())
 }
 
-// getExifData will retrieve a batch of metadata for masterfiles in a goroutine. The list of metadata is returned.
-func asyncGetExifData(cmdArray []string, channel chan []masterFileMetadata) {
-	channel <- getExifData(cmdArray)
-}
-
-// getExifData will retrieve a batch of metadata for masterfiles in a goroutine. The list of metadata is returned.
-func getExifData(cmdArray []string) []masterFileMetadata {
-	out := make([]masterFileMetadata, 0)
+func getExifMetadataBatch(tgtFiles []string, channel chan masterFileMetadata) {
+	log.Printf("INFO: start get metadata batch of %d files", len(tgtFiles))
+	startTime := time.Now()
+	cmdArray := baseExifCmd()
+	cmdArray = append(cmdArray, tgtFiles...)
 	cmd := exec.Command("exiftool", cmdArray...)
-	// log.Printf("INFO: %v", cmd)
-	stdout, err := cmd.Output()
+	cmdOut, err := cmd.Output()
 	if err != nil {
 		log.Printf("WARNINIG: unable to get image metadata: %s", err.Error())
-	} else {
-		var parsed []exifData
-		err = json.Unmarshal(stdout, &parsed)
-		if err != nil {
-			log.Printf("WARNING: unable to parse metadata: %s", err.Error())
-		} else {
-			for _, md := range parsed {
-				mdRec := masterFileMetadata{}
-				mdRec.FileName = path.Base(fmt.Sprintf("%v", md.SourceFile))
-				if md.Title != nil {
-					mdRec.Title = fmt.Sprintf("%v", md.Title)
-				}
-				if md.Description != nil {
-					mdRec.Description = fmt.Sprintf("%v", md.Description)
-				}
-				if md.Component != nil {
-					mdRec.ComponentID = fmt.Sprintf("%v", md.Component)
-				}
-				if md.Box != nil {
-					mdRec.Box = fmt.Sprintf("%v", md.Box)
-				}
-				if md.Folder != nil {
-					mdRec.Folder = fmt.Sprintf("%v", md.Folder)
-				}
-				if md.Resolution != nil {
-					valType := fmt.Sprintf("%T", md.Resolution)
-					if valType == "int" {
-						mdRec.Resolution = md.Resolution.(int)
-					} else if valType == "float64" {
-						fRes := md.Resolution.(float64)
-						mdRec.Resolution = int(fRes)
-					} else {
-						log.Printf("WARN: unsupported resolution type %s", valType)
-						mdRec.Resolution = 0
-					}
-				}
-				mdRec.ColorProfile = md.ColorProfile
-				mdRec.FileSize = md.FileSize
-				mdRec.FileType = md.FileType
-				mdRec.Width = md.Width
-				mdRec.Height = md.Height
-				mdRec.Status = md.ClassifyState
-
-				out = append(out, mdRec)
-			}
-		}
+		return
 	}
 
-	return out
+	var parsed []exifData
+	json.Unmarshal(cmdOut, &parsed)
+	for _, exifMD := range parsed {
+		mdRec := parseExifResponse(&exifMD)
+		channel <- mdRec
+	}
+
+	elapsed := time.Since(startTime)
+	log.Printf("INFO: get metadata batch of %d files has finished in %d ms", len(tgtFiles), elapsed.Milliseconds())
+}
+
+func getExifData(tgtFile string) (*masterFileMetadata, error) {
+	log.Printf("INFO: get exif metadata for %s", tgtFile)
+	cmdArray := baseExifCmd()
+	cmdArray = append(cmdArray, tgtFile)
+	cmd := exec.Command("exiftool", cmdArray...)
+
+	cmdOut, err := cmd.Output()
+	if err != nil {
+		log.Printf("WARNINIG: unable to get image metadata: %s", err.Error())
+		return nil, fmt.Errorf("%s", cmdOut)
+	}
+
+	var parsed []exifData
+	json.Unmarshal(cmdOut, &parsed)
+	md := parsed[0]
+	mdRec := parseExifResponse(&md)
+
+	return &mdRec, nil
+}
+
+func parseExifResponse(exifMD *exifData) masterFileMetadata {
+	mdRec := masterFileMetadata{}
+	mdRec.FileName = path.Base(fmt.Sprintf("%v", exifMD.SourceFile))
+	if exifMD.Title != nil {
+		mdRec.Title = fmt.Sprintf("%v", exifMD.Title)
+	}
+	if exifMD.Description != nil {
+		mdRec.Description = fmt.Sprintf("%v", exifMD.Description)
+	}
+	if exifMD.Component != nil {
+		mdRec.ComponentID = fmt.Sprintf("%v", exifMD.Component)
+	}
+	if exifMD.Box != nil {
+		mdRec.Box = fmt.Sprintf("%v", exifMD.Box)
+	}
+	if exifMD.Folder != nil {
+		mdRec.Folder = fmt.Sprintf("%v", exifMD.Folder)
+	}
+	if exifMD.Resolution != nil {
+		valType := fmt.Sprintf("%T", exifMD.Resolution)
+		if valType == "int" {
+			mdRec.Resolution = exifMD.Resolution.(int)
+		} else if valType == "float64" {
+			fRes := exifMD.Resolution.(float64)
+			mdRec.Resolution = int(fRes)
+		} else {
+			log.Printf("WARN: unsupported resolution type %s", valType)
+			mdRec.Resolution = 0
+		}
+	}
+	mdRec.ColorProfile = exifMD.ColorProfile
+	mdRec.FileSize = exifMD.FileSize
+	mdRec.FileType = exifMD.FileType
+	mdRec.Width = exifMD.Width
+	mdRec.Height = exifMD.Height
+	mdRec.Status = exifMD.ClassifyState
+	return mdRec
 }
 
 func baseExifCmd() []string {

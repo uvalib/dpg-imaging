@@ -205,9 +205,13 @@ func (svc *serviceContext) getMasterFilesMetadata(c *gin.Context) {
 	tgtFile := c.Query("file")
 	if tgtFile != "" {
 		log.Printf("INFO: get metadata for masterfile %s", tgtFile)
-		cmdArray := baseExifCmd()
-		cmdArray = append(cmdArray, tgtFile)
-		c.JSON(http.StatusOK, getExifData(cmdArray))
+		mfMD, err := getExifData(tgtFile)
+		if err != nil {
+			log.Printf("ERROR: unable to get %s metadata: %s", tgtFile, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.JSON(http.StatusOK, mfMD)
+		}
 		return
 	}
 
@@ -224,43 +228,50 @@ func (svc *serviceContext) getMasterFilesMetadata(c *gin.Context) {
 	log.Printf("INFO: get %d metadata records from %s starting from masterfile index %d", pageSize, unitDir, startSeqNum)
 
 	// use exiftool to get metadata for master files on the current page only
-	start := time.Now()
-	cmdArray := baseExifCmd()
-	pendingFilesCnt := 0
-	channel := make(chan []masterFileMetadata)
-	outstandingRequests := 0
+	startTime := time.Now()
+	var mdWG sync.WaitGroup
+	tgtFiles := make([]string, 0)
+	mdChannel := make(chan masterFileMetadata)
+
 	for i := 0; i < pageSize; i++ {
 		mfSeqNum := startSeqNum + i
 		filename := fmt.Sprintf("%s_%04d.tif", uidStr, mfSeqNum)
 		fullPath := findFile(unitDir, filename)
 		if fullPath != "" {
-			cmdArray = append(cmdArray, fullPath)
-			pendingFilesCnt++
-			if pendingFilesCnt == svc.BatchSize {
-				outstandingRequests++
-				go asyncGetExifData(cmdArray, channel)
-				cmdArray = baseExifCmd()
-				pendingFilesCnt = 0
+			tgtFiles = append(tgtFiles, fullPath)
+			if len(tgtFiles) == svc.BatchSize {
+				mdWG.Add(1)
+				filesCopy := make([]string, len(tgtFiles))
+				copy(filesCopy, tgtFiles)
+				go func() {
+					defer mdWG.Done()
+					getExifMetadataBatch(filesCopy, mdChannel)
+				}()
+				tgtFiles = make([]string, 0)
 			}
 		}
 	}
 
-	if pendingFilesCnt > 0 {
-		outstandingRequests++
-		go asyncGetExifData(cmdArray, channel)
+	if len(tgtFiles) > 0 {
+		mdWG.Add(1)
+		go func() {
+			defer mdWG.Done()
+			getExifMetadataBatch(tgtFiles, mdChannel)
+		}()
 	}
 
-	// wait for all metadata updates to complete
+	go func() {
+		log.Printf("INFO: await all exif metadata responses")
+		mdWG.Wait()
+		close(mdChannel)
+		elapsed := time.Since(startTime)
+		log.Printf("INFO: all hexif metadata requests have completed in %.3f sec", elapsed.Seconds())
+	}()
+
 	out := make([]masterFileMetadata, 0)
-	for outstandingRequests > 0 {
-		mdResp := <-channel
-		out = append(out, mdResp...)
-		outstandingRequests--
+	for mdResp := range mdChannel {
+		out = append(out, mdResp)
 	}
-
-	elapsed := time.Since(start)
-	elapsedMS := int64(elapsed / time.Millisecond)
-	log.Printf("INFO: got %d metadata records for unit %s in %dms", len(out), uidStr, elapsedMS)
 
 	c.JSON(http.StatusOK, out)
 }
