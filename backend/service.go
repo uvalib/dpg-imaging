@@ -37,6 +37,7 @@ type serviceContext struct {
 	DB          *gorm.DB
 	DevAuthUser string
 	JWTKey      string
+	BatchSize   int
 }
 
 // RequestError contains http status code and message for a failed HTTP request
@@ -56,7 +57,8 @@ func initializeService(version string, cfg *configData) *serviceContext {
 		ServiceURL:  cfg.serviceURL,
 		TrackSysURL: cfg.tracksysURL,
 		FinalizeURL: cfg.finalizeURL,
-		DevAuthUser: cfg.devAuthUser}
+		DevAuthUser: cfg.devAuthUser,
+		BatchSize:   10} // for all parallel processing. number of images processed per batch
 
 	log.Printf("INFO: connecting to DB...")
 	connectStr := fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true",

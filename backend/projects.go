@@ -25,18 +25,51 @@ type containerType struct {
 	HasFolders bool   `json:"hasFolders"`
 }
 
+type assignStatusEnum uint
+
+func (s assignStatusEnum) String() string {
+	switch s {
+	case Pending:
+		return "pending"
+	case Started:
+		return "started"
+	case Finished:
+		return "finished"
+	case Rejected:
+		return "rejected"
+	case Error:
+		return "error"
+	case Reassigned:
+		return "reassigned"
+	case Finalizing:
+		return "finalizing"
+	}
+	return "unknown"
+}
+
+// Assignment status from rails enum: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing]
+const (
+	Pending    assignStatusEnum = 0
+	Started    assignStatusEnum = 1
+	Finished   assignStatusEnum = 2
+	Rejected   assignStatusEnum = 3
+	Error      assignStatusEnum = 4
+	Reassigned assignStatusEnum = 5
+	Finalizing assignStatusEnum = 6
+)
+
 type assignment struct {
-	ID              uint        `json:"id"`
-	ProjectID       uint        `json:"projectID"`
-	StepID          uint        `json:"-"`
-	Step            step        `gorm:"foreignKey:StepID" json:"step"`
-	StaffMemberID   uint        `json:"-"`
-	StaffMember     staffMember `gorm:"foreignKey:StaffMemberID" json:"staffMember"`
-	AssignedAt      *time.Time  `json:"assignedAt,omitempty"`
-	StartedAt       *time.Time  `json:"startedAt,omitempty"`
-	FinishedAt      *time.Time  `json:"finishedAt,omitempty"`
-	DurationMinutes uint        `json:"durationMinutes"`
-	Status          uint        `json:"status"` //enum status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing]
+	ID              uint             `json:"id"`
+	ProjectID       uint             `json:"projectID"`
+	StepID          uint             `json:"-"`
+	Step            step             `gorm:"foreignKey:StepID" json:"step"`
+	StaffMemberID   uint             `json:"-"`
+	StaffMember     staffMember      `gorm:"foreignKey:StaffMemberID" json:"staffMember"`
+	AssignedAt      *time.Time       `json:"assignedAt,omitempty"`
+	StartedAt       *time.Time       `json:"startedAt,omitempty"`
+	FinishedAt      *time.Time       `json:"finishedAt,omitempty"`
+	DurationMinutes uint             `json:"durationMinutes"`
+	Status          assignStatusEnum `json:"status"`
 }
 
 type step struct {
@@ -150,6 +183,30 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, proj)
+}
+
+func (svc *serviceContext) getProjectStatus(c *gin.Context) {
+	projID := c.Param("id")
+	var proj *project
+	err := svc.DB.First(&proj, projID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %s for status check: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if proj.FinishedAt != nil {
+		c.String(http.StatusOK, "finished")
+	} else {
+		var currAssgn assignment
+		err = svc.DB.Where("project_id=?", proj.ID).Order("assigned_at desc").First(&currAssgn).Error
+		if err != nil {
+			log.Printf("ERROR: unable to get current assignemnt for project %s: %s", projID, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		c.String(http.StatusOK, currAssgn.Status.String())
+	}
 }
 
 func (svc *serviceContext) getProjects(c *gin.Context) {

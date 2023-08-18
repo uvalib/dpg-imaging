@@ -127,19 +127,18 @@ func (svc *serviceContext) updateMetadataBatch(c *gin.Context) {
 	}
 
 	start := time.Now()
-	chunkSize := 10
 	commandsBatch := make([]exifFileCommands, 0)
 	errChannel := make(chan updateProblem)
 	var updateWG sync.WaitGroup
 
-	log.Printf("INFO: batch master file metadata in %s with batch size %d", unitDir, chunkSize)
+	log.Printf("INFO: batch master file metadata in %s with batch size %d", unitDir, svc.BatchSize)
 	for _, change := range mdPost {
 		cmd := exifFileCommands{File: change.File, Commands: make([]string, 0)}
 		exifTag := getExifTag(change.Field)
 		cmd.Commands = append(cmd.Commands, fmt.Sprintf("-%s=%s", exifTag, change.Value))
 		cmd.Commands = append(cmd.Commands, change.File)
 		commandsBatch = append(commandsBatch, cmd)
-		if len(commandsBatch) == chunkSize {
+		if len(commandsBatch) == svc.BatchSize {
 			updateWG.Add(1)
 			cmdCopy := make([]exifFileCommands, len(commandsBatch))
 			copy(cmdCopy, commandsBatch)
@@ -353,49 +352,44 @@ func batchUpdateExifData(fileCommands []exifFileCommands, channel chan updatePro
 	log.Printf("INFO: batch of %d update commands has finished in %d ms", len(fileCommands), elapsed.Milliseconds())
 }
 
-func checkExifHeaders(cmdArray []string, checkLocation bool, channel chan []qaCheck) {
-	out := make([]qaCheck, 0)
+func checkExifHeaders(files []string, checkLocation bool, channel chan updateProblem) {
+	log.Printf("INFO: start batch of %d validate commands", len(files))
+	startTime := time.Now()
+	cmdArray := []string{"-json", "-iptc:headline", "-iptc:ContentLocationName", "-iptc:Keywords"}
+	cmdArray = append(cmdArray, files...)
 	cmd := exec.Command("exiftool", cmdArray...)
 	stdout, err := cmd.Output()
 	if err != nil {
 		log.Printf("ERROR: unable to get qa metadata: %s", err.Error())
-		channel <- out
-	}
+		channel <- updateProblem{File: "all", Problem: err.Error()}
+	} else {
 
-	var parsed []exifData
-	err = json.Unmarshal(stdout, &parsed)
-	if err != nil {
-		log.Printf("ERROR: unable to parse qa metadata: %s", err.Error())
-		channel <- out
-	}
-
-	for _, md := range parsed {
-		errors := make([]string, 0)
-
-		title := ""
-		if md.Title != nil {
-			title = fmt.Sprintf("%v", md.Title)
-		}
-		if title == "" {
-			log.Printf("ERROR: %s is missing a title", md.SourceFile)
-			errors = append(errors, "Missing title metadata")
-		}
-
-		if checkLocation {
-			if md.Box == "" {
-				log.Printf("ERROR: %s is missing a box", md.SourceFile)
-				errors = append(errors, "Missing box metadata")
+		var parsed []exifData
+		json.Unmarshal(stdout, &parsed)
+		for _, md := range parsed {
+			title := ""
+			if md.Title != nil {
+				title = fmt.Sprintf("%v", md.Title)
 			}
-			if md.Folder == "" {
-				log.Printf("ERROR: %s is missing a folder", md.SourceFile)
-				errors = append(errors, "Missing folder metadata")
+			if title == "" {
+				log.Printf("ERROR: %s is missing a title", md.SourceFile)
+				channel <- updateProblem{File: md.SourceFile, Problem: "Missing title metadata"}
+			}
+
+			if checkLocation {
+				if md.Box == "" {
+					log.Printf("ERROR: %s is missing a box", md.SourceFile)
+					channel <- updateProblem{File: md.SourceFile, Problem: "Missing box metadata"}
+				}
+				if md.Folder == "" {
+					log.Printf("ERROR: %s is missing a folder", md.SourceFile)
+					channel <- updateProblem{File: md.SourceFile, Problem: "Missing folder metadata"}
+				}
 			}
 		}
-
-		tc := qaCheck{File: path.Base(md.SourceFile), Valid: len(errors) == 0, Errors: errors}
-		out = append(out, tc)
 	}
-	channel <- out
+	elapsed := time.Since(startTime)
+	log.Printf("INFO: batch of %d validate commands has finished in %d ms", len(files), elapsed.Milliseconds())
 }
 
 // getExifData will retrieve a batch of metadata for masterfiles in a goroutine. The list of metadata is returned.
@@ -467,10 +461,5 @@ func baseExifCmd() []string {
 		"-FileType", "-XResolution", "-FileSize", "-icc_profile:ProfileDescription", "-iptc:OwnerID",
 		"-iptc:headline", "-iptc:caption-abstract", "-iptc:ClassifyState",
 		"-iptc:ContentLocationName", "-iptc:Keywords"}
-	return out
-}
-
-func qaExifCmd() []string {
-	out := []string{"-json", "-iptc:headline", "-iptc:ContentLocationName", "-iptc:Keywords"}
 	return out
 }

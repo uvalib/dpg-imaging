@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -525,13 +526,12 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string) error {
 	log.Printf("INFO: validate images info in %s", tgtDir)
 	highest := -1
 	cnt := 0
-
-	pendingFilesCnt := 0
-	chunkSize := 20
-	cmdArray := qaExifCmd()
-	channel := make(chan []qaCheck)
-	outstandingRequests := 0
 	isManuscript := proj.Workflow.Name == "Manuscript"
+
+	qaFiles := make([]string, 0)
+	errChannel := make(chan updateProblem)
+	var checkWG sync.WaitGroup
+	startTime := time.Now()
 
 	err := filepath.WalkDir(tgtDir, func(fullPath string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() {
@@ -567,22 +567,30 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string) error {
 		}
 
 		if proj.CurrentStep.Name == "Create Metadata" || proj.CurrentStep.Name == "Finalize" {
-			cmdArray = append(cmdArray, fullPath)
-			pendingFilesCnt++
-			if pendingFilesCnt == chunkSize {
-				outstandingRequests++
-				go checkExifHeaders(cmdArray, isManuscript, channel)
-				cmdArray = qaExifCmd()
-				pendingFilesCnt = 0
+			qaFiles = append(qaFiles, fullPath)
+			if len(qaFiles) == svc.BatchSize {
+				log.Printf("INFO: check headers on batch of %d files", len(qaFiles))
+				filesCopy := make([]string, len(qaFiles))
+				copy(filesCopy, qaFiles)
+				checkWG.Add(1)
+				go func() {
+					defer checkWG.Done()
+					checkExifHeaders(filesCopy, isManuscript, errChannel)
+				}()
+				qaFiles = make([]string, 0)
 			}
 		}
 
 		return nil
 	})
 
-	if pendingFilesCnt > 0 {
-		outstandingRequests++
-		go checkExifHeaders(cmdArray, isManuscript, channel)
+	if len(qaFiles) > 0 {
+		log.Printf("INFO: check headers on final batch of %d files", len(qaFiles))
+		checkWG.Add(1)
+		go func() {
+			defer checkWG.Done()
+			checkExifHeaders(qaFiles, isManuscript, errChannel)
+		}()
 	}
 
 	if err != nil {
@@ -597,30 +605,26 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string) error {
 		return fmt.Errorf("count/sequence mismatch in %s", tgtDir)
 	}
 
-	if outstandingRequests > 0 {
-		log.Printf("INFO: await %d outstanding header check requests for  %s", outstandingRequests, tgtDir)
-		for outstandingRequests > 0 {
-			info := <-channel
-			outstandingRequests--
-			if len(info) == 0 {
-				svc.failStep(proj, "Metadata", "<p>Unable to extract metadata from images.</p>")
-				return fmt.Errorf("unable to extract metadata from images")
-			}
-			for _, tc := range info {
-				if !tc.Valid {
-					msg := ""
-					for _, em := range tc.Errors {
-						msg += fmt.Sprintf("<li>%s</li>", em)
-					}
-					svc.failStep(proj, "Metadata", fmt.Sprintf("%s has the following errors: <ul>%s<ul>", tc.File, msg))
-					return fmt.Errorf("metadata errors in %s", tc.File)
-				}
-			}
-			if outstandingRequests > 0 {
-				log.Printf("INFO: await %d outstanding header check requests", outstandingRequests)
-			}
+	go func() {
+		log.Printf("INFO: await all metadata checks and collect any problems in the response")
+		checkWG.Wait()
+		close(errChannel)
+		elapsed := time.Since(startTime)
+		log.Printf("INFO: all header check requests have completed for %s in %.3f sec", tgtDir, elapsed.Seconds())
+	}()
+
+	errorMsg := ""
+	for problem := range errChannel {
+		if problem.File == "all" {
+			svc.failStep(proj, "Metadata", "<p>Unable to extract metadata from images.</p>")
+			return fmt.Errorf("unable to extract metadata from images")
 		}
-		log.Printf("INFO: all header check requests have completed for %s", tgtDir)
+		errorMsg += fmt.Sprintf("<li>%s - %s</li>", path.Base(problem.File), problem.Problem)
+	}
+
+	if errorMsg != "" {
+		svc.failStep(proj, "Metadata", fmt.Sprintf("The following errors were found: <ul>%s<ul>", errorMsg))
+		return fmt.Errorf("one or mor images has metadata errors")
 	}
 
 	log.Printf("INFO: %s images and metadata are valid", tgtDir)

@@ -80,7 +80,7 @@ const metadataLink = computed(() => {
 
 onMounted( async () => {
    await projectStore.getProject(route.params.id)
-   console.log("done request")
+   projectStore.pollProjectStatus()
 })
 
 onBeforeUnmount( async () => {

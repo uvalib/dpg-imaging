@@ -11,7 +11,7 @@ import (
 )
 
 // Version of the service
-const Version = "5.3.5"
+const Version = "5.3.6"
 
 func main() {
 	// Load cfg
@@ -38,6 +38,7 @@ func main() {
 		api.GET("/projects", svc.getProjects)
 		api.GET("/projects/:id", svc.getProject)
 		api.PUT("/projects/:id", svc.updateProject)
+		api.GET("/projects/:id/status", svc.getProjectStatus)
 		api.POST("/projects/:id/assign/:uid", svc.assignProject)
 		api.POST("/projects/:id/equipment", svc.setProjectEquipment)
 		api.POST("/projects/:id/note", svc.addNoteRequest)

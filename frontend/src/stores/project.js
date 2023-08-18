@@ -5,7 +5,6 @@ import axios from 'axios'
 export const useProjectStore = defineStore('project', {
    state: () => ({
       detail: null,
-      finalizeJobID: "",
       statusCheckIntervalID: -1,
       working: true,
    }),
@@ -93,8 +92,7 @@ export const useProjectStore = defineStore('project', {
             this.working = false
          })
       },
-      cancelStatusPolling() {
-         this.finalizeJobID = ""
+cancelStatusPolling() {
          if (this.statusCheckIntervalID > -1) {
             clearInterval( this.statusCheckIntervalID )
             this.statusCheckIntervalID = -1
@@ -162,17 +160,39 @@ export const useProjectStore = defineStore('project', {
       },
       finishStep(durationMins) {
          this.working = true
+         let isFinalize = (this.detail.assignments[0].step.name == "Finalize")
          axios.post(`/api/projects/${this.detail.id}/finish`, {durationMins: durationMins} ).then(response => {
             this.detail.owner = response.data.owner
             this.detail.currentStep = response.data.currentStep
             this.detail.assignments = response.data.assignments
             this.detail.notes = response.data.notes
             this.working = false
+            if ( isFinalize ) {
+               this.pollProjectStatus()
+            }
          }).catch( e => {
             const system = useSystemStore()
             system.error = e
             this.working = false
          })
+      },
+      pollProjectStatus() {
+         if ( this.isFinalizeRunning == false) return
+
+         const system = useSystemStore()
+         this.statusCheckIntervalID = setInterval( ()=>{
+            axios.get(`/api/projects/${this.detail.id}/status`).then(response => {
+               if (response.data == "error" || response.data == "finished") {
+                  this.getProject( this.detail.id )
+                  clearInterval(this.statusCheckIntervalID )
+                  this.statusCheckIntervalID = -1
+               }
+            }).catch( e => {
+               system.error = e
+               clearInterval(this.statusCheckIntervalID )
+               this.statusCheckIntervalID = -1
+            })
+         }, 5000)
       },
       rejectStep(durationMins) {
          this.working = true

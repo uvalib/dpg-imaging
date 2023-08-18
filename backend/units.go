@@ -227,7 +227,6 @@ func (svc *serviceContext) getMasterFilesMetadata(c *gin.Context) {
 	start := time.Now()
 	cmdArray := baseExifCmd()
 	pendingFilesCnt := 0
-	chunkSize := 10
 	channel := make(chan []masterFileMetadata)
 	outstandingRequests := 0
 	for i := 0; i < pageSize; i++ {
@@ -237,7 +236,7 @@ func (svc *serviceContext) getMasterFilesMetadata(c *gin.Context) {
 		if fullPath != "" {
 			cmdArray = append(cmdArray, fullPath)
 			pendingFilesCnt++
-			if pendingFilesCnt == chunkSize {
+			if pendingFilesCnt == svc.BatchSize {
 				outstandingRequests++
 				go asyncGetExifData(cmdArray, channel)
 				cmdArray = baseExifCmd()
@@ -312,7 +311,6 @@ func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse
 		return nil, uErr
 	}
 
-	chunkSize := 10
 	commandsBatch := make([]exifFileCommands, 0)
 	errChannel := make(chan updateProblem)
 	var batchWG sync.WaitGroup
@@ -345,7 +343,7 @@ func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse
 		cmd.Commands = append(cmd.Commands, path)
 		commandsBatch = append(commandsBatch, cmd)
 
-		if len(commandsBatch) == chunkSize {
+		if len(commandsBatch) == svc.BatchSize {
 			batchWG.Add(1)
 			cmdCopy := make([]exifFileCommands, len(commandsBatch))
 			copy(cmdCopy, commandsBatch)

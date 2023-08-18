@@ -9,7 +9,7 @@ require (
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/contrib v0.0.0-20221130124618-7e01895a63f2
 	github.com/gin-gonic/gin v1.9.1
-	github.com/go-playground/validator/v10 v10.15.0 // indirect
+	github.com/go-playground/validator/v10 v10.15.1 // indirect
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.9 // indirect
