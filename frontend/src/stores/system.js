@@ -11,6 +11,7 @@ export const useSystemStore = defineStore('system', {
       agencies: [],
       workstations: [],
       workflows: [],
+      steps: [],
       categories: [],
       containerTypes: [],
       ocrHints: [],
@@ -48,7 +49,8 @@ export const useSystemStore = defineStore('system', {
             this.qaDir =  response.data.qaImageDir
             this.scanDir =  response.data.scanDir
             this.staffMembers = response.data.staff
-            this.workflows= response.data.workflows
+            this.workflows = response.data.workflows
+            this.steps = response.data.steps
             this.workstations = response.data.workstations
             this.categories = response.data.categories
             this.ocrHints = response.data.ocrHints

@@ -19,6 +19,7 @@ export const useSearchStore = defineStore('search', {
       search: {
          workflow: 0,
          workstation: 0,
+         step: "any",
          assignedTo: 0,
          agency: 0,
          customer: "",
@@ -171,6 +172,7 @@ export const useSearchStore = defineStore('search', {
       resetSearch() {
          this.search.workflow = 0
          this.search.workstation = 0
+         this.search.step = "any"
          this.search.assignedTo = 0
          this.search.agency = 0
          this.search.customer = ""
@@ -188,6 +190,9 @@ export const useSearchStore = defineStore('search', {
          let qParam = []
          if (this.search.workflow != 0) {
             qParam.push(`workflow=${this.search.workflow}`)
+         }
+         if (this.search.step != "any") {
+            qParam.push(`step=${this.search.step}`)
          }
          if (this.search.workstation != 0) {
             qParam.push(`workstation=${this.search.workstation}`)
@@ -215,6 +220,8 @@ export const useSearchStore = defineStore('search', {
          if (qParam.length > 0 ) {
             q += `&${qParam.join("&")}`
          }
+
+         console.log("SEQRCH: "+q)
 
          axios.get(q).then(response => {
             this.setProjects(response.data)

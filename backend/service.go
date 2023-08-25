@@ -194,6 +194,7 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 		Problems         []problem         `json:"problems"`
 		OCRHints         []ocrHint         `json:"ocrHints"`
 		OCRLanguageHints []ocrLanguageHint `json:"ocrLanguageHints"`
+		Steps            []string          `json:"steps"`
 	}
 	resp := cfgData{TrackSysURL: svc.TrackSysURL,
 		JobsURL:    svc.FinalizeURL,
@@ -284,6 +285,15 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 				resp.OCRLanguageHints = append(resp.OCRLanguageHints, ocrLanguageHint{Code: rec[0], Language: rec[1]})
 			}
 		}
+	}
+
+	log.Printf("INFO: load step names")
+	resp.Steps = make([]string, 0)
+	err = svc.DB.Raw("select distinct(steps.name) from steps inner join workflows w on w.id = workflow_id and active=1").Scan(&resp.Steps).Error
+	if err != nil {
+		log.Printf("ERROR: unable to load step names: %s", err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, resp)

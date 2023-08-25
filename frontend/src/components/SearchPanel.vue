@@ -3,16 +3,21 @@
       <h3>Search</h3>
       <div class="form">
          <label for="workflow">Workflow</label>
-         <Dropdown id="workflow" v-model="searchStore.search.workflow" :options="workflows"
+         <Dropdown inputId="workflow" v-model="searchStore.search.workflow" :options="workflows"
             optionLabel="name" optionValue="id" @change="doSearch()" />
+
+         <label for="step">Step</label>
+         <Dropdown inputId="step" v-model="searchStore.search.step" :options="steps"
+            optionLabel="name" optionValue="id" @change="doSearch()" />
+
          <label for="assigned">Assigned To</label>
-         <Dropdown id="assigned" v-model="searchStore.search.assignedTo" :options="staffMembers"
+         <Dropdown inputId="assigned" v-model="searchStore.search.assignedTo" :options="staffMembers"
             optionLabel="name" optionValue="id"
             filter autoFilterFocus resetFilterOnHide filterMatchMode="startsWith"
             @change="doSearch()" />
 
-         <label for="unit">Order</label>
-         <input id="unit" v-model="searchStore.search.orderID" @keyup.enter="doSearch()">
+         <label for="order">Order</label>
+         <input id="order" v-model="searchStore.search.orderID" @keyup.enter="doSearch()">
 
          <label for="unit">Unit</label>
          <input id="unit" v-model="searchStore.search.unitID" @keyup.enter="doSearch()">
@@ -24,13 +29,13 @@
          <input id="customer" v-model="searchStore.search.customer" @keyup.enter="doSearch()">
 
          <label for="agency">Agency</label>
-         <Dropdown id="agency" v-model="searchStore.search.agency" :options="agencies"
+         <Dropdown inputId="agency" v-model="searchStore.search.agency" :options="agencies"
             optionLabel="name" optionValue="id"
             filter autoFilterFocus resetFilterOnHide  filterMatchMode="startsWith"
             @change="doSearch()" />
 
          <label for="workstation">Workstation</label>
-         <Dropdown id="workstation" v-model="searchStore.search.workstation" :options="workstations"
+         <Dropdown inputId="workstation" v-model="searchStore.search.workstation" :options="workstations"
             optionLabel="name" optionValue="id" @change="doSearch()" />
       </div>
       <div class="buttons">
@@ -68,6 +73,13 @@ const workflows = computed( () => {
    })
    return out
 })
+const steps = computed( ()=> {
+   let out = [ {name: "Any", id: "any"} ]
+   systemStore.steps.forEach( sm => {
+      out.push( { name: sm, id: sm})
+   })
+   return out
+})
 const agencies = computed( () => {
    let out = [ {name: "Any", id: 0} ]
    systemStore.agencies.forEach( sm => {
@@ -86,6 +98,7 @@ const workstations = computed( () => {
 const resetSearch = ( async() => {
    let query = Object.assign({}, route.query)
    delete query.workflow
+   delete query.step
    delete query.owner
    delete query.order
    delete query.unit
@@ -107,6 +120,11 @@ const doSearch = ( async () => {
    delete query.workflow
    if (searchStore.search.workflow != 0) {
       query.workflow = searchStore.search.workflow
+   }
+
+   delete query.step
+   if (searchStore.search.step != "any") {
+      query.step = searchStore.search.step
    }
 
    delete query.owner

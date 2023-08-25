@@ -258,6 +258,10 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		id, _ := strconv.Atoi(qWorkflow)
 		whereQ += fmt.Sprintf(" AND projects.workflow_id=%d", id)
 	}
+	qStep := c.Query("step")
+	if qStep != "" {
+		whereQ += fmt.Sprintf(" AND CurrentStep.name=\"%s\"", qStep)
+	}
 	qWorkstation := c.Query("workstation")
 	if qWorkstation != "" {
 		id, _ := strconv.Atoi(qWorkstation)

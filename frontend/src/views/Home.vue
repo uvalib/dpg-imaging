@@ -147,6 +147,9 @@ onBeforeMount( () => {
    if ( route.query.workflow) {
       searchStore.search.workflow = parseInt(route.query.workflow,10)
    }
+   if ( route.query.step) {
+      searchStore.search.step = route.query.step
+   }
    if ( route.query.owner) {
       searchStore.search.assignedTo = parseInt(route.query.owner,10)
    }
