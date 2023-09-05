@@ -11,7 +11,7 @@ import (
 )
 
 // Version of the service
-const Version = "5.3.6"
+const Version = "5.3.7"
 
 func main() {
 	// Load cfg
@@ -31,6 +31,8 @@ func main() {
 	router.GET("/version", svc.getVersion)
 	router.GET("/healthcheck", svc.healthCheck)
 	router.GET("/authenticate", svc.authenticate)
+	router.POST("/units/:uid/cleanup", svc.cleanupImageFilenames)
+
 	api := router.Group("/api", svc.authMiddleware)
 	{
 		api.GET("/components/:id", svc.getComponent)
@@ -49,11 +51,11 @@ func main() {
 
 		api.GET("/units/:uid/masterfiles", svc.getUnitMasterFiles)
 		api.GET("/units/:uid/masterfiles/metadata", svc.getMasterFilesMetadata)
-		api.POST("/units/:uid/update", svc.updateMetadataBatch)
-		api.POST("/units/:uid/rename", svc.renameFiles)
-		api.POST("/units/:uid/delete", svc.deleteFiles)
-		api.POST("/units/:uid/:file/rotate", svc.rotateFile)
-		api.POST("/units/:uid/:file/update", svc.updateImageMetadata)
+		api.POST("/units/:uid/update", svc.updateMetadataBatch)       // this is protected by BatchUnitsInProgress
+		api.POST("/units/:uid/rename", svc.renameFiles)               // this is protected by BatchUnitsInProgress
+		api.POST("/units/:uid/delete", svc.deleteFiles)               // this is protected by BatchUnitsInProgress
+		api.POST("/units/:uid/:file/rotate", svc.rotateFile)          // this is protected by BatchUnitsInProgress
+		api.POST("/units/:uid/:file/update", svc.updateImageMetadata) // this is protected by BatchUnitsInProgress
 
 		api.GET("/user/:id/messages", svc.getMessages)
 		api.POST("/user/:id/messages/:msgid/delete", svc.deleteMessage)

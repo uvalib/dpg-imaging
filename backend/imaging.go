@@ -8,6 +8,9 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
+	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -56,13 +59,70 @@ type exifFileCommands struct {
 	Commands []string
 }
 
-func (svc *serviceContext) updateImageMetadata(c *gin.Context) {
+func (svc *serviceContext) cleanupImageFilenames(c *gin.Context) {
 	uid := padLeft(c.Param("uid"), 9)
+	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
+
+	log.Printf("INFO: rename or remove  .tif_orignal files in %s", unitDir)
+	renameCnt := 0
+	originalTifRegex := regexp.MustCompile(`^.*\.tif_original$`)
+	err := filepath.Walk(unitDir, func(fullPath string, f os.FileInfo, err error) error {
+		if err != nil {
+			log.Printf("ERROR: directory %s traverse failed: %s", unitDir, err.Error())
+			return nil
+		}
+
+		if f.IsDir() {
+			log.Printf("INFO: directory %s", f.Name())
+			return nil
+		}
+
+		fName := f.Name()
+		if originalTifRegex.Match([]byte(fName)) {
+			fixedName := strings.Replace(fName, "tif_original", "tif", 1)
+			fixedFullPath := path.Join(unitDir, fixedName)
+			log.Printf("INFO: rename %s to %s", fullPath, fixedFullPath)
+			if exists(fixedFullPath) {
+				log.Printf("ERROR: cannot rename %s: %s already exists", fName, fixedFullPath)
+				return nil
+			}
+			err = os.Rename(fullPath, fixedFullPath)
+			if err != nil {
+				log.Printf("ERROR: unable to rename %s: %s", fullPath, err.Error())
+				return nil
+			}
+			renameCnt++
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Printf("ERROR: unable to walk contents of %s: %s", unitDir, err.Error())
+		c.String(http.StatusInternalServerError, "unable to find units")
+		return
+	}
+
+	log.Printf("INFO: renamed %d files", renameCnt)
+	c.String(http.StatusOK, "ok")
+}
+
+func (svc *serviceContext) updateImageMetadata(c *gin.Context) {
+	rawUnitID := c.Param("uid")
+	uid := padLeft(rawUnitID, 9)
 	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
 	fileName := c.Param("file")
 	updateField := c.Query("field")
 	updateValue := c.Query("value")
 	log.Printf("INFO: update %s/%s %s to %s", unitDir, fileName, updateField, updateValue)
+
+	if svc.isBatchInProgress(rawUnitID) {
+		log.Printf("WARNING: request to update metadata for file from unit %s rejected because it is already being processed", rawUnitID)
+		c.String(http.StatusConflict, "this unit is currently being processed by another user")
+		return
+	}
+
+	svc.addBatchProcess(rawUnitID)
+	defer svc.removeBatchProcess(rawUnitID)
 
 	exifTag := getExifTag(updateField)
 	if exifTag == "" {
@@ -110,8 +170,14 @@ func cleanupExifToolDups(fullPath string) {
 }
 
 func (svc *serviceContext) updateMetadataBatch(c *gin.Context) {
-	uid := padLeft(c.Param("uid"), 9)
+	rawUnitID := c.Param("uid")
+	uid := padLeft(rawUnitID, 9)
 	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
+	if svc.isBatchInProgress(rawUnitID) {
+		log.Printf("WARNING: request to batch update unit %s rejected because it is already being processed", rawUnitID)
+		c.String(http.StatusConflict, "this unit is currently being processed by another user")
+		return
+	}
 
 	var mdPost []struct {
 		File  string `json:"file"`
@@ -130,6 +196,8 @@ func (svc *serviceContext) updateMetadataBatch(c *gin.Context) {
 	commandsBatch := make([]exifFileCommands, 0)
 	errChannel := make(chan updateProblem)
 	var updateWG sync.WaitGroup
+	svc.addBatchProcess(rawUnitID)
+	defer svc.removeBatchProcess(rawUnitID)
 
 	log.Printf("INFO: batch master file metadata in %s with batch size %d", unitDir, svc.BatchSize)
 	for _, change := range mdPost {
@@ -185,7 +253,14 @@ func (svc *serviceContext) updateMetadataBatch(c *gin.Context) {
 }
 
 func (svc *serviceContext) renameFiles(c *gin.Context) {
-	unit := padLeft(c.Param("uid"), 9)
+	rawUnitID := c.Param("uid")
+	unit := padLeft(rawUnitID, 9)
+	if svc.isBatchInProgress(rawUnitID) {
+		log.Printf("WARNING: request to rename files for unit %s rejected because it is already being processed", rawUnitID)
+		c.String(http.StatusConflict, "this unit is currently being processed by another user")
+		return
+	}
+
 	var rnPost []struct {
 		Original string `json:"original"`
 		NewName  string `json:"new"`
@@ -200,6 +275,8 @@ func (svc *serviceContext) renameFiles(c *gin.Context) {
 	}
 
 	// create a working dir in the root of the unit directory to hold the original files to be renamed
+	svc.addBatchProcess(rawUnitID)
+	defer svc.removeBatchProcess(rawUnitID)
 	backUpDir := path.Join(svc.ImagesDir, "tmp", unit)
 	_, existErr := os.Stat(backUpDir)
 	if existErr == nil {
@@ -264,7 +341,8 @@ func (svc *serviceContext) renameFiles(c *gin.Context) {
 }
 
 func (svc *serviceContext) rotateFile(c *gin.Context) {
-	unit := padLeft(c.Param("uid"), 9)
+	rawUnitID := c.Param("uid")
+	unit := padLeft(rawUnitID, 9)
 	file := c.Param("file")
 	rotateDirString := c.Query("dir")
 	if rotateDirString == "" {
@@ -274,6 +352,15 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 	if rotateDirString == "left" {
 		rotateDir = "-90"
 	}
+
+	if svc.isBatchInProgress(rawUnitID) {
+		log.Printf("WARNING: request to rotate file from unit %s rejected because it is already being processed", rawUnitID)
+		c.String(http.StatusConflict, "this unit is currently being processed by another user")
+		return
+	}
+
+	svc.addBatchProcess(rawUnitID)
+	defer svc.removeBatchProcess(rawUnitID)
 
 	basePath := path.Join(svc.ImagesDir, unit)
 	log.Printf("INFO: looking for image %s in unit dir %s", file, basePath)

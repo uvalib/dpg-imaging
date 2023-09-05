@@ -5,8 +5,8 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -14,6 +14,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -25,19 +26,21 @@ import (
 
 // ServiceContext contains common data used by all handlers
 type serviceContext struct {
-	Version     string
-	ServiceURL  string
-	ImagesDir   string
-	ScanDir     string
-	FinalizeDir string
-	IIIFURL     string
-	TrackSysURL string
-	FinalizeURL string
-	HTTPClient  *http.Client
-	DB          *gorm.DB
-	DevAuthUser string
-	JWTKey      string
-	BatchSize   int
+	Version              string
+	ServiceURL           string
+	ImagesDir            string
+	ScanDir              string
+	FinalizeDir          string
+	IIIFURL              string
+	TrackSysURL          string
+	FinalizeURL          string
+	HTTPClient           *http.Client
+	DB                   *gorm.DB
+	DevAuthUser          string
+	JWTKey               string
+	BatchSize            int
+	batchMutex           sync.Mutex
+	BatchUnitsInProgress []string
 }
 
 // RequestError contains http status code and message for a failed HTTP request
@@ -176,6 +179,45 @@ func (svc *serviceContext) getVersion(c *gin.Context) {
 	vMap["version"] = Version
 	vMap["build"] = build
 	c.JSON(http.StatusOK, vMap)
+}
+
+func (svc *serviceContext) isBatchInProgress(tgtUnitID string) bool {
+	svc.batchMutex.Lock()
+	defer svc.batchMutex.Unlock()
+	for _, uid := range svc.BatchUnitsInProgress {
+		if uid == tgtUnitID {
+			return true
+		}
+	}
+	return false
+}
+func (svc *serviceContext) addBatchProcess(tgtUnitID string) {
+	svc.batchMutex.Lock()
+	defer svc.batchMutex.Unlock()
+	svc.BatchUnitsInProgress = append(svc.BatchUnitsInProgress, tgtUnitID)
+	log.Printf("INFO: added unit %s to batch processing list: %+v", tgtUnitID, svc.BatchUnitsInProgress)
+}
+func (svc *serviceContext) removeBatchProcess(tgtUnitID string) {
+	svc.batchMutex.Lock()
+	defer svc.batchMutex.Unlock()
+	tgtIdx := -1
+	for idx, uid := range svc.BatchUnitsInProgress {
+		if uid == tgtUnitID {
+			tgtIdx = idx
+			break
+		}
+	}
+
+	lastIdx := len(svc.BatchUnitsInProgress) - 1
+	if tgtIdx == lastIdx {
+		// this is the last item in the list; just shorten the slice
+		svc.BatchUnitsInProgress = svc.BatchUnitsInProgress[:lastIdx]
+	} else {
+		// copy the last element into the target index, then shorten the slice
+		svc.BatchUnitsInProgress[tgtIdx] = svc.BatchUnitsInProgress[lastIdx]
+		svc.BatchUnitsInProgress = svc.BatchUnitsInProgress[:lastIdx]
+	}
+	log.Printf("INFO: removed unit %s from batch processing list: %+v", tgtUnitID, svc.BatchUnitsInProgress)
 }
 
 func (svc *serviceContext) getConfig(c *gin.Context) {
@@ -343,18 +385,18 @@ func handleAPIResponse(logURL string, resp *http.Response, err error) ([]byte, *
 		return nil, &RequestError{StatusCode: status, Message: errMsg}
 	} else if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		defer resp.Body.Close()
-		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		bodyBytes, _ := io.ReadAll(resp.Body)
 		status := resp.StatusCode
 		errMsg := string(bodyBytes)
 		return nil, &RequestError{StatusCode: status, Message: errMsg}
 	}
 
 	defer resp.Body.Close()
-	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	bodyBytes, _ := io.ReadAll(resp.Body)
 	return bodyBytes, nil
 }
 
-func dirExist(tgtDir string) bool {
+func exists(tgtDir string) bool {
 	log.Printf("INFO: check existance of %s", tgtDir)
 	_, err := os.Stat(tgtDir)
 	if err != nil {

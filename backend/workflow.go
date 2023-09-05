@@ -423,7 +423,7 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 	if proj.CurrentStep.Name == "Finalize" {
 		// see if the starting directory is present. If not switch to finalization.
 		// At this point, no validation is done. Just checking where files reside
-		if !dirExist(tgtDir) {
+		if !exists(tgtDir) {
 			log.Printf("INFO: finalization files do not exist at %s, checking alternate location", tgtDir)
 			tgtDir = path.Join(svc.FinalizeDir, unitDir)
 			imagesMovedToFinalize = true
@@ -463,7 +463,7 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 func (svc *serviceContext) validateDirectory(proj *project, tgtDir string) error {
 	log.Printf("INFO: validate project %d directory %s", proj.ID, tgtDir)
 
-	if !dirExist(tgtDir) {
+	if !exists(tgtDir) {
 		svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Directory %s does not exist</p>", tgtDir))
 		return fmt.Errorf("%s does not exist", tgtDir)
 	}
@@ -633,8 +633,8 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string) error {
 
 func (svc *serviceContext) moveFiles(proj *project, srcDir string, destDir string) error {
 	log.Printf("INFO: move project %d files from %s to %s", proj.ID, srcDir, destDir)
-	srcExist := dirExist(srcDir)
-	destExist := dirExist(destDir)
+	srcExist := exists(srcDir)
+	destExist := exists(destDir)
 	if !srcExist && !destExist {
 		svc.failStep(proj, "Filesystem", "<p>Neither start nor finsh directory exists</p>")
 		return fmt.Errorf("neither source %s or destination %s exists", srcDir, destDir)
@@ -655,7 +655,7 @@ func (svc *serviceContext) moveFiles(proj *project, srcDir string, destDir strin
 	// See if there is an 'Output' directory for special handling. This is the directory where CaptureOne
 	// places the generated .tif files. Treat it as the source location if it is present
 	outputDir := path.Join(srcDir, "Output")
-	if dirExist(outputDir) {
+	if exists(outputDir) {
 		log.Printf("INFO: output directory %s found; moving it to %s", outputDir, destDir)
 		srcDir = outputDir
 	}

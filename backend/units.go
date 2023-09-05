@@ -277,8 +277,15 @@ func (svc *serviceContext) getMasterFilesMetadata(c *gin.Context) {
 }
 
 func (svc *serviceContext) deleteFiles(c *gin.Context) {
-	uidStr := padLeft(c.Param("uid"), 9)
+	rawUnitID := c.Param("uid")
+	uidStr := padLeft(rawUnitID, 9)
 	unitDir := path.Join(svc.ImagesDir, uidStr)
+	if svc.isBatchInProgress(rawUnitID) {
+		log.Printf("WARNING: request to delete files from unit %s rejected because it is already being processed", rawUnitID)
+		c.String(http.StatusConflict, "this unit is currently being processed by another user")
+		return
+	}
+
 	var delReq struct {
 		Filenames []string `json:"filenames"`
 	}
@@ -288,6 +295,10 @@ func (svc *serviceContext) deleteFiles(c *gin.Context) {
 		c.String(http.StatusBadRequest, "Invalid request")
 		return
 	}
+
+	svc.addBatchProcess(rawUnitID)
+	defer svc.removeBatchProcess(rawUnitID)
+
 	for _, fn := range delReq.Filenames {
 		delPath := path.Join(unitDir, fn)
 		log.Printf("INFO: delete %s", delPath)
@@ -298,6 +309,7 @@ func (svc *serviceContext) deleteFiles(c *gin.Context) {
 			return
 		}
 	}
+
 	c.String(http.StatusOK, "deleted")
 }
 
