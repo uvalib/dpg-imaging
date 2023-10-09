@@ -179,7 +179,7 @@ export const useUnitStore = defineStore('unit', {
          system.working = true
          let mdURL = `/api/units/${ this.currUnit}/masterfiles/metadata?file=${mf.path}`
          return axios.get(mdURL).then(response => {
-            let md = response.data[0]
+            let md = response.data
             mf.colorProfile = md.colorProfile
             mf.fileSize = md.fileSize
             mf.fileType = md.fileType
