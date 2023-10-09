@@ -6,7 +6,6 @@ export const useUnitStore = defineStore('unit', {
    state: () => ({
       currUnit: "",
       masterFiles: [],
-      pageMasterFiles: [],
       viewMode: "list",
       rangeStartIdx: -1,
       rangeEndIdx: -1,
@@ -49,9 +48,18 @@ export const useUnitStore = defineStore('unit', {
          if (state.rangeEndIdx != endIdx) return false
 
          return true
+      },
+      masterFilesPage: state => {
+         let startIdx = (state.currPage-1) * state.pageSize
+         let endIdx = startIdx+state.pageSize-1
+         return state.masterFiles.slice(startIdx, startIdx+state.pageSize)
       }
    },
    actions: {
+      moveImage( fromIndex, toIndex ) {
+         let img = this.masterFiles.splice(fromIndex, 1)[0]
+         this.masterFiles.splice(toIndex, 0, img)
+      },
       selectPage() {
          this.rangeStartIdx = this.pageStartIdx
          this.rangeEndIdx = this.rangeStartIdx + this.pageSize
@@ -213,7 +221,6 @@ export const useUnitStore = defineStore('unit', {
             }
          }
          if (needsData == false ) {
-            this.pageMasterFiles = this.masterFiles.slice(startIdx, startIdx+this.pageSize)
             return
          }
 
@@ -237,7 +244,6 @@ export const useUnitStore = defineStore('unit', {
                mf.folder = md.folder
                mf.componentID = md.componentID
             })
-            this.pageMasterFiles = this.masterFiles.slice(startIdx, startIdx+this.pageSize)
          }).catch( e => {
             system.error = e
             system.working = false
@@ -257,10 +263,6 @@ export const useUnitStore = defineStore('unit', {
                let idx = this.masterFiles.findIndex( mf => mf.fileName == fn)
                if (idx > -1 ) {
                   this.masterFiles.splice(idx, 1)
-               }
-               idx = this.pageMasterFiles.findIndex( mf => mf.fileName == fn)
-               if (idx > -1 ) {
-                  this.pageMasterFiles.splice(idx, 1)
                }
             })
             system.working = false
@@ -405,20 +407,10 @@ export const useUnitStore = defineStore('unit', {
          const system = useSystemStore()
          system.working = true
          let data = []
-         let pStartIdx = this.pageStartIdx
-         let pEndIdx = pStartIdx + this.pageSize-1
          let numRegex = /^\d{4}$/
          this.masterFiles.forEach( (mf,idx) => {
             let originalFN = mf.fileName.toLowerCase()
             let originalPath = mf.path
-
-            // if this MF is in the range of the acitve page, grab data for it from
-            // the pageMasterFiles array instead as it may have been reordered with drag/drop
-            if (idx >= pStartIdx && idx <= pEndIdx) {
-               let pageMf = this.pageMasterFiles[idx-pStartIdx]
-               originalFN = pageMf.fileName.toLowerCase()
-               originalPath = pageMf.path
-            }
 
             originalFN = originalFN.replace(".tif","")
             let mfParts = originalFN.split("_")

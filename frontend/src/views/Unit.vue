@@ -66,7 +66,7 @@
                   <th></th>
                </tr>
             </thead>
-            <draggable v-model="unitStore.pageMasterFiles" tag="tbody"  @start="dragStarted" item-key="fileName">
+            <Sortable :list="unitStore.masterFilesPage" item-key="fileName" tag="tbody" @end="moveImage">
                <template #item="{element, index}">
                   <tr :id="element.fileName" :key="element.fileName">
                      <td><input type="checkbox" v-model="element.selected" @click="masterFileCheckboxClicked(index)"/></td>
@@ -119,10 +119,10 @@
                      <td class="grip"><i class="fas fa-grip-lines"></i></td>
                   </tr>
                </template>
-            </draggable>
+            </Sortable>
          </table>
 
-         <draggable v-else v-model="unitStore.pageMasterFiles" @start="dragStarted" class="gallery" :class="unitStore.viewMode" item-key="fileName">
+         <Sortable v-else :list="unitStore.masterFilesPage" item-key="fileName" @end="moveImage" class="gallery" :class="unitStore.viewMode" >
             <template #item="{element, index}">
                <Card class="card" :id="element.fileName">
                   <template #content>
@@ -184,7 +184,7 @@
                   </template>
                </Card>
             </template>
-         </draggable>
+         </Sortable>
       </template>
       <div class="footer" v-if="unitStore.masterFiles.length > 20">
          <DPGPagination :currPage="unitStore.currPage" :pageSize="unitStore.pageSize"
@@ -197,13 +197,13 @@
 </template>
 
 <script setup>
+import { Sortable } from "sortablejs-vue3"
 import ComponentPanel from '../components/ComponentPanel.vue'
 import BatchUpdatePanel from '../components/BatchUpdatePanel.vue'
 import PageNumPanel from '../components/PageNumPanel.vue'
 import TagPicker from '../components/TagPicker.vue'
 import TitleInput from '../components/TitleInput.vue'
 import ProblemsDisplay from '../components/ProblemsDisplay.vue'
-import draggable from 'vuedraggable'
 import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUnitStore} from "@/stores/unit"
@@ -229,7 +229,6 @@ const newValue = ref("")
 const editField = ref("")
 const showError = ref("")
 
-// computed
 const title = computed(() => {
    let t = projectStore.detail.unit.metadata.title
    if ( t == "") {
@@ -276,6 +275,10 @@ const batchUpdateTitle = computed(() => {
 })
 const batchUpdateField = computed(() => {
    return unitStore.editMode
+})
+
+const moveImage = ((event) => {
+   unitStore.moveImage(event.oldIndex, event.newIndex)
 })
 
 function truncateTitle(title) {
@@ -348,12 +351,6 @@ function descClicked() {
 }
 function setPageNumbersClicked() {
    unitStore.editMode = "page"
-}
-function dragStarted() {
-   let eles=document.getElementsByClassName("selected")
-   while (eles[0]) {
-      eles[0].classList.remove('selected')
-   }
 }
 function isEditing(mf, field) {
    return editMF.value == mf && editField.value == field
