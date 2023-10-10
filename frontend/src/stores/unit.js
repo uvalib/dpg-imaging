@@ -51,14 +51,14 @@ export const useUnitStore = defineStore('unit', {
       },
       masterFilesPage: state => {
          let startIdx = (state.currPage-1) * state.pageSize
-         let endIdx = startIdx+state.pageSize-1
          return state.masterFiles.slice(startIdx, startIdx+state.pageSize)
       }
    },
    actions: {
       moveImage( fromIndex, toIndex ) {
-         let img = this.masterFiles.splice(fromIndex, 1)[0]
-         this.masterFiles.splice(toIndex, 0, img)
+         let pageStartIdx = (this.currPage-1) * this.pageSize
+         let img = this.masterFiles.splice(fromIndex+pageStartIdx, 1)[0]
+         this.masterFiles.splice(toIndex+pageStartIdx, 0, img)
       },
       selectPage() {
          this.rangeStartIdx = this.pageStartIdx
