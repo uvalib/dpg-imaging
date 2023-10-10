@@ -28,7 +28,7 @@
          </span>
       </div>
 
-      <div class="toolbar">
+      <div class="toolbar" ref="toolbar">
          <ViewMode />
 
          <DPGPagination  v-if="unitStore.masterFiles.length > 20" :currPage="unitStore.currPage" :pageSize="unitStore.pageSize"
@@ -53,10 +53,10 @@
       <PageNumPanel v-if="unitStore.editMode == 'page'" />
       <ComponentPanel v-if="unitStore.editMode == 'component'" />
       <BatchUpdatePanel v-if="showBatchUpdate" :title="batchUpdateTitle" :field="batchUpdateField" :global="unitStore.editMode=='box'" />
-      <template v-if="projectStore.hasDetail">
+      <div class="master-files" ref="masterfiles">
          <MasterFilesList  v-if="unitStore.viewMode == 'list'" />
          <MasterFilesGrid  v-else />
-      </template>
+      </div>
    </div>
 </template>
 
@@ -68,7 +68,7 @@ import ProblemsDisplay from '../components/ProblemsDisplay.vue'
 import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUnitStore} from "@/stores/unit"
-import { computed, ref, onBeforeMount, onBeforeUnmount, nextTick } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DPGPagination from '../components/DPGPagination.vue'
 import MasterFilesList from '../components/unit/MasterFilesList.vue'
@@ -84,6 +84,12 @@ const unitStore = useUnitStore()
 const route = useRoute()
 const router = useRouter()
 const confirm = useConfirm()
+
+const toolbarTop = ref(0)
+const toolbarHeight = ref(0)
+const toolbarWidth = ref(0)
+const toolbar = ref(null)
+const masterfiles = ref(null)
 
 const title = computed(() => {
    let t = projectStore.detail.unit.metadata.title
@@ -169,11 +175,13 @@ function pageSizeChanged(sz) {
    query.pagesize = unitStore.pageSize
    query.page = unitStore.currPage
    router.push({query})
+   scrollHandler()
 }
 function pageChanged() {
    let query = Object.assign({}, route.query)
    query.page = unitStore.currPage
    router.push({query})
+   scrollHandler()
 }
 function boxClicked() {
    unitStore.editMode = "box"
@@ -245,9 +253,28 @@ const keyboardHandler = ((event) => {
    }
 })
 
-onBeforeMount( async () => {
+
+const scrollHandler = (( ) => {
+   if ( toolbar.value && !systemStore.working) {
+      if ( window.scrollY <= toolbarTop.value ) {
+         if ( toolbar.value.classList.contains("sticky") ) {
+            toolbar.value.classList.remove("sticky")
+            masterfiles.value.style.top = `0px`
+         }
+      } else {
+         if ( toolbar.value.classList.contains("sticky") == false ) {
+            toolbar.value.classList.add("sticky")
+            toolbar.value.style.width = `${toolbarWidth.value}px`
+            masterfiles.value.style.top = `${toolbarHeight.value}px`
+         }
+      }
+   }
+})
+
+onMounted( async () => {
    // setup keyboard litener for shortcuts
    window.addEventListener('keydown', keyboardHandler)
+   window.addEventListener("scroll", scrollHandler)
 
    if (projectStore.hasDetail == false) {
       await projectStore.getProject(route.params.id)
@@ -272,10 +299,28 @@ onBeforeMount( async () => {
    if ( route.query.view ) {
       unitStore.viewMode = route.query.view
    }
+
+   let tb = toolbar.value
+   toolbarHeight.value = tb.offsetHeight
+   toolbarWidth.value = tb.offsetWidth
+   toolbarTop.value = 0
+
+   // walk the parents of the toolbar and add each top value
+   // to find the top of the toolbar relative to document top
+   let ele = tb
+   if (ele.offsetParent) {
+      do {
+         toolbarTop.value += ele.offsetTop
+         ele = ele.offsetParent
+      } while (ele)
+   }
 })
+
 onBeforeUnmount( async () => {
    window.removeEventListener('keydown', keyboardHandler)
+   window.removeEventListener("scroll", scrollHandler)
 })
+
 </script>
 
 <style lang="scss" scoped>
@@ -371,5 +416,14 @@ onBeforeUnmount( async () => {
          align-content: center;
       }
    }
+}
+.toolbar.sticky {
+   position: fixed;
+   z-index: 1000;
+   top: 0;
+   box-shadow: 0 0px 10px var(--uvalib-grey);
+}
+.master-files {
+   position: relative;
 }
 </style>
