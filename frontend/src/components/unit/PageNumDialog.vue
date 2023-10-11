@@ -2,7 +2,7 @@
    <DPGButton  class="p-button-secondary right" @click="showClicked">
       Set Page Numbers
    </DPGButton>
-   <Dialog v-model:visible="unitStore.edit.pageNumber" :modal="true" header="Set Page Numbering" @show="opened">
+   <Dialog v-model:visible="unitStore.edit.pageNumber" :modal="true" header="Set Page Numbers" @show="opened">
       <div class="panel">
          <div class="row">
             <span class="entry pad-right">
