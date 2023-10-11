@@ -38,21 +38,19 @@
          />
 
          <span class="actions">
-            <RenameFiles />
-            <DPGButton @click="setPageNumbersClicked" class="p-button-secondary right-pad" label="Set Page Numbers"/>
-            <DPGButton @click="titleClicked" class="p-button-secondary right-pad" label="Set Title"/>
-            <DPGButton @click="descClicked" class="p-button-secondary right-pad" label="Set Caption"/>
+            <RenameFilesDialog />
+            <PageNumDialog />
+            <BatchUpdateDialog title="Title" field="title" />
+            <BatchUpdateDialog title="Caption" field="description" />
             <template v-if="isManuscript">
                <DPGButton @click="boxClicked" class="p-button-secondary right-pad" label="Set Box"/>
-               <DPGButton @click="folderClicked" class="p-button-secondary right-pad" label="Set Folder"/>
+               <BatchUpdateDialog title="Box" field="box" :global="true" />
+               <BatchUpdateDialog title="Folder" field="folder" />
             </template>
-            <DPGButton @click="componentLinkClicked" class="p-button-secondary" label="Set Component"/>
+            <ComponentDialog />
          </span>
       </div>
 
-      <PageNumPanel v-if="unitStore.editMode == 'page'" />
-      <ComponentPanel v-if="unitStore.editMode == 'component'" />
-      <BatchUpdatePanel v-if="showBatchUpdate" :title="batchUpdateTitle" :field="batchUpdateField" :global="unitStore.editMode=='box'" />
       <div class="master-files" ref="masterfiles">
          <MasterFilesList  v-if="unitStore.viewMode == 'list'" />
          <MasterFilesGrid  v-else />
@@ -61,22 +59,22 @@
 </template>
 
 <script setup>
-import ComponentPanel from '../components/ComponentPanel.vue'
-import BatchUpdatePanel from '../components/BatchUpdatePanel.vue'
-import PageNumPanel from '../components/PageNumPanel.vue'
-import ProblemsDisplay from '../components/ProblemsDisplay.vue'
+import ComponentDialog from '@/components/unit/ComponentDialog.vue'
+import BatchUpdateDialog from '@/components/unit/BatchUpdateDialog.vue'
+import PageNumDialog from '@/components/unit/PageNumDialog.vue'
+import ProblemsDisplay from '@/components/ProblemsDisplay.vue'
 import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUnitStore} from "@/stores/unit"
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import DPGPagination from '../components/DPGPagination.vue'
-import MasterFilesList from '../components/unit/MasterFilesList.vue'
-import MasterFilesGrid from '../components/unit/MasterFilesGrid.vue'
+import DPGPagination from '@/components/DPGPagination.vue'
+import MasterFilesList from '@/components/unit/MasterFilesList.vue'
+import MasterFilesGrid from '@/components/unit/MasterFilesGrid.vue'
 import { useConfirm } from "primevue/useconfirm"
-import ViewMode from '../components/ViewMode.vue'
-import KeyboardShortcutHelp from '../components/KeyboardShortcutHelp.vue'
-import RenameFiles from '../components/RenameFiles.vue'
+import ViewMode from '@/components/ViewMode.vue'
+import KeyboardShortcutHelp from '@/components/KeyboardShortcutHelp.vue'
+import RenameFilesDialog from '@/components/unit/RenameFilesDialog.vue'
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
@@ -115,28 +113,6 @@ const workingDir = computed(()=>{
 const isManuscript = computed(() => {
    if ( projectStore.hasDetail == false) return false
    return projectStore.detail.workflow && projectStore.detail.workflow.name=='Manuscript'
-})
-const showBatchUpdate = computed(() => {
-   return ( unitStore.editMode == "box" || unitStore.editMode == "folder" || unitStore.editMode == "title" || unitStore.editMode == "description")
-})
-const batchUpdateTitle = computed(() => {
-   if ( unitStore.editMode == "box") {
-      return "Box"
-   }
-   if ( unitStore.editMode == "folder") {
-      return "Folder"
-   }
-   if ( unitStore.editMode == "title") {
-      return "Title"
-   }
-   if ( unitStore.editMode == "description") {
-      return "Description"
-   }
-
-   return ""
-})
-const batchUpdateField = computed(() => {
-   return unitStore.editMode
 })
 
 function truncateTitle(title) {
@@ -183,24 +159,6 @@ function pageChanged() {
    router.push({query})
    scrollHandler()
 }
-function boxClicked() {
-   unitStore.editMode = "box"
-}
-function folderClicked() {
-   unitStore.editMode = "folder"
-}
-function componentLinkClicked() {
-   unitStore.editMode = "component"
-}
-function titleClicked() {
-   unitStore.editMode = "title"
-}
-function descClicked() {
-   unitStore.editMode = "description"
-}
-function setPageNumbersClicked() {
-   unitStore.editMode = "page"
-}
 
 const handleDelete = (() => {
    confirm.require({
@@ -213,13 +171,8 @@ const handleDelete = (() => {
 })
 
 const keyboardHandler = ((event) => {
-   if (event.key == 'Escape') {
-      systemStore.error = ""
-      unitStore.editMode = ""
-      return
-   }
-
-   if (event.target.id == "edit-desc" || event.target.id == "title-input-box") {
+   if ( event.target.id == "edit-desc" || event.target.id == "title-input-box" ||
+        unitStore.edit.pageNumber || unitStore.edit.metadata || unitStore.edit.component ) {
       return
    }
 
@@ -239,13 +192,11 @@ const keyboardHandler = ((event) => {
    if ( !event.ctrlKey ) return
 
    if (event.key == 'p') {
-      setPageNumbersClicked()
-   } else if (event.key == 'b') {
-      boxClicked()
-   } else if (event.key == 'f') {
-      folderClicked()
+      unitStore.edit.pageNumber = true
+   } else if (event.key == 'b' || event.key == 'f') {
+      unitStore.edit.metadata = true
    } else if (event.key == 'k') {
-      componentLinkClicked()
+      unitStore.edit.component = true
    }  else if (event.key == 'a') {
       unitStore.selectPage()
    }  else if (event.key == 'd') {
@@ -273,7 +224,7 @@ const scrollHandler = (( ) => {
 
 onMounted( async () => {
    // setup keyboard litener for shortcuts
-   window.addEventListener('keydown', keyboardHandler)
+   window.addEventListener('keyup', keyboardHandler)
    window.addEventListener("scroll", scrollHandler)
 
    if (projectStore.hasDetail == false) {
@@ -317,7 +268,7 @@ onMounted( async () => {
 })
 
 onBeforeUnmount( async () => {
-   window.removeEventListener('keydown', keyboardHandler)
+   window.removeEventListener('keyup', keyboardHandler)
    window.removeEventListener("scroll", scrollHandler)
 })
 

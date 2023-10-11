@@ -1,0 +1,202 @@
+<template>
+   <DPGButton  class="p-button-secondary" @click="showClicked">
+      Link Component
+   </DPGButton>
+   <Dialog v-model:visible="unitStore.edit.component" :modal="true" header="Link Component" @show="opened">
+      <div class="panel confirm" v-if="unitStore.component.valid">
+         <table>
+            <tr>
+               <td class="label">Title:</td>
+               <td class="data">{{formatData(unitStore.component.title)}}</td>
+            </tr>
+            <tr>
+               <td class="label">Label:</td>
+               <td class="data">{{formatData(unitStore.component.label)}}</td>
+            </tr>
+            <tr>
+               <td class="label">Description:</td>
+               <td class="data">{{formatData(unitStore.component.description)}}</td>
+            </tr>
+            <tr>
+               <td class="label">Date:</td>
+               <td class="data">{{formatData(unitStore.component.date)}}</td>
+            </tr>
+            <tr>
+               <td class="label">Type:</td>
+               <td class="data">{{formatData(unitStore.component.type)}}</td>
+            </tr>
+         </table>
+         <p class="confirm">Link this component to selected images?</p>
+      </div>
+      <div class="panel" v-else>
+         <div class="row">
+            <span class="entry pad-right">
+               <label>Start Image:</label>
+               <select id="start-page" v-model="unitStore.rangeStartIdx" @change="startChanged">
+                  <option disabled :value="-1">Select start page</option>
+                  <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
+               </select>
+            </span>
+            <span class="entry  pad-right">
+               <label>End Image:</label>
+               <select id="end-page" v-model="unitStore.rangeEndIdx" @change="endChanged">
+                  <option disabled :value="-1">Select end page</option>
+                  <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
+               </select>
+            </span>
+            <DPGButton @click="selectAllClicked" class="p-button-secondary left" label="Select All"/>
+         </div>
+         <div class="row">
+            <span class="entry full">
+               <label>Component ID:</label>
+               <input id="component-id" type="text" v-model="componentID"  @keyup.enter="okClicked"/>
+            </span>
+         </div>
+      </div>
+      <div class="panel-actions">
+         <template  v-if="unitStore.component.valid">
+            <DPGButton class="p-button-secondary right-pad" @click="noLinkClicked" label="No"/>
+            <DPGButton @click="linkConfirmed" label="Yes"/>
+         </template>
+         <template v-else>
+            <DPGButton @click="unlinkClicked" class="p-button-secondary left">Unlink</DPGButton>
+            <DPGButton @click="cancelEditClicked" class="p-button-secondary right-pad">Cancel</DPGButton>
+            <DPGButton @click="okClicked" :loading="lookingUp">OK</DPGButton>
+         </template>
+      </div>
+   </Dialog>
+</template>
+
+<script setup>
+import { useUnitStore } from "@/stores/unit"
+import { useSystemStore } from "@/stores/system"
+import { ref, nextTick } from 'vue'
+import Dialog from 'primevue/dialog'
+
+const unitStore = useUnitStore()
+const systemStore = useSystemStore()
+const componentID = ref("")
+const lookingUp = ref(false)
+
+const showClicked = (() => {
+   unitStore.edit.component = true
+   componentID.value = ""
+})
+
+const opened = (() => {
+   nextTick( () => {
+      let ele = document.getElementById("start-page")
+      ele.focus()
+   })
+})
+
+const startChanged = (() => {
+   let pageIndex = unitStore.rangeStartIdx % unitStore.pageSize
+   unitStore.deselectAll()
+   unitStore.masterFileSelected( pageIndex )
+})
+const endChanged = (() => {
+   let pageIndex = unitStore.rangeEndIdx % unitStore.pageSize
+   unitStore.masterFileSelected( pageIndex )
+})
+
+const formatData = (( value ) => {
+   if (value && value != "" )  return value
+   return "N/A"
+})
+
+const okClicked = (async () => {
+   unitStore.clearComponent()
+   if ( unitStore.rangeStartIdx == -1 || unitStore.rangeEndIdx == -1) {
+      systemStore.setError("Start and end image must be selected")
+      return
+   }
+   if (componentID.value == "") {
+      systemStore.setError("Component ID is required")
+      return
+   }
+   lookingUp.value = true
+   await unitStore.lookupComponentID(componentID.value)
+   lookingUp.value = false
+})
+
+const noLinkClicked = (() => {
+   unitStore.clearComponent()
+   nextTick( () => {
+      let ele = document.getElementById("component-id")
+      ele.focus()
+   })
+})
+
+const cancelEditClicked = (()=> {
+   unitStore.clearComponent()
+   unitStore.edit.component = false
+})
+
+const unlinkClicked= (() => {
+   unitStore.clearComponent()
+   if ( unitStore.rangeStartIdx == -1 || unitStore.rangeEndIdx == -1) {
+      systemStore.setError("Start and end image must be selected")
+      return
+   }
+   unitStore.componentLink("")
+   cancelEditClicked()
+})
+
+const linkConfirmed = ( () => {
+   unitStore.componentLink(componentID.value)
+   cancelEditClicked()
+})
+
+const selectAllClicked = (() => {
+   unitStore.selectAll()
+})
+</script>
+
+<style lang="scss" scoped>
+.panel {
+   background: white;
+
+   table {
+      font-size: 0.9em;
+      td {
+         padding: 3px;
+         text-align: left;
+      }
+      td.label {
+         font-weight: bold;
+         text-align: right;
+      }
+   }
+
+   .row {
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 20px;
+      label {
+         display: inline-block;
+         margin-bottom: 5px;
+      }
+      .entry.pad-right {
+         margin-right: 10px;
+      }
+      .entry.full {
+         width: 100%;
+      }
+   }
+}
+.panel-actions {
+   padding: 0 0 10px 0;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-end;
+   .p-button-secondary.left {
+      margin-right: auto;
+   }
+}
+:deep(p.confirm) {
+   text-align: right;
+}
+</style>

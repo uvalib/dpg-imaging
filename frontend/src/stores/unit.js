@@ -9,7 +9,11 @@ export const useUnitStore = defineStore('unit', {
       viewMode: "list",
       rangeStartIdx: -1,
       rangeEndIdx: -1,
-      editMode: "",
+      edit: {
+         pageNumber: false,
+         component: false,
+         metadata: false,
+      },
       problems: [],
       component: {
          valid: false,
@@ -437,12 +441,11 @@ export const useUnitStore = defineStore('unit', {
          })
       },
 
-      lookupComponentID(componentID) {
+      async lookupComponentID(componentID) {
          const system = useSystemStore()
-         system.working = true
-         axios.get(`/api/components/${componentID}`).then(response => {
+         return axios.get(`/api/components/${componentID}`).then(response => {
             this.setComponentInfo(response.data)
-            system.working = false
+            console.log("GOT")
          }).catch( e => {
             system.setError(e)
          })
