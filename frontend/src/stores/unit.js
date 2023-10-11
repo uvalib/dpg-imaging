@@ -445,7 +445,6 @@ export const useUnitStore = defineStore('unit', {
          const system = useSystemStore()
          return axios.get(`/api/components/${componentID}`).then(response => {
             this.setComponentInfo(response.data)
-            console.log("GOT")
          }).catch( e => {
             system.setError(e)
          })
