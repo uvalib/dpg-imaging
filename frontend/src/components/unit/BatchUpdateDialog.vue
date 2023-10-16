@@ -2,22 +2,18 @@
    <DPGButton  class="p-button-secondary right" @click="showClicked">
       Set {{ props.title}}
    </DPGButton>
-   <Dialog v-model:visible="showDialog" :modal="true" :header="`Batch Update ${props.title}`">
+   <Dialog v-model:visible="showDialog" :modal="true" :header="`Batch Update ${props.title}`" @show="opened">
       <div class="panel">
          <div class="row"  v-if="props.global == false">
             <span class="entry pad-right">
                <label>Start Image:</label>
-               <select id="start-page" v-model="unitStore.rangeStartIdx" @change="startChanged">
-                  <option disabled :value="-1">Select start page</option>
-                  <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
-               </select>
+               <Dropdown v-model="unitStore.rangeStartIdx" @change="startChanged" filter placeholder="Select start page"
+                  :options="masterFiles" optionLabel="label" optionValue="value" ref="pickstart" />
             </span>
             <span class="entry  pad-right">
                <label>End Image:</label>
-               <select id="end-page" v-model="unitStore.rangeEndIdx" @change="endChanged">
-                  <option disabled :value="-1">Select end page</option>
-                  <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
-               </select>
+               <Dropdown v-model="unitStore.rangeEndIdx" @change="endChanged" filter placeholder="Select end page"
+                  :options="masterFiles" optionLabel="label" optionValue="value"/>
             </span>
             <DPGButton @click="selectAllClicked" class="p-button-secondary left" label="Select All"/>
          </div>
@@ -37,8 +33,9 @@
 
 <script setup>
 import {useUnitStore} from "@/stores/unit"
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, computed } from 'vue'
 import Dialog from 'primevue/dialog'
+import Dropdown from 'primevue/dropdown'
 
 const props = defineProps({
    title: {
@@ -59,6 +56,21 @@ const unitStore = useUnitStore()
 
 const newValue = ref("")
 const showDialog = ref(false)
+const pickstart = ref()
+
+const masterFiles = computed( () => {
+   let list = []
+   unitStore.masterFiles.forEach( (mf,idx) => {
+      list.push({ value: idx, label: mf.fileName })
+   })
+   return list
+})
+
+const opened = (() => {
+   nextTick( () => {
+      pickstart.value.$el.focus()
+   })
+})
 
 const showClicked = (() => {
    showDialog.value = true
@@ -73,13 +85,10 @@ const showClicked = (() => {
 })
 
 const startChanged = (() => {
-   let pageIndex = unitStore.rangeStartIdx % unitStore.pageSize
-   unitStore.deselectAll()
-   unitStore.masterFileSelected( pageIndex )
+   unitStore.startFileSelected( unitStore.rangeStartIdx )
 })
 const endChanged = (() => {
-   let pageIndex = unitStore.rangeEndIdx % unitStore.pageSize
-   unitStore.masterFileSelected( pageIndex )
+   unitStore.endFileSelected( unitStore.rangeEndIdx )
 })
 
 const okClicked = ( () => {
@@ -113,11 +122,14 @@ button.p-button-secondary.right {
       align-items: flex-end;
       margin-bottom: 20px;
       label {
-         display: inline-block;
+         display: block;
          margin-bottom: 5px;
       }
-      input {
-         width: 100%;
+      button {
+         padding: 8px 16px;
+      }
+      input[type=text] {
+         padding: 8px;
       }
       .entry.pad-right {
          margin-right: 10px;

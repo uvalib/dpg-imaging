@@ -74,6 +74,24 @@ export const useUnitStore = defineStore('unit', {
             this.masterFiles[i].selected = true
          }
       },
+      startFileSelected(idx) {
+         if (this.rangeStartIdx > -1 || this.rangeStartIdx != idx)  {
+            this.deselectAll()
+         }
+         this.rangeEndIdx = idx
+         this.rangeStartIdx = idx
+         this.masterFiles[idx].selected = true
+      },
+      endFileSelected(idx) {
+         if ( idx <= this.rangeStartIdx) {
+            this.startFileSelected(idx)
+         } else {
+            this.rangeEndIdx = idx
+            for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+               this.masterFiles[i].selected = true
+            }
+         }
+      },
       selectAll() {
          this.rangeStartIdx = 0
          this.rangeEndIdx = this.masterFiles.length - 1

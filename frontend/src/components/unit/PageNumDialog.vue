@@ -7,17 +7,13 @@
          <div class="row">
             <span class="entry pad-right">
                <label>Start Image:</label>
-               <select id="start-page" v-model="unitStore.rangeStartIdx" @change="startChanged">
-                  <option disabled :value="-1">Select start page</option>
-                  <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
-               </select>
+               <Dropdown v-model="unitStore.rangeStartIdx" @change="startChanged" filter placeholder="Select start page"
+                  :options="masterFiles" optionLabel="label" optionValue="value" ref="pickstart" />
             </span>
             <span class="entry  pad-right">
                <label>End Image:</label>
-               <select id="end-page" v-model="unitStore.rangeEndIdx" @change="endChanged">
-                  <option disabled :value="-1">Select end page</option>
-                  <option v-for="(mf,idx) in unitStore.masterFiles" :value="idx" :key="`start-${mf.fileName}`">{{mf.fileName}}</option>
-               </select>
+               <Dropdown v-model="unitStore.rangeEndIdx" @change="endChanged" filter placeholder="Select end page"
+                  :options="masterFiles" optionLabel="label" optionValue="value"/>
             </span>
             <DPGButton @click="selectAllClicked" class="p-button-secondary left" label="Select All"/>
          </div>
@@ -40,13 +36,23 @@
 import {useUnitStore} from "@/stores/unit"
 import {useSystemStore} from "@/stores/system"
 import Dialog from 'primevue/dialog'
-import { ref, nextTick } from 'vue'
+import Dropdown from 'primevue/dropdown'
+import { ref, nextTick, computed } from 'vue'
 
 const unitStore = useUnitStore()
 const systemStore = useSystemStore()
 
 const startPage = ref("1")
 const unnumberVerso = ref(false)
+const pickstart = ref()
+
+const masterFiles = computed( () => {
+   let list = []
+   unitStore.masterFiles.forEach( (mf,idx) => {
+      list.push({ value: idx, label: mf.fileName })
+   })
+   return list
+})
 
 const showClicked = (() => {
    unitStore.edit.pageNumber = true
@@ -56,19 +62,15 @@ const showClicked = (() => {
 
 const opened = (() => {
    nextTick( () => {
-      let ele = document.getElementById("start-page")
-      ele.focus()
+      pickstart.value.$el.focus()
    })
 })
 
 const startChanged = (() => {
-   let pageIndex = unitStore.rangeStartIdx % unitStore.pageSize
-   unitStore.deselectAll()
-   unitStore.masterFileSelected( pageIndex )
+   unitStore.startFileSelected( unitStore.rangeStartIdx )
 })
 const endChanged = (() => {
-   let pageIndex = unitStore.rangeEndIdx % unitStore.pageSize
-   unitStore.masterFileSelected( pageIndex )
+   unitStore.endFileSelected( unitStore.rangeEndIdx )
 })
 
 const cancelEditClicked = (() => {
@@ -112,8 +114,14 @@ button.p-button-secondary.right {
       align-items: flex-end;
       margin-bottom: 20px;
       label {
-         display: inline-block;
+         display: block;
          margin-bottom: 5px;
+      }
+      button {
+         padding: 8px 16px;
+      }
+      input[type=text] {
+         padding: 8px;
       }
       .entry.pad-right {
          margin-right: 10px;
