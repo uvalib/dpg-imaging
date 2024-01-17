@@ -4,7 +4,7 @@
          <span>Digitization Projects</span>
       </h2>
       <WaitSpinner v-if="searchStore.working" :overlay="true" message="Loading projects..." />
-      <div class="toolbar">
+      <div class="toolbar pin-target">
          <div class="filter">
             <label for="me">
                <input id="me" type="radio" value="me" name="filter" v-model="activeFilter" @change="filterChanged">
@@ -34,91 +34,92 @@
             />
          </div>
       </div>
-
-      <div class="project-board">
-         <SearchPanel />
-         <div class="none" v-if="!searchStore.working && searchStore.projects.length == 0">
-            No projects match your search criteria
-         </div>
-         <ul v-else class="projects">
-            <li class="card" v-for="(p,idx) in searchStore.projects" :key="`p${p.id}`">
-               <div class="top">
-                  <div class="due">
-                     <span>
-                        <label>Date Due:</label><span>{{searchStore.dueDate(idx)}}</span>
-                     </span>
-                     <span>
-                        <span class="status-msg overdue" v-if="isOverdue(idx) && !p.finishedAt">OVERDUE</span>
-                        <i v-if="searchStore.hasError(idx)" class="error-icon fas fa-exclamation-triangle"></i>
-                     </span>
-                     <span v-if="p.finishedAt">
-                        <label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span>
-                        <div class="time" v-if="p.totalDuration">
-                           <label>Duration:</label>
-                           <span>{{ p.totalDuration }} mins</span>
+      <div class="scroll-body">
+         <div class="project-board">
+            <SearchPanel />
+            <div class="none" v-if="!searchStore.working && searchStore.projects.length == 0">
+               No projects match your search criteria
+            </div>
+            <ul v-else class="projects">
+               <li class="card" v-for="(p,idx) in searchStore.projects" :key="`p${p.id}`">
+                  <div class="top">
+                     <div class="due">
+                        <span>
+                           <label>Date Due:</label><span>{{searchStore.dueDate(idx)}}</span>
+                        </span>
+                        <span>
+                           <span class="status-msg overdue" v-if="isOverdue(idx) && !p.finishedAt">OVERDUE</span>
+                           <i v-if="searchStore.hasError(idx)" class="error-icon fas fa-exclamation-triangle"></i>
+                        </span>
+                        <span v-if="p.finishedAt">
+                           <label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span>
+                           <div class="time" v-if="p.totalDuration">
+                              <label>Duration:</label>
+                              <span>{{ p.totalDuration }} mins</span>
+                           </div>
+                        </span>
+                     </div>
+                     <router-link :to="`/projects/${p.id}`">
+                        <div class="title">
+                           <div class="project-id"><label>Project:</label><span>{{p.id}}</span></div>
+                           <div>{{p.unit.metadata.title}}</div>
                         </div>
-                     </span>
+                     </router-link>
                   </div>
-                  <router-link :to="`/projects/${p.id}`">
-                     <div class="title">
-                        <div class="project-id"><label>Project:</label><span>{{p.id}}</span></div>
-                        <div>{{p.unit.metadata.title}}</div>
+                  <div class="data">
+                     <dl>
+                        <dt>Customer:</dt>
+                        <dd>{{p.unit.order.customer.lastName}}, {{p.unit.order.customer.firstName}} </dd>
+                        <template v-if="p.unit.order.agency.id > 0">
+                           <dt>Agency:</dt>
+                           <dd>{{p.unit.order.agency.name}}</dd>
+                        </template>
+                        <dt>Call Number:</dt>
+                        <dd>
+                           <span v-if="p.unit.metadata.callNumber">{{p.unit.metadata.callNumber}}</span>
+                           <span v-else class="na">N/A</span>
+                        </dd>
+                        <dt>Intended Use:</dt>
+                        <dd>{{p.unit.intendedUse.description}}</dd>
+                     </dl>
+                     <dl class="right">
+                        <dt>Order:</dt>
+                        <dd><a target="_blank" :href="`${systemStore.adminURL}/orders/${p.unit.order.id}`">{{p.unit.order.id}}</a></dd>
+                        <dt>Unit:</dt>
+                        <dd><a target="_blank" :href="`${systemStore.adminURL}/units/${p.unit.id}`">{{p.unit.id}}</a></dd>
+                        <dt>Workflow:</dt>
+                        <dd>{{p.workflow.name}}</dd>
+                        <dt>Category:</dt>
+                        <dd>{{p.category.name}}</dd>
+                     </dl>
+                  </div>
+                  <div class="special-instructions" v-if="p.unit.specialInstructions">
+                     <label>Special Instructions:</label>
+                     <p>{{p.unit.specialInstructions}}</p>
+                  </div>
+                  <div class="status" v-if="!p.finishedAt || p.finishedAt == ''">
+                     <div class="progress-panel">
+                        <span :class="{error: searchStore.hasError(idx)}">{{searchStore.statusText(p.id)}}</span>
+                        <div class="progress-bar">
+                           <div class="percentage" :style="{width: searchStore.percentComplete(p.id) }"></div>
+                        </div>
                      </div>
-                  </router-link>
-               </div>
-               <div class="data">
-                  <dl>
-                     <dt>Customer:</dt>
-                     <dd>{{p.unit.order.customer.lastName}}, {{p.unit.order.customer.firstName}} </dd>
-                     <template v-if="p.unit.order.agency.id > 0">
-                        <dt>Agency:</dt>
-                        <dd>{{p.unit.order.agency.name}}</dd>
-                     </template>
-                     <dt>Call Number:</dt>
-                     <dd>
-                        <span v-if="p.unit.metadata.callNumber">{{p.unit.metadata.callNumber}}</span>
-                        <span v-else class="na">N/A</span>
-                     </dd>
-                     <dt>Intended Use:</dt>
-                     <dd>{{p.unit.intendedUse.description}}</dd>
-                  </dl>
-                  <dl class="right">
-                     <dt>Order:</dt>
-                     <dd><a target="_blank" :href="`${systemStore.adminURL}/orders/${p.unit.order.id}`">{{p.unit.order.id}}</a></dd>
-                     <dt>Unit:</dt>
-                     <dd><a target="_blank" :href="`${systemStore.adminURL}/units/${p.unit.id}`">{{p.unit.id}}</a></dd>
-                     <dt>Workflow:</dt>
-                     <dd>{{p.workflow.name}}</dd>
-                     <dt>Category:</dt>
-                     <dd>{{p.category.name}}</dd>
-                  </dl>
-               </div>
-               <div class="special-instructions" v-if="p.unit.specialInstructions">
-                  <label>Special Instructions:</label>
-                  <p>{{p.unit.specialInstructions}}</p>
-               </div>
-               <div class="status" v-if="!p.finishedAt || p.finishedAt == ''">
-                  <div class="progress-panel">
-                     <span :class="{error: searchStore.hasError(idx)}">{{searchStore.statusText(p.id)}}</span>
-                     <div class="progress-bar">
-                        <div class="percentage" :style="{width: searchStore.percentComplete(p.id) }"></div>
+                     <div class="owner-panel">
+                        <span class="assignment">
+                           <i class="user fas fa-user"></i>
+                           <span v-if="!p.owner" class="unassigned">Unassigned</span>
+                           <span v-else class="assigned">{{ownerInfo(p)}}</span>
+                        </span>
+                        <span class="owner-buttons">
+                           <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)" class="p-button-secondary right-pad" label="Claim"/>
+                           <AssignModal  v-if="canAssign" :projectID="p.id" @assigned="searchStore.getProjects()" />
+                           <DPGButton  class="view p-button-secondary" @click="viewClicked(p.id)" label="View"/>
+                        </span>
                      </div>
                   </div>
-                  <div class="owner-panel">
-                     <span class="assignment">
-                        <i class="user fas fa-user"></i>
-                        <span v-if="!p.owner" class="unassigned">Unassigned</span>
-                        <span v-else class="assigned">{{ownerInfo(p)}}</span>
-                     </span>
-                     <span class="owner-buttons">
-                        <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)" class="p-button-secondary right-pad" label="Claim"/>
-                        <AssignModal  v-if="canAssign" :projectID="p.id" @assigned="searchStore.getProjects()" />
-                        <DPGButton  class="view p-button-secondary" @click="viewClicked(p.id)" label="View"/>
-                     </span>
-                  </div>
-               </div>
-            </li>
-         </ul>
+               </li>
+            </ul>
+         </div>
       </div>
    </div>
 </template>
@@ -133,6 +134,9 @@ import { useProjectStore } from "@/stores/project"
 import { useUserStore } from "@/stores/user"
 import { useRoute, useRouter } from 'vue-router'
 import { onBeforeMount, ref } from 'vue'
+import { usePinnable } from '@/composables/pin'
+
+usePinnable("pin-target", "scroll-body")
 
 const searchStore = useSearchStore()
 const systemStore = useSystemStore()
@@ -304,6 +308,10 @@ const isOverdue = ((projIdx) => {
          margin-left: auto;
          display: inline-block;
       }
+   }
+   .scroll-body {
+      display: block;
+      position: relative;
    }
    .project-board {
       display: flex;

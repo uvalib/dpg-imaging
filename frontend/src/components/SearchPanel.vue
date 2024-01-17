@@ -177,8 +177,8 @@ const doSearch = ( async () => {
    margin-right: 8px;
 }
 .search {
-   width: 20%;
-   min-width: 270px;
+   min-width: 275px;
+   max-width: 275px;
    border: 1px solid var(--uvalib-grey);
    box-shadow: rgba(0, 0, 0, 0.14) 0px 2px 2px 0px;
    div.p-dropdown.p-component {
