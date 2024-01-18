@@ -1,5 +1,5 @@
 <template>
-   <div class="search">
+   <div class="search" id="search-panel">
       <h3>Search</h3>
       <div class="form">
          <label for="workflow">Workflow</label>
@@ -176,9 +176,11 @@ const doSearch = ( async () => {
    width: auto;
    margin-right: 8px;
 }
+.search.pinned {
+   position: fixed;
+}
+
 .search {
-   min-width: 275px;
-   max-width: 275px;
    border: 1px solid var(--uvalib-grey);
    box-shadow: rgba(0, 0, 0, 0.14) 0px 2px 2px 0px;
    div.p-dropdown.p-component {

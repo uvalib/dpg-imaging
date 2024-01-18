@@ -1,6 +1,6 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 
-export function usePinnable( pinClass, bodyClass ) {
+export function usePinnable( pinClass, bodyClass, pinCallback ) {
    const toolbarTop = ref(0)
    const toolbarHeight = ref(0)
    const toolbarWidth = ref(0)
@@ -11,6 +11,7 @@ export function usePinnable( pinClass, bodyClass ) {
    const scrolled = (() => {
       if ( window.scrollY <= toolbarTop.value ) {
          if ( toolbar.value.classList.contains("sticky") ) {
+            pinCallback(false)
             toolbar.value.classList.remove("sticky")
             toolbar.value.style.width = `auto`
             if ( scrollBody.value ) {
@@ -20,6 +21,7 @@ export function usePinnable( pinClass, bodyClass ) {
          pinned.value = false
       } else {
          if ( toolbar.value.classList.contains("sticky") == false ) {
+            pinCallback(true)
             if ( scrollBody.value ) {
                scrollBody.value.style.top = `${toolbarHeight.value}px`
             }
@@ -49,8 +51,6 @@ export function usePinnable( pinClass, bodyClass ) {
       if ( bodyClass) {
          let sbs = document.getElementsByClassName( bodyClass )
          if ( sbs.length > 0 ) {
-            console.log(bodyClass)
-            console.log(sbs)
             scrollBody.value = sbs[0]
          }
       }

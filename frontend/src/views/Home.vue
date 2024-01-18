@@ -36,7 +36,9 @@
       </div>
       <div class="scroll-body">
          <div class="project-board">
-            <SearchPanel />
+            <div class="search-col">
+               <SearchPanel />
+            </div>
             <div class="none" v-if="!searchStore.working && searchStore.projects.length == 0">
                No projects match your search criteria
             </div>
@@ -136,7 +138,18 @@ import { useRoute, useRouter } from 'vue-router'
 import { onBeforeMount, ref } from 'vue'
 import { usePinnable } from '@/composables/pin'
 
-usePinnable("pin-target", "scroll-body")
+usePinnable("pin-target", "scroll-body", ( (isPinned) => {
+   let p = document.getElementById("search-panel")
+   if ( p ) {
+      if ( isPinned ) {
+         p.style.top = `55px`
+         p.style.width = `${p.getBoundingClientRect().width}px`
+         p.classList.add("pinned")
+      } else {
+         p.classList.remove("pinned")
+      }
+   }
+}))
 
 const searchStore = useSearchStore()
 const systemStore = useSystemStore()
@@ -246,6 +259,10 @@ const isOverdue = ((projIdx) => {
 .home {
    position: relative;
    padding: 0;
+   .search-col {
+      width: 20%;
+      min-width: 275px;
+   }
    h2 {
       color: var(--uvalib-brand-orange);
       margin-bottom: 20px;
