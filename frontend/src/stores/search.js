@@ -221,8 +221,6 @@ export const useSearchStore = defineStore('search', {
             q += `&${qParam.join("&")}`
          }
 
-         console.log("SEQRCH: "+q)
-
          axios.get(q).then(response => {
             this.setProjects(response.data)
             this.working = false

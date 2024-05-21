@@ -31,6 +31,9 @@ export const useUserStore = defineStore('user', {
       signedInUser: state => {
          return `${state.firstName} ${state.lastName} (${state.computeID})`
       },
+      isSignedIn: state => {
+         return state.jwt != "" && state.computeID != ""
+      }
    },
    actions: {
       signout() {
@@ -44,48 +47,48 @@ export const useUserStore = defineStore('user', {
          this.ID = 0
       },
       setJWT(jwt) {
-         if (jwt != this.jwt) {
-            this.jwt = jwt
-            localStorage.setItem("dpg_jwt", jwt)
+         if (jwt == this.jwt || jwt == "" || jwt == null || jwt == "null")  return
 
-            let parsed = parseJwt(jwt)
-            this.ID = parsed.userID
-            this.computeID = parsed.computeID
-            this.firstName = parsed.firstName
-            this.lastName = parsed.lastName
-            this.role = parsed.role
+         this.jwt = jwt
+         localStorage.setItem("dpg_jwt", jwt)
 
-            // add interceptor to put bearer token in header
-            axios.interceptors.request.use(config => {
-               config.headers['Authorization'] = 'Bearer ' + jwt
-               return config
-            }, error => {
-               return Promise.reject(error)
-            })
+         let parsed = parseJwt(jwt)
+         this.ID = parsed.userID
+         this.computeID = parsed.computeID
+         this.firstName = parsed.firstName
+         this.lastName = parsed.lastName
+         this.role = parsed.role
 
-            // Catch 401 errors and redirect to an expired auth page
-            axios.interceptors.response.use(
-               res => res,
-               err => {
-                  if (err.config.url.match(/\/authenticate/)) {
-                     this.router.push("/forbidden")
-                  } else {
-                     if (err.response && err.response.status == 401) {
-                        localStorage.removeItem("dpg_jwt")
-                        this.jwt = ""
-                        this.firstName = ""
-                        this.lastName = ""
-                        this.role = ""
-                        this.computeID = ""
-                        this.ID = 0
-                        this.router.push("/signedout?expired=1")
-                        return new Promise(() => { })
-                     }
+         // add interceptor to put bearer token in header
+         axios.interceptors.request.use(config => {
+            config.headers['Authorization'] = 'Bearer ' + jwt
+            return config
+         }, error => {
+            return Promise.reject(error)
+         })
+
+         // Catch 401 errors and redirect to an expired auth page
+         axios.interceptors.response.use(
+            res => res,
+            err => {
+               if (err.config.url.match(/\/authenticate/)) {
+                  this.router.push("/forbidden")
+               } else {
+                  if (err.response && err.response.status == 401) {
+                     localStorage.removeItem("dpg_jwt")
+                     this.jwt = ""
+                     this.firstName = ""
+                     this.lastName = ""
+                     this.role = ""
+                     this.computeID = ""
+                     this.ID = 0
+                     this.router.push("/signedout?expired=1")
+                     return new Promise(() => { })
                   }
-                  return Promise.reject(err)
                }
-            )
-         }
+               return Promise.reject(err)
+            }
+         )
       },
    }
 })

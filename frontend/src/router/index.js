@@ -63,36 +63,40 @@ const router = createRouter({
    },
 })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach( (to) => {
+   console.log("BEFORE ROUTE "+to.path)
    const userStore = useUserStore()
-   const messageStore = useMessageStore()
+   const noAuthRoutes = ["not_found", "forbidden", "signedout"]
+
    if (to.path === '/granted') {
       let jwtStr = VueCookies.get("dpg_jwt")
       userStore.setJWT(jwtStr)
-      messageStore.getMessages( userStore.ID )
-      let priorURL = localStorage.getItem('dpgImagingPriorURL')
-      console.log("RESTORE LAST PATH "+to.fullPath)
-      localStorage.removeItem("dpgImagingPriorURL")
-      if ( priorURL && priorURL != "/granted" && priorURL != "/") {
-         console.log("RESTORE "+priorURL)
-         next(priorURL)
-      } else {
-         next("/")
+      if ( userStore.isSignedIn  ) {
+         console.log(`GRANTED [${jwtStr}]`)
+         useMessageStore().getMessages( userStore.ID )
+         let priorURL = localStorage.getItem('dpgImagingPriorURL')
+         localStorage.removeItem("dpgImagingPriorURL")
+         if ( priorURL && priorURL != "/granted" && priorURL != "/") {
+            console.log("RESTORE "+priorURL)
+            return priorURL
+         }
+         return "/"
       }
-   } else if (to.name !== 'not_found' && to.name !== 'forbidden' && to.name !== "signedout") {
-      console.log("SAVE LAST PATH "+to.fullPath)
-      localStorage.setItem("dpgImagingPriorURL", to.fullPath)
-      let jwtStr = localStorage.getItem('dpg_jwt')
-      if ( jwtStr) {
-         userStore.setJWT(jwtStr)
-         messageStore.getMessages( userStore.ID )
-         next()
-      } else {
-         window.location.href = "/authenticate"
-      }
-   } else {
-      next()
+      return {name: "forbidden"}
    }
- })
+
+   if ( noAuthRoutes.includes(to.name)) {
+      console.log("NOT A PROTECTED PAGE")
+   } else {
+      if (userStore.isSignedIn == false) {
+         console.log("AUTHENTICATE")
+         localStorage.setItem("dpgImagingPriorURL", to.fullPath)
+         window.location.href = "/authenticate"
+         return false   // cancel the original navigation
+      } else {
+         console.log(`REQUEST AUTHENTICATED PAGE WITH JWT`)
+      }
+   }
+})
 
 export default router
