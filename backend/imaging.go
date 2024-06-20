@@ -390,10 +390,10 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 
 	log.Printf("INFO: rotate %s", fullPath)
 	cmd := []string{fullPath, "-rotate", rotateDir, fullPath}
-	_, err = exec.Command("magick", cmd...).Output()
+	rotateOut, err := exec.Command("magick", cmd...).CombinedOutput()
 	if err != nil {
-		log.Printf("ERROR: unable to rotate %s: %s", fullPath, err.Error())
-		c.String(http.StatusInternalServerError, fmt.Sprintf("unable to rotate file: %s", err.Error()))
+		log.Printf("ERROR: unable to rotate %s: %s", fullPath, rotateOut)
+		c.String(http.StatusInternalServerError, fmt.Sprintf("unable to rotate file: %s", rotateOut))
 		return
 	}
 

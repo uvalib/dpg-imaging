@@ -416,9 +416,9 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 
 		log.Printf("INFO: mark assignment %d as reassigned", activeAssign.ID)
 		activeAssign.Status = StepReassigned
-		r := svc.DB.Model(&activeAssign).Select("Status").Updates(activeAssign)
-		if r.Error != nil {
-			log.Printf("ERROR: unable to mark project %d active assignment as reassigned: %s", proj.ID, r.Error.Error())
+		err := svc.DB.Model(&activeAssign).Select("Status").Updates(activeAssign).Error
+		if err != nil {
+			log.Printf("ERROR: unable to mark project %d active assignment as reassigned: %s", proj.ID, err.Error())
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
