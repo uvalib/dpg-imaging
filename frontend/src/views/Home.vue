@@ -372,10 +372,13 @@ const isOverdue = ((projIdx) => {
                color: var(--uvalib-text) !important;
                background:var(--uvalib-grey-lightest);
                .project-id {
-                  label { font-weight: bold; margin-right: 5px;}
                   margin-bottom: 10px;
                   padding-bottom: 10px;
                   border-bottom: 1px solid var(--uvalib-grey-light);
+                  label {
+                     font-weight: bold;
+                     margin-right: 5px;
+                  }
                }
             }
             .due {

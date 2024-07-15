@@ -132,6 +132,8 @@ const backClicked = (() => {
          display: flex;
          flex-flow: row nowrap;
          justify-content: center;
+         margin: 5px 0;
+
          label {
             margin-right: 10px;
             width: 100px;
@@ -141,7 +143,6 @@ const backClicked = (() => {
          .data {
             font-weight: 500;
          }
-         margin: 5px 0;
          div {
             margin: 5px 0;
          }

@@ -82,11 +82,12 @@ onMounted( async () => {
          margin: 0;
          padding: 0;
          li {
+            white-space: nowrap;
+            padding: 2px;
+
             .vocab {
                display: block;
             }
-            white-space: nowrap;
-            padding: 2px;
             &:hover {
                background: var(--uvalib-blue-alt-light);
                color: var(--uvalib-text);

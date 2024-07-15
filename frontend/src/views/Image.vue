@@ -323,6 +323,8 @@ onUnmounted( async () => {
          margin-bottom: 0;
 
          .line {
+            padding: 3px 0;
+
             td {
                padding: 5px;
             }
@@ -341,7 +343,6 @@ onUnmounted( async () => {
                   margin-left: 15px;
                }
             }
-            padding: 3px 0;
          }
       }
 
