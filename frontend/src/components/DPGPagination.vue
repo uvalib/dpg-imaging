@@ -1,19 +1,19 @@
 <template>
    <span class=pager>
       <span class="pages">
-         <DPGButton class="p-button-text right-pad" :disabled="!prevAvailable" @click="$emit('first')" aria-label="first page">
+         <DPGButton severity="secondary" text rounded :disabled="!prevAvailable" @click="$emit('first')" aria-label="first page">
             <i class="fas fa-angle-double-left"></i>
          </DPGButton>
-         <DPGButton class="p-button-text" :disabled="!prevAvailable" @click="$emit('prior')" aria-label="previous page">
+         <DPGButton severity="secondary" text rounded :disabled="!prevAvailable" @click="$emit('prior')" aria-label="previous page">
             <i class="fas fa-angle-left"></i>
          </DPGButton>
          <span class="page-info" @click="showPageJump">
             {{currPage}} of {{totalPages}}
          </span>
-         <DPGButton class="p-button-text right-pad" :disabled="!nextAvailable" @click="$emit('next')" aria-label="next page">
+         <DPGButton severity="secondary" text rounded :disabled="!nextAvailable" @click="$emit('next')" aria-label="next page">
             <i class="fas fa-angle-right"></i>
          </DPGButton>
-         <DPGButton class="p-button-text" :disabled="!nextAvailable" @click="$emit('last')" aria-label="last page">
+         <DPGButton severity="secondary" text rounded :disabled="!nextAvailable" @click="$emit('last')" aria-label="last page">
             <i class="fas fa-angle-double-right"></i>
          </DPGButton>
       </span>

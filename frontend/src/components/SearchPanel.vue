@@ -2,41 +2,59 @@
    <div class="search" id="search-panel">
       <h3>Search</h3>
       <div class="form">
-         <label for="workflow">Workflow</label>
-         <Dropdown inputId="workflow" v-model="searchStore.search.workflow" :options="workflows"
-            optionLabel="name" optionValue="id" @change="doSearch()" />
+         <div class="row">
+            <label for="workflow">Workflow</label>
+            <Select inputId="workflow" v-model="searchStore.search.workflow" :options="workflows"
+               optionLabel="name" optionValue="id" @change="doSearch()" />
+         </div>
 
-         <label for="step">Step</label>
-         <Dropdown inputId="step" v-model="searchStore.search.step" :options="steps"
-            optionLabel="name" optionValue="id" @change="doSearch()" />
+         <div class="row">
+            <label for="step">Step</label>
+            <Select inputId="step" v-model="searchStore.search.step" :options="steps"
+               optionLabel="name" optionValue="id" @change="doSearch()" />
+            </div>
 
-         <label for="assigned">Assigned To</label>
-         <Dropdown inputId="assigned" v-model="searchStore.search.assignedTo" :options="staffMembers"
-            optionLabel="name" optionValue="id"
-            filter autoFilterFocus resetFilterOnHide filterMatchMode="startsWith"
-            @change="doSearch()" />
+         <div class="row">
+            <label for="assigned">Assigned To</label>
+            <Select inputId="assigned" v-model="searchStore.search.assignedTo" :options="staffMembers"
+               optionLabel="name" optionValue="id"
+               filter autoFilterFocus resetFilterOnHide filterMatchMode="startsWith"
+               @change="doSearch()" />
+            </div>
 
-         <label for="order">Order</label>
-         <input id="order" v-model="searchStore.search.orderID" @keyup.enter="doSearch()">
+         <div class="row">
+            <label for="order">Order</label>
+            <input id="order" v-model="searchStore.search.orderID" @keyup.enter="doSearch()">
+         </div>
 
-         <label for="unit">Unit</label>
-         <input id="unit" v-model="searchStore.search.unitID" @keyup.enter="doSearch()">
+         <div class="row">
+            <label for="unit">Unit</label>
+            <input id="unit" v-model="searchStore.search.unitID" @keyup.enter="doSearch()">
+         </div>
 
-         <label for="call">Call Number</label>
-         <input id="call" v-model="searchStore.search.callNumber" @keyup.enter="doSearch()">
+         <div class="row">
+            <label for="call">Call Number</label>
+            <input id="call" v-model="searchStore.search.callNumber" @keyup.enter="doSearch()">
+         </div>
 
-         <label for="customer">Customer Last Name</label>
-         <input id="customer" v-model="searchStore.search.customer" @keyup.enter="doSearch()">
+         <div class="row">
+            <label for="customer">Customer Last Name</label>
+            <input id="customer" v-model="searchStore.search.customer" @keyup.enter="doSearch()">
+         </div>
 
-         <label for="agency">Agency</label>
-         <Dropdown inputId="agency" v-model="searchStore.search.agency" :options="agencies"
-            optionLabel="name" optionValue="id"
-            filter autoFilterFocus resetFilterOnHide  filterMatchMode="startsWith"
-            @change="doSearch()" />
+         <div class="row">
+            <label for="agency">Agency</label>
+            <Select inputId="agency" v-model="searchStore.search.agency" :options="agencies"
+               optionLabel="name" optionValue="id"
+               filter autoFilterFocus resetFilterOnHide  filterMatchMode="startsWith"
+               @change="doSearch()" />
+            </div>
 
-         <label for="workstation">Workstation</label>
-         <Dropdown inputId="workstation" v-model="searchStore.search.workstation" :options="workstations"
-            optionLabel="name" optionValue="id" @change="doSearch()" />
+         <div class="row">
+            <label for="workstation">Workstation</label>
+            <Select inputId="workstation" v-model="searchStore.search.workstation" :options="workstations"
+               optionLabel="name" optionValue="id" @change="doSearch()" />
+         </div>
       </div>
       <div class="buttons">
          <DPGButton class="p-button-secondary" @click="resetSearch" label="Reset Search"/>
@@ -49,7 +67,7 @@
 import { useSearchStore } from '@/stores/search'
 import { useSystemStore } from '@/stores/system'
 import { useRoute, useRouter } from 'vue-router'
-import Dropdown from 'primevue/dropdown'
+import Select from 'primevue/select'
 import { computed } from 'vue'
 
 const route = useRoute()
@@ -167,28 +185,13 @@ const doSearch = ( async () => {
 </script>
 
 <style scoped lang="scss">
-:deep(span.p-dropdown-label.p-inputtext) {
-   font-size: 0.9em;
-   padding: 5px 8px;
-   color: var(--uvalib-text);
-}
-:deep(div.p-dropdown-trigger) {
-   width: auto;
-   margin-right: 8px;
-}
 .search.pinned {
    position: fixed;
 }
 
 .search {
    border: 1px solid var(--uvalib-grey);
-   box-shadow: rgba(0, 0, 0, 0.14) 0px 2px 2px 0px;
-   div.p-dropdown.p-component {
-      width: 100%;
-      margin-bottom: 15px;
-      margin-top: 2px;
-      font-size: 0.9em;
-   }
+   border-radius: 4px;
 
    h3 {
       text-align: center;
@@ -198,26 +201,30 @@ const doSearch = ( async () => {
       border-bottom: 1px solid var(--uvalib-grey);
       font-size: 1em;
       font-weight: normal;
+      border-radius: 4px 4px 0 0;
    }
    .form {
       background: white;
       min-height: 300px;
       text-align: left;
-      padding: 10px 10px 0 10px;
-      label {
-         display: block;
-      }
-      select, input{
-         margin: 2px 0 15px 0;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      row-gap: 15px;
+      div.row {
+         display: flex;
+         flex-direction: column;
+         row-gap: 2px;
       }
    }
    .buttons {
+      border-radius: 4px;
       background: white;
-      padding: 0 10px 10px 10px;
-      text-align: right;
-      button {
-         margin-left: 5px;
-      }
+      padding: 15px;
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: flex-end;
+      gap: 10px;
    }
 }
 </style>

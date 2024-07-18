@@ -1,8 +1,5 @@
 <template>
    <div class="home">
-      <h2>
-         <span>Digitization Projects</span>
-      </h2>
       <WaitSpinner v-if="searchStore.working" :overlay="true" message="Loading projects..." />
       <div class="toolbar pin-target">
          <div class="filter">
@@ -51,7 +48,7 @@
                         </span>
                         <span>
                            <span class="status-msg overdue" v-if="isOverdue(idx) && !p.finishedAt">OVERDUE</span>
-                           <i v-if="searchStore.hasError(idx)" class="error-icon fas fa-exclamation-triangle"></i>
+                           <i v-if="searchStore.hasError(idx) && !p.finishedAt" class="error-icon fas fa-exclamation-triangle"></i>
                         </span>
                         <span v-if="p.finishedAt">
                            <label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span>
@@ -282,7 +279,8 @@ const isOverdue = ((projIdx) => {
       display: flex;
       flex-flow: row;
       justify-content: flex-start;
-      align-content: center;
+      align-items: center;
+
       .filter {
          display: flex;
          flex-flow: row nowrap;
@@ -299,7 +297,6 @@ const isOverdue = ((projIdx) => {
             cursor: pointer;
             span {
                display: inline-block;
-               font-size: 0.9em;
                position: relative;
                top: 2px;
             }
@@ -351,7 +348,7 @@ const isOverdue = ((projIdx) => {
 
       .card {
          flex: 0 1 calc(25% - 1em);
-         border: 1px solid var(--uvalib-grey);
+         border: 1px solid var(--uvalib-grey-light);
          padding: 0;
          margin: 0px 10px 20px 10px;
          position: relative;
@@ -359,8 +356,7 @@ const isOverdue = ((projIdx) => {
          box-sizing: border-box;
          min-width: 48%;
          color: var(--uvalib-text);
-         font-size: 0.9em;
-         box-shadow: rgba(0, 0, 0, 0.14) 0px 2px 2px 0px;
+         box-shadow: rgba(0, 0, 0, 0.14) 0px 2px 4px 1px;
          background: white;
          padding-bottom: 110px;
 
@@ -382,7 +378,7 @@ const isOverdue = ((projIdx) => {
                }
             }
             .due {
-               padding: 5px 5px 5px 10px;
+               padding: 10px;
                border-bottom: 1px solid var(--uvalib-grey);
                background: var(--uvalib-grey-light);
                display: flex;
@@ -415,14 +411,13 @@ const isOverdue = ((projIdx) => {
          }
          .special-instructions{
             margin: 0 30px;
-            font-size: 0.9em;
             label {
                display: block;
                font-weight: bold !important;
             }
             p {
                padding:0;
-               margin: 5px 0;
+               margin: 10px;
             }
          }
          .data {
@@ -431,7 +426,6 @@ const isOverdue = ((projIdx) => {
             flex-flow: row nowrap;
             justify-content: flex-start;
             align-items: flex-start;
-            font-size: 0.9em;
             dl.right {
                margin-left: 50px;
             }

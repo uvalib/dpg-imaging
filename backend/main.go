@@ -11,7 +11,7 @@ import (
 )
 
 // Version of the service
-const Version = "5.3.11"
+const Version = "5.3.12"
 
 func main() {
 	// Load cfg

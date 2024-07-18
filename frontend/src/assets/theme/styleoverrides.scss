@@ -1,0 +1,15 @@
+.p-dialog-mask {
+   .p-dialog {
+      .p-dialog-header {
+         background: var(--uvalib-teal-lightest);
+         border-bottom: 1px solid var(--uvalib-teal-light);
+         border-radius: 4px 4px 0 0;
+         margin-bottom: 25px;
+      }
+   }
+}
+
+div.p-panel-header {
+   border-bottom: 1px solid var(--uvalib-grey-light);
+   margin-bottom: 15px;
+}

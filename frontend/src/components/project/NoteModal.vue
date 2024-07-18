@@ -1,7 +1,5 @@
 <template>
-   <DPGButton class="p-button-text" v-if="!manual" @click="show" :id="`${props.id}-trigger`">
-      <i class="add fas fa-plus-circle"></i>
-   </DPGButton>
+   <DPGButton v-if="!manual"  label="Add Note" size="small" @click="show" :id="`${props.id}-trigger`" />
    <Dialog v-model:visible="isOpen" :modal="true" header="Create Note" style="width:650px">
       <div class="note-modal-content">
          <div class="instruct" v-if="instructions">{{instructions}}</div>
@@ -124,8 +122,9 @@ function setFocus(id) {
 </script>
 
 <style lang="scss" scoped>
-i.add {
-   font-size: 1.4em;
+.p-button.p-component.p-button-icon-only.p-button-rounded.p-button-text {
+
+   margin:0px;
 }
 p.error {
    color: var(--uvalib-red-emergency);

@@ -24,10 +24,20 @@ app.component("WaitSpinner", WaitSpinner)
 
 // Primevue setup
 import PrimeVue from 'primevue/config'
+import UVA from './assets/theme/uva'
 import ConfirmationService from 'primevue/confirmationservice'
 import ToastService from 'primevue/toastservice'
 
-app.use(PrimeVue)
+app.use(PrimeVue, {
+   theme: {
+      preset: UVA,
+      options: {
+         prefix: 'p',
+         darkModeSelector: '.dpg-dark'
+      }
+   }
+})
+
 app.use(ConfirmationService)
 app.use(ToastService)
 
@@ -36,15 +46,11 @@ import ConfirmDialog from 'primevue/confirmdialog'
 app.component("DPGButton", Button)
 app.component("ConfirmDialog", ConfirmDialog)
 
-import 'primevue/resources/themes/saga-blue/theme.css'
-import 'primevue/resources/primevue.min.css'
-import 'primeicons/primeicons.css'
 
 // Styles
+import 'primeicons/primeicons.css'
 import '@fortawesome/fontawesome-free/css/all.css'
-import './assets/stylesheets/uva-colors.css'
 import './assets/stylesheets/main.scss'
-import './assets/stylesheets/styleoverrides.scss'
 
 // actually mount to DOM
 app.mount('#app')
