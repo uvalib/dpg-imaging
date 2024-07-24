@@ -10,8 +10,8 @@
       </dl>
       <div class="msg">{{message.message}}</div>
       <template #footer>
-         <DPGButton @click="replyClicked" label="Reply" class="p-button-secondary"/>
-         <DPGButton @click="hide" label="OK" class="p-button-secondary"/>
+         <DPGButton @click="replyClicked" label="Reply" severity="secondary"/>
+         <DPGButton @click="hide" label="OK" severity="secondary"/>
       </template>
    </Dialog>
 </template>

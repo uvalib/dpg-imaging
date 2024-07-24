@@ -1,9 +1,7 @@
 <template>
    <div class="messages">
       <h2>Messages</h2>
-      <div class="acts">
-         <DPGButton @click="createClicked" class="p-button-secondary" label="Create Message"/>
-      </div>
+      <DPGButton @click="createClicked" severity="secondary" label="Create Message"/>
       <TabView>
          <TabPanel header="Inbox">
             <div v-if="messageStore.inbox.length == 0">
@@ -40,8 +38,10 @@
                </Column>
                <Column header="">
                   <template #body="slotProps">
-                     <DPGButton @click="viewClicked(slotProps.data.id)" class="small p-button-secondary" label="View"/>
-                     <DPGButton @click="deleteClicked(slotProps.data.id)" class="small p-button-danger" label="Delete"/>
+                     <div class="acts">
+                        <DPGButton @click="viewClicked(slotProps.data.id)" severity="secondary" label="View"/>
+                        <DPGButton @click="deleteClicked(slotProps.data.id)" severity="danger" label="Delete"/>
+                     </div>
                   </template>
                </Column>
             </DataTable>
@@ -122,7 +122,12 @@ const deleteClicked = ((msgID) => {
 .messages {
    padding: 25px;
    .acts {
-      margin: 15px 0;
+     display: flex;
+     flex-direction: column;
+     gap: 5px;
+     button {
+      font-size: 0.85em;
+     }
    }
    .email {
       margin-top: 5px;
@@ -135,18 +140,6 @@ const deleteClicked = ((msgID) => {
       i {
          font-size: 1.25em;
       }
-   }
-   :deep(td.nowrap) {
-      white-space: nowrap;
-   }
-   :deep(td.grow) {
-      width:100%
-   }
-   button.p-button-secondary.small,button.p-button-danger.small {
-      font-size: 0.8em;
-      padding: 3px 10px;
-      width: 100%;
-      margin-bottom: 5px;
    }
 }
 </style>

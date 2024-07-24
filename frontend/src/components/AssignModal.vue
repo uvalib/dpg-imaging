@@ -1,5 +1,5 @@
 <template>
-   <DPGButton @click="show" :label="props.label" class="p-button-secondary"/>
+   <DPGButton @click="show" :label="props.label" severity="secondary"/>
    <Dialog v-model:visible="isOpen" :modal="true" header="Assign Project">
       <div class="candidate-scroller">
          <div class="val" v-for="(c,idx) in systemStore.staffMembers" :key="c.id" :class="{selected: idx == selectedIdx}" @click="selectCandidate(idx)">
@@ -8,7 +8,7 @@
       </div>
       <p class="error">{{error}}</p>
       <template #footer>
-         <DPGButton @click="hide" label="Cancel" class="p-button-secondary"/>
+         <DPGButton @click="hide" label="Cancel" severity="secondary"/>
          <span class="spacer"></span>
          <DPGButton @click="assignClicked" label="Assign"/>
       </template>

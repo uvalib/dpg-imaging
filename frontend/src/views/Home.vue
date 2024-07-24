@@ -110,9 +110,9 @@
                            <span v-else class="assigned">{{ownerInfo(p)}}</span>
                         </span>
                         <span class="owner-buttons">
-                           <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)" class="p-button-secondary right-pad" label="Claim"/>
+                           <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)" severity="secondary" label="Claim"/>
                            <AssignModal  v-if="canAssign" :projectID="p.id" @assigned="searchStore.getProjects()" />
-                           <DPGButton  class="view p-button-secondary" @click="viewClicked(p.id)" label="View"/>
+                           <DPGButton  severity="secondary" @click="viewClicked(p.id)" label="View"/>
                         </span>
                      </div>
                   </div>
@@ -461,13 +461,9 @@ const isOverdue = ((projIdx) => {
             .owner-buttons {
                display: flex;
                flex-flow: row nowrap;
-               .dpg-button {
-                  margin-right: 10px;
-               }
-               .view {
-                  margin-right: 0;
-                  margin-left: 10px;
-               }
+               justify-content: flex-start;
+               align-items: flex-start;
+               gap: 10px;
             }
 
             .progress-panel {

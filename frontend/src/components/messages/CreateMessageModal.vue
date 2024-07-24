@@ -1,5 +1,6 @@
 <template>
-   <Dialog v-model:visible="messageStore.showCreateModal" :modal="true" header="New Message" @hide="cancelMessage" style="width:650px;">
+   <Dialog v-model:visible="messageStore.showCreateModal" :modal="true" header="New Message"
+      @hide="cancelMessage" style="width:650px;" :closable="false">
       <div class="content">
          <div class="row">
             <label>To</label>
@@ -24,7 +25,7 @@
          <p class="error" v-if="messageStore.error">{{messageStore.error}}</p>
       </div>
       <template #footer>
-         <DPGButton @click="cancelMessage" label="Cancel" class="p-button-secondary right-pad"/>
+         <DPGButton @click="cancelMessage" label="Cancel" severity="secondary"/>
          <DPGButton @click="sendMessage" label="Send"/>
       </template>
    </Dialog>

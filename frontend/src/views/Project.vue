@@ -25,7 +25,7 @@
                <span class="data">{{detail.unit.intendedUse.description}}</span>
             </div>
          </div>
-         <div class="row right-pad">
+         <div class="row">
             <div>
                <label>Unit:</label>
                <a target="_blank" :href="`${systemStore.adminURL}/units/${detail.unit.id}`">{{detail.unit.id}}</a>

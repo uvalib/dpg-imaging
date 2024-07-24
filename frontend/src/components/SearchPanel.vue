@@ -57,8 +57,8 @@
          </div>
       </div>
       <div class="buttons">
-         <DPGButton class="p-button-secondary" @click="resetSearch" label="Reset Search"/>
-         <DPGButton class="p-button-secondary" @click="doSearch" label="Search"/>
+         <DPGButton severity="secondary" @click="resetSearch" label="Reset Search"/>
+         <DPGButton severity="secondary" @click="doSearch" label="Search"/>
       </div>
    </div>
 </template>

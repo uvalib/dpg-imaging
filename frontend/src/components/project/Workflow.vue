@@ -29,7 +29,7 @@
             <label for="time">Approximately how many minutes did you spend on this assignment?</label>
             <div class="time-controls">
                <input id="time" type="text" v-model="stepMinutes"  @keyup.enter="timeEntered">
-               <DPGButton @click="cancelFinish" class="p-button-secondary" label="Cancel"/>
+               <DPGButton @click="cancelFinish" severity="secondary" label="Cancel"/>
                <DPGButton @click="timeEntered" label="OK"/>
             </div>
          </div>
@@ -38,28 +38,26 @@
          <WaitSpinner :overlay="false" message="Finalization in progress..." />
       </div>
       <div class="workflow-btns" v-else-if="isFinished == false">
-         <DPGButton @click="changeWorkflowClicked()" class="p-button-secondary" v-if="projectStore.canChangeWorkflow &&  (isSupervisor || isAdmin)" label="Change Workflow"/>
-         <span class="right-buttons">
-            <DPGButton @click="viewerClicked" class="p-button-secondary" v-if="isScanning == false && (isOwner(userStore.computeID) || isSupervisor || isAdmin)" label="Open QA Viewer"/>
-            <DPGButton v-if="hasOwner && (isAdmin || isSupervisor)"
-               @click="clearClicked()" class="p-button-secondary pad-right" label="Clear Assignment"/>
-            <template v-if="isOwner(userStore.computeID)">
-               <template v-if="isWorking == false">
-                  <AssignModal v-if="(isOwner(userStore.computeID) || isSupervisor || isAdmin)" :projectID="detail.id" label="Reassign"/>
-                  <DPGButton v-if="inProgress == false" @click="startStep" label="Start"/>
-                  <DPGButton v-if="canReject" class="p-button-danger" @click="rejectStepClicked" label="Reject"/>
-                  <DPGButton v-if="inProgress == true" :disabled="!isFinishEnabled" @click="finishClicked">
-                     <template v-if="isFinalizing &&  hasError == true">Retry Finalize</template>
-                     <template v-else>Finish</template>
-                  </DPGButton>
-               </template>
+         <DPGButton @click="changeWorkflowClicked()" severity="secondary" v-if="projectStore.canChangeWorkflow &&  (isSupervisor || isAdmin)" label="Change Workflow"/>
+         <DPGButton @click="viewerClicked" severity="secondary" v-if="isScanning == false && (isOwner(userStore.computeID) || isSupervisor || isAdmin)" label="Open QA Viewer"/>
+         <DPGButton v-if="hasOwner && (isAdmin || isSupervisor)"
+            @click="clearClicked()" severity="secondary" label="Clear Assignment"/>
+         <template v-if="isOwner(userStore.computeID)">
+            <template v-if="isWorking == false">
+               <AssignModal v-if="(isOwner(userStore.computeID) || isSupervisor || isAdmin)" :projectID="detail.id" label="Reassign"/>
+               <DPGButton v-if="inProgress == false" @click="startStep" label="Start"/>
+               <DPGButton v-if="canReject" class="p-button-danger" @click="rejectStepClicked" label="Reject"/>
+               <DPGButton v-if="inProgress == true" :disabled="!isFinishEnabled" @click="finishClicked">
+                  <template v-if="isFinalizing &&  hasError == true">Retry Finalize</template>
+                  <template v-else>Finish</template>
+               </DPGButton>
             </template>
-            <template v-else>
-               <DPGButton v-if="isWorking == false && (hasOwner == false || isAdmin ||isSupervisor)"
-                  @click="claimClicked()"  class="p-button-secondary pad-right" label="Claim"/>
-               <AssignModal v-if="(isAdmin || isSupervisor)" :projectID="detail.id" />
-            </template>
-         </span>
+         </template>
+         <template v-else>
+            <DPGButton v-if="isWorking == false && (hasOwner == false || isAdmin ||isSupervisor)"
+               @click="claimClicked()"  severity="secondary" label="Claim"/>
+            <AssignModal v-if="(isAdmin || isSupervisor)" :projectID="detail.id" />
+         </template>
       </div>
       <div class="workflow-message" v-if="isOwner(userStore.computeID) && workflowNote">
          {{workflowNote}}
@@ -91,7 +89,7 @@
          </div>
       </div>
       <template #footer>
-         <DPGButton @click="cancelWorkflowChange()" label="Cancel" class="p-button-secondary"/>
+         <DPGButton @click="cancelWorkflowChange()" label="Cancel" severity="secondary"/>
          <span class="spacer"></span>
          <DPGButton @click="submitWorkflowChange()" label="Submit" :disabled="isWorkflowChangeDisabled"/>
       </template>
@@ -291,7 +289,13 @@ function timeEntered() {
       confirm.require({
          message: `The duration entered (${intDuration} minutes) is very large. Are you sure?`,
          header: 'Confirm Duration',
-         rejectClass: 'p-button-secondary',
+         rejectProps: {
+            label: 'Cancel',
+            severity: 'secondary'
+         },
+         acceptProps: {
+            label: 'Confirm'
+         },
          accept: () => {
             timeEnterSuccess( intDuration )
          }
@@ -373,13 +377,9 @@ function unitDirectory(unitID) {
       margin-top: 10px;
       display: flex;
       flex-flow: row nowrap;
-      justify-content: space-between;
-      button.p-button {
-         margin-left: 10px;
-      }
-      .right-buttons {
-         margin-left: auto;
-      }
+      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 10px;
    }
    .workflow-btns.time {
       text-align: left;

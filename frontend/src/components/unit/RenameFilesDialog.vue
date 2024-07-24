@@ -1,6 +1,6 @@
 <template>
-   <DPGButton @click="renameClicked" class="p-button-secondary right-pad" label="Rename All"/>
-   <ConfirmDialog>
+   <DPGButton @click="renameClicked" severity="secondary" label="Rename All"/>
+   <ConfirmDialog :closable="false">
       <template #message>
          <div>All files will be renamed to match the following format:</div>
          <code>{{paddedUnit()}}_0001.tif - {{paddedUnit()}}_nnnn.tif</code>
@@ -35,6 +35,13 @@ function keyboardHandler(event) {
 function renameClicked() {
    confirm.require({
       header: 'Confirm Rename',
+      rejectProps: {
+         label: 'Cancel',
+         severity: 'secondary'
+      },
+      acceptProps: {
+         label: 'Rename'
+      },
       accept: () => {
          unitStore.renameAll()
       }

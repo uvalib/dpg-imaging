@@ -29,7 +29,7 @@
       <Dialog v-model:visible="systemStore.showError" :modal="true" header="System Error" @hide="errorClosed()" class="error">
          {{systemStore.error}}
          <template #footer>
-            <DPGButton @click="errorClosed()" label="OK" class="p-button-secondary"/>
+            <DPGButton @click="errorClosed()" label="OK" severity="secondary"/>
          </template>
       </Dialog>
       <MessageModal />

@@ -1,7 +1,7 @@
 <template>
    <div class="tag-picker">
       <span tabindex="0" @click="showMenu" @keydown.enter="showMenu" class="tag current" :class="[masterFile.status, props.display]"></span>
-      <OverlayPanel ref="picker" :dismissable="true">
+      <Popover ref="picker" :dismissable="true">
          <ul>
             <li @click.stop.prevent="selectTag('rescan')">
                <span class="tag rescan"></span>
@@ -32,12 +32,12 @@
                <span class="label">Remove Tag</span>
             </li>
          </ul>
-      </OverlayPanel>
+      </Popover>
    </div>
 </template>
 
 <script setup>
-import OverlayPanel from 'primevue/overlaypanel'
+import Popover from 'primevue/popover'
 import {useUnitStore} from "@/stores/unit"
 import { ref } from 'vue'
 

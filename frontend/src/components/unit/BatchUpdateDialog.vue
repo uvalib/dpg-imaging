@@ -1,21 +1,21 @@
 <template>
-   <DPGButton  class="p-button-secondary right" @click="showClicked">
+   <DPGButton  severity="secondary" @click="showClicked">
       Set {{ props.title}}
    </DPGButton>
-   <Dialog v-model:visible="showDialog" :modal="true" :header="`Batch Update ${props.title}`" @show="opened">
+   <Dialog v-model:visible="showDialog" :modal="true" :header="`Batch Update ${props.title}`" @show="opened" :closable="false">
       <div class="panel">
          <div class="row"  v-if="props.global == false">
-            <span class="entry pad-right">
+            <span class="entry">
                <label>Start Image:</label>
-               <Dropdown v-model="unitStore.rangeStartIdx" @change="startChanged" filter placeholder="Select start page"
+               <Select v-model="unitStore.rangeStartIdx" @change="startChanged" filter placeholder="Select start page"
                   :options="masterFiles" optionLabel="label" optionValue="value" ref="pickstart" />
             </span>
-            <span class="entry  pad-right">
+            <span class="entry">
                <label>End Image:</label>
-               <Dropdown v-model="unitStore.rangeEndIdx" @change="endChanged" filter placeholder="Select end page"
+               <Select v-model="unitStore.rangeEndIdx" @change="endChanged" filter placeholder="Select end page"
                   :options="masterFiles" optionLabel="label" optionValue="value"/>
             </span>
-            <DPGButton @click="selectAllClicked" class="p-button-secondary left" label="Select All"/>
+            <DPGButton @click="selectAllClicked" severity="secondary" label="Select All"/>
          </div>
          <div class="row ">
             <span class="entry full">
@@ -24,10 +24,10 @@
             </span>
          </div>
       </div>
-      <div class="panel-actions">
-         <DPGButton @click="cancelEditClicked" class="p-button-secondary right-pad" label="Cancel"/>
+      <template #footer>
+         <DPGButton @click="cancelEditClicked" severity="secondary" label="Cancel"/>
          <DPGButton @click="okClicked" label="OK"/>
-      </div>
+      </template>
    </Dialog>
 </template>
 
@@ -35,7 +35,7 @@
 import {useUnitStore} from "@/stores/unit"
 import { ref, nextTick, computed } from 'vue'
 import Dialog from 'primevue/dialog'
-import Dropdown from 'primevue/dropdown'
+import Select from 'primevue/select'
 
 const props = defineProps({
    title: {
@@ -109,38 +109,27 @@ const selectAllClicked = (() => {
 </script>
 
 <style lang="scss" scoped>
-button.p-button-secondary.right {
-   margin-right: 10px;
-}
 .panel {
    background: white;
+   display: flex;
+   flex-direction: column;
+   gap: 20px;
 
    .row {
       display: flex;
       flex-flow: row nowrap;
       justify-content: space-between;
       align-items: flex-end;
-      margin-bottom: 20px;
+      justify-content: flex-start;
+      gap: 10px;
+
       label {
          display: block;
          margin-bottom: 5px;
-      }
-      button {
-         padding: 8px 16px;
-      }
-      input[type=text] {
-         padding: 8px;
-      }
-      .entry.pad-right {
-         margin-right: 10px;
       }
       .entry.full {
          width: 100%;
       }
    }
-}
-.panel-actions {
-   padding: 0 0 10px 0;
-   text-align: right;
 }
 </style>

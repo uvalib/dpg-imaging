@@ -30,12 +30,11 @@ function viewModeChanged() {
    flex-flow: row nowrap;
    justify-content: flex-start;
    align-items: baseline;
-   margin-right: 15px;
+   gap: 5px;
 
    label {
       display: inline-block;
       font-weight: bold;
-      margin-right: 5px;
    }
    select {
       border: 1px solid var(--uvalib-grey);

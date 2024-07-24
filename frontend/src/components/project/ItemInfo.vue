@@ -112,9 +112,9 @@
          </tr>
       </table>
       <div class="buttons" v-if="canEdit">
-         <DPGButton v-if="!editing" @click="editClicked" class="p-button-secondary" label="Edit"/>
+         <DPGButton v-if="!editing" @click="editClicked" severity="secondary" label="Edit"/>
          <template v-else>
-            <DPGButton @click="cancelClicked" class="p-button-secondary" label="Cancel"/>
+            <DPGButton @click="cancelClicked" severity="secondary" label="Cancel"/>
             <DPGButton @click="saveClicked" label="Save"/>
          </template>
       </div>

@@ -43,7 +43,7 @@
             <BatchUpdateDialog title="Title" field="title" />
             <BatchUpdateDialog title="Caption" field="description" />
             <template v-if="isManuscript">
-               <DPGButton @click="boxClicked" class="p-button-secondary right-pad" label="Set Box"/>
+               <DPGButton @click="boxClicked" severity="secondary" label="Set Box"/>
                <BatchUpdateDialog title="Box" field="box" :global="true" />
                <BatchUpdateDialog title="Folder" field="folder" />
             </template>
@@ -355,16 +355,18 @@ onBeforeUnmount( async () => {
       flex-flow: row wrap;
       justify-content: space-between;
       align-content: center;
-      padding: 10px;
-      background: var(--uvalib-grey-light);
+      padding: 5px;
+      background: #fafaff;
       border-bottom: 1px solid var(--uvalib-grey);
       border-top: 1px solid var(--uvalib-grey);
+      gap: 5px;
 
       .actions {
          display: flex;
          flex-flow: row wrap;
          justify-content: flex-end;
          align-content: center;
+         gap: 5px;
       }
    }
 }

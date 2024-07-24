@@ -1,7 +1,7 @@
 <template>
-   <div class="tag-picker">
-      <DPGButton @click="showMenu" class="p-button-secondary hint-trigger" label="Keyboard Shortcuts" icon="pi pi-question-circle" />
-      <OverlayPanel ref="hints">
+   <div class="keyboard-shortcuts">
+      <DPGButton @click="showMenu" severity="secondary" class="hint-trigger" label="Keyboard Shortcuts" icon="pi pi-question-circle" />
+      <Popover ref="hints">
          <table >
             <tr><td class="act">Select All:</td><td>ctrl+a</td></tr>
             <tr><td class="act">Paging:</td><td>&lt;  &gt;</td></tr>
@@ -13,12 +13,12 @@
             <tr><td class="act">Component:</td><td>ctrl+k</td></tr>
             <tr><td class="act">Cancel Edit:</td><td>esc</td></tr>
          </table>
-      </OverlayPanel>
+      </Popover>
    </div>
 </template>
 
 <script setup>
-import OverlayPanel from 'primevue/overlaypanel'
+import Popover from 'primevue/popover'
 import { ref, computed } from 'vue'
 import {useProjectStore} from "@/stores/project"
 
@@ -35,10 +35,9 @@ function showMenu(event) {
 
 <style lang="scss" scoped>
 .hint-trigger {
-   position: absolute;
-   right: 10px;
-   top: 0px;
+   float:right;
    z-index: 999;
+   margin-right: 10px;
 }
 
 table {

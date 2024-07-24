@@ -26,7 +26,7 @@
       </div>
       <p class="error" v-if="error">{{error}}</p>
       <template #footer>
-         <DPGButton @click="hide" class="p-button-secondary" label="Cancel"/>
+         <DPGButton @click="hide" severity="secondary" label="Cancel"/>
          <span class="spacer"></span>
          <DPGButton autofocus @click="createClicked" label="Create"/>
       </template>

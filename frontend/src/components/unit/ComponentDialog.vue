@@ -1,8 +1,8 @@
 <template>
-   <DPGButton  class="p-button-secondary" @click="showClicked">
+   <DPGButton  severity="secondary" @click="showClicked">
       Link Component
    </DPGButton>
-   <Dialog v-model:visible="unitStore.edit.component" :modal="true" header="Link Component" @show="opened">
+   <Dialog v-model:visible="unitStore.edit.component" :modal="true" header="Link Component" @show="opened" :closable="false">
       <div class="panel confirm" v-if="unitStore.component.valid">
          <table>
             <tr>
@@ -30,17 +30,17 @@
       </div>
       <div class="panel" v-else>
          <div class="row">
-            <span class="entry pad-right">
+            <span class="entr">
                <label>Start Image:</label>
                <Dropdown v-model="unitStore.rangeStartIdx" @change="startChanged" filter placeholder="Select start page"
                   :options="masterFiles" optionLabel="label" optionValue="value" ref="pickstart" />
             </span>
-            <span class="entry  pad-right">
+            <span class="entry">
                <label>End Image:</label>
                <Dropdown v-model="unitStore.rangeEndIdx" @change="endChanged" filter placeholder="Select end page"
                   :options="masterFiles" optionLabel="label" optionValue="value"/>
             </span>
-            <DPGButton @click="selectAllClicked" class="p-button-secondary left" label="Select All"/>
+            <DPGButton @click="selectAllClicked" severity="secondary" label="Select All"/>
          </div>
          <div class="row">
             <span class="entry full">
@@ -49,17 +49,17 @@
             </span>
          </div>
       </div>
-      <div class="panel-actions">
+      <template #footer>
          <template  v-if="unitStore.component.valid">
-            <DPGButton class="p-button-secondary right-pad" @click="noLinkClicked" label="No"/>
+            <DPGButton severity="secondary" @click="noLinkClicked" label="No"/>
             <DPGButton @click="linkConfirmed" label="Yes"/>
          </template>
          <template v-else>
-            <DPGButton @click="unlinkClicked" class="p-button-secondary left">Unlink</DPGButton>
-            <DPGButton @click="cancelEditClicked" class="p-button-secondary right-pad">Cancel</DPGButton>
+            <DPGButton @click="unlinkClicked" severity="danger" class="left">Unlink</DPGButton>
+            <DPGButton @click="cancelEditClicked" severity="secondary">Cancel</DPGButton>
             <DPGButton @click="okClicked" :loading="lookingUp">OK</DPGButton>
          </template>
-      </div>
+      </template>
    </Dialog>
 </template>
 
@@ -158,53 +158,28 @@ const selectAllClicked = (() => {
 <style lang="scss" scoped>
 .panel {
    background: white;
-
-   table {
-      font-size: 0.9em;
-      td {
-         padding: 3px;
-         text-align: left;
-      }
-      td.label {
-         font-weight: bold;
-         text-align: right;
-      }
-   }
+   display: flex;
+   flex-direction: column;
+   gap: 20px;
 
    .row {
       display: flex;
       flex-flow: row nowrap;
       justify-content: space-between;
       align-items: flex-end;
-      margin-bottom: 20px;
+      justify-content: flex-start;
+      gap: 10px;
+
       label {
          display: block;
          margin-bottom: 5px;
-      }
-      button {
-         padding: 8px 16px;
-      }
-      input[type=text] {
-         padding: 8px;
-      }
-      .entry.pad-right {
-         margin-right: 10px;
       }
       .entry.full {
          width: 100%;
       }
    }
 }
-.panel-actions {
-   padding: 0 0 10px 0;
-   display: flex;
-   flex-flow: row nowrap;
-   justify-content: flex-end;
-   .p-button-secondary.left {
-      margin-right: auto;
-   }
-}
-:deep(p.confirm) {
-   text-align: right;
+.left {
+   margin-right: auto;
 }
 </style>

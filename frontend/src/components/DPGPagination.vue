@@ -26,11 +26,11 @@
          </select>
       </span>
    </span>
-   <Dialog v-model:visible="pageJumpOpen" :modal="true" header="Jump to page">
+   <Dialog v-model:visible="pageJumpOpen" :modal="true" header="Jump to page" :closable="false">
       <input id="page-jump" type="number" v-model="pageJump" :min="1" :max="totalPages"
          @keydown.stop.prevent.enter="pageJumpSelected" @keydown.stop.prevent.esc="pageJumpCanceled"/>
       <template #footer>
-         <DPGButton class="p-button-secondary right-margin" @click="pageJumpCanceled" label="Cancel"/>
+         <DPGButton severity="secondary" @click="pageJumpCanceled" label="Cancel"/>
          <DPGButton @click="pageJumpSelected" label="OK"/>
       </template>
    </Dialog>
@@ -101,6 +101,16 @@ function showPageJump() {
    flex-flow: row nowrap;
    justify-content: space-evenly;
    position: relative;
+   .setup {
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 5px;
+      label {
+         white-space: nowrap;
+      }
+   }
 
    .pages {
       display: flex;
@@ -116,13 +126,6 @@ function showPageJump() {
       margin: 0 10px;
       font-size: 0.85em;
       cursor: pointer;
-   }
-   .setup {
-      margin-left: 10px;
-      select {
-         width: max-content;
-         margin-left: 5px;
-      }
    }
 }
 </style>
