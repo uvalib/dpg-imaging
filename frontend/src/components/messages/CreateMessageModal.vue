@@ -4,7 +4,7 @@
       <div class="content">
          <div class="row">
             <label>To</label>
-            <Dropdown id="assigned" v-model="messageStore.newMessage.to" :options="staffMembers"
+            <Select id="assigned" v-model="messageStore.newMessage.to" :options="staffMembers"
                optionLabel="name" optionValue="id"
                filter autoFilterFocus resetFilterOnHide filterMatchMode="startsWith"
                placeholder="Select a recipient" />
@@ -35,7 +35,7 @@
 import { useMessageStore } from "@/stores/messages"
 import { useSystemStore } from "@/stores/system"
 import Dialog from 'primevue/dialog'
-import Dropdown from 'primevue/dropdown'
+import Select from 'primevue/select'
 import { computed } from 'vue'
 
 const messageStore = useMessageStore()

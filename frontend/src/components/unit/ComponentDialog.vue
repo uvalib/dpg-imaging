@@ -32,12 +32,12 @@
          <div class="row">
             <span class="entr">
                <label>Start Image:</label>
-               <Dropdown v-model="unitStore.rangeStartIdx" @change="startChanged" filter placeholder="Select start page"
+               <Select v-model="unitStore.rangeStartIdx" @change="startChanged" filter placeholder="Select start page"
                   :options="masterFiles" optionLabel="label" optionValue="value" ref="pickstart" />
             </span>
             <span class="entry">
                <label>End Image:</label>
-               <Dropdown v-model="unitStore.rangeEndIdx" @change="endChanged" filter placeholder="Select end page"
+               <Select v-model="unitStore.rangeEndIdx" @change="endChanged" filter placeholder="Select end page"
                   :options="masterFiles" optionLabel="label" optionValue="value"/>
             </span>
             <DPGButton @click="selectAllClicked" severity="secondary" label="Select All"/>
@@ -68,7 +68,7 @@ import { useUnitStore } from "@/stores/unit"
 import { useSystemStore } from "@/stores/system"
 import { ref, nextTick, computed } from 'vue'
 import Dialog from 'primevue/dialog'
-import Dropdown from 'primevue/dropdown'
+import Select from 'primevue/select'
 
 const unitStore = useUnitStore()
 const systemStore = useSystemStore()
