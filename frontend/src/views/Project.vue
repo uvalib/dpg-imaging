@@ -37,8 +37,7 @@
          </div>
 
          <div class="back">
-            <i class="fas fa-angle-double-left back-button"></i>
-            <span class="text-button" @click="backClicked">Back to projects</span>
+            <DPGButton icon="pi pi-angle-double-left" text label="Back to projects" @click="backClicked" size="small" severity="secondary"/>
          </div>
       </div>
       <div  v-if="projectStore.hasDetail" class="project-main">
@@ -158,20 +157,6 @@ const backClicked = (() => {
       }
       .back {
          text-align: left;
-         .back-button {
-            color: var(--color-link);
-         }
-         .text-button {
-            font-weight: normal;
-            text-decoration: none;
-            color: var(--color-link);
-            display: inline-block;
-            margin-left: 5px;
-            cursor: pointer;
-            &:hover {
-               text-decoration: underline ;
-            }
-         }
       }
    }
    .project-main {

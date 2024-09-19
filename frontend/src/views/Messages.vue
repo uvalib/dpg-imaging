@@ -13,12 +13,6 @@
                paginatorTemplate="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink RowsPerPageDropdown"
                currentPageReportTemplate="{first} - {last} of {totalRecords}"
             >
-               <Column field="read" header=""  class="icon">
-                  <template #body="slotProps">
-                     <i v-if="slotProps.data.read" class="far fa-envelope-open"></i>
-                     <i v-else class="far fa-envelope"></i>
-                  </template>
-               </Column>
                <Column field="sentAt" header="Date" class="nowrap">
                   <template #body="slotProps">
                      {{formatDate(slotProps.data.sentAt)}}

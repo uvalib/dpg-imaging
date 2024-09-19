@@ -398,8 +398,9 @@ function unitDirectory(unitID) {
             display: flex;
             flex-flow: row nowrap;
             justify-content: flex-end;
+            gap: 10px;
             input {
-               width: 50px;
+               width: 100px;
                border-color: var(--uvalib-grey-light);
             }
          }

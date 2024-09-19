@@ -49,7 +49,6 @@ app.component("ConfirmDialog", ConfirmDialog)
 
 // Styles
 import 'primeicons/primeicons.css'
-import '@fortawesome/fontawesome-free/css/all.css'
 import './assets/stylesheets/main.scss'
 
 // actually mount to DOM

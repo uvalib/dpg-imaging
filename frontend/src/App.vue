@@ -18,7 +18,7 @@
                <div class="messages">
                   <span class="cnt">{{messageStore.unreadMessageCount}}</span>
                   <router-link to="/messages">
-                     <i class="mail fas fa-envelope"></i>
+                     <i class="mail pi pi-envelope"></i>
                   </router-link>
                </div>
                <span class="signout" @click="signout">Sign out</span>
@@ -34,13 +34,12 @@
       </Dialog>
       <MessageModal />
       <CreateMessageModal />
-      <ScrollToTop />
+      <ScrollTop />
    </div>
 </template>
 
 <script setup>
 import UvaLibraryLogo from "@/components/UvaLibraryLogo.vue"
-import ScrollToTop from "@/components/ScrollToTop.vue"
 import {useSystemStore} from "@/stores/system"
 import {useUserStore} from "@/stores/user"
 import {useMessageStore} from "@/stores/messages"
@@ -49,6 +48,7 @@ import { onMounted } from 'vue'
 import Dialog from 'primevue/dialog'
 import MessageModal from "./components/messages/MessageModal.vue"
 import CreateMessageModal from "./components/messages/CreateMessageModal.vue"
+import ScrollTop from 'primevue/scrolltop'
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()

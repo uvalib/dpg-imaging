@@ -46,9 +46,9 @@
                         <span>
                            <label>Date Due:</label><span>{{searchStore.dueDate(idx)}}</span>
                         </span>
-                        <span>
+                        <span class="status-section">
                            <span class="status-msg overdue" v-if="isOverdue(idx) && !p.finishedAt">OVERDUE</span>
-                           <i v-if="searchStore.hasError(idx) && !p.finishedAt" class="error-icon fas fa-exclamation-triangle"></i>
+                           <i v-if="searchStore.hasError(idx) && !p.finishedAt" class="error-icon pi pi-exclamation-circle"></i>
                         </span>
                         <span v-if="p.finishedAt">
                            <label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span>
@@ -105,7 +105,7 @@
                      </div>
                      <div class="owner-panel">
                         <span class="assignment">
-                           <i class="user fas fa-user"></i>
+                           <i class="user pi pi-user"></i>
                            <span v-if="!p.owner" class="unassigned">Unassigned</span>
                            <span v-else class="assigned">{{ownerInfo(p)}}</span>
                         </span>
@@ -384,12 +384,19 @@ const isOverdue = ((projIdx) => {
                display: flex;
                flex-flow: row nowrap;
                justify-content: space-between;
-               align-items: flex-start;
+               align-items: center;
+               .status-section {
+                  display: flex;
+                  flex-flow: row nowrap;
+                  align-items: center;
+                  gap: 10px;
+               }
                .error-icon {
-                  display: inline-block;
-                  color: var(--uvalib-red-emergency);
-                  margin-left: 5px;
-                  font-size: 1.15em;
+                  font-size: 1.5em;
+                  background: var(--uvalib-red-emergency);;
+                  color: white;
+                  padding: 2px 2px 1px 2px;
+                  border-radius: 50%;
                }
                label {
                   font-weight: bold;

@@ -13,7 +13,7 @@
          </span>
       </div>
       <div class="history-wrap">
-         <table class="history">
+         <table class="history"><tbody>
             <tr>
                <th>Date</th><th>Step</th><th>Activity</th><th>Owner</th>
             </tr>
@@ -63,7 +63,7 @@
                <td>Created</td>
                <td></td>
             </tr>
-         </table>
+         </tbody></table>
       </div>
    </Panel>
 </template>

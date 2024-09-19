@@ -1,21 +1,13 @@
 <template>
    <span class=pager>
       <span class="pages">
-         <DPGButton severity="secondary" text rounded :disabled="!prevAvailable" @click="$emit('first')" aria-label="first page">
-            <i class="fas fa-angle-double-left"></i>
-         </DPGButton>
-         <DPGButton severity="secondary" text rounded :disabled="!prevAvailable" @click="$emit('prior')" aria-label="previous page">
-            <i class="fas fa-angle-left"></i>
-         </DPGButton>
+         <DPGButton severity="secondary" text rounded :disabled="!prevAvailable" @click="$emit('first')" icon="pi pi-angle-double-left" />
+         <DPGButton severity="secondary" text rounded :disabled="!prevAvailable" @click="$emit('prior')" icon="pi pi-angle-left" />
          <span class="page-info" @click="showPageJump">
             {{currPage}} of {{totalPages}}
          </span>
-         <DPGButton severity="secondary" text rounded :disabled="!nextAvailable" @click="$emit('next')" aria-label="next page">
-            <i class="fas fa-angle-right"></i>
-         </DPGButton>
-         <DPGButton severity="secondary" text rounded :disabled="!nextAvailable" @click="$emit('last')" aria-label="last page">
-            <i class="fas fa-angle-double-right"></i>
-         </DPGButton>
+         <DPGButton severity="secondary" text rounded :disabled="!nextAvailable" @click="$emit('next')" icon="pi pi-angle-right"/>
+         <DPGButton severity="secondary" text rounded :disabled="!nextAvailable" @click="$emit('last')" icon="pi pi-angle-double-right"/>
       </span>
       <span class="setup" v-if="sizePicker">
          <label>per page:</label>

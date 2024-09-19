@@ -35,27 +35,29 @@
          </dd>
       </dl>
       <table class="edit" v-else>
-         <tr class="row">
-            <td class="label"><label for="workstation">Workstation:</label></td>
-            <td class="data">
-               <select id="workstation" v-model="workstationID">
-                  <option disabled :value="0">Choose a workstation</option>
-                  <option v-for="ws in systemStore.workstations" :key="`ws${ws.id}`" :value="ws.id">{{ws.name}}</option>
-               </select>
-            </td>
-         </tr>
-         <tr class="row">
-            <td class="label"><label for="capture">Capture Resolution:</label></td>
-            <td><input id="capture" type="text" v-model="captureResolution"></td>
-         </tr>
-         <tr class="row">
-            <td class="label"><label for="resize">Resized Resolution:</label></td>
-            <td class="data"><input id="resize" type="text" v-model="resizedResolution"></td>
-         </tr>
-         <tr class="row">
-            <td class="label"><label for="res-note">Resolution Note:</label></td>
-            <td class="data"><textarea id="res-note" v-model="resolutionNote"></textarea></td>
-         </tr>
+         <tbody>
+            <tr class="row">
+               <td class="label"><label for="workstation">Workstation:</label></td>
+               <td class="data">
+                  <select id="workstation" v-model="workstationID">
+                     <option disabled :value="0">Choose a workstation</option>
+                     <option v-for="ws in systemStore.workstations" :key="`ws${ws.id}`" :value="ws.id">{{ws.name}}</option>
+                  </select>
+               </td>
+            </tr>
+            <tr class="row">
+               <td class="label"><label for="capture">Capture Resolution:</label></td>
+               <td><input id="capture" type="text" v-model="captureResolution"></td>
+            </tr>
+            <tr class="row">
+               <td class="label"><label for="resize">Resized Resolution:</label></td>
+               <td class="data"><input id="resize" type="text" v-model="resizedResolution"></td>
+            </tr>
+            <tr class="row">
+               <td class="label"><label for="res-note">Resolution Note:</label></td>
+               <td class="data"><textarea id="res-note" v-model="resolutionNote"></textarea></td>
+            </tr>
+         </tbody>
       </table>
       <div class="buttons" v-if="canEdit">
          <DPGButton v-if="!editing" @click="editClicked" severity="secondary" label="Edit"/>

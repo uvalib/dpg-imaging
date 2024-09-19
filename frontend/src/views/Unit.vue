@@ -22,10 +22,9 @@
             <div class="small" >{{workingDir}}</div>
             <div class="small" >{{unitStore.masterFiles.length}} Images</div>
          </h3>
-         <span class="back">
-            <i class="fas fa-angle-double-left back-button"></i>
-            <router-link :to="`/projects/${projectStore.detail.id}`" class="link">Back to project</router-link>
-         </span>
+         <div class="back">
+            <DPGButton icon="pi pi-angle-double-left" text label="Back to project" size="small" severity="secondary" @click="backClicked"/>
+         </div>
       </div>
 
       <div class="toolbar" ref="toolbar">
@@ -113,6 +112,10 @@ const workingDir = computed(()=>{
 const isManuscript = computed(() => {
    if ( projectStore.hasDetail == false) return false
    return projectStore.detail.workflow && projectStore.detail.workflow.name=='Manuscript'
+})
+
+const backClicked = (() => {
+   router.push( `/projects/${projectStore.detail.id}` )
 })
 
 function truncateTitle(title) {
@@ -333,20 +336,7 @@ onBeforeUnmount( async () => {
          }
       }
       .back {
-         position: absolute;
-         left: 10px;
-         bottom: -15px;
-         .link {
-            font-weight: normal;
-            text-decoration: none;
-            color: var(--uvalib-text) !important;
-            display: inline-block;
-            margin-left: 5px;
-            cursor: pointer;
-            &:hover {
-               text-decoration: underline ;
-            }
-         }
+         text-align: left;
       }
    }
 

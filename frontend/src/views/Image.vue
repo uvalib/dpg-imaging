@@ -1,60 +1,63 @@
 <template>
    <div class="viewer">
       <WaitSpinner v-if="systemStore.working" :overlay="true" message="Working..." />
-      <div id="iiif-toolbar" class="toolbar" v-show="fullScreen == false">
-         <TagPicker v-if="currMasterFile" :masterFile="currMasterFile" display="large" class="top-right"/>
-         <table class="info" v-if="projectStore.hasDetail">
-            <tr class="line">
-               <td class="label">Image:</td>
-               <td class="data" v-if="currMasterFile">
-                  <span>{{currMasterFile.fileName}}</span>
-                  <span class="detail">(Size: {{currMasterFile.width}} x {{currMasterFile.height}}, Resolution: {{currMasterFile.resolution}})</span>
-               </td>
-            </tr>
-            <tr class="line">
-               <td class="label">Title:</td>
-               <td class="data editable" @click="editMetadata('title')" >
-                  <TitleInput  v-if="isEditing('title')" @canceled="cancelEdit" @accepted="submitEdit" v-model="newValue"/>
-                  <template v-else>
-                     <span  v-if="currMasterFile && currMasterFile.title">{{currMasterFile.title}}</span>
-                     <span v-else class="undefined editable">Undefined</span>
-                  </template>
-               </td>
-            </tr>
-            <tr class="line">
-               <td class="label">Caption:</td>
-               <td class="data editable" @click="editMetadata('description')" >
-                  <input  v-if="isEditing('description')" id="edit-desc" type="text" v-model="newValue"
-                     @keyup.enter="submitEdit()" @keyup.esc="cancelEdit" />
-                  <template v-else>
-                     <span v-if="currMasterFile && currMasterFile.description">{{currMasterFile.description}}</span>
-                     <span v-else class="undefined editable">Undefined</span>
-                  </template>
-               </td>
-            </tr>
-            <tr class="line">
-               <td class="label">Keybard Shortcuts:</td>
-               <td class="data">Pan Image: w,a,s,d or arrow keys. Pagination: &lt; prior, &gt; next. Full Screen Toggle: z. 100% Zoom: 1.</td>
-            </tr>
-         </table>
+      <div id="iiif-header" class="toolbar" v-show="fullScreen == false">
+         <div class="header-top">
+            <table class="info" v-if="projectStore.hasDetail">
+               <tbody>
+                  <tr class="line">
+                     <td class="label">Image:</td>
+                     <td class="data" v-if="currMasterFile">
+                        <span>{{currMasterFile.fileName}}</span>
+                        <span class="detail">(Size: {{currMasterFile.width}} x {{currMasterFile.height}}, Resolution: {{currMasterFile.resolution}})</span>
+                     </td>
+                  </tr>
+                  <tr class="line">
+                     <td class="label">Title:</td>
+                     <td class="data editable" @click="editMetadata('title')" >
+                        <TitleInput  v-if="isEditing('title')" @canceled="cancelEdit" @accepted="submitEdit" v-model="newValue"/>
+                        <template v-else>
+                           <span  v-if="currMasterFile && currMasterFile.title">{{currMasterFile.title}}</span>
+                           <span v-else class="undefined editable">Undefined</span>
+                        </template>
+                     </td>
+                  </tr>
+                  <tr class="line">
+                     <td class="label">Caption:</td>
+                     <td class="data editable" @click="editMetadata('description')" >
+                        <input  v-if="isEditing('description')" id="edit-desc" type="text" v-model="newValue"
+                           @keyup.enter="submitEdit()" @keyup.esc="cancelEdit" />
+                        <template v-else>
+                           <span v-if="currMasterFile && currMasterFile.description">{{currMasterFile.description}}</span>
+                           <span v-else class="undefined editable">Undefined</span>
+                        </template>
+                     </td>
+                  </tr>
+                  <tr class="line">
+                     <td class="label">Keybard Shortcuts:</td>
+                     <td class="data">Pan Image: w,a,s,d or arrow keys. Pagination: &lt; prior, &gt; next. Full Screen Toggle: z. 100% Zoom: 1.</td>
+                  </tr>
+               </tbody>
+            </table>
+            <TagPicker v-if="currMasterFile" :masterFile="currMasterFile" display="large" />
+         </div>
          <div class="acts">
             <span class="toolbar-button group back">
-               <i class="fas fa-angle-double-left back-button"></i>
-               <span @click="router.back()">Back to unit</span>
+               <DPGButton icon="pi pi-angle-double-left" text label="Back to unit" @click="backClicked" size="small" severity="secondary"/>
             </span>
             <span class="paging group">
-               <span id="previous" title="Previous" class="toolbar-button" :class="{disabled: prevDisabled}"  @click="prevImage"><i class="fas fa-arrow-left"></i></span>
+               <DPGButton icon="pi pi-arrow-left" rounded text @click="prevImage" severity="secondary" :disabled="prevDisabled"/>
                <span class="page">{{page}} of {{unitStore.pageInfoURLs.length}}</span>
-               <span id="next" title="Next" class="toolbar-button" :class="{disabled: nextDisabled}" @click="nextImage"><i class="fas fa-arrow-right"></i></span>
+               <DPGButton icon="pi pi-arrow-right" rounded text @click="nextImage" severity="secondary" :disabled="nextDisabled"/>
             </span>
             <span class="zoom group">
-               <span id="rotate-left" title="Rotate Left" class="toolbar-button"  @click="rotateImage('left')"><i class="fas fa-undo"></i></span>
-               <span id="rotate-right" title="Rotate Right" class="toolbar-button"  @click="rotateImage('right')"><i class="rotated fas fa-undo"></i></span>
-               <span id="zoom-in" title="Zoom in" class="toolbar-button"><i class="fas fa-search-plus"></i></span>
+               <DPGButton id="rotate-left" icon="pi pi-undo" rounded text @click="rotateImage('left')" severity="secondary" />
+               <DPGButton id="rotate-right" class="rotated" icon="pi pi-undo" rounded text @click="rotateImage('right')" severity="secondary" />
+               <DPGButton id="zoom-in" icon="pi pi-search-plus" text rounded severity="secondary" />
                <span class="page">{{Math.round(zoom*100)}} %</span>
-               <span id="zoom-out" title="Zoom in" class="toolbar-button"><i class="fas fa-search-minus"></i></span>
-               <span id="actual-size" title="Reset view" @click="viewActualSize" class="full toolbar-button">1:1</span>
-               <span id="home" title="Reset view" class="toolbar-button"><i class="fas fa-home"></i></span>
+               <DPGButton id="zoom-out" icon="pi pi-search-minus" rounded text severity="secondary" />
+               <DPGButton id="actual-size" label="1:1" rounded text severity="secondary" @click="viewActualSize"/>
+               <DPGButton id="home" icon="pi pi-home" rounded text severity="secondary" />
             </span>
          </div>
       </div>
@@ -98,6 +101,10 @@ const prevDisabled = computed(() => {
 
 const nextDisabled = computed(() => {
    return page.value == unitStore.totalFiles
+})
+
+const backClicked = (() => {
+   router.push( `/projects/${projectStore.detail.id}/unit` )
 })
 
 const rotateImage = ( async (dir) => {
@@ -238,13 +245,12 @@ onBeforeMount( async () => {
    }
    nextTick(()=>{
       let hdr = document.getElementById("uva-header")
-      let toolbar = document.getElementById("iiif-toolbar")
+      let toolbar = document.getElementById("iiif-header")
       viewerTop.value = hdr.offsetHeight + toolbar.offsetHeight
       let ele =  document.getElementById("iiif-viewer")
       ele.style.top = `${viewerTop.value}px`
       viewer = OpenSeadragon({
          id: "iiif-viewer",
-         toolbar: "iiif-toolbar",
          animationTime: 0.25,
          showNavigator: true,
          sequenceMode: true,
@@ -290,14 +296,17 @@ onUnmounted( async () => {
       background: #555555 !important;
    }
    .toolbar {
-      padding: 10px;
       background: var(--uvalib-grey-light);
       position: relative;
       border-bottom: 1px solid var(--uvalib-grey);
-      .top-right {
-         position: absolute;
-         top: 10px;
-         right:10px;
+      display: flex;
+      flex-direction: column;
+      .header-top {
+         display: flex;
+         flex-flow: row nowrap;
+         justify-content: space-between;
+         align-items: flex-start;
+         padding: 10px 10px 0 10px;
       }
       .undefined {
          font-style: italic;
@@ -312,12 +321,15 @@ onUnmounted( async () => {
          }
       }
       .acts {
-         padding-top: 15px;
+         padding: 5px;
          border-top: 1px solid var(--uvalib-grey);
+         display: flex;
+         flex-flow: row nowrap;
+         justify-content: space-between;
+         background: #f0f0f0;
       }
 
       .info {
-         width: 75%;
          text-align: left;
          padding-bottom: 10px;
          margin-bottom: 0;
@@ -347,47 +359,22 @@ onUnmounted( async () => {
       }
 
       .group {
-         display: inline-block;
-         position: relative;
+         display: flex;
+         flex-flow: row nowrap;
+         align-items: center;
+         gap: 10px;
       }
-      .rotated {
-         transform: scaleX(-1);
-      }
-
-      .toolbar-button {
-         padding: 5px 10px;
-         display: inline-block;
-         position: relative;
-         cursor: pointer;
-         &:hover {
-            text-decoration: underline;
+      .group.zoom {
+         gap: 2px;
+         button {
+            display: inherit !important;
          }
-      }
-      .toolbar-button.disabled {
-         opacity:0.2;
-      }
-      .back-button {
-         padding: 5px 10px 5px 0;
-         display: inline-block;
-         position: relative;
-      }
-
-      .back {
-         position: absolute;
-         left: 10px;
-         bottom: 7px;
-         a {
-            text-decoration: none;
-            color: var(--uvalib-text);
+         .page {
+            margin: 0 5px;
          }
-         &:hover {
-            text-decoration: underline ;
+         .rotated {
+            transform: scaleX(-1);
          }
-      }
-      .zoom {
-         position: absolute;
-         right: 10px;
-         bottom: 12px;
       }
    }
 }

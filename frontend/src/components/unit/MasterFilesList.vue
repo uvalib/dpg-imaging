@@ -69,7 +69,7 @@
                <td class="nowrap">{{element.width}} x {{element.height}}</td>
                <td>{{element.resolution}}</td>
                <td class="nowrap">{{element.colorProfile}}</td>
-               <td class="grip"><i class="fas fa-grip-lines"></i></td>
+               <td class="grip"><i class="pi pi-bars"></i></td>
             </tr>
          </template>
       </Sortable>

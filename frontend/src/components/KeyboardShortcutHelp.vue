@@ -3,15 +3,17 @@
       <DPGButton @click="showMenu" severity="secondary" class="hint-trigger" label="Keyboard Shortcuts" icon="pi pi-question-circle" />
       <Popover ref="hints">
          <table >
-            <tr><td class="act">Select All:</td><td>ctrl+a</td></tr>
-            <tr><td class="act">Paging:</td><td>&lt;  &gt;</td></tr>
-            <tr><td class="act">Delete:</td><td>ctrl+d</td></tr>
-            <tr><td class="act">Rename:</td><td>ctrl+r</td></tr>
-            <tr><td class="act">Page Numbers:</td><td>ctrl+p</td></tr>
-            <tr v-if="isManuscript"><td class="act">Set Box:</td><td>ctrl+b</td></tr>
-            <tr v-if="isManuscript"><td class="act">Set Folder:</td><td>ctrl+f</td></tr>
-            <tr><td class="act">Component:</td><td>ctrl+k</td></tr>
-            <tr><td class="act">Cancel Edit:</td><td>esc</td></tr>
+            <tbody>
+               <tr><td class="act">Select All:</td><td>ctrl+a</td></tr>
+               <tr><td class="act">Paging:</td><td>&lt;  &gt;</td></tr>
+               <tr><td class="act">Delete:</td><td>ctrl+d</td></tr>
+               <tr><td class="act">Rename:</td><td>ctrl+r</td></tr>
+               <tr><td class="act">Page Numbers:</td><td>ctrl+p</td></tr>
+               <tr v-if="isManuscript"><td class="act">Set Box:</td><td>ctrl+b</td></tr>
+               <tr v-if="isManuscript"><td class="act">Set Folder:</td><td>ctrl+f</td></tr>
+               <tr><td class="act">Component:</td><td>ctrl+k</td></tr>
+               <tr><td class="act">Cancel Edit:</td><td>esc</td></tr>
+            </tbody>
          </table>
       </Popover>
    </div>

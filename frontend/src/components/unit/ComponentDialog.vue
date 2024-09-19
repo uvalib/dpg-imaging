@@ -5,26 +5,28 @@
    <Dialog v-model:visible="unitStore.edit.component" :modal="true" header="Link Component" @show="opened" :closable="false">
       <div class="panel confirm" v-if="unitStore.component.valid">
          <table>
-            <tr>
-               <td class="label">Title:</td>
-               <td class="data">{{formatData(unitStore.component.title)}}</td>
-            </tr>
-            <tr>
-               <td class="label">Label:</td>
-               <td class="data">{{formatData(unitStore.component.label)}}</td>
-            </tr>
-            <tr>
-               <td class="label">Description:</td>
-               <td class="data">{{formatData(unitStore.component.description)}}</td>
-            </tr>
-            <tr>
-               <td class="label">Date:</td>
-               <td class="data">{{formatData(unitStore.component.date)}}</td>
-            </tr>
-            <tr>
-               <td class="label">Type:</td>
-               <td class="data">{{formatData(unitStore.component.type)}}</td>
-            </tr>
+            <tbody>
+               <tr>
+                  <td class="label">Title:</td>
+                  <td class="data">{{formatData(unitStore.component.title)}}</td>
+               </tr>
+               <tr>
+                  <td class="label">Label:</td>
+                  <td class="data">{{formatData(unitStore.component.label)}}</td>
+               </tr>
+               <tr>
+                  <td class="label">Description:</td>
+                  <td class="data">{{formatData(unitStore.component.description)}}</td>
+               </tr>
+               <tr>
+                  <td class="label">Date:</td>
+                  <td class="data">{{formatData(unitStore.component.date)}}</td>
+               </tr>
+               <tr>
+                  <td class="label">Type:</td>
+                  <td class="data">{{formatData(unitStore.component.type)}}</td>
+               </tr>
+            </tbody>
          </table>
          <p class="confirm">Link this component to selected images?</p>
       </div>
