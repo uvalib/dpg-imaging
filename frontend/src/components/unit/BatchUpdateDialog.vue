@@ -4,7 +4,7 @@
    </DPGButton>
    <Dialog v-model:visible="showDialog" :modal="true" :header="`Batch Update ${props.title}`" @show="opened" :closable="false">
       <div class="panel">
-         <div class="row"  v-if="props.global == false">
+         <div class="row">
             <span class="entry">
                <label>Start Image:</label>
                <Select v-model="unitStore.rangeStartIdx" @change="startChanged" filter placeholder="Select start page"
@@ -46,10 +46,6 @@ const props = defineProps({
       type: String,
       required: true
    },
-   global: {
-      type: Boolean,
-      default: false
-   }
 })
 
 const unitStore = useUnitStore()
@@ -77,9 +73,6 @@ const showClicked = (() => {
    newValue.value = ""
    nextTick( () => {
       let ele = document.getElementById("start-page")
-      if (props.global) {
-         ele = document.getElementById("update-value")
-      }
       ele.focus()
    })
 })
@@ -92,11 +85,8 @@ const endChanged = (() => {
 })
 
 const okClicked = ( () => {
-   if ( props.global) {
-      unitStore.selectAll()
-   }
-   cancelEditClicked()
    unitStore.batchUpdate( props.field, newValue.value )
+   showDialog.value = false
 })
 
 const cancelEditClicked = (() => {

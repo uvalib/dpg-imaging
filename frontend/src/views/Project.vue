@@ -1,11 +1,6 @@
 <template>
    <div class="project">
-      <h2>
-         <span>Digitization Project #{{route.params.id}}</span>
-         <span v-if="projectStore.working == false" class="due">
-            <label>Due:</label><span>{{projectStore.dueDate}}</span>
-         </span>
-      </h2>
+      <h2>Digitization Project #{{route.params.id}}</h2>
       <WaitSpinner v-if="projectStore.working" :overlay="true" message="Working..." />
       <div v-if="projectStore.hasDetail" class="project-head">
          <h3>
@@ -38,6 +33,9 @@
 
          <div class="back">
             <DPGButton icon="pi pi-angle-double-left" text label="Back to projects" @click="backClicked" size="small" severity="secondary"/>
+            <span v-if="projectStore.working == false" class="due">
+               <label>Due:</label><span>{{projectStore.dueDate}}</span>
+            </span>
          </div>
       </div>
       <div  v-if="projectStore.hasDetail" class="project-main">
@@ -95,18 +93,17 @@ const backClicked = (() => {
 <style scoped lang="scss">
 .project {
    position: relative;
-   padding: 25px;
+   padding: 0;
 
    .due {
-      position: absolute;
-      right: 0;
-      color: var(--uvalib-text);
-      font-size: 16px;
-      font-weight: 500;
-      background: var(--uvalib-blue-alt-light);
-      border: 1px solid var(--uvalib-blue-alt);
-      padding: 5px 15px;
-   }
+         color: var(--uvalib-text);
+         font-size: 16px;
+         font-weight: 500;
+         background: var(--uvalib-blue-alt-light);
+         border: 1px solid var(--uvalib-blue-alt);
+         padding: 5px 15px;
+         margin-left: auto;
+      }
 
    label {
       font-weight: bold;
@@ -156,7 +153,11 @@ const backClicked = (() => {
          }
       }
       .back {
-         text-align: left;
+         display: flex;
+         flex-flow: row nowrap;
+         justify-content: space-between;
+         align-items: center;
+         padding: 0 10px;
       }
    }
    .project-main {

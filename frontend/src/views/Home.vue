@@ -356,9 +356,10 @@ const isOverdue = ((projIdx) => {
          box-sizing: border-box;
          min-width: 48%;
          color: var(--uvalib-text);
-         box-shadow: rgba(0, 0, 0, 0.14) 0px 2px 4px 1px;
+         box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 4px 1px;
          background: white;
          padding-bottom: 110px;
+         border-radius: 4px;
 
          .top {
             border-bottom: 1px solid var(--uvalib-grey);

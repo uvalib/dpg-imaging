@@ -42,8 +42,7 @@
             <BatchUpdateDialog title="Title" field="title" />
             <BatchUpdateDialog title="Caption" field="description" />
             <template v-if="isManuscript">
-               <DPGButton @click="boxClicked" severity="secondary" label="Set Box"/>
-               <BatchUpdateDialog title="Box" field="box" :global="true" />
+               <BatchUpdateDialog title="Box" field="box" />
                <BatchUpdateDialog title="Folder" field="folder" />
             </template>
             <ComponentDialog />

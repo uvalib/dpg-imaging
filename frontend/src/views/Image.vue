@@ -42,8 +42,8 @@
             <TagPicker v-if="currMasterFile" :masterFile="currMasterFile" display="large" />
          </div>
          <div class="acts">
-            <span class="toolbar-button group back">
-               <DPGButton icon="pi pi-angle-double-left" text label="Back to unit" @click="backClicked" size="small" severity="secondary"/>
+            <span class="back">
+               <DPGButton icon="pi pi-angle-double-left" rounded text label="Back to unit" @click="backClicked" size="small" severity="secondary"/>
             </span>
             <span class="paging group">
                <DPGButton icon="pi pi-arrow-left" rounded text @click="prevImage" severity="secondary" :disabled="prevDisabled"/>
@@ -327,6 +327,34 @@ onUnmounted( async () => {
          flex-flow: row nowrap;
          justify-content: space-between;
          background: #f0f0f0;
+         .group {
+            display: flex;
+            flex-flow: row nowrap;
+            align-items: center;
+            gap: 10px;
+         }
+         .back {
+            width: 25%;
+            display: flex;
+            flex-flow: row nowrap;
+            align-items: center;
+            justify-content: flex-start;
+         }
+         .group.zoom {
+            width: 25%;
+            gap: 2px;
+            justify-content: flex-end;
+            button {
+               display: inherit !important;
+            }
+            .page {
+               margin: 0 5px;
+               white-space: nowrap;
+            }
+            .rotated {
+               transform: scaleX(-1);
+            }
+         }
       }
 
       .info {
@@ -355,25 +383,6 @@ onUnmounted( async () => {
                   margin-left: 15px;
                }
             }
-         }
-      }
-
-      .group {
-         display: flex;
-         flex-flow: row nowrap;
-         align-items: center;
-         gap: 10px;
-      }
-      .group.zoom {
-         gap: 2px;
-         button {
-            display: inherit !important;
-         }
-         .page {
-            margin: 0 5px;
-         }
-         .rotated {
-            transform: scaleX(-1);
          }
       }
    }

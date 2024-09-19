@@ -15,13 +15,8 @@
          <div class="user-banner" v-if="userStore.jwt">
             <div class="acts">
                <span class="signed-in-as">{{ userStore.signedInUser }}</span>
-               <div class="messages">
-                  <span class="cnt">{{messageStore.unreadMessageCount}}</span>
-                  <router-link to="/messages">
-                     <i class="mail pi pi-envelope"></i>
-                  </router-link>
-               </div>
-               <span class="signout" @click="signout">Sign out</span>
+               <DPGButton icon="pi pi-envelope" @click="messagesClicked" :label="`${messageStore.unreadMessageCount}`" size="small"/>
+               <DPGButton icon="pi pi-sign-out" @click="signout" label="Sign out" size="small"/>
             </div>
          </div>
       </div>
@@ -57,6 +52,10 @@ const router = useRouter()
 
 const errorClosed = (() => {
    systemStore.setError("")
+})
+
+const messagesClicked = (() => {
+   router.push("/messages")
 })
 
 const signout = (() => {
@@ -124,39 +123,10 @@ div.header {
          flex-flow: row nowrap;
          justify-content: flex-end;
          align-items: center;
+         gap: 10px;
 
          .signed-in-as {
             display: inline-block;
-            margin-right: 15px;
-         }
-
-         .messages {
-            display: flex;
-            flex-flow: row nowrap;
-            justify-content: space-between;
-            align-items: center;
-            .mail, .cnt {
-               display: inline-block;
-               margin-right: 10px;
-               font-size: 1.5em;
-               color: white;
-            }
-            .cnt {
-               margin-right: 5px;
-               font-size: 1em;
-            }
-         }
-         .signout {
-            display: inline-block;
-            margin-left: 10px;
-            cursor: pointer;
-            border: 1px solid var(--uvalib-brand-blue-light);
-            padding: 2px 9px;
-            border-radius: 3px;
-            background: var(--uvalib-brand-blue-light);
-            &:hover {
-               background: var(--uvalib-brand-blue-lighter);
-            }
          }
       }
    }
