@@ -4,29 +4,25 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview --port 5050",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
+    "build": "vite build"
   },
   "dependencies": {
-    "@primevue/themes": "^4.0.0",
-    "axios": "^1.7.2",
-    "dayjs": "^1.11.5",
-    "openseadragon": "^2.4.2",
-    "pinia": "^2.0.12",
-    "primeicons": "^6.0.1",
-    "primevue": "^4.0.0",
-    "sortablejs": "^1.15.0",
-    "sortablejs-vue3": "^1.2.9",
-    "vue": "^3.1.0",
-    "vue-cookies": "^1.7.4",
-    "vue-router": "^4.0.0"
+    "@primevue/themes": "^4.0.7",
+    "axios": "^1.7.7",
+    "dayjs": "^1.11.13",
+    "openseadragon": "^5.0.0",
+    "pinia": "^2.2.2",
+    "primeicons": "^7.0.0",
+    "primevue": "^4.0.7",
+    "sortablejs": "^1.15.3",
+    "sortablejs-vue3": "^1.2.11",
+    "vue": "^3.5.8",
+    "vue-cookies": "^1.8.4",
+    "vue-router": "^4.4.5"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.1.2",
-    "eslint": "^9.9.0",
-    "eslint-plugin-vue": "^9.27.0",
-    "sass": "^1.79.1",
-    "vite": "^5.4.0"
+    "@vitejs/plugin-vue": "^5.1.4",
+    "sass-embedded": "^1.79.3",
+    "vite": "^5.4.8"
   }
 }
