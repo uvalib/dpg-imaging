@@ -344,10 +344,10 @@ onBeforeUnmount( async () => {
       flex-flow: row wrap;
       justify-content: space-between;
       align-content: center;
-      padding: 5px;
+      padding: 10px;
       background: #fafaff;
-      border-bottom: 1px solid var(--uvalib-grey);
-      border-top: 1px solid var(--uvalib-grey);
+      border-bottom: 1px solid var(--uvalib-grey-light);
+      border-top: 1px solid var(--uvalib-grey-light);
       gap: 5px;
 
       .actions {
@@ -355,7 +355,7 @@ onBeforeUnmount( async () => {
          flex-flow: row wrap;
          justify-content: flex-end;
          align-content: center;
-         gap: 5px;
+         gap: 10px;
       }
    }
 }
