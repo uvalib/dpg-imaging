@@ -1,37 +1,28 @@
-
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../views/Home.vue'
-import Project from '../views/Project.vue'
-import Unit from '../views/Unit.vue'
-import Image from '../views/Image.vue'
-import NotFound from '../views/NotFound.vue'
-import Forbidden from '../views/Forbidden.vue'
-import SignedOut from '../views/SignedOut.vue'
-import VueCookies from 'vue-cookies'
-
 import { useUserStore } from '@/stores/user'
 import { useMessageStore } from '@/stores/messages'
+import { useCookies } from '@vueuse/integrations/useCookies'
 
 const routes = [
    {
       path: '/',
       name: 'home',
-      component: Home
+      component: () => import('../views/Home.vue')
    },
    {
       path: '/projects/:id',
       name: 'project',
-      component: Project
+      component: () => import('../views/Project.vue')
    },
    {
       path: '/projects/:id/unit',
       name: 'unit',
-      component: Unit
+      component: () => import('../views/Unit.vue')
    },
    {
       path: '/projects/:id/unit/images/:page',
       name: 'image',
-      component: Image
+      component: () => import('../views/Image.vue')
    },
    {
       path: '/messages',
@@ -41,17 +32,17 @@ const routes = [
    {
       path: '/forbidden',
       name: 'forbidden',
-      component: Forbidden
+      component: () => import('../views/Forbidden.vue')
    },
    {
       path: '/signedout',
       name: 'signedout',
-      component: SignedOut
+      component: () => import('../views/SignedOut.vue')
    },
    {
       path: '/:pathMatch(.*)*',
       name: "not_found",
-      component: NotFound
+      component: () => import('../views/NotFound.vue')
    }
 ]
 
@@ -66,10 +57,11 @@ const router = createRouter({
 router.beforeEach( (to) => {
    console.log("BEFORE ROUTE "+to.path)
    const userStore = useUserStore()
+   const cookies = useCookies()
    const noAuthRoutes = ["not_found", "forbidden", "signedout"]
 
    if (to.path === '/granted') {
-      let jwtStr = VueCookies.get("dpg_jwt")
+      const jwtStr = cookies.get("dpg_jwt")
       userStore.setJWT(jwtStr)
       if ( userStore.isSignedIn  ) {
          console.log(`GRANTED [${jwtStr}]`)

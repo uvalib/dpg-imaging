@@ -1,16 +1,6 @@
 import axios from 'axios'
 import { defineStore } from 'pinia'
-
-function parseJwt(token) {
-   var base64Url = token.split('.')[1]
-   var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-   var jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-   }).join(''))
-
-   return JSON.parse(jsonPayload);
-}
-
+import { useJwt } from '@vueuse/integrations/useJwt'
 
 export const useUserStore = defineStore('user', {
    state: () => ({
@@ -52,12 +42,12 @@ export const useUserStore = defineStore('user', {
          this.jwt = jwt
          localStorage.setItem("dpg_jwt", jwt)
 
-         let parsed = parseJwt(jwt)
-         this.ID = parsed.userID
-         this.computeID = parsed.computeID
-         this.firstName = parsed.firstName
-         this.lastName = parsed.lastName
-         this.role = parsed.role
+         const { payload } = useJwt(jwt)
+         this.ID = payload.value.userID
+         this.computeID = payload.value.computeID
+         this.firstName = payload.value.firstName
+         this.lastName = payload.value.lastName
+         this.role = payload.value.role
 
          // add interceptor to put bearer token in header
          axios.interceptors.request.use(config => {
