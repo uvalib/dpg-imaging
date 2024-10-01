@@ -8,21 +8,21 @@
   },
   "dependencies": {
     "@primevue/themes": "^4.0.7",
+    "@vueuse/core": "^11.1.0",
     "axios": "^1.7.7",
-    "dayjs": "^1.11.13",
     "openseadragon": "^5.0.0",
-    "pinia": "^2.2.2",
+    "pinia": "^2.2.3",
     "primeicons": "^7.0.0",
     "primevue": "^4.0.7",
     "sortablejs": "^1.15.3",
     "sortablejs-vue3": "^1.2.11",
-    "vue": "^3.5.8",
+    "vue": "^3.5.10",
     "vue-cookies": "^1.8.4",
     "vue-router": "^4.4.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.1.4",
-    "sass-embedded": "^1.79.3",
+    "sass-embedded": "^1.79.4",
     "vite": "^5.4.8"
   }
 }

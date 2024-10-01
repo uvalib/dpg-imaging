@@ -85,7 +85,7 @@ import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-import dayjs from 'dayjs'
+import { useDateFormat } from '@vueuse/core'
 
 const messageStore = useMessageStore()
 
@@ -94,7 +94,7 @@ const createClicked = (() => {
 })
 
 const formatDate =(( date ) => {
-   return dayjs(date).format("YYYY-MM-DD hh:mm A")
+   return useDateFormat(date, "YYYY-MM-DD hh:mm A")
 })
 
 const truncateMessage = ((msg) => {

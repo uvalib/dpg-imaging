@@ -69,7 +69,7 @@
 </template>
 
 <script setup>
-import dayjs from 'dayjs'
+import { useDateFormat } from '@vueuse/core'
 import { useProjectStore } from "@/stores/project"
 import { computed } from 'vue'
 import Panel from 'primevue/panel'
@@ -90,7 +90,7 @@ const totalWorkTime = computed(() => {
 })
 
 const formatDate = ( (d) => {
-   return dayjs(d).format("YYYY-MM-DD hh:mm A")
+   return useDateFormat(d, "YYYY-MM-DD hh:mm A")
 })
 </script>
 

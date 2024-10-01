@@ -20,7 +20,7 @@
 import { computed } from 'vue'
 import {useMessageStore} from '@/stores/messages'
 import Dialog from 'primevue/dialog'
-import dayjs from 'dayjs'
+import { useDateFormat } from '@vueuse/core'
 
 const messageStore = useMessageStore()
 
@@ -29,7 +29,7 @@ const message = computed( () => {
 })
 
 const formatDate = (( date ) => {
-   return dayjs(date).format("YYYY-MM-DD hh:mm A")
+   return useDateFormat(date, "YYYY-MM-DD hh:mm A")
 })
 
 const replyClicked = (() => {

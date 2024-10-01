@@ -32,7 +32,7 @@
 import {useProjectStore} from "@/stores/project"
 import NoteModal from '@/components/project/NoteModal.vue'
 import { storeToRefs } from 'pinia'
-import dayjs from 'dayjs'
+import { useDateFormat } from '@vueuse/core'
 import Panel from 'primevue/panel'
 
 const projectStore = useProjectStore()
@@ -51,7 +51,7 @@ const noteTypeString =((typeID) => {
 })
 
 const formatDate =((d) => {
-   return dayjs(d).format("YYYY-MM-DD hh:mm A")
+   return useDateFormat(d, "YYYY-MM-DD hh:mm A")
 })
 </script>
 

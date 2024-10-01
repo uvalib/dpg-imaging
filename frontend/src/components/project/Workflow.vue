@@ -97,7 +97,7 @@
 </template>
 
 <script setup>
-import dayjs from 'dayjs'
+import { useDateFormat } from '@vueuse/core'
 import AssignModal from "@/components/AssignModal.vue"
 import NoteModal from '@/components/project/NoteModal.vue'
 import { useProjectStore } from "@/stores/project"
@@ -175,17 +175,17 @@ const workingDir = computed(()=>{
    return `${systemStore.qaDir}/${unitDir}`
 })
 const assignedAt = computed(()=>{
-   let stepID = detail.value.currentStep.id
-   let a = detail.value.assignments.find( a => a.stepID == stepID)
-   if (a && a.assignedAt)  {
-      return dayjs(a.assignedAt).format("YYYY-MM-DD hh:mm A")
+   let currA = detail.value.assignments[0]
+   if ( currA ) {
+      return useDateFormat(currA.assignedAt, "YYYY-MM-DD hh:mm A")
    }
    return ""
 })
 const startedAt = computed(()=>{
-   let stepID = detail.value.currentStep.id
-   let a = detail.value.assignments.find( a => a.stepID == stepID)
-   if ( a && a.startedAt) return dayjs(a.startedAt).format("YYYY-MM-DD hh:mm A")
+   let currA = detail.value.assignments[0]
+   if ( currA && currA.startedAt ) {
+      return useDateFormat(currA.startedAt, "YYYY-MM-DD hh:mm A")
+   }
    return ""
 })
 const workflowNote = computed(()=>{

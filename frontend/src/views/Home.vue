@@ -1,7 +1,7 @@
 <template>
    <div class="home">
       <WaitSpinner v-if="searchStore.working" :overlay="true" message="Loading projects..." />
-      <div class="toolbar pin-target">
+      <div class="toolbar pin-target" id="pin-target">
          <div class="filter">
             <label for="me">
                <input id="me" type="radio" value="me" name="filter" v-model="activeFilter" @change="filterChanged">
@@ -31,8 +31,8 @@
             />
          </div>
       </div>
-      <div class="scroll-body">
-         <div class="project-board">
+      <div class="scroll-body" id="scroll-body">
+         <div class="project-board" id="project-board">
             <div class="search-col">
                <SearchPanel />
             </div>
@@ -135,11 +135,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { onBeforeMount, ref } from 'vue'
 import { usePinnable } from '@/composables/pin'
 
-usePinnable("pin-target", "scroll-body", ( (isPinned) => {
+usePinnable("pin-target", "scroll-body", ( (isPinned, toolbarBottom) => {
    let p = document.getElementById("search-panel")
    if ( p ) {
       if ( isPinned ) {
-         p.style.top = `55px`
+         const board = document.getElementById("project-board")
+         const pad = parseInt(window.getComputedStyle(board, null).getPropertyValue('padding-top'),10)
+         p.style.top = `${toolbarBottom+pad}px`
          p.style.width = `${p.getBoundingClientRect().width}px`
          p.classList.add("pinned")
       } else {
