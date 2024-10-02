@@ -40,7 +40,7 @@
                         <label>Caption</label>
                         <div class="data editable" tabindex="0" @focus.stop.prevent="editMetadata(element, 'description')"  @click="editMetadata(element, 'description')">
                            <template v-if="isEditing(element, 'description')">
-                              <input id="edit-desc" type="text" v-model="newValue" @keyup.enter="submitEdit(element)" @keyup.esc="cancelEdit" @blur.stop.prevent="cancelEdit"/>
+                              <input id="edit-desc" type="text" v-model="newValue" @keyup.enter="submitEdit(element)" @keydown.stop.prevent.esc="cancelEdit" @blur.stop.prevent="cancelEdit"/>
                            </template>
                            <template v-else>
                               <template v-if="element.description">{{element.description}}</template>

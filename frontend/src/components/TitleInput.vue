@@ -4,7 +4,7 @@
          :value="editVal"
          @input="handleInput($event.target.value)"
          @focus="showDropdown"
-         @keypress.enter="acceptEdit" @keydown.tab="cancelEdit" @keydown.esc="cancelEdit"/>
+         @keypress.enter="acceptEdit" @keydown.tab="cancelEdit" @keydown.stop.prevent.esc="cancelEdit"/>
       <div v-if="dropdownOpen" class="title-vocab-wrap">
          <ul>
             <li v-for="(v,idx) in vocab" :key="`v${idx}`">
@@ -16,7 +16,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 
 const props = defineProps( ['modelValue'] )
 const emit = defineEmits( ['update:modelValue', 'accepted', 'canceled'] )
@@ -30,6 +30,9 @@ const vocab = ref(["Spine", "Front Cover", "Front Cover verso", "Back Cover", "B
          "Privilege", "Ad Lectorem",  "Table of Contents", "Titlepage", "Device",
          "Epigraph", "Prologue/Preface", "Dedication", "Errata"].sort())
 
+onMounted(() => {
+   nextTick( () => document.getElementById("title-input-box").focus() )
+})
 function showDropdown() {
    dropdownOpen.value = true
 }
@@ -60,14 +63,14 @@ function handleInput(newVal) {
    .title-vocab-wrap {
       color: var(--uvalib-text);
       position: absolute;
-      top: 20px;
+      top: 30px;
       left: 0;
       z-index: 1000;
       background: white;
       padding: 10px;
       border: 1px solid var(--uvalib-grey);
-      box-shadow: var(--box-shadow);
-      border-radius: 0 5px 5px 5px;
+      border-radius: 0 0 5px 5px;
+      border-top: 0;
       ul {
          list-style: none;
          margin: 0;

@@ -33,32 +33,32 @@
                   <span v-if="showError==element.fileName" class="hover-error">{{element.error}}</span>
                </span>
             </td>
-            <td @click="editMetadata(element, 'title')" class="editable nowrap" tabindex="0" @focus.stop.prevent="editMetadata(element, 'title')" >
+            <td @click="editMetadata(element, 'title')" class="nowrap" tabindex="0" @focus.stop.prevent="editMetadata(element, 'title')" >
                <span v-if="!isEditing(element, 'title')"  class="editable">
                   <span v-if="element.title">{{element.title}}</span>
                   <span v-else class="undefined">Undefined</span>
                </span>
                <TitleInput v-else @canceled="cancelEdit" @accepted="submitEdit(element)" v-model="newValue"  @blur.stop.prevent="cancelEdit"/>
             </td>
-            <td @click="editMetadata(element, 'description')" class="editable nowrap" >
+            <td @click="editMetadata(element, 'description')" class="nowrap" >
                <span  tabindex="0" @focus.stop.prevent="editMetadata(element, 'description')" v-if="!isEditing(element, 'description')" class="editable">
                   <span v-if="element.description">{{element.description}}</span>
                   <span v-else class="undefined">Undefined</span>
                </span>
                <input v-else id="edit-desc" type="text" v-model="newValue"
-                  @keyup.enter="submitEdit(element)"  @keyup.esc="cancelEdit"  @blur.stop.prevent="cancelEdit"/>
+                  @keyup.enter="submitEdit(element)"  @keydown.stop.prevent.esc="cancelEdit"  @blur.stop.prevent="cancelEdit"/>
             </td>
             <template v-if="isManuscript">
                <td>
                <span v-if="element.box">{{element.box}}</span>
                <span v-else class="undefined">Undefined</span>
             </td>
-               <td @click="editMetadata(element, 'folder')" class="editable nowrap" tabindex="0" @focus.stop.prevent="editMetadata(element, 'folder')" >
+               <td @click="editMetadata(element, 'folder')" class="nowrap" tabindex="0" @focus.stop.prevent="editMetadata(element, 'folder')" >
                   <span v-if="!isEditing(element, 'folder')"  class="editable">
                      <span v-if="element.folder">{{element.folder}}</span>
                      <span v-else class="undefined">Undefined</span>
                   </span>
-                  <input v-else id="edit-folder" type="text" v-model="newValue" @keyup.enter="submitEdit(element)"  @keyup.esc="cancelEdit"  @blur.stop.prevent="cancelEdit"/>
+                  <input v-else id="edit-folder" type="text" v-model="newValue" @keyup.enter="submitEdit(element)"  @keydown.stop.prevent.esc="cancelEdit"  @blur.stop.prevent="cancelEdit"/>
                </td>
             </template>
             <td>

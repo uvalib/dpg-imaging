@@ -26,7 +26,7 @@
                      <td class="label">Caption:</td>
                      <td class="data editable" @click="editMetadata('description')" >
                         <input  v-if="isEditing('description')" id="edit-desc" type="text" v-model="newValue"
-                           @keyup.enter="submitEdit()" @keyup.esc="cancelEdit" />
+                           @keyup.enter="submitEdit()" @keydown.stop.prevent.esc="cancelEdit" />
                         <template v-else>
                            <span v-if="currMasterFile && currMasterFile.description">{{currMasterFile.description}}</span>
                            <span v-else class="undefined editable">Undefined</span>
