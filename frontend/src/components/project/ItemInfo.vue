@@ -58,7 +58,7 @@
             <tr class="row">
                <td class="label"><label for="category">Category:</label></td>
                <td class="data">
-                  <select id="category" v-model="categoryID">
+                  <select id="category" v-model="categoryID" ref="categorysel">
                      <option :value="0" disabled>Select a category</option>
                      <option v-for="c in systemStore.categories" :key="`cat${c.id}`" :value="c.id">{{c.name}}</option>
                   </select>
@@ -127,9 +127,10 @@
 import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUserStore} from "@/stores/user"
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import Panel from 'primevue/panel'
+import { useFocus } from '@vueuse/core'
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
@@ -137,6 +138,8 @@ const userStore = useUserStore()
 const { detail } = storeToRefs(projectStore)
 
 const editing = ref(false)
+const categorysel = ref()
+const { focused: categoryFocus } = useFocus(categorysel)
 const categoryID = ref(0)
 const containerTypeID = ref(0)
 const condition = ref(0)
@@ -180,6 +183,7 @@ function editClicked() {
    note.value = detail.value.conditionNote
    ocrHintID.value = detail.value.unit.metadata.ocrHint.id
    ocrLangage.value = detail.value.unit.metadata.ocrLanguageHint
+   nextTick( ()=> categoryFocus.value = true )
 }
 
 function cancelClicked() {

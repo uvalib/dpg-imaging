@@ -79,7 +79,7 @@ function show() {
    max-height: 300px;
    overflow: scroll;
    padding: 0;
-   margin:  0;
+   margin:  5px 0;
    border: 1px solid var(--uvalib-grey-light);
    border-radius: 4px;
    .val {

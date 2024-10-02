@@ -2,13 +2,13 @@
    <DPGButton  severity="secondary" @click="showClicked">
       Set Page Numbers
    </DPGButton>
-   <Dialog v-model:visible="unitStore.edit.pageNumber" :modal="true" header="Set Page Numbers" @show="opened" :closable="false">
+   <Dialog v-model:visible="unitStore.edit.pageNumber" :modal="true" header="Set Page Numbers">
       <div class="panel">
          <div class="row">
             <span class="entry pad-right">
                <label>Start Image:</label>
                <Select v-model="unitStore.rangeStartIdx" @change="startChanged" filter placeholder="Select start page"
-                  :options="masterFiles" optionLabel="label" optionValue="value" ref="pickstart" />
+                  :options="masterFiles" optionLabel="label" optionValue="value" />
             </span>
             <span class="entry  pad-right">
                <label>End Image:</label>
@@ -37,14 +37,13 @@ import {useUnitStore} from "@/stores/unit"
 import {useSystemStore} from "@/stores/system"
 import Dialog from 'primevue/dialog'
 import Select from 'primevue/select'
-import { ref, nextTick, computed } from 'vue'
+import { ref, computed } from 'vue'
 
 const unitStore = useUnitStore()
 const systemStore = useSystemStore()
 
 const startPage = ref("1")
 const unnumberVerso = ref(false)
-const pickstart = ref()
 
 const masterFiles = computed( () => {
    let list = []
@@ -58,12 +57,6 @@ const showClicked = (() => {
    unitStore.edit.pageNumber = true
    startPage.value = "1"
    unnumberVerso.value = false
-})
-
-const opened = (() => {
-   nextTick( () => {
-      pickstart.value.$el.focus()
-   })
 })
 
 const startChanged = (() => {

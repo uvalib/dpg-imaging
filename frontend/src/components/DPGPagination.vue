@@ -18,9 +18,11 @@
          </select>
       </span>
    </span>
-   <Dialog v-model:visible="pageJumpOpen" :modal="true" header="Jump to page" :closable="false">
-      <input id="page-jump" type="number" v-model="pageJump" :min="1" :max="totalPages"
-         @keydown.stop.prevent.enter="pageJumpSelected" @keydown.stop.prevent.esc="pageJumpCanceled"/>
+   <Dialog v-model:visible="pageJumpOpen" :modal="true" header="Jump to page">
+      <div class="jump-content">
+         <input id="page-jump" type="number" v-model="pageJump" :min="1" :max="totalPages"
+            @keydown.stop.prevent.enter="pageJumpSelected" @keydown.stop.prevent.esc="pageJumpCanceled"/>
+      </div>
       <template #footer>
          <DPGButton severity="secondary" @click="pageJumpCanceled" label="Cancel"/>
          <DPGButton @click="pageJumpSelected" label="OK"/>
@@ -29,7 +31,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 import Dialog from 'primevue/dialog'
 
 const props = defineProps({
@@ -79,15 +81,13 @@ function pageJumpSelected() {
 
 function showPageJump() {
    pageJumpOpen.value = true
-   nextTick( () =>{
-      let ele = document.getElementById("page-jump")
-      ele.focus()
-      ele.select()
-   })
 }
 </script>
 
 <style lang="scss" scoped>
+.jump-content {
+   padding: 5px 0 5px 0;
+}
 .pager {
    display: flex;
    flex-flow: row nowrap;

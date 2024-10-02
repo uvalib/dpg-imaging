@@ -39,7 +39,7 @@
             <tr class="row">
                <td class="label"><label for="workstation">Workstation:</label></td>
                <td class="data">
-                  <select id="workstation" v-model="workstationID">
+                  <select id="workstation" v-model="workstationID" ref="workstation">
                      <option disabled :value="0">Choose a workstation</option>
                      <option v-for="ws in systemStore.workstations" :key="`ws${ws.id}`" :value="ws.id">{{ws.name}}</option>
                   </select>
@@ -73,9 +73,10 @@
 import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUserStore} from "@/stores/user"
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import Panel from 'primevue/panel'
+import { useFocus } from '@vueuse/core'
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
@@ -84,6 +85,8 @@ const userStore = useUserStore()
 const { detail } = storeToRefs(projectStore)
 
 const editing = ref(false)
+const workstation = ref()
+const { focused: wsFocus } = useFocus(workstation)
 const workstationID = ref(0)
 const captureResolution = ref("")
 const resizedResolution = ref("")
@@ -109,6 +112,7 @@ const editClicked = (() => {
    }
    resolutionNote.value = detail.value.resolutionNote
    editing.value = true
+   nextTick( ()=> wsFocus.value = true )
 })
 
 const cancelClicked =(() => {

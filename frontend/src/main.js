@@ -1,4 +1,4 @@
-import { createApp, markRaw } from 'vue'
+import { createApp, markRaw, nextTick } from 'vue'
 import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
@@ -12,11 +12,6 @@ pinia.use(({ store }) => {
 const app = createApp(App)
 app.use( router )
 app.use( pinia )
-
-// add a v-focus directive that can be used to autofocus
-app.directive('focus', {
-   mounted: (el) => nextTick( ()=> el.focus() )
-})
 
 // Global component registration. All components can use these without import
 import WaitSpinner from "@/components/WaitSpinner.vue"

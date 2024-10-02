@@ -2,7 +2,7 @@
    <DPGButton  severity="secondary" @click="showClicked">
       Link Component
    </DPGButton>
-   <Dialog v-model:visible="unitStore.edit.component" :modal="true" header="Link Component" @show="opened" :closable="false">
+   <Dialog v-model:visible="unitStore.edit.component" :modal="true" header="Link Component">
       <div class="panel confirm" v-if="unitStore.component.valid">
          <table>
             <tbody>
@@ -68,7 +68,7 @@
 <script setup>
 import { useUnitStore } from "@/stores/unit"
 import { useSystemStore } from "@/stores/system"
-import { ref, nextTick, computed } from 'vue'
+import { ref, computed } from 'vue'
 import Dialog from 'primevue/dialog'
 import Select from 'primevue/select'
 
@@ -76,7 +76,6 @@ const unitStore = useUnitStore()
 const systemStore = useSystemStore()
 const componentID = ref("")
 const lookingUp = ref(false)
-const pickstart = ref()
 
 const masterFiles = computed( () => {
    let list = []
@@ -89,12 +88,6 @@ const masterFiles = computed( () => {
 const showClicked = (() => {
    unitStore.edit.component = true
    componentID.value = ""
-})
-
-const opened = (() => {
-   nextTick( () => {
-      pickstart.value.$el.focus()
-   })
 })
 
 const startChanged = (() => {

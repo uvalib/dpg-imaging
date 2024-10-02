@@ -16,7 +16,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 
 const props = defineProps( ['modelValue'] )
 const emit = defineEmits( ['update:modelValue', 'accepted', 'canceled'] )
@@ -47,20 +47,11 @@ function cancelEdit() {
 function vocabSelected(val) {
    editVal.value = val
    emit('update:modelValue', val)
-   document.getElementById("title-input-box").focus()
 }
 function handleInput(newVal) {
    editVal.value = newVal
    emit('update:modelValue', newVal)
 }
-
-onMounted( async () => {
-   let ele = document.getElementById("title-input-box")
-   if ( ele ) {
-      ele.focus()
-      ele.select()
-   }
-})
 </script>
 
 <style lang="scss" scoped>

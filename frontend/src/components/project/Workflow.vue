@@ -28,7 +28,7 @@
          <div class="time-form">
             <label for="time">Approximately how many minutes did you spend on this assignment?</label>
             <div class="time-controls">
-               <input id="time" type="text" v-model="stepMinutes"  @keyup.enter="timeEntered">
+               <input id="time" type="text" v-model="stepMinutes"  @keyup.enter="timeEntered" ref="time">
                <DPGButton @click="cancelFinish" severity="secondary" label="Cancel"/>
                <DPGButton @click="timeEntered" label="OK"/>
             </div>
@@ -109,6 +109,7 @@ import { useRouter } from 'vue-router'
 import Panel from 'primevue/panel'
 import Dialog from 'primevue/dialog'
 import { useConfirm } from "primevue/useconfirm"
+import { useFocus } from '@vueuse/core'
 
 const confirm = useConfirm()
 
@@ -123,6 +124,8 @@ const {
 const {isAdmin, isSupervisor} = storeToRefs(userStore)
 
 const timeEntry = ref(false)
+const time = ref()
+const { focused: timeFocus } = useFocus(time)
 const stepMinutes = ref(0)
 const action = ref("finish")
 const showRejectNote = ref(false)
@@ -261,13 +264,7 @@ function finishClicked() {
 function showTimeEntry() {
    timeEntry.value = true
    stepMinutes.value = 0
-   nextTick( () => {
-      let te = document.getElementById("time")
-      if (te) {
-         te.focus()
-         te.select()
-      }
-   })
+   nextTick( ()=> timeFocus.value = true )
 }
 
 function timeEntered() {

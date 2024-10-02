@@ -1,11 +1,11 @@
 <template>
-   <DPGButton v-if="!manual"  label="Add Note" size="small" @click="show" :id="`${props.id}-trigger`" />
-   <Dialog v-model:visible="isOpen" :modal="true" header="Create Note" style="width:650px">
+   <DPGButton v-if="!manual"  label="Add Note" size="small" @click="showClicked" ref="notetrigger" />
+   <Dialog v-model:visible="isOpen" :modal="true" header="Create Note" style="width:650px" @show="show" @afterHide="hidden">
       <div class="note-modal-content">
          <div class="instruct" v-if="instructions">{{instructions}}</div>
          <div class="row">
             <label>Note Type {{trigger}}</label>
-            <select v-model="noteTypeID" :id="`${props.id}-type`">
+            <select v-model="noteTypeID" :id="`${props.id}-type`" ref="typesel">
                <option :value="0">Comment</option>
                <option :value="1">Suggestion</option>
                <option :value="2">Problem</option>
@@ -27,7 +27,6 @@
       <p class="error" v-if="error">{{error}}</p>
       <template #footer>
          <DPGButton @click="hide" severity="secondary" label="Cancel"/>
-         <span class="spacer"></span>
          <DPGButton autofocus @click="createClicked" label="Create"/>
       </template>
    </Dialog>
@@ -36,12 +35,15 @@
 <script setup>
 import { useSystemStore } from '@/stores/system'
 import { useProjectStore } from '@/stores/project'
-import { ref, nextTick, watch } from 'vue'
+import { ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
+import { useFocus } from '@vueuse/core'
 
 const systemStore = useSystemStore()
 const projectStore = useProjectStore()
+
 const emit = defineEmits( ['opened', 'closed', 'submitted' ] )
+
 const props = defineProps({
    id: {
       type: String,
@@ -70,18 +72,18 @@ const noteTypeID = ref(props.noteType) //[:comment, :suggestion, :problem, :item
 const note = ref("")
 const problemIDs = ref([])
 const error = ref("")
+const notetrigger = ref()
+const { focused: triggerFocus } = useFocus(notetrigger)
+const typesel = ref()
+const { focused: selFocus } = useFocus(typesel)
 
 watch(() => props.trigger, (newtrigger) => {
    if (props.manual && newtrigger) {
       isOpen.value = true
-      nextTick(()=>{
-         setFocus(`${props.id}-close`)
-         emit('opened')
-      })
    }
 })
 
-function createClicked() {
+const createClicked = (() => {
    error.value = ""
     if ( note.value == "") {
       error.value = "Note text is required"
@@ -94,38 +96,32 @@ function createClicked() {
    let data = {noteTypeID: noteTypeID.value, note: note.value, problemIDs: problemIDs.value}
    projectStore.addNote(data)
    isOpen.value = false
-   setFocus(`${props.id}-trigger`)
    emit('submitted')
-}
-function hide() {
-   emit('closed')
+})
+
+const hide = (() => {
    isOpen.value = false
-   setFocus(`${props.id}-trigger`)
-}
-function show() {
+})
+
+const hidden = (() => {
+   triggerFocus.value = true
+   emit('closed')
+})
+
+const show = (() => {
+   setTimeout( ()=> { selFocus.value = true }, 250 )
+})
+
+const showClicked = (() => {
    isOpen.value = true
    noteTypeID.value = 0
    note.value = ""
    problemIDs.value = []
-   nextTick(()=>{
-      setFocus(`${props.id}-close`)
-      emit('opened')
-   })
    error.value = ""
-}
-function setFocus(id) {
-   let ele = document.getElementById(id)
-   if (ele ) {
-      ele.focus()
-   }
-}
+})
 </script>
 
 <style lang="scss" scoped>
-.p-button.p-component.p-button-icon-only.p-button-rounded.p-button-text {
-
-   margin:0px;
-}
 p.error {
    color: var(--uvalib-red-emergency);
    margin: 5px;
@@ -133,11 +129,6 @@ p.error {
    font-weight: normal;
    font-style: italic;
 }
-
-   .spacer {
-      display: inline-block;
-      margin: 0 5px;
-   }
 
    div.note-modal-content {
       padding: 10px 10px 0 10px;

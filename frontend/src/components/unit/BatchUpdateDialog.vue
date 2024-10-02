@@ -2,13 +2,13 @@
    <DPGButton  severity="secondary" @click="showClicked">
       Set {{ props.title}}
    </DPGButton>
-   <Dialog v-model:visible="showDialog" :modal="true" :header="`Batch Update ${props.title}`" @show="opened" :closable="false">
+   <Dialog v-model:visible="showDialog" :modal="true" :header="`Batch Update ${props.title}`">
       <div class="panel">
          <div class="row">
             <span class="entry">
                <label>Start Image:</label>
                <Select v-model="unitStore.rangeStartIdx" @change="startChanged" filter placeholder="Select start page"
-                  :options="masterFiles" optionLabel="label" optionValue="value" ref="pickstart" />
+                  :options="masterFiles" optionLabel="label" optionValue="value" />
             </span>
             <span class="entry">
                <label>End Image:</label>
@@ -33,7 +33,7 @@
 
 <script setup>
 import {useUnitStore} from "@/stores/unit"
-import { ref, nextTick, computed } from 'vue'
+import { ref, computed } from 'vue'
 import Dialog from 'primevue/dialog'
 import Select from 'primevue/select'
 
@@ -52,7 +52,6 @@ const unitStore = useUnitStore()
 
 const newValue = ref("")
 const showDialog = ref(false)
-const pickstart = ref()
 
 const masterFiles = computed( () => {
    let list = []
@@ -62,19 +61,9 @@ const masterFiles = computed( () => {
    return list
 })
 
-const opened = (() => {
-   nextTick( () => {
-      pickstart.value.$el.focus()
-   })
-})
-
 const showClicked = (() => {
    showDialog.value = true
    newValue.value = ""
-   nextTick( () => {
-      let ele = document.getElementById("start-page")
-      ele.focus()
-   })
 })
 
 const startChanged = (() => {
