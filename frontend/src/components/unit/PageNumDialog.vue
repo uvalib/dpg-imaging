@@ -106,6 +106,7 @@ const selectAllClicked = (() => {
       justify-content: space-between;
       align-items: flex-end;
       gap: 10px;
+      text-align: left;
       label {
          display: block;
          margin-bottom: 5px;

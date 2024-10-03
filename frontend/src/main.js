@@ -22,6 +22,7 @@ import PrimeVue from 'primevue/config'
 import UVA from './assets/theme/uva'
 import ConfirmationService from 'primevue/confirmationservice'
 import ToastService from 'primevue/toastservice'
+import Tooltip from 'primevue/tooltip';
 
 app.use(PrimeVue, {
    theme: {
@@ -33,6 +34,7 @@ app.use(PrimeVue, {
    }
 })
 
+app.directive('tooltip', Tooltip)
 app.use(ConfirmationService)
 app.use(ToastService)
 

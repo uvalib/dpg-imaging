@@ -101,6 +101,7 @@ const selectAllClicked = (() => {
       align-items: flex-end;
       justify-content: flex-start;
       gap: 10px;
+      text-align: left;
 
       label {
          display: block;

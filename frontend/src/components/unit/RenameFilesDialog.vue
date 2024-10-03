@@ -1,6 +1,6 @@
 <template>
    <DPGButton @click="renameClicked" severity="secondary" label="Rename All"/>
-   <ConfirmDialog :closable="false">
+   <ConfirmDialog>
       <template #message>
          <div>All files will be renamed to match the following format:</div>
          <code>{{paddedUnit()}}_0001.tif - {{paddedUnit()}}_nnnn.tif</code>

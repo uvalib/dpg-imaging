@@ -98,8 +98,6 @@ const UVA = definePreset(Aura, {
          },
       },
       select: {
-         paddingX: '8px',
-         paddingY: '4px',
          option: {
             selectedFocusBackground: 'var(--uvalib-blue-alt-light)',
             selectedFocusColor: 'var(--uvalib-text)',
