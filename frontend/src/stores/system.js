@@ -21,6 +21,13 @@ export const useSystemStore = defineStore('system', {
       jobsURL: "",
       qaDir: "",
       scanDir: "",
+      titleVocab: [
+         "Spine", "Front Cover", "Front Cover verso", "Back Cover", "Back Cover recto",
+         "Head", "Tail", "Fore-edge", "Front Paste-down Endpaper", "Front Free Endpaper",
+         "Rear Paste-down Endpaper", "Rear Free Endpaper", "Plate",
+         "Blank Page", "Half-title", "Frontispiece", "Printer's Imprint", "Copyright",
+         "Privilege", "Ad Lectorem",  "Table of Contents", "Titlepage", "Device",
+         "Epigraph", "Prologue/Preface", "Dedication", "Errata"].sort()
 	}),
 	getters: {
 	},
