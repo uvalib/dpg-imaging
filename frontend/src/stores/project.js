@@ -9,6 +9,10 @@ export const useProjectStore = defineStore('project', {
       working: true,
    }),
    getters: {
+      isManuscript: state => {
+         if (state.detail == null) return false
+         return state.detail.workflow && state.detail.workflow.name=='Manuscript'
+      },
       hasDetail: state => {
          return state.detail != null
       },

@@ -14,10 +14,12 @@
                   </tr>
                   <tr class="line">
                      <td class="label">Title:</td>
-                     <td class="data editable" @click="editMetadata('title')" >
-                        <TitleInput  v-if="isEditing('title')" @canceled="cancelEdit" @accepted="submitEdit" v-model="newValue"/>
+                     <td class="data" @click="editMetadata('title')" >
+                        <template v-if="isEditing('title')">
+                           <Select id="title-edit" v-model="newValue" editable fluid :options="systemStore.titleVocab" @keydown.enter="submitEdit" @keydown.tab="cancelEdit"/>
+                        </template>
                         <template v-else>
-                           <span  v-if="currMasterFile && currMasterFile.title">{{currMasterFile.title}}</span>
+                           <span v-if="currMasterFile && currMasterFile.title" class="editable">{{currMasterFile.title}}</span>
                            <span v-else class="undefined editable">Undefined</span>
                         </template>
                      </td>
@@ -26,7 +28,7 @@
                      <td class="label">Caption:</td>
                      <td class="data editable" @click="editMetadata('description')" >
                         <input  v-if="isEditing('description')" id="edit-desc" type="text" v-model="newValue"
-                           @keyup.enter="submitEdit()" @keydown.stop.prevent.esc="cancelEdit" />
+                           @keyup.enter="submitEdit()" @keydown.stop.prevent.esc="cancelEdit" @keydown.tab="cancelEdit"/>
                         <template v-else>
                            <span v-if="currMasterFile && currMasterFile.description">{{currMasterFile.description}}</span>
                            <span v-else class="undefined editable">Undefined</span>
@@ -68,7 +70,7 @@
 <script setup>
 import OpenSeadragon from "openseadragon"
 import TagPicker from '../components/TagPicker.vue'
-import TitleInput from '../components/TitleInput.vue'
+import Select from 'primevue/select'
 import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUnitStore} from "@/stores/unit"
@@ -104,7 +106,11 @@ const nextDisabled = computed(() => {
 })
 
 const backClicked = (() => {
-   router.push( `/projects/${projectStore.detail.id}/unit` )
+   if (unitStore.lastURL != "") {
+      router.push( unitStore.lastURL )
+   } else {
+      router.push( `/projects/${projectStore.detail.id}/unit` )
+   }
 })
 
 const rotateImage = ( async (dir) => {
@@ -131,8 +137,14 @@ const editMetadata = ((field) => {
    }
    editField.value = field
    nextTick( ()=> {
+      let ele = null
       if ( field == "description") {
-         let ele = document.getElementById("edit-desc")
+         ele = document.getElementById("edit-desc")
+      }
+      if ( field == "title") {
+         ele = document.querySelector("#title-edit .p-select-label")
+      }
+      if (ele) {
          ele.focus()
          ele.select()
       }
@@ -296,9 +308,8 @@ onUnmounted( async () => {
       background: #555555 !important;
    }
    .toolbar {
-      background: var(--uvalib-grey-light);
+      background: #fafafa;
       position: relative;
-      border-bottom: 1px solid var(--uvalib-grey);
       display: flex;
       flex-direction: column;
       .header-top {
@@ -322,7 +333,7 @@ onUnmounted( async () => {
       }
       .acts {
          padding: 5px;
-         border-top: 1px solid var(--uvalib-grey);
+         border-top: 1px solid var(--uvalib-grey-light);
          display: flex;
          flex-flow: row nowrap;
          justify-content: space-between;

@@ -23,49 +23,28 @@ export const useUnitStore = defineStore('unit', {
          date: "",
          type: "",
       },
+      lastURL: "",
+      currPage: 0,
       pageSize: 20,
-      currPage: 1,
    }),
    getters: {
       pageInfoURLs: state => {
-         let out = []
-         state.masterFiles.forEach( mf => out.push(mf.infoURL) )
-         return out
-      },
-      pageStartIdx: state => {
-         return (state.currPage-1)*state.pageSize
-      },
-      totalPages: state => {
-         return Math.ceil(state.masterFiles.length / state.pageSize)
+         return state.masterFiles.map( mf => mf.infoURL )
       },
       totalFiles: state => {
          return state.masterFiles.length
       },
-      allPageImagesSelected: state => {
-         if (state.rangeStartIdx == -1 || state.rangeEndIdx == -1) return false
-         let pageStart = (state.currPage-1)*state.pageSize
-         if (state.rangeStartIdx !=  pageStart) return false
-         let endIdx = pageStart+state.pageSize
-         if (endIdx >= state.masterFiles.length) {
-            endIdx = state.masterFiles.length-1
-         }
-         if (state.rangeEndIdx != endIdx) return false
-
-         return true
-      },
-      masterFilesPage: state => {
-         let startIdx = (state.currPage-1) * state.pageSize
-         return state.masterFiles.slice(startIdx, startIdx+state.pageSize)
+      currStartIndex: state => {
+         return state.currPage * state.pageSize
       }
    },
    actions: {
       moveImage( fromIndex, toIndex ) {
-         let pageStartIdx = (this.currPage-1) * this.pageSize
-         let img = this.masterFiles.splice(fromIndex+pageStartIdx, 1)[0]
-         this.masterFiles.splice(toIndex+pageStartIdx, 0, img)
+         let img = this.masterFiles.splice(fromIndex, 1)[0]
+         this.masterFiles.splice(toIndex, 0, img)
       },
       selectPage() {
-         this.rangeStartIdx = this.pageStartIdx
+         this.rangeStartIdx = this.currStartIndex
          this.rangeEndIdx = this.rangeStartIdx + this.pageSize
          if (this.rangeEndIdx >= this.masterFiles.length) {
             this.rangeEndIdx = this.masterFiles.length-1
@@ -101,16 +80,6 @@ export const useUnitStore = defineStore('unit', {
          this.rangeStartIdx = -1
          this.rangeEndIdx = - 1
          this.masterFiles.forEach( mf => mf.selected = false)
-      },
-      async setPage(startPageNum) {
-         this.currPage = startPageNum
-         this.deselectAll()
-         this.editMode = ""
-         return this.getMetadataPage()
-      },
-      setPageSize(newSize) {
-         this.pageSize = newSize
-         this.setPage(1)
       },
 
       setMasterFileProblems(data) {
@@ -150,23 +119,22 @@ export const useUnitStore = defineStore('unit', {
       },
 
       masterFileSelected(idx) {
-         let actualIdx =  (this.currPage-1) * this.pageSize + idx
-         if (this.masterFiles[actualIdx].selected) {
+         if (this.masterFiles[idx].selected) {
             this.masterFiles.forEach( mf => mf.selected = false)
             this.rangeStartIdx = -1
             this.rangeEndIdx = -1
          } else {
             let priorSelIdx = this.masterFiles.findIndex( mf => mf.selected)
             if (priorSelIdx == -1) {
-               this.masterFiles[actualIdx].selected = true
-               this.rangeStartIdx = actualIdx
-               this.rangeEndIdx = actualIdx
+               this.masterFiles[idx].selected = true
+               this.rangeStartIdx = idx
+               this.rangeEndIdx = idx
             } else {
-               if (priorSelIdx < actualIdx) {
+               if (priorSelIdx < idx) {
                   this.rangeStartIdx = priorSelIdx
-                  this.rangeEndIdx = actualIdx
+                  this.rangeEndIdx = idx
                } else {
-                  this.rangeStartIdx = actualIdx
+                  this.rangeStartIdx = idx
                   this.rangeEndIdx = priorSelIdx
                }
                for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
@@ -228,9 +196,10 @@ export const useUnitStore = defineStore('unit', {
       },
 
       async getMetadataPage() {
-         // must have a unit set to get metdata
+         console.log("GET PAGEINDEX "+this.currPage+" sz "+this.pageSize)
          if (this.currUnit == "") return
-         let startIdx = (this.currPage-1) * this.pageSize
+
+         let startIdx = this.currPage * this.pageSize
          let endIdx = startIdx+this.pageSize-1
          if (endIdx >= this.masterFiles.length-1) {
             endIdx = this.masterFiles.length-1
@@ -248,7 +217,7 @@ export const useUnitStore = defineStore('unit', {
 
          const system = useSystemStore()
          system.working = true
-         let mdURL = `/api/units/${ this.currUnit}/masterfiles/metadata?page=${this.currPage}&pagesize=${this.pageSize}`
+         let mdURL = `/api/units/${ this.currUnit}/masterfiles/metadata?page=${this.currPage+1}&pagesize=${this.pageSize}`
          return axios.get(mdURL).then(response => {
             system.working = false
             response.data.forEach( md => {

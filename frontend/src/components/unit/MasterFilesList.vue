@@ -1,225 +1,178 @@
 <template>
-   <table class="unit-list">
-      <thead>
-         <tr>
-            <th></th>
-            <th></th>
-            <th>Tag</th>
-            <th>File Name</th>
-            <th>Title</th>
-            <th>Caption</th>
-            <template v-if="isManuscript">
-               <th>Box</th>
-               <th>Folder</th>
+   <DataTable :value="unitStore.masterFiles" ref="mfTable" dataKey="fileName"
+         stripedRows size="small" paginatorPosition="top"
+         :lazy="false" :rows="unitStore.pageSize" :first="unitStore.currStartIndex" :rowsPerPageOptions="[20,50,75]" paginator
+         paginatorTemplate="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink RowsPerPageDropdown"
+         currentPageReportTemplate="{currentPage} of {totalPages}"  @page="pageChanged"
+         editMode="cell" @cell-edit-complete="onCellEditComplete" @rowReorder="onRowReorder"
+   >
+      <template #paginatorstart>
+         <ViewMode />
+      </template>
+      <template #paginatorend>
+         <UnitActions />
+      </template>
+      <Column headerStyle="width: 3rem">
+         <template #body="slotProps">
+            <input type="checkbox" style="width: 20px;height: 20px" v-model="slotProps.data.selected" @click="masterFileCheckboxClicked(slotProps.data)"/>
+         </template>
+      </Column>
+      <Column header="" headerStyle="width: 70px">
+         <template #body="slotProps">
+            <div class="centered">
+               <router-link :to="imageViewerURL(slotProps.data)" @click="imageClicked"><img :src="slotProps.data.thumbURL"/></router-link>
+            </div>
+         </template>
+      </Column>
+      <Column header="Tag" headerStyle="width: 60px">
+         <template #body="slotProps">
+            <TagPicker :masterFile="slotProps.data" />
+         </template>
+      </Column>
+      <Column header="File Name" field="fileName">
+         <template #body="slotProps">
+            <div class="filename">
+               <span>{{ slotProps.data.fileName }}</span>
+               <i v-if="slotProps.data.error" class="image-err pi pi-exclamation-circle" v-tooltip.bottom="{ value: slotProps.data.error, autoHide: false }"></i>
+            </div>
+         </template>
+      </Column>
+      <Column header="Title" field="title">
+         <template #body="slotProps"><span class="editable">{{ slotProps.data.title }}</span></template>
+         <template #editor="{ data, field }">
+            <Select v-model="data[field]" fluid editable :options="system.titleVocab" />
+         </template>
+      </Column>
+      <Column header="Caption" field="description">
+         <template #body="slotProps"><span class="editable">{{ slotProps.data.description }}</span></template>
+         <template #editor="{ data, field }">
+            <InputText v-model="data[field]" fluid />
+         </template>
+      </Column>
+      <template v-if="projectStore.isManuscript">
+         <Column header="Box" field="box" class="nowrap">
+            <template #body="slotProps">
+               <span  v-if="slotProps.data.box" class="editable">{{ slotProps.data.box }}</span>
+               <span  v-else class="editable undefined">Undefined</span>
             </template>
-            <th>Component</th>
-            <th>Size</th>
-            <th>Resolution</th>
-            <th>Color Profile</th>
-            <th></th>
-         </tr>
-      </thead>
-      <tbody ref="masterfiles">
-         <tr v-for="(element,index) in unitStore.masterFilesPage" :id="element.fileName" :key="element.fileName">
-            <td><input type="checkbox" v-model="element.selected" @click="masterFileCheckboxClicked(index)"/></td>
-            <td class="thumb">
-               <router-link :to="imageViewerURL(index)"><img :src="element.thumbURL"/></router-link>
-            </td>
-            <td><TagPicker :masterFile="element" /></td>
-            <td class="hover-container">
-               <span>{{element.fileName}}</span>
-               <span v-if="element.error">
-                  <i class="image-err fas fa-exclamation-circle" @mouseover="hoverEnter(element.fileName)" @mouseleave="hoverExit()"></i>
-                  <span v-if="showError==element.fileName" class="hover-error">{{element.error}}</span>
-               </span>
-            </td>
-            <td @click="editMetadata(element, 'title')" class="nowrap" tabindex="0" @focus.stop.prevent="editMetadata(element, 'title')" >
-               <span v-if="!isEditing(element, 'title')"  class="editable">
-                  <span v-if="element.title">{{element.title}}</span>
-                  <span v-else class="undefined">Undefined</span>
-               </span>
-               <TitleInput v-else @canceled="cancelEdit" @accepted="submitEdit(element)" v-model="newValue"  @blur.stop.prevent="cancelEdit"/>
-            </td>
-            <td @click="editMetadata(element, 'description')" class="nowrap" >
-               <span  tabindex="0" @focus.stop.prevent="editMetadata(element, 'description')" v-if="!isEditing(element, 'description')" class="editable">
-                  <span v-if="element.description">{{element.description}}</span>
-                  <span v-else class="undefined">Undefined</span>
-               </span>
-               <input v-else id="edit-desc" type="text" v-model="newValue"
-                  @keyup.enter="submitEdit(element)"  @keydown.stop.prevent.esc="cancelEdit"  @blur.stop.prevent="cancelEdit"/>
-            </td>
-            <template v-if="isManuscript">
-               <td>
-               <span v-if="element.box">{{element.box}}</span>
-               <span v-else class="undefined">Undefined</span>
-            </td>
-               <td @click="editMetadata(element, 'folder')" class="nowrap" tabindex="0" @focus.stop.prevent="editMetadata(element, 'folder')" >
-                  <span v-if="!isEditing(element, 'folder')"  class="editable">
-                     <span v-if="element.folder">{{element.folder}}</span>
-                     <span v-else class="undefined">Undefined</span>
-                  </span>
-                  <input v-else id="edit-folder" type="text" v-model="newValue" @keyup.enter="submitEdit(element)"  @keydown.stop.prevent.esc="cancelEdit"  @blur.stop.prevent="cancelEdit"/>
-               </td>
+            <template #editor="{ data, field }">
+               <InputText v-model="data[field]" fluid />
             </template>
-            <td>
-               <span v-if="element.componentID">{{element.componentID}}</span>
-               <span v-else>N/A</span>
-            </td>
-            <td class="nowrap">{{element.width}} x {{element.height}}</td>
-            <td>{{element.resolution}}</td>
-            <td class="nowrap">{{element.colorProfile}}</td>
-            <td class="grip"><i class="pi pi-bars"></i></td>
-         </tr>
-      </tbody>
-   </table>
+         </Column>
+         <Column header="Folder" field="folder" class="nowrap">
+            <template #body="slotProps">
+               <span  v-if="slotProps.data.folder" class="editable">{{ slotProps.data.folder }}</span>
+               <span  v-else class="editable undefined">Undefined</span>
+            </template>
+            <template #editor="{ data, field }">
+               <InputText v-model="data[field]" fluid />
+            </template>
+         </Column>
+      </template>
+      <Column header="Component" field="component" class="nowrap">
+         <template #body="slotProps">
+            <span v-if="slotProps.data.componentID">{{slotProps.data.componentID}}</span>
+            <span v-else class="undefined">N/A</span>
+         </template>
+      </Column>
+      <Column header="Size" class="nowrap">
+         <template #body="slotProps">{{slotProps.data.width}} x {{slotProps.data.height}}</template>
+      </Column>
+      <Column header="Resolution" field="resolution" class="nowrap"/>
+      <Column header="Color Profile" field="colorProfile" class="nowrap"/>
+      <Column rowReorder headerStyle="width: 3rem" :reorderableColumn="false" />
+   </DataTable>
 </template>
 
 <script setup>
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
 import TagPicker from '@/components/TagPicker.vue'
-import TitleInput from '@/components/TitleInput.vue'
+import Select from 'primevue/select'
+import InputText from 'primevue/inputtext'
 import { useProjectStore } from "@/stores/project"
-import {useUnitStore} from "@/stores/unit"
-import { computed, ref, nextTick } from 'vue'
-import { useSortable } from '@vueuse/integrations/useSortable'
+import { useUnitStore } from "@/stores/unit"
+import { useSystemStore } from "@/stores/system"
+import ViewMode from '@/components/ViewMode.vue'
+import UnitActions from '@/components/unit/UnitActions.vue'
+import { useRoute, useRouter } from 'vue-router'
 
+const route = useRoute()
+const router = useRouter()
 const projectStore = useProjectStore()
 const unitStore = useUnitStore()
+const system = useSystemStore()
 
-const masterfiles = ref()
-const editMF = ref(null)
-const newValue = ref("")
-const editField = ref("")
-const showError = ref("")
-
-useSortable(masterfiles,  unitStore.masterFilesPage, {
-  animation: 150,
-  handle: '.grip',
-  onUpdate: (e) => {
-   unitStore.moveImage(e.oldIndex, e.newIndex)
-  }
+const imageClicked = (() => {
+   unitStore.lastURL = route.fullPath
 })
 
-const isManuscript = computed(() => {
-   if ( projectStore.hasDetail == false) return false
-   return projectStore.detail.workflow && projectStore.detail.workflow.name=='Manuscript'
+const pageChanged = ((event) => {
+   unitStore.deselectAll()
+   unitStore.pageSize = event.rows
+   unitStore.currPage = event.page
+   let query = Object.assign({}, route.query)
+   query.pagesize = event.rows
+   query.page = event.page
+   router.push({query})
+   unitStore.getMetadataPage()
 })
 
-const masterFileCheckboxClicked = ((index) => {
-   unitStore.masterFileSelected(index)
+const onRowReorder = ( (event) => {
+   unitStore.masterFiles = event.value
 })
 
-const imageViewerURL = ((pgIndex) => {
-   return `/projects/${projectStore.detail.id}/unit/images/${unitStore.pageStartIdx+pgIndex+1}`
+const masterFileCheckboxClicked = ((img) => {
+   const idx = unitStore.masterFiles.findIndex( mf => mf.fileName == img.fileName)
+   unitStore.masterFileSelected(idx)
 })
 
-const hoverExit = (() => {
-   showError.value = ""
+const imageViewerURL = ((img) => {
+   const idx = unitStore.masterFiles.findIndex( mf => mf.fileName == img.fileName)
+   return `/projects/${projectStore.detail.id}/unit/images/${idx+1}`
 })
-const hoverEnter = ((f) => {
-   showError.value = f
-})
-const isEditing = ((mf, field) => {
-   return editMF.value == mf && editField.value == field
-})
-const editMetadata = ((mf, field) => {
-   editMF.value = mf
-   editField.value = field
-   if (field == "title") {
-      newValue.value = mf.title
+
+const onCellEditComplete = ( (event) => {
+   let { data, newValue, field } = event
+   if ( data[field] != newValue) {
+      unitStore.updateMasterFileMetadata( data.fileName, field, newValue)
    }
-   if (field == "description") {
-      newValue.value = mf.description
-   }
-   if (field == "folder") {
-      newValue.value = mf.folder
-   }
-   nextTick( ()=> {
-      let ele = null
-      if ( field == "description") {
-         ele = document.getElementById("edit-desc")
-      }
-      if ( field == "folder") {
-         ele = document.getElementById("edit-folder")
-      }
-      if (ele) {
-         ele.focus()
-         ele.select()
-      }
-   })
-})
-const cancelEdit = (() => {
-   editMF.value = null
-})
-
-const submitEdit = ( async (mf) => {
-   await unitStore.updateMasterFileMetadata( mf.fileName, editField.value, newValue.value )
-   editMF.value = null
 })
 </script>
 
 <style lang="scss" scoped>
-   .undefined {
-      font-style: italic;
+.centered {
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: center;
+   padding: 5px 5px 2px 5px;
+   img {
+      border:1px solid var(--uvalib-grey);
    }
-   .hover-container {
-      position: relative;
-      .image-err {
-         color: var(--uvalib-red);
-         margin: 0 5px;
-         cursor: pointer;
-      }
-      .hover-error {
-         position: absolute;
-         white-space: nowrap;
-         background: white;
-         padding: 5px 10px;
-         border: 2px solid var(--uvalib-red-dark);
-         border-radius: 4px;
-         box-shadow: var(--box-shadow);
-         bottom: 5px;
-         z-index: 10000;
-      }
+}
+.editable {
+   cursor: pointer;
+   &:hover {
+      text-decoration: underline;
+      color: var(--uvalib-blue-alt) !important;
    }
-   table.unit-list {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 0.9em;
-      input[type=checkbox] {
-         width: 20px;
-         height: 20px;
-      }
-
-      th {
-         background-color: var(--uvalib-grey-lightest);
-      }
-      th,td {
-         padding: 5px 10px;
-         text-align: left;
-         border-bottom: 1px solid var(--uvalib-grey-lightest);
-         cursor:  default;
-      }
-      td.thumb {
-         padding: 5px 5px 2px 5px;
-         img {
-            border:1px solid var(--uvalib-grey);
-         }
-      }
-      td.grip {
-         color: var(--uvalib-grey);
-         cursor:  grab;
-      }
-      th {
-         border-bottom: 1px solid var(--uvalib-grey-light);
-      }
-   }
-   .editable {
+}
+.filename {
+   display: flex;
+   flex-flow: row nowrap;
+   gap: 10px;
+   align-items: center;
+   i.image-err {
+      font-size: 1.15em;
+      color: var(--uvalib-red-emergency);
       cursor: pointer;
-      &:hover {
-         text-decoration: underline;
-         color: var(--uvalib-blue-alt) !important;
-      }
    }
-   .nowrap {
-      white-space: nowrap;
-   }
+}
+.undefined {
+   font-style: italic;
+   color: var(--uvalib-grey-light);
+}
+.nowrap {
+   white-space: nowrap;
+}
 </style>

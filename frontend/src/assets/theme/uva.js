@@ -86,6 +86,14 @@ const UVA = definePreset(Aura, {
             }
          }
       },
+      paginator: {
+         root: {
+            borderRadius: '0',
+            padding: '10px',
+            background: '#fafaff',
+            color: 'var(--uvalib-text)',
+         }
+      },
       panel: {
          header: {
             background: '#f8f9fa',
