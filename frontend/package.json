@@ -7,18 +7,18 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@primevue/themes": "^4.0.7",
+    "@primevue/themes": "^4.1.0",
     "@vueuse/core": "^11.1.0",
     "@vueuse/integrations": "^11.1.0",
     "axios": "^1.7.7",
     "jwt-decode": "^4.0.0",
     "openseadragon": "^5.0.0",
-    "pinia": "^2.2.3",
+    "pinia": "^2.2.4",
     "primeicons": "^7.0.0",
-    "primevue": "^4.0.7",
+    "primevue": "^4.1.0",
     "sortablejs": "^1.15.3",
     "universal-cookie": "^7.2.0",
-    "vue": "^3.5.10",
+    "vue": "^3.5.11",
     "vue-router": "^4.4.5"
   },
   "devDependencies": {
