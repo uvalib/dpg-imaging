@@ -85,7 +85,7 @@
 </template>
 
 <script setup>
-import DataView from 'primevue/DataView'
+import DataView from 'primevue/dataview'
 import { useSortable } from '@vueuse/integrations/useSortable'
 import TagPicker from '@/components/TagPicker.vue'
 import Card from 'primevue/card'
