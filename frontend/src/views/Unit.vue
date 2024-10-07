@@ -26,29 +26,6 @@
             <DPGButton icon="pi pi-angle-double-left" text label="Back to project" size="small" severity="secondary" @click="backClicked"/>
          </div>
       </div>
-
-      <div class="toolbar" ref="toolbar">
-         <ViewMode />
-
-         <DPGPagination  v-if="unitStore.masterFiles.length > 20" :currPage="unitStore.currPage" :pageSize="unitStore.pageSize"
-            :totalPages="unitStore.totalPages" :sizePicker="true"
-            @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
-            @jump="pageJumpClicked" @size="pageSizeChanged"
-         />
-
-         <span class="actions">
-            <RenameFilesDialog />
-            <PageNumDialog />
-            <BatchUpdateDialog title="Title" field="title" />
-            <BatchUpdateDialog title="Caption" field="description" />
-            <template v-if="isManuscript">
-               <BatchUpdateDialog title="Box" field="box" />
-               <BatchUpdateDialog title="Folder" field="folder" />
-            </template>
-            <ComponentDialog />
-         </span>
-      </div>
-
       <div class="master-files" ref="masterfiles">
          <MasterFilesList  v-if="unitStore.viewMode == 'list'" />
          <MasterFilesGrid  v-else />
@@ -57,22 +34,16 @@
 </template>
 
 <script setup>
-import ComponentDialog from '@/components/unit/ComponentDialog.vue'
-import BatchUpdateDialog from '@/components/unit/BatchUpdateDialog.vue'
-import PageNumDialog from '@/components/unit/PageNumDialog.vue'
 import ProblemsDisplay from '@/components/ProblemsDisplay.vue'
 import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUnitStore} from "@/stores/unit"
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import DPGPagination from '@/components/DPGPagination.vue'
 import MasterFilesList from '@/components/unit/MasterFilesList.vue'
 import MasterFilesGrid from '@/components/unit/MasterFilesGrid.vue'
 import { useConfirm } from "primevue/useconfirm"
-import ViewMode from '@/components/ViewMode.vue'
 import KeyboardShortcutHelp from '@/components/KeyboardShortcutHelp.vue'
-import RenameFilesDialog from '@/components/unit/RenameFilesDialog.vue'
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
@@ -127,41 +98,6 @@ function paddedUnit() {
    return unitStr.padStart(9,'0')
 }
 
-async function priorClicked() {
-   unitStore.setPage(unitStore.currPage-1)
-   pageChanged()
-}
-async function nextClicked() {
-   await unitStore.setPage(unitStore.currPage+1)
-   pageChanged()
-}
-async function lastClicked() {
-   await unitStore.setPage(unitStore.totalPages)
-   pageChanged()
-}
-async function firstClicked() {
-   await unitStore.setPage(1)
-   pageChanged()
-}
-async function pageJumpClicked(pg) {
-   await unitStore.setPage(pg)
-   pageChanged()
-}
-function pageSizeChanged(sz) {
-   unitStore.setPageSize(sz)
-   let query = Object.assign({}, route.query)
-   query.pagesize = unitStore.pageSize
-   query.page = unitStore.currPage
-   router.push({query})
-   scrollHandler()
-}
-function pageChanged() {
-   let query = Object.assign({}, route.query)
-   query.page = unitStore.currPage
-   router.push({query})
-   scrollHandler()
-}
-
 const handleDelete = (() => {
    confirm.require({
       group: 'delete',
@@ -185,6 +121,7 @@ const keyboardHandler = ((event) => {
       }
    }
    if ( event.key == '.' || event.key == '>') {
+      // FIXME
       if (unitStore.currPage < unitStore.totalPages) {
          nextClicked()
          return
@@ -207,44 +144,43 @@ const keyboardHandler = ((event) => {
 })
 
 
-const scrollHandler = (( ) => {
-   if ( toolbar.value && !systemStore.working) {
-      if ( window.scrollY <= toolbarTop.value ) {
-         if ( toolbar.value.classList.contains("sticky") ) {
-            toolbar.value.classList.remove("sticky")
-            masterfiles.value.style.top = `0px`
-         }
-      } else {
-         if ( toolbar.value.classList.contains("sticky") == false ) {
-            toolbar.value.classList.add("sticky")
-            toolbar.value.style.width = `${toolbarWidth.value}px`
-            masterfiles.value.style.top = `${toolbarHeight.value}px`
-         }
-      }
-   }
-})
+// const scrollHandler = (( ) => {
+//    if ( toolbar.value && !systemStore.working) {
+//       if ( window.scrollY <= toolbarTop.value ) {
+//          if ( toolbar.value.classList.contains("sticky") ) {
+//             toolbar.value.classList.remove("sticky")
+//             masterfiles.value.style.top = `0px`
+//          }
+//       } else {
+//          if ( toolbar.value.classList.contains("sticky") == false ) {
+//             toolbar.value.classList.add("sticky")
+//             toolbar.value.style.width = `${toolbarWidth.value}px`
+//             masterfiles.value.style.top = `${toolbarHeight.value}px`
+//          }
+//       }
+//    }
+// })
 
 onMounted( async () => {
+   unitStore.lastURL = ""
+
    // setup keyboard litener for shortcuts
    window.addEventListener('keyup', keyboardHandler)
-   window.addEventListener("scroll", scrollHandler)
+   // window.addEventListener("scroll", scrollHandler)
 
    if (projectStore.hasDetail == false) {
       await projectStore.getProject(route.params.id)
    }
 
    // set current page size and page, which is needed to get list of MF
+   console.log("UNIT MOUNTED")
+   unitStore.pageSize = 20
    if ( route.query.pagesize ) {
-      let ps = parseInt(route.query.pagesize, 10)
-      unitStore.setPageSize(ps)
-   } else {
-       unitStore.setPageSize(20)
+      unitStore.pageSize = parseInt(route.query.pagesize, 10)
    }
+   unitStore.currPage = 0
    if ( route.query.page ) {
-      let pg = parseInt(route.query.page, 10)
-      unitStore.setPage(pg)
-   } else {
-      unitStore.setPage(1)
+      unitStore.currPage = parseInt(route.query.page, 10)
    }
 
    await unitStore.getUnitMasterFiles( projectStore.detail.unit.id )
@@ -253,25 +189,25 @@ onMounted( async () => {
       unitStore.viewMode = route.query.view
    }
 
-   let tb = toolbar.value
-   toolbarHeight.value = tb.offsetHeight
-   toolbarWidth.value = tb.offsetWidth
-   toolbarTop.value = 0
+   // let tb = toolbar.value
+   // toolbarHeight.value = tb.offsetHeight
+   // toolbarWidth.value = tb.offsetWidth
+   // toolbarTop.value = 0
 
-   // walk the parents of the toolbar and add each top value
-   // to find the top of the toolbar relative to document top
-   let ele = tb
-   if (ele.offsetParent) {
-      do {
-         toolbarTop.value += ele.offsetTop
-         ele = ele.offsetParent
-      } while (ele)
-   }
+   // // walk the parents of the toolbar and add each top value
+   // // to find the top of the toolbar relative to document top
+   // let ele = tb
+   // if (ele.offsetParent) {
+   //    do {
+   //       toolbarTop.value += ele.offsetTop
+   //       ele = ele.offsetParent
+   //    } while (ele)
+   // }
 })
 
 onBeforeUnmount( async () => {
    window.removeEventListener('keyup', keyboardHandler)
-   window.removeEventListener("scroll", scrollHandler)
+   // window.removeEventListener("scroll", scrollHandler)
 })
 
 </script>
@@ -338,34 +274,5 @@ onBeforeUnmount( async () => {
          text-align: left;
       }
    }
-
-   .toolbar {
-      display: flex;
-      flex-flow: row wrap;
-      justify-content: space-between;
-      align-content: center;
-      padding: 10px;
-      background: #fafaff;
-      border-bottom: 1px solid var(--uvalib-grey-light);
-      border-top: 1px solid var(--uvalib-grey-light);
-      gap: 5px;
-
-      .actions {
-         display: flex;
-         flex-flow: row wrap;
-         justify-content: flex-end;
-         align-content: center;
-         gap: 10px;
-      }
-   }
-}
-.toolbar.sticky {
-   position: fixed;
-   z-index: 1000;
-   top: 0;
-   box-shadow: 0 0px 10px var(--uvalib-grey);
-}
-.master-files {
-   position: relative;
 }
 </style>

@@ -1,17 +1,11 @@
-import { createApp, markRaw, nextTick } from 'vue'
+import { createApp, markRaw } from 'vue'
 import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
-
-// create pinia store and give all stores access to the router as this.router
-const pinia = createPinia()
-pinia.use(({ store }) => {
-   store.router = markRaw(router)
-})
+import 'primeicons/primeicons.css'
+import './assets/stylesheets/main.scss'
 
 const app = createApp(App)
-app.use( router )
-app.use( pinia )
 
 // Global component registration. All components can use these without import
 import WaitSpinner from "@/components/WaitSpinner.vue"
@@ -43,10 +37,13 @@ import ConfirmDialog from 'primevue/confirmdialog'
 app.component("DPGButton", Button)
 app.component("ConfirmDialog", ConfirmDialog)
 
-
-// Styles
-import 'primeicons/primeicons.css'
-import './assets/stylesheets/main.scss'
+// Per some suggestions on vue / pinia git hub issue reports, create and add pinia support LAST
+// and use the chained form of the setup. This to avid problems where the vuew dev tools fail to
+// include pinia in the tools
+app.use( router )
+app.use(createPinia().use( ({ store }) => {
+   store.router = markRaw(router)
+}))
 
 // actually mount to DOM
 app.mount('#app')

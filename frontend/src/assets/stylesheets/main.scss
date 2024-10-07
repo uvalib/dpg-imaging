@@ -58,10 +58,11 @@ body {
       gap: 10px;
    }
 
-   div.sticky {
+   .sticky {
       position: fixed;
       z-index: 1000;
       top: 0;
+      border-bottom: 1px solid var(--uvalib-grey-light);
    }
 
    #app {

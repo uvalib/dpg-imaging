@@ -9,6 +9,10 @@
    }
 }
 
+div.p-paginator.p-component  {
+   border-top: 1px solid var(--uvalib-grey-lightest);
+}
+
 div.p-panel-header {
    border-bottom: 1px solid var(--uvalib-grey-light);
    margin-bottom: 15px;
