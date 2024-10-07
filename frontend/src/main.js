@@ -37,6 +37,9 @@ import ConfirmDialog from 'primevue/confirmdialog'
 app.component("DPGButton", Button)
 app.component("ConfirmDialog", ConfirmDialog)
 
+// Per some suggestions on vue / pinia git hub issue reports, create and add pinia support LAST
+// and use the chained form of the setup. This to avid problems where the vuew dev tools fail to
+// include pinia in the tools
 app.use( router )
 app.use(createPinia().use( ({ store }) => {
    store.router = markRaw(router)

@@ -1,5 +1,5 @@
 <template>
-   <DataView :value="unitStore.masterFiles" paginatorPosition="top"
+   <DataView :value="unitStore.masterFiles" id="mf-grid" paginatorPosition="top"
       :lazy="false" :rows="unitStore.pageSize" :first="unitStore.currStartIndex" :rowsPerPageOptions="[20,50,75]" paginator
       paginatorTemplate="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink RowsPerPageDropdown"
       currentPageReportTemplate="{currentPage} of {totalPages}" @page="pageChanged"
@@ -97,6 +97,9 @@ import Select from 'primevue/select'
 import ViewMode from '@/components/ViewMode.vue'
 import UnitActions from '@/components/unit/UnitActions.vue'
 import { useRoute, useRouter } from 'vue-router'
+import { usePinnable } from '@/composables/pin'
+
+usePinnable("mf-grid")
 
 const route = useRoute()
 const router = useRouter()

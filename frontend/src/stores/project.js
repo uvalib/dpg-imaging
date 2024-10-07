@@ -22,6 +22,7 @@ export const useProjectStore = defineStore('project', {
          return  state.detail.unit.order.dateDue.split("T")[0]
       },
       canChangeWorkflow: state => {
+         if ( state.detail == null ) return false
          let assignments = state.detail.assignments
          if ( assignments == null || assignments === undefined) return true
 
@@ -38,21 +39,25 @@ export const useProjectStore = defineStore('project', {
       // NOTES : enums from tracksys models
       // assignment status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing]
       canReject: state => {
+         if ( state.detail == null ) return false
          if ( state.detail.assignments == null || state.detail.assignments === undefined) return false
          if ( state.detail.assignments.length == 0) return false
          let currA = state.detail.assignments[0]
          return currA.step.failStepID > 0 && currA.status == 1
       },
       isFinalizeRunning: state => {
+         if ( state.detail == null ) return false
          if ( state.detail.assignments == null || state.detail.assignments === undefined) return false
          if ( state.detail.assignments.length == 0 ) return false
          let currA = state.detail.assignments[0]
          return currA.status == 6 // finalizing
       },
       isFinished: state => {
+         if ( state.detail == null ) return false
          return Object.hasOwn(state.detail, 'finishedAt') && state.detail.finishedAt != ""
       },
       hasError: state => {
+         if ( state.detail == null ) return false
          if ( state.detail.assignments == null || state.detail.assignments === undefined) return false
          if (state.detail.assignments.length == 0) return false
          let currA = state.detail.assignments[0]
@@ -61,15 +66,18 @@ export const useProjectStore = defineStore('project', {
          return false
       },
       hasOwner: state => {
+         if ( state.detail == null ) return false
          return (state.detail.owner !== undefined && state.detail.owner != null)
       },
       inProgress: state => {
+         if ( state.detail == null ) return false
          if ( state.detail.assignments == null || state.detail.assignments === undefined) return false
          if (state.detail.assignments.length == 0) return false
          let currA = state.detail.assignments[0]
          return  currA.status == 1 ||  currA.status == 4 ||  currA.status == 6 ||  currA.status == 7
       },
       isWorking: state => {
+         if ( state.detail == null ) return false
          if ( state.detail.assignments == null || state.detail.assignments === undefined) return false
          if ( state.detail.assignments.length == 0) return false
          let currA = state.detail.assignments[0]
@@ -77,6 +85,7 @@ export const useProjectStore = defineStore('project', {
       },
       isOwner: state => {
          return (computeID) => {
+            if ( state.detail == null ) return false
             if ( state.detail.owner ) {
                return state.detail.owner.computingID == computeID
             }

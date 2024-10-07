@@ -1,5 +1,5 @@
 <template>
-   <DataTable :value="unitStore.masterFiles" ref="mfTable" dataKey="fileName"
+   <DataTable :value="unitStore.masterFiles" ref="mfTable" id="mf-table" dataKey="fileName"
          stripedRows size="small" paginatorPosition="top"
          :lazy="false" :rows="unitStore.pageSize" :first="unitStore.currStartIndex" :rowsPerPageOptions="[20,50,75]" paginator
          paginatorTemplate="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink RowsPerPageDropdown"
@@ -96,6 +96,9 @@ import { useSystemStore } from "@/stores/system"
 import ViewMode from '@/components/ViewMode.vue'
 import UnitActions from '@/components/unit/UnitActions.vue'
 import { useRoute, useRouter } from 'vue-router'
+import { usePinnable } from '@/composables/pin'
+
+usePinnable("mf-table")
 
 const route = useRoute()
 const router = useRouter()
