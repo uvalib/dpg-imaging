@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -109,6 +111,53 @@ type masterFileMetadata struct {
 type unitMasterfiles struct {
 	MasterFiles []*masterFileInfo `json:"masterFiles"`
 	Problems    []string          `json:"problems"`
+}
+
+func (svc *serviceContext) validateComponentSettings(c *gin.Context) {
+	uidStr := padLeft(c.Param("uid"), 9)
+	unitDir := path.Join(svc.ImagesDir, uidStr)
+	log.Printf("INFO: validate component settings for master fliles in %s", unitDir)
+	cmdArray := []string{"-json", "-iptc:OwnerID", unitDir}
+	cmd := exec.Command("exiftool", cmdArray...)
+	out, err := cmd.Output()
+	if err != nil {
+		log.Printf("ERROR: unable to get conmponent data using %v: %s", cmd, out)
+		c.String(http.StatusInternalServerError, fmt.Sprintf("%s", out))
+		return
+	}
+
+	var resp []struct {
+		FileName  string `json:"SourceFile"`
+		Component any    `json:"OwnerID"`
+	}
+	parseErr := json.Unmarshal(out, &resp)
+	if parseErr != nil {
+		log.Printf("ERROR: unable to parse exif response: %s", parseErr.Error())
+		c.String(http.StatusInternalServerError, parseErr.Error())
+		return
+	}
+
+	mfRegex := regexp.MustCompile(`^\d{9}_\w{4,}\.tif$`)
+	missing := make([]string, 0)
+	for _, inf := range resp {
+		fn := path.Base(inf.FileName)
+		if !mfRegex.Match([]byte(fn)) {
+			continue
+		}
+		if inf.Component == nil {
+			log.Printf("INFO: %s is missing component info", fn)
+			missing = append(missing, fn)
+		}
+	}
+
+	missingResp := struct {
+		Valid   bool     `json:"valid"`
+		Missing []string `json:"missing"`
+	}{
+		Valid:   (len(missing) == 0),
+		Missing: missing,
+	}
+	c.JSON(http.StatusOK, missingResp)
 }
 
 func (svc *serviceContext) getUnitMasterFiles(c *gin.Context) {

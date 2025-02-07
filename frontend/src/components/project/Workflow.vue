@@ -25,12 +25,25 @@
          <dd>{{workingDir}}</dd>
       </dl>
       <div class="workflow-btns time" v-if="timeEntry">
-         <div class="time-form">
-            <label for="time">Approximately how many minutes did you spend on this assignment?</label>
-            <div class="time-controls">
-               <input id="time" type="text" v-model="stepMinutes"  @keyup.enter="timeEntered" ref="time">
-               <DPGButton @click="cancelFinish" severity="secondary" label="Cancel"/>
-               <DPGButton @click="timeEntered" label="OK"/>
+         <div v-if="validateComponents" class="validate">
+            <div>Validating component settings...</div>
+            <ProgressSpinner style="width: 40px; height: 40px" strokeWidth="5" />
+         </div>
+         <div v-else class="time-form" >
+            <template v-if="isManuscript">
+            <div  class="finish-info">
+               <label>Does this unit have components?</label>
+               <Select v-model="hasComponents" :options="['Yes', 'No']" placeholder="Yes or no?" @update:modelValue="componentChanged" />
+            </div>
+            <div class="sep"></div>
+         </template>
+            <div class="finish-info right">
+               <label for="time">Approximately how many minutes did you spend on this assignment?</label>
+               <div class="time-controls">
+                  <InputNumber v-model="stepMinutes" inputId="time" :min="1" :max="500" />
+                  <DPGButton @click="cancelFinish" severity="secondary" label="Cancel"/>
+                  <DPGButton @click="timeEntered" label="OK" :disabled="isManuscript && hasComponents == null"/>
+               </div>
             </div>
          </div>
       </div>
@@ -106,12 +119,12 @@ import { useUserStore } from "@/stores/user"
 import { ref, computed, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
+import Select from 'primevue/select'
 import Panel from 'primevue/panel'
+import InputNumber from 'primevue/inputnumber'
 import Dialog from 'primevue/dialog'
-import { useConfirm } from "primevue/useconfirm"
+import ProgressSpinner from 'primevue/progressspinner'
 import { useFocus } from '@vueuse/core'
-
-const confirm = useConfirm()
 
 const router = useRouter()
 const projectStore = useProjectStore()
@@ -123,16 +136,22 @@ const {
 } = storeToRefs(projectStore)
 const {isAdmin, isSupervisor} = storeToRefs(userStore)
 
+const hasComponents = ref(null)
+const validateComponents = ref(false)
+
 const timeEntry = ref(false)
 const time = ref()
 const { focused: timeFocus } = useFocus(time)
-const stepMinutes = ref(0)
+const stepMinutes = ref(1)
 const action = ref("finish")
 const showRejectNote = ref(false)
 const showWorkflowPicker = ref(false)
 const selectedWorkflowIdx = ref(-1)
 const selectedContainerTypeIdx = ref(-1)
 
+const isManuscript = computed(() => {
+   return detail.value.workflow.name
+})
 const activeWorkflows = computed(() => {
    return systemStore.workflows.filter( wf => wf.isActive == true)
 })
@@ -213,6 +232,22 @@ const workflowNote = computed(()=>{
    return ""
 })
 
+const componentChanged = ( async ()=> {
+   if ( hasComponents.value == "Yes" ) {
+      validateComponents.value = true
+      await projectStore.validateComponents()
+      validateComponents.value = false
+      if ( projectStore.hasMissingComponents == true ) {
+         systemStore.setError("Some images are missing component data. Please correct the problem before finishing this step.")
+         cancelFinish()
+         var msg = "The following images are missing component data: "
+         msg += projectStore.missingComponents.join(", ")
+         let data = {noteTypeID: 2, note: msg, problemIDs: [4]}
+         projectStore.addNote(data)
+      }
+   }
+})
+
 function changeWorkflowClicked() {
    selectedWorkflowIdx.value = -1
    selectedContainerTypeIdx.value = -1
@@ -263,50 +298,19 @@ function finishClicked() {
 
 function showTimeEntry() {
    timeEntry.value = true
-   stepMinutes.value = 0
+   stepMinutes.value = 1
    nextTick( ()=> timeFocus.value = true )
 }
 
 function timeEntered() {
-   let threshold = 100
-   if (detail.value.currentStep.name == "Scan" || detail.value.currentStep.name == "First QA") {
-      threshold = 500
-   }
-
-   let intDuration = parseInt(stepMinutes.value, 10)
-   if ( isNaN(intDuration)) {
-      systemStore.setError("Please enter a number")
-      return
-   }
-   if (intDuration <= 0 ) {
-      systemStore.setError("A non-zero duration is required")
-      return
-   }
-   if (intDuration > threshold ) {
-      confirm.require({
-         message: `The duration entered (${intDuration} minutes) is very large. Are you sure?`,
-         header: 'Confirm Duration',
-         rejectProps: {
-            label: 'Cancel',
-            severity: 'secondary'
-         },
-         acceptProps: {
-            label: 'Confirm'
-         },
-         accept: () => {
-            timeEnterSuccess( intDuration )
-         }
-      })
-   } else {
-      timeEnterSuccess( intDuration )
-   }
+   // timeEnterSuccess( intDuration )
 }
 
 const timeEnterSuccess = ((intDuration) => {
    if ( action.value == "finish")  {
       projectStore.finishStep( intDuration )
       timeEntry.value = false
-      stepMinutes.value = 0
+      stepMinutes.value = 1
    } else {
       showRejectNote.value = true
       timeEntry.value = false
@@ -316,7 +320,7 @@ const timeEnterSuccess = ((intDuration) => {
 function rejectCanceled() {
    showRejectNote.value = false
    timeEntry.value = false
-   stepMinutes.value = 0
+   stepMinutes.value = 1
 }
 
 function rejectSubmitted() {
@@ -332,11 +336,12 @@ function rejectSubmitted() {
    projectStore.rejectStep( intDuration )
    showRejectNote.value = false
    timeEntry.value = false
-   stepMinutes.value = 0
+   stepMinutes.value = 1
 }
 
 function cancelFinish() {
    timeEntry.value = false
+   hasComponents.value = null
 }
 
 function viewerClicked() {
@@ -380,26 +385,52 @@ function unitDirectory(unitID) {
    }
    .workflow-btns.time {
       text-align: left;
+      .validate {
+         border-top: 1px solid #e2e8f0;
+         display: flex;
+         flex-direction: column;
+         align-items: center;
+         gap: 1rem;
+         font-size: 1.25rem;
+         width: 100%;
+         padding-top: 15px;
+      }
       .time-form {
          width: 100%;
          text-align: right;
          margin-bottom: 10px;
          font-size: 0.9em;
-         label {
-            white-space: nowrap;
-            display: block;
-            font-weight: bold;
-            margin-bottom: 10px
+         display: flex;
+         flex-flow: row nowrap;
+         justify-content: flex-end;
+         border-top: 1px solid #e2e8f0;
+         .sep {
+            border-left: 1px solid #e2e8f0;
          }
-         .time-controls {
+         .finish-info {
+            flex-basis: 100%;
             display: flex;
-            flex-flow: row nowrap;
-            justify-content: flex-end;
-            gap: 10px;
-            input {
-               width: 100px;
-               border-color: var(--uvalib-grey-light);
+            flex-direction: column;
+            align-items: flex-start;
+            label {
+               display: block;
+               font-weight: bold;
+               margin: 15px 0;
+               max-width: 80%;
             }
+            .time-controls {
+               display: flex;
+               flex-flow: row nowrap;
+               justify-content: flex-end;
+               gap: 10px;
+               input {
+                  width: 100px;
+                  border-color: var(--uvalib-grey-light);
+               }
+            }
+         }
+         .finish-info.right {
+            align-items: flex-end;
          }
       }
    }

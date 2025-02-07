@@ -11,7 +11,7 @@ import (
 )
 
 // Version of the service
-const Version = "5.5.0"
+const Version = "5.6.0"
 
 func main() {
 	// Load cfg
@@ -49,6 +49,7 @@ func main() {
 		api.POST("/projects/:id/reject", svc.rejectProjectStep)
 		api.POST("/projects/:id/workflow", svc.changeProjectWorkflow)
 
+		api.GET("/units/:uid/validate/components", svc.validateComponentSettings)
 		api.GET("/units/:uid/masterfiles", svc.getUnitMasterFiles)
 		api.GET("/units/:uid/masterfiles/metadata", svc.getMasterFilesMetadata)
 		api.POST("/units/:uid/update", svc.updateMetadataBatch)       // this is protected by BatchUnitsInProgress

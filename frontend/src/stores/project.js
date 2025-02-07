@@ -7,8 +7,12 @@ export const useProjectStore = defineStore('project', {
       detail: null,
       statusCheckIntervalID: -1,
       working: true,
+      missingComponents: []
    }),
    getters: {
+      hasMissingComponents: state => {
+         return state.detail.workflow.name == "Manuscript" && state.missingComponents.length > 0
+      },
       isManuscript: state => {
          if (state.detail == null) return false
          return state.detail.workflow && state.detail.workflow.name=='Manuscript'
@@ -105,7 +109,7 @@ export const useProjectStore = defineStore('project', {
             this.working = false
          })
       },
-cancelStatusPolling() {
+      cancelStatusPolling() {
          if (this.statusCheckIntervalID > -1) {
             clearInterval( this.statusCheckIntervalID )
             this.statusCheckIntervalID = -1
@@ -187,6 +191,21 @@ cancelStatusPolling() {
             const system = useSystemStore()
             system.error = e
             this.working = false
+         })
+      },
+      async validateComponents() {
+         if (this.detail.workflow.name != "Manuscript" ) {
+            // not manuscript, nothing to do
+            return
+         }
+         this.missingComponents = []
+         await axios.get(  `/api/units/${this.detail.unit.id}/validate/components` ).then(response => {
+            if (response.data.valid == false) {
+               this.missingComponents = response.data.missing
+            }
+         }).catch( e => {
+            const system = useSystemStore()
+            system.setError( e)
          })
       },
       pollProjectStatus() {
