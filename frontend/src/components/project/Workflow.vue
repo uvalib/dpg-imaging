@@ -30,19 +30,19 @@
             <ProgressSpinner style="width: 40px; height: 40px" strokeWidth="5" />
          </div>
          <div v-else class="time-form" >
-            <template v-if="isManuscript">
-            <div  class="finish-info">
-               <label>Does this unit have components?</label>
-               <Select v-model="hasComponents" :options="['Yes', 'No']" placeholder="Yes or no?" @update:modelValue="componentChanged" />
-            </div>
-            <div class="sep"></div>
-         </template>
+            <template v-if="isManuscript && detail.currentStep.name == 'Create Metadata'">
+               <div  class="finish-info">
+                  <label>Does this unit have components?</label>
+                  <Select v-model="hasComponents" :options="['Yes', 'No']" placeholder="Yes or no?" @update:modelValue="componentChanged" />
+               </div>
+               <div class="sep"></div>
+            </template>
             <div class="finish-info right">
                <label for="time">Approximately how many minutes did you spend on this assignment?</label>
                <div class="time-controls">
                   <InputNumber v-model="stepMinutes" inputId="time" :min="1" :max="500" />
                   <DPGButton @click="cancelFinish" severity="secondary" label="Cancel"/>
-                  <DPGButton @click="timeEntered" label="OK" :disabled="isManuscript && hasComponents == null"/>
+                  <DPGButton @click="timeEntered" label="OK" :disabled="isManuscript && hasComponents == null && detail.currentStep.name == 'Create Metadata'"/>
                </div>
             </div>
          </div>
@@ -150,7 +150,7 @@ const selectedWorkflowIdx = ref(-1)
 const selectedContainerTypeIdx = ref(-1)
 
 const isManuscript = computed(() => {
-   return detail.value.workflow.name
+   return detail.value.workflow.name == "Manuscript"
 })
 const activeWorkflows = computed(() => {
    return systemStore.workflows.filter( wf => wf.isActive == true)
