@@ -303,7 +303,7 @@ function showTimeEntry() {
 }
 
 function timeEntered() {
-   // timeEnterSuccess( intDuration )
+   timeEnterSuccess( intDuration )
 }
 
 const timeEnterSuccess = ((intDuration) => {
