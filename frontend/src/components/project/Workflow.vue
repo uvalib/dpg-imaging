@@ -302,13 +302,9 @@ function showTimeEntry() {
    nextTick( ()=> timeFocus.value = true )
 }
 
-function timeEntered() {
-   timeEnterSuccess( intDuration )
-}
-
-const timeEnterSuccess = ((intDuration) => {
+const timeEntered = (() =>{
    if ( action.value == "finish")  {
-      projectStore.finishStep( intDuration )
+      projectStore.finishStep( stepMinutes.value )
       timeEntry.value = false
       stepMinutes.value = 1
    } else {
