@@ -8,8 +8,8 @@
   },
   "dependencies": {
     "@primeuix/themes": "^1.0.1",
-    "@vueuse/core": "^12.8.2",
-    "@vueuse/integrations": "^12.8.2",
+    "@vueuse/core": "^13.0.0",
+    "@vueuse/integrations": "^13.0.0",
     "axios": "^1.8.4",
     "jwt-decode": "^4.0.0",
     "openseadragon": "^5.0.1",
