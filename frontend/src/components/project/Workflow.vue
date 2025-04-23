@@ -35,7 +35,6 @@
                   <label>Does this unit have components?</label>
                   <Select v-model="hasComponents" :options="['Yes', 'No']" placeholder="Yes or no?" @update:modelValue="componentChanged" />
                </div>
-               <div class="sep"></div>
             </template>
             <div class="finish-info right">
                <label for="time">Approximately how many minutes did you spend on this assignment?</label>
@@ -368,7 +367,6 @@ function unitDirectory(unitID) {
    }
    .finalizing {
       text-align: center;
-      font-size: 0.75em;
    }
    .workflow-btns {
       padding: 0;
@@ -393,26 +391,22 @@ function unitDirectory(unitID) {
       }
       .time-form {
          width: 100%;
-         text-align: right;
          margin-bottom: 10px;
          font-size: 0.9em;
          display: flex;
          flex-flow: row nowrap;
          justify-content: flex-end;
-         border-top: 1px solid #e2e8f0;
-         .sep {
-            border-left: 1px solid #e2e8f0;
-         }
+         gap: 10px;
+
          .finish-info {
             flex-basis: 100%;
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            justify-content: flex-end;
             label {
                display: block;
                font-weight: bold;
-               margin: 15px 0;
-               max-width: 80%;
+               margin: 10px 0;
             }
             .time-controls {
                display: flex;

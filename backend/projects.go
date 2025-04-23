@@ -4,6 +4,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path"
+	"path/filepath"
+	"regexp"
+	"slices"
 	"strconv"
 	"time"
 
@@ -122,6 +127,7 @@ type project struct {
 	Unit              unit           `gorm:"foreignKey:UnitID" json:"unit"`
 	OwnerID           *uint          `json:"-"`
 	Owner             *staffMember   `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
+	ImageCount        int            `json:"imageCount"`
 	Assignments       []*assignment  `gorm:"foreignKey:ProjectID" json:"assignments"`
 	CurrentStepID     uint           `json:"-"`
 	CurrentStep       step           `gorm:"foreignKey:CurrentStepID" json:"currentStep"`
@@ -183,6 +189,69 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, proj)
+}
+
+func (svc *serviceContext) updateProjecImageCount(c *gin.Context) {
+	projID := c.Param("id")
+	log.Printf("INFO: check project %s image count", projID)
+	var proj project
+	err := svc.DB.Preload("CurrentStep").Find(&proj, projID).Error
+	if err != nil {
+		log.Printf("ERROR: unable to get project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	noCountSteps := []string{"Scan", "Process", "Create Metadata"}
+	hasCount := !slices.Contains(noCountSteps, proj.CurrentStep.Name)
+
+	if hasCount == false {
+		log.Printf("INFO: project %s is on step %s, no image count yet", projID, proj.CurrentStep.Name)
+		c.String(http.StatusOK, "ok")
+		return
+	}
+
+	mfCnt := svc.getImageCount(proj.UnitID)
+	if mfCnt != proj.ImageCount {
+		log.Printf("INFO: update project %s image count to: %d", projID, mfCnt)
+		proj.ImageCount = mfCnt
+		err = svc.DB.Table("projects").Where("id = ?", proj.ID).Update("image_count", mfCnt).Error
+		if err != nil {
+			log.Printf("ERROR: unable to update project %s image count to %d: %s", projID, mfCnt, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+	} else {
+		log.Printf("INFO: project %s has %d images; no update needed", projID, mfCnt)
+	}
+	c.String(http.StatusOK, fmt.Sprintf("%d", mfCnt))
+}
+
+func (svc *serviceContext) getImageCount(unitID uint) int {
+	mfCnt := 0
+	uidStr := padLeft(fmt.Sprintf("%d", unitID), 9)
+	unitDir := path.Join(svc.ImagesDir, uidStr)
+	mfRegex := regexp.MustCompile(`^\d{9}_\w{4,}\.tif$`)
+	err := filepath.Walk(unitDir, func(path string, f os.FileInfo, err error) error {
+		if err != nil {
+			log.Printf("WARNING: directory traverse failed: %s", err.Error())
+			return nil
+		}
+
+		if !f.IsDir() {
+			fName := f.Name()
+			if mfRegex.Match([]byte(fName)) {
+				mfCnt++
+				return nil
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		log.Printf("ERROR: unable to get image count for unit %d: %s", unitID, err.Error())
+		mfCnt = 0
+	}
+	return mfCnt
 }
 
 func (svc *serviceContext) getProjectStatus(c *gin.Context) {
