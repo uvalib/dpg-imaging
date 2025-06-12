@@ -149,7 +149,6 @@ const saveClicked = ( async () => {
       }
    }
    .edit {
-      font-size: 0.9em;
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 5px;
@@ -174,7 +173,6 @@ const saveClicked = ( async () => {
    dd {
       table {
          width: 100%;
-         font-size: 0.8em;
       }
    }
 }

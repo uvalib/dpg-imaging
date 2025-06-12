@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -246,6 +247,8 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		return
 	}
 	log.Printf("INFO: user %s is finishing [%s] step in project [%s] with duration %d", claims.ComputeID, proj.CurrentStep.Name, projID, doneReq.DurationMins)
+	noCountSteps := []string{"Scan", "Process", "Create Metadata"}
+	updateCount := !slices.Contains(noCountSteps, proj.CurrentStep.Name)
 
 	// First finish attempt includes a non-zero duration. Record it.
 	// If a step fails and is corrected, 0 duration will be passed. Just
@@ -350,6 +353,23 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		log.Printf("ERROR: unable to advance step: %s", err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
+	}
+
+	if updateCount {
+		log.Printf("INFO: finishing this step triggers an image count update")
+		mfCnt := svc.getImageCount(proj.UnitID)
+		if mfCnt != proj.ImageCount {
+			log.Printf("INFO: update project %s image count to %d", projID, mfCnt)
+			proj.ImageCount = mfCnt
+			err = svc.DB.Table("projects").Where("id = ?", proj.ID).Update("image_count", mfCnt).Error
+			if err != nil {
+				log.Printf("ERROR: unable to update project %s image count to %d: %s", projID, mfCnt, err.Error())
+				c.String(http.StatusInternalServerError, err.Error())
+				return
+			}
+		} else {
+			log.Printf("INFO: project %d already has image count %d; no update needed", proj.ID, mfCnt)
+		}
 	}
 
 	// reload project to reflect changes and send result to client

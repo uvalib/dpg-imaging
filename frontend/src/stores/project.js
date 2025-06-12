@@ -103,6 +103,7 @@ export const useProjectStore = defineStore('project', {
          await axios.get(`/api/projects/${projectID}`).then(response => {
             this.detail = response.data
             this.working = false
+            axios.put(`/api/projects/${projectID}/images/count`)
          }).catch( e => {
             const system = useSystemStore()
             system.error = e

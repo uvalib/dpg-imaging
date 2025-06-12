@@ -60,7 +60,14 @@
                      </div>
                      <router-link :to="`/projects/${p.id}`">
                         <div class="title">
-                           <div class="project-id"><label>Project:</label><span>{{p.id}}</span></div>
+                           <div class="project-id">
+                              <span>
+                                 <label>Project:</label><span>{{p.id}}</span>
+                              </span>
+                              <span v-if="p.imageCount > 0">
+                                 <label>Images:</label><span>{{p.imageCount}}</span>
+                              </span>
+                           </div>
                            <div>{{p.unit.metadata.title}}</div>
                         </div>
                      </router-link>
@@ -374,6 +381,9 @@ const isOverdue = ((projIdx) => {
                   margin-bottom: 10px;
                   padding-bottom: 10px;
                   border-bottom: 1px solid var(--uvalib-grey-light);
+                  display: flex;
+                  flex-flow: row nowrap;
+                  justify-content: space-between;
                   label {
                      font-weight: bold;
                      margin-right: 5px;
