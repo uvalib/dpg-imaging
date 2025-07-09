@@ -126,7 +126,7 @@ func (svc *serviceContext) authMiddleware(c *gin.Context) {
 
 	log.Printf("Validating JWT auth token...")
 	jwtClaims := &jwtClaims{}
-	_, jwtErr := jwt.ParseWithClaims(tokenStr, jwtClaims, func(token *jwt.Token) (interface{}, error) {
+	_, jwtErr := jwt.ParseWithClaims(tokenStr, jwtClaims, func(token *jwt.Token) (any, error) {
 		return []byte(svc.JWTKey), nil
 	})
 	if jwtErr != nil {

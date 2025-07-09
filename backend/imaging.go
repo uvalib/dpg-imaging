@@ -28,19 +28,19 @@ type exifMapping struct {
 }
 
 type exifData struct {
-	SourceFile    string      `json:"SourceFile"`
-	ColorProfile  string      `json:"ProfileDescription"`
-	FileSize      string      `json:"FileSize"`
-	FileType      string      `json:"FileType"`
-	Resolution    interface{} `json:"XResolution"`
-	Title         interface{} `json:"Headline"`
-	Description   interface{} `json:"Caption-Abstract"`
-	Width         int         `json:"ImageWidth"`
-	Height        int         `json:"ImageHeight"`
-	ClassifyState string      `json:"ClassifyState"`       // tag
-	Box           interface{} `json:"Keywords"`            // box
-	Folder        interface{} `json:"ContentLocationName"` // folder
-	Component     interface{} `json:"OwnerID"`             // component
+	SourceFile    string `json:"SourceFile"`
+	ColorProfile  string `json:"ProfileDescription"`
+	FileSize      string `json:"FileSize"`
+	FileType      string `json:"FileType"`
+	Resolution    any    `json:"XResolution"`
+	Title         any    `json:"Headline"`
+	Description   any    `json:"Caption-Abstract"`
+	Width         int    `json:"ImageWidth"`
+	Height        int    `json:"ImageHeight"`
+	ClassifyState string `json:"ClassifyState"`       // tag
+	Box           any    `json:"Keywords"`            // box
+	Folder        any    `json:"ContentLocationName"` // folder
+	Component     any    `json:"OwnerID"`             // component
 }
 
 type updateProblem struct {

@@ -350,7 +350,7 @@ func padLeft(str string, tgtLen int) string {
 	}
 }
 
-func (svc *serviceContext) postRequest(url string, payload interface{}) ([]byte, *RequestError) {
+func (svc *serviceContext) postRequest(url string, payload any) ([]byte, *RequestError) {
 	log.Printf("POST request: %s", url)
 	startTime := time.Now()
 	b, _ := json.Marshal(payload)
