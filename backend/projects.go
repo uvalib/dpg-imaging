@@ -390,15 +390,16 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 			log.Printf("WARNING: unable to get count of projects: %s", err.Error())
 			total = 0
 		}
-		if idx == 0 {
+		switch idx {
+		case 0:
 			out.TotalMe = total
-		} else if idx == 1 {
+		case 1:
 			out.TotalActive = total
-		} else if idx == 2 {
+		case 2:
 			out.TotalUnassigned = total
-		} else if idx == 3 {
+		case 3:
 			out.TotalFinished = total
-		} else {
+		default:
 			out.TotalError = total
 		}
 	}

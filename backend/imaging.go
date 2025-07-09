@@ -542,12 +542,13 @@ func parseExifResponse(exifMD *exifData) masterFileMetadata {
 	}
 	if exifMD.Resolution != nil {
 		valType := fmt.Sprintf("%T", exifMD.Resolution)
-		if valType == "int" {
+		switch valType {
+		case "int":
 			mdRec.Resolution = exifMD.Resolution.(int)
-		} else if valType == "float64" {
+		case "float64":
 			fRes := exifMD.Resolution.(float64)
 			mdRec.Resolution = int(fRes)
-		} else {
+		default:
 			log.Printf("WARN: unsupported resolution type %s", valType)
 			mdRec.Resolution = 0
 		}

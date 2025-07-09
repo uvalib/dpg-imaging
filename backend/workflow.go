@@ -223,7 +223,6 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
-
 }
 
 func (svc *serviceContext) finishProjectStep(c *gin.Context) {
@@ -333,16 +332,17 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 	}
 
 	log.Printf("INFO: enforce next step %s owner type %d", nextStep.Name, nextStep.OwnerType)
-	if nextStep.OwnerType == 1 { // prior owner
+	switch nextStep.OwnerType {
+	case 1: // prior owner
 		log.Printf("INFO: project %s workflow %s advancing to new step %s with current owner %s",
 			projID, proj.Workflow.Name, nextStep.Name, proj.Owner.ComputingID)
 		err = svc.nextStep(proj, nextStepID, proj.OwnerID)
-	} else if nextStep.OwnerType == 3 { // original owner
+	case 3: // original owner
 		firstA := proj.Assignments[len(proj.Assignments)-1]
 		log.Printf("INFO: project %s workflow %s advancing to new step %s with originial owner %s",
 			projID, proj.Workflow.Name, nextStep.Name, firstA.StaffMember.ComputingID)
 		err = svc.nextStep(proj, nextStepID, &firstA.StaffMemberID)
-	} else {
+	default:
 		// any, unique or supervisor for this step. Someone must claim it, so set owner nil.
 		log.Printf("INFO: project %s workflow %s advancing to new step %s with no owner set", projID, proj.Workflow.Name, nextStep.Name)
 		proj.Owner = nil
@@ -456,14 +456,15 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 	}
 
 	// Files get moved in two places; after Process and Finalization. Handle the case of a retried finalize when files have already been moved
-	if proj.CurrentStep.Name == "Process" {
+	switch proj.CurrentStep.Name {
+	case "Process":
 		srcDir := path.Join(svc.ScanDir, unitDir)
 		tgtDir := path.Join(svc.ImagesDir, unitDir)
 		moveErr := svc.moveFiles(proj, srcDir, tgtDir)
 		if moveErr != nil {
 			return moveErr
 		}
-	} else if proj.CurrentStep.Name == "Finalize" {
+	case "Finalize":
 		if !imagesMovedToFinalize {
 			srcDir := path.Join(svc.ImagesDir, unitDir)
 			tgtDir := path.Join(svc.FinalizeDir, unitDir)
