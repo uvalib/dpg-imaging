@@ -106,6 +106,7 @@ type masterFileMetadata struct {
 	ComponentID  string `json:"componentID"`
 	Box          string `json:"box"`
 	Folder       string `json:"folder"`
+	Location     string `json:"location"`
 }
 
 type unitMasterfiles struct {
@@ -248,7 +249,7 @@ func (svc *serviceContext) getUnitMasterFiles(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// getMasterFilesMetadata will retrieve the metadata for one page of master files
+// getMasterFilesMetadata will retrieve the metadata for one page of master files or for a single master file
 func (svc *serviceContext) getMasterFilesMetadata(c *gin.Context) {
 	uidStr := padLeft(c.Param("uid"), 9)
 	tgtFile := c.Query("file")
@@ -373,7 +374,7 @@ func (svc *serviceContext) getUnitMetadata(uid string) (*metadata, error) {
 	return &md, nil
 }
 
-func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse, error) {
+func (svc *serviceContext) finalizeUnitData(rawUnitID string, isManuscript bool) (*finalizeResponse, error) {
 	uid := padLeft(rawUnitID, 9)
 	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
 	log.Printf("INFO: finalize unit %s", unitDir)
@@ -392,13 +393,10 @@ func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse
 	tifRegex := regexp.MustCompile(`^.*\.tif$`)
 	hiddenRegex := regexp.MustCompile(`^\..*`)
 	err := filepath.Walk(unitDir, func(path string, f os.FileInfo, err error) error {
-		if err != nil {
+		if err != nil || f.IsDir() {
 			return nil
 		}
 
-		if f.IsDir() {
-			return nil
-		}
 		fName := f.Name()
 		if hiddenRegex.Match([]byte(fName)) || !tifRegex.Match([]byte(fName)) || !mfRegex.Match([]byte(fName)) {
 			return nil
@@ -411,7 +409,12 @@ func (svc *serviceContext) finalizeUnitData(rawUnitID string) (*finalizeResponse
 		}
 		cmd.Commands = append(cmd.Commands, fmt.Sprintf("-iptc:MasterDocumentID=%s", fmt.Sprintf("UVA Library: %s", id)))
 		cmd.Commands = append(cmd.Commands, fmt.Sprintf("-iptc:ObjectName=%s", fName))
-		cmd.Commands = append(cmd.Commands, fmt.Sprintf("-iptc:ClassifyState=%s", ""))
+		cmd.Commands = append(cmd.Commands, fmt.Sprintf("-iptc:ClassifyState=%s", "")) // clear tag info
+		if isManuscript {
+			cmd.Commands = append(cmd.Commands, fmt.Sprintf("-iptc:Keywords=%s", ""))            // clear temp box info
+			cmd.Commands = append(cmd.Commands, fmt.Sprintf("-iptc:ContentLocationName=%s", "")) // clear temp folder info
+		}
+
 		cmd.Commands = append(cmd.Commands, path)
 		commandsBatch = append(commandsBatch, cmd)
 

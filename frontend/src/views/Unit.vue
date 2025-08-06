@@ -157,8 +157,9 @@ onMounted( async () => {
       unitStore.currPage = parseInt(route.query.page, 10)
    }
 
+   unitStore.containerType = projectStore.detail.containerType
    await unitStore.getUnitMasterFiles( projectStore.detail.unit.id )
-   await unitStore.getMetadataPage( projectStore.detail.containerType )
+   await unitStore.getMetadataPage( )
    if ( route.query.view ) {
       unitStore.viewMode = route.query.view
    }

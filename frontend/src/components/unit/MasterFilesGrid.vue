@@ -62,13 +62,9 @@
                            </div>
                         </div>
                         <template v-if="projectStore.isManuscript">
-                           <div class="row" v-if="image.box && image.box != '<nil>'">
-                              <label>Box</label>
-                              <div class="data">{{ image.box }}</div>
-                           </div>
-                           <div class="row" v-if="image.folder && image.folder != '<nil>'">
-                              <label>Folder</label>
-                              <div class="data">{{ image.folder }}</div>
+                           <div class="row">
+                              <label>Location</label>
+                              <div class="data">{{ image.location }}</div>
                            </div>
                         </template>
                         <div class="row" v-if="image.componentID">

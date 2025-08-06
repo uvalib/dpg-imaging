@@ -38,20 +38,15 @@ type exifData struct {
 	Width         int    `json:"ImageWidth"`
 	Height        int    `json:"ImageHeight"`
 	ClassifyState string `json:"ClassifyState"`       // tag
-	Box           any    `json:"Keywords"`            // box
-	Folder        any    `json:"ContentLocationName"` // folder
+	Box           any    `json:"Keywords"`            // temporary container ID
+	Folder        any    `json:"ContentLocationName"` // temporary folder ID
+	Location      any    `json:"sub-location"`        // location
 	Component     any    `json:"OwnerID"`             // component
 }
 
 type updateProblem struct {
 	File    string `json:"file"`
 	Problem string `json:"problem"`
-}
-
-type qaCheck struct {
-	File   string   `json:"file"`
-	Valid  bool     `json:"valid"`
-	Errors []string `json:"errors"`
 }
 
 type exifFileCommands struct {
@@ -124,6 +119,7 @@ func (svc *serviceContext) updateImageMetadata(c *gin.Context) {
 	svc.addBatchProcess(rawUnitID)
 	defer svc.removeBatchProcess(rawUnitID)
 
+	tgtFile := path.Join(unitDir, fileName)
 	exifTag := getExifTag(updateField)
 	if exifTag == "" {
 		log.Printf("ERROR: invalid update field %s", updateField)
@@ -131,8 +127,20 @@ func (svc *serviceContext) updateImageMetadata(c *gin.Context) {
 		return
 	}
 
-	tgtFile := path.Join(unitDir, fileName)
-	cmd := []string{fmt.Sprintf("-%s=%s", exifTag, updateValue), tgtFile}
+	// initially, just update the target field. If the field was box or folder, generate a
+	// new location string and update iptc:sub-location as well
+	cmd := []string{fmt.Sprintf("-%s=%s", exifTag, updateValue)}
+	if updateField == "box" || updateField == "folder" {
+		loc, err := svc.getUpdatedLocation(rawUnitID, tgtFile, updateField, updateValue)
+		if err != nil {
+			log.Printf("ERROR: %s", err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		cmd = append(cmd, fmt.Sprintf("-iptc:sub-location=%s", loc))
+	}
+	cmd = append(cmd, tgtFile)
+
 	log.Printf("INFO: update command %v", cmd)
 	_, err := exec.Command("exiftool", cmd...).Output()
 	if err != nil {
@@ -141,8 +149,32 @@ func (svc *serviceContext) updateImageMetadata(c *gin.Context) {
 		return
 	}
 	cleanupExifToolDups(tgtFile)
+	md, _ := getExifData(tgtFile)
 
-	c.String(http.StatusOK, "ok")
+	c.JSON(http.StatusOK, md)
+}
+
+func (svc *serviceContext) getUpdatedLocation(unitID, tgtFile, updateField, updateValue string) (string, error) {
+	md, err := getExifData(tgtFile)
+	if err != nil {
+		return "", fmt.Errorf("unable to get existing metadata for %s update: %s", tgtFile, err.Error())
+	}
+
+	var tgtProject *project
+	dbErr := svc.DB.Preload("ContainerType").Where("unit_id=?", unitID).First(&tgtProject).Error
+	if dbErr != nil {
+		return "", fmt.Errorf("unable to load project for unit %s: %s", unitID, dbErr.Error())
+	}
+
+	containerID := md.Box
+	folderID := md.Folder
+	if updateField == "box" {
+		containerID = updateValue
+	} else {
+		folderID = updateValue
+	}
+
+	return fmt.Sprintf("%s %s, Folder %s", tgtProject.ContainerType.Name, containerID, folderID), nil
 }
 
 func getExifTag(fieldName string) string {
@@ -169,6 +201,7 @@ func cleanupExifToolDups(fullPath string) {
 	os.Remove(dupPath)
 }
 
+// FIXME?
 func (svc *serviceContext) updateMetadataBatch(c *gin.Context) {
 	rawUnitID := c.Param("uid")
 	uid := padLeft(rawUnitID, 9)
@@ -204,6 +237,16 @@ func (svc *serviceContext) updateMetadataBatch(c *gin.Context) {
 		cmd := exifFileCommands{File: change.File, Commands: make([]string, 0)}
 		exifTag := getExifTag(change.Field)
 		cmd.Commands = append(cmd.Commands, fmt.Sprintf("-%s=%s", exifTag, change.Value))
+		if change.Field == "box" || change.Field == "folder" {
+			loc, err := svc.getUpdatedLocation(rawUnitID, change.File, change.Field, change.Value)
+			if err != nil {
+				log.Printf("ERROR: %s", err.Error())
+				c.String(http.StatusInternalServerError, err.Error())
+				return
+			}
+			cmd.Commands = append(cmd.Commands, fmt.Sprintf("-iptc:sub-location=%s", loc))
+		}
+
 		cmd.Commands = append(cmd.Commands, change.File)
 		commandsBatch = append(commandsBatch, cmd)
 		if len(commandsBatch) == svc.BatchSize {
@@ -540,6 +583,9 @@ func parseExifResponse(exifMD *exifData) masterFileMetadata {
 	if exifMD.Folder != nil {
 		mdRec.Folder = fmt.Sprintf("%v", exifMD.Folder)
 	}
+	if exifMD.Location != nil {
+		mdRec.Location = fmt.Sprintf("%v", exifMD.Location)
+	}
 	if exifMD.Resolution != nil {
 		valType := fmt.Sprintf("%T", exifMD.Resolution)
 		switch valType {
@@ -566,6 +612,6 @@ func baseExifCmd() []string {
 	out := []string{"-json", "-ImageWidth", "-ImageHeight",
 		"-FileType", "-XResolution", "-FileSize", "-icc_profile:ProfileDescription", "-iptc:OwnerID",
 		"-iptc:headline", "-iptc:caption-abstract", "-iptc:ClassifyState",
-		"-iptc:ContentLocationName", "-iptc:Keywords"}
+		"-iptc:ContentLocationName", "-iptc:Keywords", "-iptc:sub-location"}
 	return out
 }

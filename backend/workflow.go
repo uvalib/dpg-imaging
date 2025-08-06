@@ -34,7 +34,7 @@ const (
 func (svc *serviceContext) getProjectInfo(projID string) (*project, error) {
 	log.Printf("INFO: look up basic info for project %s", projID)
 	var tgtProject *project
-	err := svc.DB.Joins("CurrentStep").Joins("Owner").First(&tgtProject, projID).Error
+	err := svc.DB.Preload("CurrentStep").Preload("Owner").Preload("ContainerType").Preload("Workflow").First(&tgtProject, projID).Error
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +401,8 @@ func (svc *serviceContext) nextStep(proj *project, nextStepID uint, ownerID *uin
 func (svc *serviceContext) validateFinishStep(proj *project) error {
 	log.Printf("INFO: validate project [%d] step [%s] finish", proj.ID, proj.CurrentStep.Name)
 
-	if proj.Workflow.Name == "Manuscript" && proj.ContainerTypeID == nil || (proj.ContainerTypeID != nil && *proj.ContainerTypeID == 0) {
+	isManuscript := proj.Workflow.Name == "Manuscript"
+	if isManuscript && proj.ContainerTypeID == nil || (proj.ContainerTypeID != nil && *proj.ContainerTypeID == 0) {
 		svc.failStep(proj, "Other", "<p>This project is missing the required Container Type setting.</p>")
 		return errors.New("manuscript is missing container type")
 	}
@@ -409,7 +410,7 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 	//  When finishing the final QA step, call finalize on the viewer to cleanup up and apply final metadata to each image
 	if proj.CurrentStep.NextStepID > 0 && svc.nextStepName(proj) == "Finalize" {
 		log.Printf("INFO: finishing final qa step; prep images for finalization in unit %d", proj.UnitID)
-		resp, err := svc.finalizeUnitData(fmt.Sprintf("%d", proj.UnitID))
+		resp, err := svc.finalizeUnitData(fmt.Sprintf("%d", proj.UnitID), isManuscript)
 		if err != nil {
 			log.Printf("ERROR: unable to prep unit [%d}] for finalization: %s", proj.UnitID, err.Error())
 			msg := "<p>Prep for finalization failed</p>"

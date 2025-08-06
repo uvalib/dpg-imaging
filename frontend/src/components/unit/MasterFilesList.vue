@@ -50,7 +50,7 @@
          </template>
       </Column>
       <template v-if="projectStore.isManuscript">
-         <Column header="Box" field="box" class="nowrap">
+         <Column :header="projectStore.detail.containerType.name" field="box" class="nowrap">
             <template #body="slotProps">
                <span  v-if="slotProps.data.box" class="editable">{{ slotProps.data.box }}</span>
                <span  v-else class="editable undefined">Undefined</span>
@@ -59,7 +59,7 @@
                <InputText v-model="data[field]" fluid />
             </template>
          </Column>
-         <Column header="Folder" field="folder" class="nowrap">
+         <Column v-if="projectStore.detail.containerType.hasFolders" header="Folder" field="folder" class="nowrap">
             <template #body="slotProps">
                <span  v-if="slotProps.data.folder" class="editable">{{ slotProps.data.folder }}</span>
                <span  v-else class="editable undefined">Undefined</span>

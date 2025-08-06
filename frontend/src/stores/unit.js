@@ -26,6 +26,7 @@ export const useUnitStore = defineStore('unit', {
       lastURL: "",
       currPage: 0,
       pageSize: 20,
+      containerType: null
    }),
    getters: {
       pageInfoURLs: state => {
@@ -168,6 +169,7 @@ export const useUnitStore = defineStore('unit', {
          })
       },
 
+      // NOTES: this is only used from the image view
       async getMasterFileMetadata( masterFileIndex ) {
          let mf = this.masterFiles[masterFileIndex]
          if (!mf) return
@@ -177,22 +179,46 @@ export const useUnitStore = defineStore('unit', {
          system.working = true
          let mdURL = `/api/units/${ this.currUnit}/masterfiles/metadata?file=${mf.path}`
          return axios.get(mdURL).then(response => {
-            let md = response.data
-            mf.colorProfile = md.colorProfile
-            mf.fileSize = md.fileSize
-            mf.fileType = md.fileType
-            mf.resolution = md.resolution
-            mf.title = md.title
-            mf.description = md.description
-            mf.width = md.width
-            mf.height = md.height
-            mf.status = md.status
-            mf.componentID = md.componentID
+            this.setImageMetadata(response.data)
             system.working = false
          }).catch( e => {
             system.error = e
             system.working = false
          })
+      },
+
+      setImageMetadata( md ) {
+         let mf = this.masterFiles.find( m => m.fileName == md.fileName)
+         mf.colorProfile = md.colorProfile
+         mf.fileSize = md.fileSize
+         mf.fileType = md.fileType
+         mf.resolution = md.resolution
+         mf.title = md.title
+         mf.description = md.description
+         mf.width = md.width
+         mf.height = md.height
+         mf.status = md.status
+         mf.location = "Undefined"
+         mf.box = ""
+         mf.folder = ""
+         if (md.location ) {
+               mf.location = md.location
+         }
+         if ( md.box ) {
+            mf.box = md.box
+            if ( this.containerType.hasFolders && md.folder ) {
+               mf.folder = md.folder
+            }
+            // for existing projects before this update, location will not be set
+            // generate it from the box/folder info
+            if (mf.location == "Undefined") {
+               mf.location = `${ this.containerType.name} ${mf.box}`
+               if ( mf.folder) {
+                  mf.location += `, Folder ${mf.folder}`
+               }
+            }
+         }
+         mf.componentID = md.componentID
       },
 
       async getMetadataPage() {
@@ -221,19 +247,7 @@ export const useUnitStore = defineStore('unit', {
          return axios.get(mdURL).then(response => {
             system.working = false
             response.data.forEach( md => {
-               let mf = this.masterFiles.find( m => m.fileName == md.fileName)
-               mf.colorProfile = md.colorProfile
-               mf.fileSize = md.fileSize
-               mf.fileType = md.fileType
-               mf.resolution = md.resolution
-               mf.title = md.title
-               mf.description = md.description
-               mf.width = md.width
-               mf.height = md.height
-               mf.status = md.status
-               mf.box = md.box
-               mf.folder = md.folder
-               mf.componentID = md.componentID
+               this.setImageMetadata( md )
             })
          }).catch( e => {
             system.error = e
@@ -343,10 +357,16 @@ export const useUnitStore = defineStore('unit', {
                } else if (field == "description") {
                   this.masterFiles[i].description = update.value
                }
+               if ( field == "folder" || field == "box" ) {
+                  this.masterFiles[i].location = `${ this.containerType.name} ${this.masterFiles[i].box}`
+                  if ( this.masterFiles[i].folder) {
+                     this.masterFiles[i].location += `, Folder ${this.masterFiles[i].folder}`
+                  }
+               }
             }
             system.working = false
             if (resp.data.success == false) {
-               system.setError("Faolder assignment failed for some images")
+               system.setError("Folder assignment failed for some images")
                this.setMasterFileProblems(resp.data.problems)
             }
          }).catch( e => {
@@ -362,18 +382,7 @@ export const useUnitStore = defineStore('unit', {
             value = ""
          }
          return axios.post(`/api/units/${this.currUnit}/${file}/update?field=${field}&value=${encodeURIComponent(value.trim())}`).then( resp => {
-            let tgtMF = this.masterFiles.find( mf => mf.fileName == file)
-            if (field == "title") {
-               tgtMF.title = value
-            } else if (field == "description") {
-               tgtMF.description = value
-            } else if (field == "box") {
-               tgtMF.box = value
-            } else if (field == "folder") {
-               tgtMF.folder = value
-            } else if (field == "tag") {
-               tgtMF.status = value
-            }
+            this.setImageMetadata(resp.data)
             system.working = false
             if (resp.data.success == false) {
                system.setError("Unable to update image metadata")
