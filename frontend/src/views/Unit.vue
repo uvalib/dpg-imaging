@@ -51,11 +51,6 @@ const unitStore = useUnitStore()
 const route = useRoute()
 const router = useRouter()
 const confirm = useConfirm()
-
-const toolbarTop = ref(0)
-const toolbarHeight = ref(0)
-const toolbarWidth = ref(0)
-const toolbar = ref(null)
 const masterfiles = ref(null)
 
 const title = computed(() => {
@@ -65,6 +60,7 @@ const title = computed(() => {
    }
    return t
 })
+
 const callNumber = computed(() => {
    let t = projectStore.detail.unit.metadata.callNumber
    if ( t == "") {
@@ -72,16 +68,13 @@ const callNumber = computed(() => {
    }
    return t
 })
+
 const workingDir = computed(()=>{
    let unitDir =  paddedUnit(projectStore.detail.unit.id)
    if (projectStore.detail.currentStep.name == "Process" || projectStore.detail.currentStep.name == "Scan") {
       return `${systemStore.scanDir}/${unitDir}`
    }
    return `${systemStore.qaDir}/${unitDir}`
-})
-const isManuscript = computed(() => {
-   if ( projectStore.hasDetail == false) return false
-   return projectStore.detail.workflow && projectStore.detail.workflow.name=='Manuscript'
 })
 
 const backClicked = (() => {
@@ -143,24 +136,6 @@ const keyboardHandler = ((event) => {
    }
 })
 
-
-// const scrollHandler = (( ) => {
-//    if ( toolbar.value && !systemStore.working) {
-//       if ( window.scrollY <= toolbarTop.value ) {
-//          if ( toolbar.value.classList.contains("sticky") ) {
-//             toolbar.value.classList.remove("sticky")
-//             masterfiles.value.style.top = `0px`
-//          }
-//       } else {
-//          if ( toolbar.value.classList.contains("sticky") == false ) {
-//             toolbar.value.classList.add("sticky")
-//             toolbar.value.style.width = `${toolbarWidth.value}px`
-//             masterfiles.value.style.top = `${toolbarHeight.value}px`
-//          }
-//       }
-//    }
-// })
-
 onMounted( async () => {
    unitStore.lastURL = ""
 
@@ -173,7 +148,6 @@ onMounted( async () => {
    }
 
    // set current page size and page, which is needed to get list of MF
-   console.log("UNIT MOUNTED")
    unitStore.pageSize = 20
    if ( route.query.pagesize ) {
       unitStore.pageSize = parseInt(route.query.pagesize, 10)
@@ -184,30 +158,14 @@ onMounted( async () => {
    }
 
    await unitStore.getUnitMasterFiles( projectStore.detail.unit.id )
-   await unitStore.getMetadataPage()
+   await unitStore.getMetadataPage( projectStore.detail.containerType )
    if ( route.query.view ) {
       unitStore.viewMode = route.query.view
    }
-
-   // let tb = toolbar.value
-   // toolbarHeight.value = tb.offsetHeight
-   // toolbarWidth.value = tb.offsetWidth
-   // toolbarTop.value = 0
-
-   // // walk the parents of the toolbar and add each top value
-   // // to find the top of the toolbar relative to document top
-   // let ele = tb
-   // if (ele.offsetParent) {
-   //    do {
-   //       toolbarTop.value += ele.offsetTop
-   //       ele = ele.offsetParent
-   //    } while (ele)
-   // }
 })
 
 onBeforeUnmount( async () => {
    window.removeEventListener('keyup', keyboardHandler)
-   // window.removeEventListener("scroll", scrollHandler)
 })
 
 </script>
