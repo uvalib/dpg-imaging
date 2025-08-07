@@ -410,7 +410,7 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 	//  When finishing the final QA step, call finalize on the viewer to cleanup up and apply final metadata to each image
 	if proj.CurrentStep.NextStepID > 0 && svc.nextStepName(proj) == "Finalize" {
 		log.Printf("INFO: finishing final qa step; prep images for finalization in unit %d", proj.UnitID)
-		resp, err := svc.finalizeUnitData(fmt.Sprintf("%d", proj.UnitID), isManuscript)
+		resp, err := svc.finalizeUnitData(proj)
 		if err != nil {
 			log.Printf("ERROR: unable to prep unit [%d}] for finalization: %s", proj.UnitID, err.Error())
 			msg := "<p>Prep for finalization failed</p>"
