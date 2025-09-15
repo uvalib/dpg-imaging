@@ -7,6 +7,9 @@ import './assets/stylesheets/main.scss'
 
 const app = createApp(App)
 
+import VueCookies from 'vue3-cookies'
+app.use(VueCookies)
+
 // Global component registration. All components can use these without import
 import WaitSpinner from "@/components/WaitSpinner.vue"
 app.component("WaitSpinner", WaitSpinner)
