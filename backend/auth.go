@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type staffMember struct {
@@ -34,8 +34,7 @@ type jwtClaims struct {
 	Role      string `json:"role"`
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
-	AdminURL  string `json:"adminURL"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 func (svc *serviceContext) authenticate(c *gin.Context) {
@@ -87,8 +86,8 @@ func (svc *serviceContext) authenticate(c *gin.Context) {
 		FirstName: sm.FirstName,
 		LastName:  sm.LastName,
 		Role:      sm.roleString(),
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			Issuer:    "dpgimaging",
 		},
 	}
@@ -125,8 +124,8 @@ func (svc *serviceContext) authMiddleware(c *gin.Context) {
 	}
 
 	log.Printf("Validating JWT auth token...")
-	jwtClaims := &jwtClaims{}
-	_, jwtErr := jwt.ParseWithClaims(tokenStr, jwtClaims, func(token *jwt.Token) (any, error) {
+	jwtClaims := jwtClaims{}
+	_, jwtErr := jwt.ParseWithClaims(tokenStr, &jwtClaims, func(token *jwt.Token) (any, error) {
 		return []byte(svc.JWTKey), nil
 	})
 	if jwtErr != nil {
@@ -146,11 +145,12 @@ func getJWTClaims(c *gin.Context) *jwtClaims {
 	if !signedIn {
 		return nil
 	}
-	jwtClaims, ok := claims.(*jwtClaims)
+	jwtClaims, ok := claims.(jwtClaims)
 	if !ok {
 		return nil
 	}
-	return jwtClaims
+	log.Printf("INFO: pulled claims from context [%+v]", jwtClaims)
+	return &jwtClaims
 }
 
 // getBearerToken is a helper to extract the token from headers
