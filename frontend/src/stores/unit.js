@@ -204,7 +204,7 @@ export const useUnitStore = defineStore('unit', {
          if (md.location ) {
                mf.location = md.location
          }
-         if ( md.box ) {
+         if ( md.box && md.box != "<nil>" ) {
             mf.box = md.box
             if ( this.containerType.hasFolders && md.folder ) {
                mf.folder = md.folder

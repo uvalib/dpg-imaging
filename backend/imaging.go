@@ -578,10 +578,16 @@ func parseExifResponse(exifMD *exifData) masterFileMetadata {
 		mdRec.ComponentID = fmt.Sprintf("%v", exifMD.Component)
 	}
 	if exifMD.Box != nil {
-		mdRec.Box = fmt.Sprintf("%v", exifMD.Box)
+		boxStr := fmt.Sprintf("%v", exifMD.Box)
+		if boxStr != "<nil>" {
+			mdRec.Box = boxStr
+		}
 	}
 	if exifMD.Folder != nil {
-		mdRec.Folder = fmt.Sprintf("%v", exifMD.Folder)
+		folderStr := fmt.Sprintf("%v", exifMD.Folder)
+		if folderStr != "<nil>" {
+			mdRec.Folder = folderStr
+		}
 	}
 	if exifMD.Location != nil {
 		mdRec.Location = fmt.Sprintf("%v", exifMD.Location)
