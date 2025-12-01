@@ -1,30 +1,29 @@
 <template>
-   <Panel class="panel">
-      <template #header>
-         <div class="panel-header">
-            <span>Notes</span>
-            <NoteModal id="note-modal" />
-         </div>
-      </template>
+   <Panel header="Notes" class="panel" toggleable>
       <div v-if="!detail.notes" class="none">
          There are no notes associated with this project
       </div>
-      <div v-else class="note-card" v-for="n in detail.notes" :key="`n${n.id}`" :class="noteTypeString(n.type).toLowerCase()">
-         <div class="note-info">
-            <div>
-               <p class="note-date">{{formatDate(n.createdAt)}}</p>
-               <p class="note-by">{{n.staffMember.firstName}} {{n.staffMember.lastName}}</p>
+      <div v-else class="notes">
+         <div class="note-card" v-for="n in detail.notes" :key="`n${n.id}`" :class="noteTypeString(n.type).toLowerCase()">
+            <div class="note-info">
+               <div>
+                  <p class="note-date">{{formatDate(n.createdAt)}}</p>
+                  <p class="note-by">{{n.staffMember.firstName}} {{n.staffMember.lastName}}</p>
+               </div>
+               <div class="right">
+                  <p class="note-type">{{noteTypeString(n.type)}}</p>
+                  <p v-if="n.stepID > 0" class="note-step"><b>Step: </b>{{n.step.name}}</p>
+               </div>
             </div>
-            <div class="right">
-               <p class="note-type">{{noteTypeString(n.type)}}</p>
-               <p v-if="n.stepID > 0" class="note-step"><b>Step: </b>{{n.step.name}}</p>
+            <div class="note-text">
+               <div class="problems" v-if="n.problems && n.problems.length > 0">{{problemsString(n.problems)}}</div>
+               <div v-html="n.text"></div>
             </div>
-         </div>
-         <div class="note-text">
-            <div class="problems" v-if="n.problems && n.problems.length > 0">{{problemsString(n.problems)}}</div>
-            <div v-html="n.text"></div>
          </div>
       </div>
+      <template #footer>
+         <NoteModal id="note-modal" />
+      </template>
    </Panel>
 </template>
 
@@ -57,29 +56,21 @@ const formatDate =((d) => {
 
 <style scoped lang="scss">
 .panel {
-   width: 46%;
-   min-width: 600px;
-   margin: 15px;
-   display: inline-block;
-   min-height: 100px;
    text-align: left;
-   .panel-header {
-      display: flex;
-      flex-flow: row nowrap;
-      justify-content: space-between;
-      width: 100%;
-   }
-
    .none {
       font-size: 1.15em;
       text-align: center;
       margin: 25px;
    }
+   .notes {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+   }
    .note-card {
       background-color: white;
       border: 1px solid var(--uvalib-grey-light);
       border-radius: 0;
-      margin: 5px 0 15px 0;
       padding: 8px;
       .note-info {
          display: flex;

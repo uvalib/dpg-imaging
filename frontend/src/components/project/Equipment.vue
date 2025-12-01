@@ -1,5 +1,5 @@
 <template>
-   <Panel header="Equipment" class="panel">
+   <Panel header="Equipment" class="panel" toggleable>
       <dl v-if="!editing">
          <dt>Workstation:</dt>
          <dd>
@@ -133,11 +133,6 @@ const saveClicked = ( async () => {
 
 <style scoped lang="scss">
 .panel {
-   width: 46%;
-   min-width: 600px;
-   margin: 15px;
-   display: inline-block;
-   min-height: 100px;
    text-align: left;
 
    .buttons {

@@ -1,5 +1,5 @@
 <template>
-   <Panel header="History" class="panel">
+   <Panel header="History" class="panel" toggleable>
       <div class="timing">
          <span>
             <label>Date started:</label>
@@ -96,11 +96,6 @@ const formatDate = ( (d) => {
 
 <style scoped lang="scss">
 .panel {
-   width: 100%;
-   box-sizing: border-box;
-   margin: 15px 0;
-   display: inline-block;
-   min-height: 100px;
    text-align: left;
    .timing {
       display: flex;

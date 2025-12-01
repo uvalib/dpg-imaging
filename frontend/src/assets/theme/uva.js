@@ -55,15 +55,23 @@ const UVA = definePreset(Aura, {
    },
    components: {
       button: {
+         root: {
+            paddingY: '.5em',
+            paddingX: '1em',
+            gap: '0.5rem',
+            borderRadius: '.3rem',
+         },
          colorScheme: {
             light: {
-               secondary: {
-                  background: 'var(--uvalib-grey-lightest)',
-                  hoverBackground: 'var(--uvalib-grey-light)',
-                  hoverBorderColor: 'var(--uvalib-grey)',
-                  borderColor: 'var(--uvalib-grey-light)',
-                  color: 'var(--uvalib-text)',
-               },
+               root: {
+                  secondary: {
+                     background: 'var(--uvalib-grey-lightest)',
+                     hoverBackground: 'var(--uvalib-grey-light)',
+                     hoverBorderColor: 'var(--uvalib-grey)',
+                     borderColor: 'var(--uvalib-grey-light)',
+                     color: 'var(--uvalib-text)',
+                  },
+               }
             }
          }
       },
@@ -74,7 +82,7 @@ const UVA = definePreset(Aura, {
                   background: '#ffffff',
                   borderColor: 'var(--uvalib-grey)',
                   padding: '15px',
-                  borderRadius: '4px',
+                  borderRadius: '0.3rem',
                },
                header: {
                   padding: '10px',
@@ -97,8 +105,7 @@ const UVA = definePreset(Aura, {
       panel: {
          header: {
             background: '#f8f9fa',
-            borderColor:  'var(--uvalib-grey-light)',
-            borderRadius: '4px 4px 0 0',
+            borderColor:  'var(--uvalib-grey)',
             padding: '1rem'
          },
          title: {

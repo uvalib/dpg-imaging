@@ -80,12 +80,12 @@ type assignment struct {
 type step struct {
 	ID          uint   `json:"id"`
 	WorkflowID  uint   `json:"workflowID"`
-	StepType    uint   `json:"stepType"`
+	StepType    uint   `json:"stepType"` // [:start, :end, :error, :normal]
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	NextStepID  uint   `json:"nextStepID"`
 	FailStepID  uint   `json:"failStepID"`
-	OwnerType   uint   `json:"ownerType"`
+	OwnerType   uint   `json:"ownerType"` // [:any_owner, :prior_owner, :unique_owner, :original_owner, :supervisor_owner]
 }
 
 type category struct {

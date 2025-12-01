@@ -1,5 +1,5 @@
 <template>
-   <Panel header="Item Information" class="panel">
+   <Panel header="Item Information" class="panel" toggleable>
       <dl v-if="!editing">
          <template v-if="detail.workflow.name == 'Manuscript'">
             <dt>Container Type:</dt>
@@ -150,6 +150,7 @@ const ocrMasterFiles = ref(false)
 const ocrCandidate = ref(true)
 
 const canEdit = computed(() => {
+   if ( projectStore.detail.workflow.name == 'Vendor') return false
    if (projectStore.isOwner(userStore.computeID) == false) return false
    if (projectStore.isFinalizeRunning || projectStore.isFinished || projectStore.isWorking) {
       return false
@@ -207,11 +208,6 @@ async function saveClicked() {
 
 <style scoped lang="scss">
 .panel {
-   width: 46%;
-   min-width: 600px;
-   margin: 15px;
-   display: inline-block;
-   min-height: 100px;
    text-align: left;
 
    .edit {

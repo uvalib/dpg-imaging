@@ -355,11 +355,6 @@ function unitDirectory(unitID) {
 
 <style scoped lang="scss">
 .panel {
-   width: 100%;
-   box-sizing: border-box;
-   margin: 15px 0;
-   display: inline-block;
-   min-height: 100px;
    text-align: left;
 
    .pad-right {
