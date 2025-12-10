@@ -34,11 +34,13 @@ const (
 func (svc *serviceContext) getProjectInfo(projID string) (*project, error) {
 	log.Printf("INFO: look up basic info for project %s", projID)
 	var tgtProject *project
+	// TODO lookup OWNER
 	err := svc.DB.Preload("CurrentStep").Preload("Owner").Preload("ContainerType").Preload("Workflow").First(&tgtProject, projID).Error
 	if err != nil {
 		return nil, err
 	}
 
+	// TODO lookup STAFF
 	log.Printf("INFO: get project %d assignments", tgtProject.ID)
 	err = svc.DB.Where("project_id=?", tgtProject.ID).Joins("Step").Joins("StaffMember").
 		Order("assigned_at DESC").Find(&tgtProject.Assignments).Error
@@ -215,6 +217,7 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 		return
 	}
 
+	// TODO lookup staff NOTE: client already has a list of staff and customers... could just sent ID and do lookup on client
 	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").Order("assigned_at DESC").Find(&out.Assignments).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get project %d assignments: %s", proj.ID, err.Error())
@@ -288,7 +291,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 			}
 
 			log.Printf("INFO: sending request to dpg-jobs to begin or restart finalization of unit %d", proj.UnitID)
-			_, httpErr := svc.postRequest(fmt.Sprintf("%s/units/%d/finalize", svc.FinalizeURL, proj.UnitID), nil)
+			_, httpErr := svc.postRequest(fmt.Sprintf("%s/units/%d/finalize", svc.TrackSys.Jobs, proj.UnitID), nil)
 			if httpErr != nil {
 				log.Printf("ERROR: finalize request failed: %s", httpErr.Message)
 				msg := fmt.Sprintf("<p>Request to start finalization failed: %s</p>", httpErr.Message)
