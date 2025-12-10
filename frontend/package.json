@@ -7,7 +7,7 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@primeuix/themes": "^2.0.1",
+    "@primeuix/themes": "^2.0.2",
     "@vueuse/core": "^14.1.0",
     "@vueuse/integrations": "^14.1.0",
     "axios": "^1.13.2",
@@ -15,7 +15,7 @@
     "openseadragon": "^5.0.1",
     "pinia": "^3.0.4",
     "primeicons": "^7.0.0",
-    "primevue": "^4.5.0",
+    "primevue": "^4.5.3",
     "sortablejs": "^1.15.6",
     "vue": "^3.5.25",
     "vue-router": "^4.6.3",
@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.2",
-    "sass-embedded": "^1.93.3",
-    "vite": "^7.2.6"
+    "sass-embedded": "^1.95.1",
+    "vite": "^7.2.7"
   }
 }

@@ -32,8 +32,7 @@ type serviceContext struct {
 	ScanDir              string
 	FinalizeDir          string
 	IIIFURL              string
-	TrackSysURL          string
-	FinalizeURL          string
+	TrackSys             tracksysURLS
 	HTTPClient           *http.Client
 	DB                   *gorm.DB
 	DevAuthUser          string
@@ -58,8 +57,7 @@ func initializeService(version string, cfg *configData) *serviceContext {
 		FinalizeDir: cfg.finalizeDir,
 		JWTKey:      cfg.jwtKey,
 		ServiceURL:  cfg.serviceURL,
-		TrackSysURL: cfg.tracksysURL,
-		FinalizeURL: cfg.finalizeURL,
+		TrackSys:    cfg.tracksys,
 		DevAuthUser: cfg.devAuthUser,
 		BatchSize:   10} // for all parallel processing. number of images processed per batch
 
@@ -227,23 +225,25 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 		JobsURL          string            `json:"jobsURL"`
 		QAImageDir       string            `json:"qaImageDir"`
 		ScanDir          string            `json:"scanDir"`
-		Agencies         []agency          `json:"agencies"`
-		Staff            []staffMember     `json:"staff"`
+		Agencies         []agency          `json:"agencies"` // api
+		Staff            []staffMember     `json:"staff"`    // api
 		Workstations     []workstation     `json:"workstations"`
 		Workflows        []workflow        `json:"workflows"`
 		Categories       []category        `json:"categories"`
-		ContainerTypes   []containerType   `json:"containerTypes"`
+		ContainerTypes   []containerType   `json:"containerTypes"` // api
 		Problems         []problem         `json:"problems"`
-		OCRHints         []ocrHint         `json:"ocrHints"`
-		OCRLanguageHints []ocrLanguageHint `json:"ocrLanguageHints"`
+		OCRHints         []ocrHint         `json:"ocrHints"`         // api
+		OCRLanguageHints []ocrLanguageHint `json:"ocrLanguageHints"` // api
 		Steps            []string          `json:"steps"`
 	}
-	resp := cfgData{TrackSysURL: svc.TrackSysURL,
-		JobsURL:    svc.FinalizeURL,
-		QAImageDir: svc.ImagesDir,
-		ScanDir:    svc.ScanDir,
+	resp := cfgData{
+		TrackSysURL: svc.TrackSys.Client,
+		JobsURL:     svc.TrackSys.Jobs,
+		QAImageDir:  svc.ImagesDir,
+		ScanDir:     svc.ScanDir,
 	}
 
+	// TOD API CALLS FOR MOST OF THESE
 	log.Printf("INFO: load staff members")
 	dbResp := svc.DB.Where("role<=? and is_active=?", 2, 1).Order("last_name asc").Find(&resp.Staff)
 	if dbResp.Error != nil {
