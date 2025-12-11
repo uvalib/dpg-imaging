@@ -7,6 +7,7 @@ export const useSystemStore = defineStore('system', {
 		version: "unknown",
 		error: "",
       showError: false,
+      customers: [],
       staffMembers: [],
       agencies: [],
       workstations: [],
@@ -55,13 +56,14 @@ export const useSystemStore = defineStore('system', {
             this.adminURL = response.data.tracksysURL
             this.qaDir =  response.data.qaImageDir
             this.scanDir =  response.data.scanDir
+            this.customers = response.data.customers
             this.staffMembers = response.data.staff
             this.workflows = response.data.workflows
             this.steps = response.data.steps
             this.workstations = response.data.workstations
             this.categories = response.data.categories
-            this.ocrHints = response.data.ocrHints
-            this.ocrLanguageHints = response.data.ocrLanguageHints
+            this.ocrHints = response.data.ocr.hints
+            this.ocrLanguageHints = response.data.ocr.languages
             this.problemTypes = response.data.problems
             this.containerTypes = response.data.containerTypes
             this.agencies = response.data.agencies

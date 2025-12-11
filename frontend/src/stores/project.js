@@ -11,6 +11,8 @@ export const useProjectStore = defineStore('project', {
    }),
    getters: {
       hasMissingComponents: state => {
+         if (state.detail == null) return false
+         if (state.detail.workflow == null) return false
          return state.detail.workflow.name == "Manuscript" && state.missingComponents.length > 0
       },
       isManuscript: state => {

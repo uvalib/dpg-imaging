@@ -38,8 +38,11 @@
          </div>
 
          <div class="row">
-            <label for="customer">Customer Last Name</label>
-            <input id="customer" v-model="searchStore.search.customer" @keyup.enter="doSearch()">
+            <label for="customer">Customer</label>
+            <Select inputId="assigned" v-model="searchStore.search.customer" :options="customers"
+               optionLabel="name" optionValue="id"  :virtualScrollerOptions="{ itemSize: 32 }"
+               filter autoFilterFocus resetFilterOnHide filterMatchMode="startsWith"
+               @change="doSearch()" />
          </div>
 
          <div class="row">
@@ -78,6 +81,13 @@ const systemStore = useSystemStore()
 const staffMembers = computed( () => {
    let out = [ {name: "Any", id: 0} ]
    systemStore.staffMembers.forEach( sm => {
+      out.push( { name: `${sm.lastName}, ${sm.firstName}`, id: sm.id})
+   })
+   return out
+})
+const customers = computed( () => {
+   let out = [ {name: "Any", id: 0} ]
+   systemStore.customers.forEach( sm => {
       out.push( { name: `${sm.lastName}, ${sm.firstName}`, id: sm.id})
    })
    return out

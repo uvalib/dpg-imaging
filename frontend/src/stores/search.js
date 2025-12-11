@@ -22,7 +22,7 @@ export const useSearchStore = defineStore('search', {
          step: "any",
          assignedTo: 0,
          agency: 0,
-         customer: "",
+         customer: 0,
          callNumber: "",
          unitID: "",
          orderID: ""
@@ -107,6 +107,11 @@ export const useSearchStore = defineStore('search', {
             const system = useSystemStore()
             let p = state.projects.find( p => p.id == pID)
             let tgtWorkflow = system.workflows.find( w => w.id == p.workflow.id)
+            if (tgtWorkflow == null ) {
+               console.log("no workflow found for id "+ p.workflow.id)
+               console.log(system.workflows)
+               return
+            }
             let nonErrSteps =  tgtWorkflow.steps.filter( s => s.stepType != 2)
             let numSteps = nonErrSteps.length*3 // each non-error step has 3 parts, assigned, in-process and done
 
@@ -175,7 +180,7 @@ export const useSearchStore = defineStore('search', {
          this.search.step = "any"
          this.search.assignedTo = 0
          this.search.agency = 0
-         this.search.customer = ""
+         this.search.customer = 0
          this.search.callNumber = ""
          this.search.unitID = ""
          this.search.orderID = ""

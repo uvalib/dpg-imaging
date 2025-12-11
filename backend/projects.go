@@ -155,6 +155,7 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 	claims := getJWTClaims(c)
 	log.Printf("INFO: user %s is requesting project %s details", claims.ComputeID, projID)
 
+	// TODO pull unit info from API
 	var proj *project
 	projQ := svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").InnerJoins("Unit").
 		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").Joins("Unit.Metadata.OCRHint").
@@ -168,6 +169,7 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 		return
 	}
 
+	// TODO lookuop all staff from API
 	log.Printf("INFO: get project %d assignments", proj.ID)
 	err = svc.DB.Where("project_id=?", proj.ID).
 		Joins("Step").Joins("StaffMember").
@@ -178,6 +180,7 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 		return
 	}
 
+	// TODO lookuop all staff from API
 	log.Printf("INFO: get project %d notes", proj.ID)
 	err = svc.DB.Where("project_id=?", proj.ID).
 		Joins("Step").Joins("StaffMember").Preload("Problems").
@@ -320,6 +323,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	log.Printf("INFO: user %s requests projects page %d", claims.ComputeID, page)
 
 	// ALWAYS exclude caneled projects. exclude done projects when filter is not finished.
+	// TODO projects need to track if they are canceled too: add canceled_at
 	whereQ := " AND unit_status != 'canceled'"
 
 	qWorkflow := c.Query("workflow")
@@ -343,11 +347,12 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	}
 	qCallNum := c.Query("callnum")
 	if qCallNum != "" {
-		whereQ += fmt.Sprintf(" AND call_number like \"%%%s%%\"", qCallNum)
+		whereQ += fmt.Sprintf(" AND call_number like \"%%%s%%\"", qCallNum) // REQUIRES JOIN OF UNIT AND MD
 	}
 	qCustomer := c.Query("customer")
 	if qCustomer != "" {
-		whereQ += fmt.Sprintf(" AND Unit__Order__Customer.last_name like \"%s%%\"", qCustomer)
+		id, _ := strconv.Atoi(qCustomer)
+		whereQ += fmt.Sprintf(" AND Unit__Order__Customer.id=%d", id)
 	}
 	qAgency := c.Query("agency")
 	if qAgency != "" {
@@ -379,6 +384,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	}
 	out := projResp{Page: uint(page), PageSize: uint(pageSize)}
 
+	// TODO unit_status will not be available if DB is spit. POSSIBLE: add status or canceled_at to project table
 	for idx, q := range filterQ {
 		var total int64
 		countQ := q + whereQ
@@ -424,7 +430,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 
 	for _, p := range out.Projects {
 		err = svc.DB.Where("project_id=?", p.ID).
-			Joins("Step").Joins("StaffMember").
+			Joins("Step").
 			Order("assigned_at DESC").Find(&p.Assignments).Error
 		if err != nil {
 			log.Printf("ERROR: unable to get project %d assignments: %s", p.ID, err.Error())
@@ -556,6 +562,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 		}
 	}
 
+	// TODO staff mamber lookups
 	log.Printf("INFO: update data for reassigned project %d", proj.ID)
 	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").Order("assigned_at DESC").Find(&out.Assignments).Error
 	if err != nil {
@@ -599,7 +606,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 
 	log.Printf("INFO: lookup project %s", projID)
 	var proj project
-	err := svc.DB.Joins("Unit").First(&proj, projID).Error
+	err := svc.DB.Joins("Unit").First(&proj, projID).Error // TODO UNIT NEEDED TO GET METADATA ID
 	if err != nil {
 		log.Printf("ERROR: unable to get project %s update: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -646,6 +653,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 		return
 	}
 
+	// TODO API call to update OCR for unit; PROBLEM TSAPI is readonly. Single call PUT unit/:id/ocr that accepts all 3 OCR settings. Possible: call TS direct OR make it a job instead
 	log.Printf("INFO: update OCR settings for project %s", projID)
 	tgtUnit := unit{ID: proj.UnitID, OCRMasterFiles: updateData.OCRMasterFiles}
 	err = svc.DB.Model(&tgtUnit).Select("OCRMasterFiles").Updates(tgtUnit).Error
@@ -655,6 +663,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 		return
 	}
 	if updateData.OCRHintID > 0 {
+		// TODO API call to lookup unit to get ID then API call to update OCR : Problem, TS API is readonly
 		tgtMD := metadata{ID: proj.Unit.MetadataID, OCRHintID: updateData.OCRHintID}
 		err = svc.DB.Model(&tgtMD).Select("OCRHintID").Updates(tgtMD).Error
 		if err != nil {
@@ -753,6 +762,7 @@ func (svc *serviceContext) setProjectEquipment(c *gin.Context) {
 	c.JSON(http.StatusOK, proj)
 }
 
+// TODO pass staff ID, lookup ROLE from API
 func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwtClaims, proj *project) error {
 	// admin/supervisor can caim or assign anything
 	assigneeRole := assignee.roleString()
@@ -814,6 +824,7 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 }
 
 func (svc *serviceContext) getBaseSearchQuery() (tx *gorm.DB) {
+	// TODO this is a mess
 	return svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").InnerJoins("Unit").
 		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").
 		Joins("Unit.Order.Customer").Joins("Unit.Order.Agency").

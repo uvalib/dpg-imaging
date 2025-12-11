@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -220,21 +219,25 @@ func (svc *serviceContext) removeBatchProcess(tgtUnitID string) {
 
 func (svc *serviceContext) getConfig(c *gin.Context) {
 	log.Printf("INFO: get service configuration")
+	type ocrData struct {
+		Hints     []ocrHint         `json:"hints"`
+		Languages []ocrLanguageHint `json:"languages"`
+	}
 	type cfgData struct {
-		TrackSysURL      string            `json:"tracksysURL"`
-		JobsURL          string            `json:"jobsURL"`
-		QAImageDir       string            `json:"qaImageDir"`
-		ScanDir          string            `json:"scanDir"`
-		Agencies         []agency          `json:"agencies"` // api
-		Staff            []staffMember     `json:"staff"`    // api
-		Workstations     []workstation     `json:"workstations"`
-		Workflows        []workflow        `json:"workflows"`
-		Categories       []category        `json:"categories"`
-		ContainerTypes   []containerType   `json:"containerTypes"` // api
-		Problems         []problem         `json:"problems"`
-		OCRHints         []ocrHint         `json:"ocrHints"`         // api
-		OCRLanguageHints []ocrLanguageHint `json:"ocrLanguageHints"` // api
-		Steps            []string          `json:"steps"`
+		TrackSysURL    string          `json:"tracksysURL"`
+		JobsURL        string          `json:"jobsURL"`
+		QAImageDir     string          `json:"qaImageDir"`
+		ScanDir        string          `json:"scanDir"`
+		Agencies       []agency        `json:"agencies"`
+		Customers      []customer      `json:"customers"`
+		Staff          []staffMember   `json:"staff"`
+		Workstations   []workstation   `json:"workstations"`
+		Workflows      []workflow      `json:"workflows"`
+		Categories     []category      `json:"categories"`
+		ContainerTypes []containerType `json:"containerTypes"`
+		Problems       []problem       `json:"problems"`
+		OCR            ocrData         `json:"ocr"`
+		Steps          []string        `json:"steps"`
 	}
 	resp := cfgData{
 		TrackSysURL: svc.TrackSys.Client,
@@ -243,35 +246,75 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 		ScanDir:     svc.ScanDir,
 	}
 
-	// TOD API CALLS FOR MOST OF THESE
 	log.Printf("INFO: load staff members")
-	dbResp := svc.DB.Where("role<=? and is_active=?", 2, 1).Order("last_name asc").Find(&resp.Staff)
-	if dbResp.Error != nil {
-		log.Printf("ERROR: unable to get staff members: %s", dbResp.Error.Error())
-		c.String(http.StatusInternalServerError, dbResp.Error.Error())
+	rawResp, err := svc.getRequest(fmt.Sprintf("%s/staff", svc.TrackSys.API))
+	if err != nil {
+		log.Printf("ERROR: unable to get staff members: %s", err.Message)
+		c.String(err.StatusCode, err.Message)
+		return
+	}
+	if err := json.Unmarshal(rawResp, &resp.Staff); err != nil {
+		log.Printf("ERROR: unable to parse staff members: %s", err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: load customers")
+	rawResp, err = svc.getRequest(fmt.Sprintf("%s/customers", svc.TrackSys.API))
+	if err != nil {
+		log.Printf("ERROR: unable to get customers: %s", err.Message)
+		c.String(err.StatusCode, err.Message)
+		return
+	}
+	if err := json.Unmarshal(rawResp, &resp.Customers); err != nil {
+		log.Printf("ERROR: unable to parse customers: %s", err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	log.Printf("INFO: load agencies")
-	dbResp = svc.DB.Order("name asc").Find(&resp.Agencies)
-	if dbResp.Error != nil {
-		log.Printf("ERROR: unable to load agencies: %s", dbResp.Error.Error())
-		c.String(http.StatusInternalServerError, dbResp.Error.Error())
+	rawResp, err = svc.getRequest(fmt.Sprintf("%s/agencies", svc.TrackSys.API))
+	if err != nil {
+		log.Printf("ERROR: unable to get agencies: %s", err.Message)
+		c.String(err.StatusCode, err.Message)
 		return
 	}
-
-	log.Printf("INFO: load categories")
-	dbResp = svc.DB.Order("name asc").Find(&resp.Categories)
-	if dbResp.Error != nil {
-		log.Printf("ERROR: unable to load categories: %s", dbResp.Error.Error())
-		c.String(http.StatusInternalServerError, dbResp.Error.Error())
+	if err := json.Unmarshal(rawResp, &resp.Agencies); err != nil {
+		log.Printf("ERROR: unable to parse agencies: %s", err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	log.Printf("INFO: load container types")
-	dbResp = svc.DB.Order("name asc").Find(&resp.ContainerTypes)
+	rawResp, err = svc.getRequest(fmt.Sprintf("%s/containertypes", svc.TrackSys.API))
+	if err != nil {
+		log.Printf("ERROR: unable to get container types: %s", err.Message)
+		c.String(err.StatusCode, err.Message)
+		return
+	}
+	if err := json.Unmarshal(rawResp, &resp.ContainerTypes); err != nil {
+		log.Printf("ERROR: unable to parse container types: %s", err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: load ocr hints")
+	rawResp, err = svc.getRequest(fmt.Sprintf("%s/ocr", svc.TrackSys.API))
+	if err != nil {
+		log.Printf("ERROR: unable to get ocr info: %s", err.Message)
+		c.String(err.StatusCode, err.Message)
+		return
+	}
+	if err := json.Unmarshal(rawResp, &resp.OCR); err != nil {
+		log.Printf("ERROR: unable to ocr: %s", err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: load categories")
+	dbResp := svc.DB.Order("name asc").Find(&resp.Categories)
 	if dbResp.Error != nil {
-		log.Printf("ERROR: unable to load container types: %s", dbResp.Error.Error())
+		log.Printf("ERROR: unable to load categories: %s", dbResp.Error.Error())
 		c.String(http.StatusInternalServerError, dbResp.Error.Error())
 		return
 	}
@@ -303,36 +346,9 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 		return
 	}
 
-	log.Printf("INFO: load ocr hints")
-	dbResp = svc.DB.Order("name asc").Find(&resp.OCRHints)
-	if dbResp.Error != nil {
-		log.Printf("ERROR: unable to load ocr hints: %s", dbResp.Error.Error())
-		c.String(http.StatusInternalServerError, dbResp.Error.Error())
-		return
-	}
-
-	log.Printf("INFO: load ocr language hints")
-	resp.OCRLanguageHints = make([]ocrLanguageHint, 0)
-	f, err := os.Open("./data/languages.csv")
-	if err != nil {
-		log.Printf("ERROR: unable to load ocr language hints: %s", dbResp.Error.Error())
-	} else {
-		defer f.Close()
-		csvReader := csv.NewReader(f)
-		langRecs, err := csvReader.ReadAll()
-		if err != nil {
-			log.Printf("ERROR: unable to parse languages file: %s", err.Error())
-		} else {
-			for _, rec := range langRecs {
-				resp.OCRLanguageHints = append(resp.OCRLanguageHints, ocrLanguageHint{Code: rec[0], Language: rec[1]})
-			}
-		}
-	}
-
 	log.Printf("INFO: load step names")
 	resp.Steps = make([]string, 0)
-	err = svc.DB.Raw("select distinct(steps.name) from steps inner join workflows w on w.id = workflow_id and active=1").Scan(&resp.Steps).Error
-	if err != nil {
+	if err := svc.DB.Raw("select distinct(steps.name) from steps inner join workflows w on w.id = workflow_id and active=1").Scan(&resp.Steps).Error; err != nil {
 		log.Printf("ERROR: unable to load step names: %s", err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
@@ -348,6 +364,26 @@ func padLeft(str string, tgtLen int) string {
 		}
 		str = "0" + str
 	}
+}
+
+func (svc *serviceContext) getRequest(url string) ([]byte, *RequestError) {
+	log.Printf("GET request: %s", url)
+	startTime := time.Now()
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Add("Content-type", "application/json")
+	httpClient := svc.HTTPClient
+	rawResp, rawErr := httpClient.Do(req)
+	resp, err := handleAPIResponse(url, rawResp, rawErr)
+	elapsed := time.Since(startTime)
+	elapsedMS := int64(elapsed / time.Millisecond)
+
+	if err != nil {
+		log.Printf("ERROR: Failed response from GET %s - %d:%s. Elapsed Time: %d (ms)",
+			url, err.StatusCode, err.Message, elapsedMS)
+	} else {
+		log.Printf("Successful response from GET %s. Elapsed Time: %d (ms)", url, elapsedMS)
+	}
+	return resp, err
 }
 
 func (svc *serviceContext) postRequest(url string, payload any) ([]byte, *RequestError) {
