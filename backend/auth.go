@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -70,10 +71,16 @@ func (svc *serviceContext) authenticate(c *gin.Context) {
 	}
 
 	log.Printf("INFO: lookup staff member %s", computingID)
+	respBytes, reqErr := svc.getRequest(fmt.Sprintf("%s/staff/%s", svc.TrackSys.API, computingID))
+	if reqErr != nil {
+		log.Printf("ERROR: could not find staff member %s: %s", computingID, reqErr.Message)
+		c.Redirect(http.StatusFound, "/forbidden")
+		return
+	}
+
 	var sm staffMember
-	resp := svc.DB.Where("computing_id=?", computingID).First(&sm)
-	if resp.Error != nil {
-		log.Printf("ERROR: could not fond staff mamber %s: %s", computingID, resp.Error.Error())
+	if err := json.Unmarshal(respBytes, &sm); err != nil {
+		log.Printf("ERROR: could not parse staff member %s reaponse: %s", computingID, err.Error())
 		c.Redirect(http.StatusFound, "/forbidden")
 		return
 	}

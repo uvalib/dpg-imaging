@@ -15,15 +15,15 @@
     "openseadragon": "^5.0.1",
     "pinia": "^3.0.4",
     "primeicons": "^7.0.0",
-    "primevue": "^4.5.3",
+    "primevue": "^4.5.4",
     "sortablejs": "^1.15.6",
-    "vue": "^3.5.25",
-    "vue-router": "^4.6.3",
+    "vue": "^3.5.26",
+    "vue-router": "^4.6.4",
     "vue3-cookies": "^1.0.6"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.2",
-    "sass-embedded": "^1.95.1",
-    "vite": "^7.2.7"
+    "@vitejs/plugin-vue": "^6.0.3",
+    "sass-embedded": "^1.97.1",
+    "vite": "^7.3.0"
   }
 }
