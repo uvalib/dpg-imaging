@@ -387,6 +387,9 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	for idx, q := range filterQ {
 		var total int64
 		countQ := q + whereQ
+		if idx != 3 {
+			countQ += " AND unit_status != 'done'"
+		}
 		err = svc.getBaseSearchQuery().Where(countQ).Count(&total).Error
 		if err != nil {
 			log.Printf("WARNING: unable to get count of projects: %s", err.Error())
