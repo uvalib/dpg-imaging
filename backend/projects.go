@@ -384,13 +384,9 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	}
 	out := projResp{Page: uint(page), PageSize: uint(pageSize)}
 
-	// TODO unit_status will not be available if DB is spit. POSSIBLE: add status or canceled_at to project table
 	for idx, q := range filterQ {
 		var total int64
 		countQ := q + whereQ
-		if idx != 3 {
-			countQ += " AND unit_status != 'done'"
-		}
 		err = svc.getBaseSearchQuery().Where(countQ).Count(&total).Error
 		if err != nil {
 			log.Printf("WARNING: unable to get count of projects: %s", err.Error())
