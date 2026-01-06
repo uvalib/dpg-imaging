@@ -157,6 +157,15 @@ const selectAllClicked = (() => {
    flex-direction: column;
    gap: 20px;
 
+   td.data {
+      text-align: left;
+   }
+   td.label {
+      text-align: right;
+      font-weight: bold;
+      padding-right: 10px;
+   }
+
    .row {
       display: flex;
       flex-flow: row nowrap;

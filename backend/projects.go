@@ -388,6 +388,9 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		var total int64
 		countQ := q + whereQ
 		if idx != 3 {
+			// NOTE: this is needed for cases where projects fail finailzatiuon and are fixed outside of DPG imaging
+			// in these cases, the unit status gets bumped to done, but the project is left unfinished. Seems to be
+			// a bug that needs to be addressed. There are only 13 units in this situation, so it is an unusual happening.
 			countQ += " AND unit_status != 'done'"
 		}
 		err = svc.getBaseSearchQuery().Where(countQ).Count(&total).Error
