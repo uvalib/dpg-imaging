@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm/clause"
 )
 
 type ocrHint struct {
@@ -363,26 +362,23 @@ func (svc *serviceContext) deleteFiles(c *gin.Context) {
 	c.String(http.StatusOK, "deleted")
 }
 
-func (svc *serviceContext) getUnitMetadata(uid string) (*metadata, error) {
-	log.Printf("INFO: get metadata for unit %s", uid)
-	var md metadata
-	resp := svc.DB.Preload(clause.Associations).Joins("inner join units on units.metadata_id = metadata.id").Where("units.id=?", uid).First(&md)
-	if resp.Error != nil {
-		return nil, fmt.Errorf("unable to get metadata for unit %s: %s", uid, resp.Error.Error())
-	}
-
-	return &md, nil
-}
-
 func (svc *serviceContext) finalizeUnitData(proj *project) (*finalizeResponse, error) {
 	isManuscript := proj.Workflow.Name == "Manuscript"
 	uid := padLeft(fmt.Sprintf("%d", proj.UnitID), 9)
 	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
 	log.Printf("INFO: finalize unit %s", unitDir)
 
-	unitMD, uErr := svc.getUnitMetadata(uid)
-	if uErr != nil {
-		return nil, uErr
+	log.Printf("INFO: get info for unit %d", proj.UnitID)
+	mdBytes, reqErr := svc.getRequest(fmt.Sprintf("%s/units/%d", svc.TrackSys.API, proj.UnitID))
+	if reqErr != nil {
+		return nil, fmt.Errorf("unable to get unit info: %s", reqErr.Message)
+	}
+	var unitInfo struct {
+		MetadataPID string `json:"metadataPID"`
+		CallNumber  string `json:"callNumber"`
+	}
+	if err := json.Unmarshal(mdBytes, &unitInfo); err != nil {
+		return nil, err
 	}
 
 	commandsBatch := make([]exifFileCommands, 0)
@@ -404,9 +400,9 @@ func (svc *serviceContext) finalizeUnitData(proj *project) (*finalizeResponse, e
 		}
 
 		cmd := exifFileCommands{File: path, Commands: make([]string, 0)}
-		id := unitMD.CallNumber
+		id := unitInfo.CallNumber
 		if id == "" {
-			id = unitMD.PID
+			id = unitInfo.MetadataPID
 		}
 		cmd.Commands = append(cmd.Commands, fmt.Sprintf("-iptc:MasterDocumentID=%s", fmt.Sprintf("UVA Library: %s", id)))
 		cmd.Commands = append(cmd.Commands, fmt.Sprintf("-iptc:ObjectName=%s", fName))
