@@ -23,8 +23,12 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DisableConsoleColor()
 	router := gin.Default()
-	router.Use(cors.Default())
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
+	corsCfg := cors.DefaultConfig()
+	corsCfg.AllowAllOrigins = true
+	corsCfg.AllowCredentials = true
+	corsCfg.AddAllowHeaders("Authorization")
+	router.Use(cors.New(corsCfg))
 
 	// Set routes and start server
 	router.GET("/config", svc.getConfig)
@@ -32,6 +36,12 @@ func main() {
 	router.GET("/healthcheck", svc.healthCheck)
 	router.GET("/authenticate", svc.authenticate)
 	router.POST("/units/:uid/cleanup", svc.cleanupImageFilenames)
+
+	// external API used by TrackSys
+	router.GET("/constants", svc.getConstants)
+	router.GET("/projects/lookup/:uid", svc.lookupProjectForUnit)
+	router.POST("/projects/create", svc.extAuthMiddleware, svc.createProject)
+	router.POST("/projects/:id/cancel", svc.extAuthMiddleware, svc.cancelProject)
 
 	api := router.Group("/api", svc.authMiddleware)
 	{

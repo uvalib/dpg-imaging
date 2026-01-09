@@ -13,10 +13,11 @@ type dbConfig struct {
 	Name string
 }
 
-type tracksysURLS struct {
+type tracksysCfg struct {
 	Client string
 	API    string
 	Jobs   string
+	JWTKey string
 }
 
 type configData struct {
@@ -27,7 +28,7 @@ type configData struct {
 	finalizeDir string
 	iiifURL     string
 	serviceURL  string
-	tracksys    tracksysURLS
+	tracksys    tracksysCfg
 	jwtKey      string
 	devAuthUser string
 }
@@ -40,10 +41,13 @@ func getConfiguration() *configData {
 	flag.StringVar(&config.finalizeDir, "finalize", " /digiserv-production/finalization", "Finalization directory")
 	flag.StringVar(&config.iiifURL, "iiif", "", "IIIF server URL")
 	flag.StringVar(&config.serviceURL, "url", "", "Base URL for DPG Imaging service")
+	flag.StringVar(&config.jwtKey, "jwtkey", "", "JWT signature key")
+
+	// tracksys config
 	flag.StringVar(&config.tracksys.API, "tsapiurl", "https://tracksys-api-ws.internal.lib.virginia.edu/api", "URL for TrackSysAPI service")
 	flag.StringVar(&config.tracksys.Client, "tsurl", "https://tracksys.lib.virginia.edu", "URL for TrackSys")
 	flag.StringVar(&config.tracksys.Jobs, "finalizeurl", "", "URL for finalization processing")
-	flag.StringVar(&config.jwtKey, "jwtkey", "", "JWT signature key")
+	flag.StringVar(&config.tracksys.JWTKey, "tskey", "", "TrackSys JWT key")
 
 	// DB connection params
 	flag.StringVar(&config.db.Host, "dbhost", "", "Database host")
@@ -84,8 +88,18 @@ func getConfiguration() *configData {
 	if config.db.Pass == "" {
 		log.Fatal("Parameter dbpass is required")
 	}
+
+	if config.tracksys.API == "" {
+		log.Fatal("Parameter tsapiurl is required")
+	}
+	if config.tracksys.Client == "" {
+		log.Fatal("Parameter tsurl is required")
+	}
 	if config.tracksys.Jobs == "" {
 		log.Fatal("Parameter finalizeurl is required")
+	}
+	if config.tracksys.JWTKey == "" {
+		log.Fatal("Parameter tskey is required")
 	}
 
 	log.Printf("[CONFIG] port          = [%d]", config.port)
