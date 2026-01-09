@@ -2,8 +2,10 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -89,6 +91,7 @@ func (svc *serviceContext) lookupProjectForUnit(c *gin.Context) {
 }
 
 type createProjectRequest struct {
+	UnitID          int64  `json:"unitID"`
 	WorkflowID      int64  `json:"workflowID"`
 	ContainerTypeID int64  `json:"containerTypeID"`
 	CategoryID      int64  `json:"categoryID"`
@@ -104,7 +107,51 @@ func (svc *serviceContext) createProject(c *gin.Context) {
 		return
 	}
 	log.Printf("INFO: received create project request: %v", req)
-	c.String(http.StatusNotImplemented, "NO")
+
+	var projCnt int64
+	if err := svc.DB.Table("projects").Where("unit_id=?", req.UnitID).Count(&projCnt).Error; err != nil {
+		log.Printf("ERROR: unable to determine if a project already exists for unit %d: %s", req.UnitID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if projCnt > 0 {
+		log.Printf("INFO: unable to create project for unit %d as it already has a project", req.UnitID)
+		c.String(http.StatusConflict, "a project already exists for this unit")
+		return
+	}
+
+	log.Printf("INFO: lookup first step of new project for unit %d, workflow %d", req.UnitID, req.WorkflowID)
+	var firstStep step
+	if err := svc.DB.Where("workflow_id=? and step_type=0", req.WorkflowID).First(&firstStep).Error; err != nil {
+		log.Printf("ERROR: unable to get first step for workflow %d: %s", req.WorkflowID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: create project for unit %d", req.UnitID)
+	now := time.Now()
+	newProj := project{
+		WorkflowID:    uint(req.WorkflowID),
+		UnitID:        uint(req.UnitID),
+		CurrentStepID: firstStep.ID,
+		AddedAt:       &now,
+		CategoryID:    uint(req.CategoryID),
+		ItemCondition: uint(req.Condition),
+		ConditionNote: req.Notes,
+	}
+	if req.ContainerTypeID != 0 {
+		cID := uint(req.ContainerTypeID)
+		newProj.ContainerTypeID = &cID
+	}
+	if err := svc.DB.Create(&newProj).Error; err != nil {
+		log.Printf("ERROR: unable to create project for unit %d: %s", req.UnitID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: new project %d created for unit %d", newProj.ID, req.UnitID)
+	c.String(http.StatusOK, fmt.Sprintf("%d", newProj.ID))
 }
 
 func (svc *serviceContext) cancelProject(c *gin.Context) {
