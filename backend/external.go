@@ -88,7 +88,22 @@ func (svc *serviceContext) lookupProjectForUnit(c *gin.Context) {
 	c.JSON(http.StatusOK, lookupResp{Exists: true, ProjectID: proj.ID})
 }
 
+type createProjectRequest struct {
+	WorkflowID      int64  `json:"workflowID"`
+	ContainerTypeID int64  `json:"containerTypeID"`
+	CategoryID      int64  `json:"categoryID"`
+	Condition       int64  `json:"condition"`
+	Notes           string `json:"notes"`
+}
+
 func (svc *serviceContext) createProject(c *gin.Context) {
+	var req createProjectRequest
+	if qpErr := c.ShouldBindJSON(&req); qpErr != nil {
+		log.Printf("ERROR: invalid create project payload: %v", qpErr)
+		c.String(http.StatusBadRequest, "Invalid request")
+		return
+	}
+	log.Printf("INFO: received create project request: %v", req)
 	c.String(http.StatusNotImplemented, "NO")
 }
 
