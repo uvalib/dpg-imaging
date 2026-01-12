@@ -31,6 +31,17 @@ export const useSystemStore = defineStore('system', {
          "Epigraph", "Prologue/Preface", "Dedication", "Errata"].sort()
 	}),
 	getters: {
+       getStaffMember: state => {
+         return (staffID) => {
+            let staff = null
+            state.staffMembers.forEach( sm => {
+               if (sm.id == staffID) {
+                  staff = sm
+               }
+            })
+            return staff
+         }
+      }
 	},
 	actions: {
       setError( e ) {
@@ -71,6 +82,7 @@ export const useSystemStore = defineStore('system', {
             this.containerTypes = response.data.containerTypes
             this.agencies = response.data.agencies
             this.working = false
+            console.log("DONE CIONFIG")
          }).catch( e => {
             this.error =  e
             this.working = false

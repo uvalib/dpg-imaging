@@ -22,7 +22,10 @@
             </div>
          </div>
       </div>
-      <router-view />
+      <router-view v-if="systemStore.working==false"/>
+      <div v-else style="margin-top:5%">
+         <WaitSpinner :overlay="false" message="Initializing sysem..." />
+      </div>
       <Dialog v-model:visible="systemStore.showError" :modal="true" header="System Error" @hide="errorClosed()" class="error">
          {{systemStore.error}}
          <template #footer>
