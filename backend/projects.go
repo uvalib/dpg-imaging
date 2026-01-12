@@ -93,30 +93,12 @@ type category struct {
 	Name string `json:"name"`
 }
 
-type equipment struct {
-	ID           uint   `json:"id"`
-	Name         string `json:"name"`
-	Type         string `json:"type"`
-	SerialNumber string `json:"serialNumber"`
-}
-
 type projectEquipment struct {
 	ID          uint       `json:"id"`
 	ProjectID   uint       `json:"project_id"`
 	EquipmentID uint       `json:"equipment_id"`
 	CreatedAt   *time.Time `json:"created_at,omitempty"`
 	UpdatedAt   *time.Time `json:"updated_at,omitempty"`
-}
-
-func (projectEquipment) TableName() string {
-	return "project_equipment"
-}
-
-type workstation struct {
-	ID        uint         `json:"id"`
-	Name      string       `json:"name"`
-	Status    uint         `json:"status"`
-	Equipment []*equipment `gorm:"many2many:workstation_equipment" json:"equipment,omitempty"`
 }
 
 type project struct {

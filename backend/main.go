@@ -11,7 +11,7 @@ import (
 )
 
 // Version of the service
-const Version = "5.9.0"
+const Version = "5.10.0"
 
 func main() {
 	// Load cfg
@@ -46,6 +46,14 @@ func main() {
 	api := router.Group("/api", svc.authMiddleware)
 	{
 		api.GET("/components/:id", svc.getComponent)
+
+		// equipment management
+		api.GET("/equipment", svc.getEquipment)
+		api.POST("/equipment", svc.createEquipment)
+		api.POST("/equipment/:id/update", svc.updateEquipment)
+		api.POST("/workstation", svc.createWorkstation)
+		api.POST("/workstation/:id/update", svc.updateWorkstation)
+		api.POST("/workstation/:id/setup", svc.updateWorkstationSetup)
 
 		api.GET("/projects", svc.getProjects)
 		api.GET("/projects/:id", svc.getProject)

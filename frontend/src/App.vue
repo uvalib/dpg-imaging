@@ -1,5 +1,6 @@
 <template>
    <div id="app">
+      <ConfirmDialog position="top" :closable="false"/>
       <div class="header" role="banner" id="uva-header">
          <div class="main-header">
             <div class="library-link">
@@ -16,6 +17,7 @@
             <div class="acts">
                <span class="signed-in-as">{{ userStore.signedInUser }}</span>
                <DPGButton icon="pi pi-envelope" @click="messagesClicked" :label="`${messageStore.unreadMessageCount}`" size="small"/>
+               <DPGButton v-if="userStore.isAdmin || userStore.isSupervisor" @click="equipmentClicked" icon="pi pi-cog" label="Manage Equipment" size="small"/>
                <DPGButton icon="pi pi-sign-out" @click="signout" label="Sign out" size="small"/>
             </div>
          </div>
@@ -51,11 +53,15 @@ const messageStore = useMessageStore()
 const router = useRouter()
 
 const errorClosed = (() => {
-   systemStore.setError("")
+   systemStore.clearError()
 })
 
 const messagesClicked = (() => {
    router.push("/messages")
+})
+
+const equipmentClicked = (() => {
+   router.push("/equipment")
 })
 
 const signout = (() => {

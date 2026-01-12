@@ -35,12 +35,15 @@ export const useSystemStore = defineStore('system', {
 	actions: {
       setError( e ) {
          this.error = e
-         this.working = false
-         if (this.error && this.error.length > 0) {
-            this.showError = true
-         } else {
-            this.showError = false
+         if (e.response && e.response.data) {
+            this.error = e.response.data
          }
+         this.showError = true
+         this.working = false
+      },
+      clearError() {
+         this.error = ""
+         this.showError = false
       },
 		getVersion() {
          axios.get("/version").then(response => {

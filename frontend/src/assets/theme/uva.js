@@ -75,6 +75,26 @@ const UVA = definePreset(Aura, {
             }
          }
       },
+       datatable: {
+         row: {
+            selectedBackground: 'var(--uvalib-teal-lightest)',
+         },
+         colorScheme: {
+            light: {
+               root: {
+                  borderColor: 'transparent'
+               },
+               headerCell: {
+                  borderColor: 'var(--uvalib-grey-light)',
+                  background: 'var(--uvalib-grey-lightest)',
+               },
+               bodyCell: {
+                  selectedBorderColor: 'var(--uvalib-teal-light)',
+                  borderColor: 'var(--uvalib-grey-lightest)',
+               }
+            }
+         }
+      },
       dialog: {
          colorScheme: {
             light: {
