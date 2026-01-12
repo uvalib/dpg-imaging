@@ -160,12 +160,27 @@ func (svc *serviceContext) getUpdatedLocation(unitID, tgtFile, updateField, upda
 		return "", fmt.Errorf("unable to get existing metadata for %s update: %s", tgtFile, err.Error())
 	}
 
-	var tgtProject *project
-	dbErr := svc.DB.Preload("ContainerType").Where("unit_id=?", unitID).First(&tgtProject).Error
-	if dbErr != nil {
-		return "", fmt.Errorf("unable to load project for unit %s: %s", unitID, dbErr.Error())
+	containerTypeName := ""
+	if md.Location == "" {
+		var tgtProject *project
+		dbErr := svc.DB.Where("unit_id=?", unitID).First(&tgtProject).Error
+		if dbErr != nil {
+			return "", fmt.Errorf("unable to load project for unit %s: %s", unitID, dbErr.Error())
+		}
+		rawResp, reqErr := svc.getRequest(fmt.Sprintf("%s/containertypes", svc.TrackSys.API))
+		if reqErr != nil {
+			return "", fmt.Errorf("unable to load project for unit %s: %s", unitID, reqErr.Message)
+		}
+		containerTypeName = string(rawResp)
+	} else {
+		// if location is set, the container type is the first part of that string; extract it
+		// from full location string [container name] [containerid], Folder [id]
+		bits := strings.Split(md.Location, ",")
+		containerBits := strings.Split(bits[0], " ")
+		containerTypeName = strings.Join(containerBits[0:len(containerBits)-1], " ")
 	}
 
+	// add the new container and folder id to the string
 	containerID := md.Box
 	folderID := md.Folder
 	if updateField == "box" {
@@ -174,7 +189,7 @@ func (svc *serviceContext) getUpdatedLocation(unitID, tgtFile, updateField, upda
 		folderID = updateValue
 	}
 
-	return fmt.Sprintf("%s %s, Folder %s", tgtProject.ContainerType.Name, containerID, folderID), nil
+	return fmt.Sprintf("%s %s, Folder %s", containerTypeName, containerID, folderID), nil
 }
 
 func getExifTag(fieldName string) string {
@@ -201,7 +216,6 @@ func cleanupExifToolDups(fullPath string) {
 	os.Remove(dupPath)
 }
 
-// FIXME?
 func (svc *serviceContext) updateMetadataBatch(c *gin.Context) {
 	rawUnitID := c.Param("uid")
 	uid := padLeft(rawUnitID, 9)

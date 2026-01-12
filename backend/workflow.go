@@ -34,8 +34,8 @@ const (
 func (svc *serviceContext) getProjectInfo(projID string) (*project, error) {
 	log.Printf("INFO: look up basic info for project %s", projID)
 	var tgtProject *project
-	// TODO lookup OWNER
-	err := svc.DB.Preload("CurrentStep").Preload("Owner").Preload("ContainerType").Preload("Workflow").First(&tgtProject, projID).Error
+	// FIXME lookup OWNER AND ContainerType
+	err := svc.DB.Preload("CurrentStep").Preload("Owner").Preload("Workflow").First(&tgtProject, projID).Error
 	if err != nil {
 		return nil, err
 	}
@@ -334,6 +334,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		return
 	}
 
+	// FIXME lookup compoute ID for owner and assignee
 	log.Printf("INFO: enforce next step %s owner type %d", nextStep.Name, nextStep.OwnerType)
 	switch nextStep.OwnerType {
 	case 1: // prior owner
