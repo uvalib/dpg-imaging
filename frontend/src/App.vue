@@ -17,6 +17,7 @@
                <span class="signed-in-as">{{ userStore.signedInUser }}</span>
                <DPGButton icon="pi pi-envelope" @click="messagesClicked" :label="`${messageStore.unreadMessageCount}`" size="small"/>
                <DPGButton v-if="userStore.isAdmin || userStore.isSupervisor" @click="equipmentClicked" icon="pi pi-cog" label="Manage Equipment" size="small"/>
+               <DPGButton label="Projects" icon="pi pi-home" @click="homeClicked" size="small"/>
                <DPGButton icon="pi pi-sign-out" @click="signout" label="Sign out" size="small"/>
             </div>
          </div>
@@ -69,6 +70,10 @@ const equipmentClicked = (() => {
 const signout = (() => {
    userStore.signout()
    router.push("/signedout")
+})
+
+const homeClicked = (() => {
+   router.push("/")
 })
 
 onMounted( async () => {

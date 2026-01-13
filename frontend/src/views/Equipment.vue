@@ -5,7 +5,6 @@
       <div class="actions" >
          <AddWorkstationDialog />
          <AddEquipmentDialog />
-         <DPGButton label="Projects" icon="pi pi-home" @click="homeClicked"/>
       </div>
    </h2>
    <div class="equipment">
@@ -132,10 +131,6 @@ const clearAllDisabled = computed( () => {
 
 onBeforeMount( async () => {
    equipmentStore.getEquipment()
-})
-
-const homeClicked = (() => {
-   router.push("/")
 })
 
 const statusClass = ((statusID) => {
