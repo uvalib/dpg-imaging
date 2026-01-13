@@ -162,17 +162,22 @@ func (svc *serviceContext) getUpdatedLocation(unitID, tgtFile, updateField, upda
 
 	containerTypeName := ""
 	if md.Location == "" {
-		var tgtProject *project
+		log.Printf("INFO: %s has no sub-location in exif headers; lookup unit and container type", tgtFile)
+		var tgtProject project
 		dbErr := svc.DB.Where("unit_id=?", unitID).First(&tgtProject).Error
 		if dbErr != nil {
 			return "", fmt.Errorf("unable to load project for unit %s: %s", unitID, dbErr.Error())
 		}
-		rawResp, reqErr := svc.getRequest(fmt.Sprintf("%s/containertypes", svc.TrackSys.API))
+
+		ctID := *tgtProject.ContainerTypeID
+		log.Printf("INFO: lookkup container type id %d", ctID)
+		rawResp, reqErr := svc.getRequest(fmt.Sprintf("%s/containertypes/%d", svc.TrackSys.API, ctID))
 		if reqErr != nil {
 			return "", fmt.Errorf("unable to load project for unit %s: %s", unitID, reqErr.Message)
 		}
 		containerTypeName = string(rawResp)
 	} else {
+		log.Printf("INFO: %s has sub-location [%s]; extract container type", tgtFile, md.Location)
 		// if location is set, the container type is the first part of that string; extract it
 		// from full location string [container name] [containerid], Folder [id]
 		bits := strings.Split(md.Location, ",")
@@ -189,7 +194,9 @@ func (svc *serviceContext) getUpdatedLocation(unitID, tgtFile, updateField, upda
 		folderID = updateValue
 	}
 
-	return fmt.Sprintf("%s %s, Folder %s", containerTypeName, containerID, folderID), nil
+	newLoc := fmt.Sprintf("%s %s, Folder %s", containerTypeName, containerID, folderID)
+	log.Printf("INFO: %s has new location [%s]", tgtFile, newLoc)
+	return newLoc, nil
 }
 
 func getExifTag(fieldName string) string {
