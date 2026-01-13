@@ -33,7 +33,7 @@
                               </template>
                            </span>
                         </td>
-                        <td>{{ getStaffMemberName(a.staffMemberID) }} {{a.staffMember.lastName}}</td>
+                        <td>{{ getStaffMemberName(a.staffMemberID) }}</td>
                      </tr>
                   </template>
                   <template v-if="a.startedAt">
@@ -44,7 +44,7 @@
                         <td v-else-if="a.status == 6">Finalizing...</td>
                         <td v-else-if="a.status == 7">Working...</td>
                         <td v-else>Started</td>
-                        <td>{{a.staffMember.firstName}} {{a.staffMember.lastName}}</td>
+                        <td>{{ getStaffMemberName(a.staffMemberID) }}</td>
                      </tr>
                   </template>
                   <tr v-else :class="{reassign: a.status == 5}">
@@ -52,7 +52,7 @@
                      <td>{{a.step.name}}</td>
                      <td v-if="a.status == 5">Reassigned</td>
                      <td v-else>Assigned</td>
-                     <td>{{a.staffMember.firstName}} {{a.staffMember.lastName}}</td>
+                     <td>{{ getStaffMemberName(a.staffMemberID) }}</td>
                   </tr>
 
                </template>

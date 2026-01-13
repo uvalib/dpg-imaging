@@ -447,10 +447,9 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 		return
 	}
 
-	// FIXME staffmember is not in this DB
 	log.Printf("INFO: lookup active assignent for project %s", projID)
 	var activeAssign assignment
-	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").
+	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").
 		Order("assigned_at DESC").Limit(1).Find(&activeAssign).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get active assignment project %s reassign: %s", projID, err.Error())
@@ -549,9 +548,8 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 		}
 	}
 
-	// FIXME staff mamber lookups
 	log.Printf("INFO: update data for reassigned project %d", proj.ID)
-	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").Order("assigned_at DESC").Find(&out.Assignments).Error
+	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Order("assigned_at DESC").Find(&out.Assignments).Error
 	if err != nil {
 		log.Printf("ERROR: unable to refresh assigned project %s assignments: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())

@@ -34,7 +34,7 @@ const (
 func (svc *serviceContext) getProjectInfo(projID string) (*project, error) {
 	log.Printf("INFO: look up basic info for project %s", projID)
 	var tgtProject *project
-	// FIXME lookup OWNER AND ContainerType
+	// FIXME lookup OWNER
 	err := svc.DB.Preload("CurrentStep").Preload("Owner").Preload("Workflow").First(&tgtProject, projID).Error
 	if err != nil {
 		return nil, err
@@ -217,8 +217,7 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 		return
 	}
 
-	// FIXME lookup staff NOTE: client already has a list of staff and customers... could just sent ID and do lookup on client
-	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").Order("assigned_at DESC").Find(&out.Assignments).Error
+	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Order("assigned_at DESC").Find(&out.Assignments).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get project %d assignments: %s", proj.ID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
