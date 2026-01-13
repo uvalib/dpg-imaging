@@ -40,7 +40,7 @@ func (svc *serviceContext) getProjectInfo(projID string) (*project, error) {
 		return nil, err
 	}
 
-	// TODO lookup STAFF
+	// FIXME lookup STAFF
 	log.Printf("INFO: get project %d assignments", tgtProject.ID)
 	err = svc.DB.Where("project_id=?", tgtProject.ID).Joins("Step").Joins("StaffMember").
 		Order("assigned_at DESC").Find(&tgtProject.Assignments).Error
@@ -49,7 +49,7 @@ func (svc *serviceContext) getProjectInfo(projID string) (*project, error) {
 	}
 
 	log.Printf("INFO: get project %d notes", tgtProject.ID)
-	err = svc.DB.Where("project_id=?", tgtProject.ID).Joins("Step").Joins("StaffMember").Preload("Problems").
+	err = svc.DB.Where("project_id=?", tgtProject.ID).Joins("Step").Preload("Problems").
 		Order("notes.created_at DESC").Find(&tgtProject.Notes).Error
 	if err != nil {
 		return nil, err
@@ -217,7 +217,7 @@ func (svc *serviceContext) changeProjectWorkflow(c *gin.Context) {
 		return
 	}
 
-	// TODO lookup staff NOTE: client already has a list of staff and customers... could just sent ID and do lookup on client
+	// FIXME lookup staff NOTE: client already has a list of staff and customers... could just sent ID and do lookup on client
 	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").Order("assigned_at DESC").Find(&out.Assignments).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get project %d assignments: %s", proj.ID, err.Error())

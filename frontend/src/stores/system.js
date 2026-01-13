@@ -3,7 +3,7 @@ import axios from 'axios'
 
 export const useSystemStore = defineStore('system', {
 	state: () => ({
-      working: false,
+      initializing: false,
 		version: "unknown",
 		error: "",
       showError: false,
@@ -31,7 +31,18 @@ export const useSystemStore = defineStore('system', {
          "Epigraph", "Prologue/Preface", "Dedication", "Errata"].sort()
 	}),
 	getters: {
-       getStaffMember: state => {
+      getContainerType: state => {
+         return (ctID) => {
+            let ct = null
+            state.containerTypes.forEach( val => {
+               if (val.id == ctID) {
+                  ct = val
+               }
+            })
+            return ct
+         }
+      },
+      getStaffMember: state => {
          return (staffID) => {
             let staff = null
             state.staffMembers.forEach( sm => {
@@ -50,7 +61,6 @@ export const useSystemStore = defineStore('system', {
             this.error = e.response.data
          }
          this.showError = true
-         this.working = false
       },
       clearError() {
          this.error = ""
@@ -64,7 +74,7 @@ export const useSystemStore = defineStore('system', {
          })
       },
       getConfig() {
-         this.working = true
+         this.initializing = true
          axios.get("/config").then(response => {
             this.jobsURL = response.data.jobsURL
             this.adminURL = response.data.tracksysURL
@@ -81,11 +91,10 @@ export const useSystemStore = defineStore('system', {
             this.problemTypes = response.data.problems
             this.containerTypes = response.data.containerTypes
             this.agencies = response.data.agencies
-            this.working = false
-            console.log("DONE CIONFIG")
+            this.initializing = false
          }).catch( e => {
             this.error =  e
-            this.working = false
+            this.initializing = false
          })
       },
 	}

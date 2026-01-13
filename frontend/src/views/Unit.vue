@@ -1,11 +1,13 @@
 <template>
    <div class="unit">
-      <WaitSpinner  v-if="systemStore.working" :overlay="true" message="Working..." />
+      <WaitSpinner  v-if="unitStore.working" :overlay="true" message="Working..." />
       <ConfirmDialog group="delete">
          <template #message>
-            <div>Delete the selected images? All data will be lost.</div>
-            <div>This is not reversable.</div>
-            <div class="sure">Are you sure?</div>
+            <div style="display:flex; flex-direction: column; gap: 10px; align-items: flex-start;">
+               <div>Delete the selected images? All data will be lost.</div>
+               <div>This is not reversable.</div>
+               <div>Are you sure?</div>
+            </div>
          </template>
       </ConfirmDialog>
 
@@ -17,7 +19,7 @@
          </h2>
          <h3>
             <div>{{callNumber}}</div>
-            <div>Unit {{unitStore.currUnit}}</div>
+            <div>Unit {{unitStore.unitID}}</div>
             <div class="divider"></div>
             <div class="small" >{{workingDir}}</div>
             <div class="small" >{{unitStore.masterFiles.length}} Images</div>
@@ -51,7 +53,6 @@ const unitStore = useUnitStore()
 const route = useRoute()
 const router = useRouter()
 const confirm = useConfirm()
-const masterfiles = ref(null)
 
 const title = computed(() => {
    let t = projectStore.detail.unit.metadata.title
@@ -87,7 +88,7 @@ function truncateTitle(title) {
 }
 
 function paddedUnit() {
-   let unitStr = ""+unitStore.currUnit
+   let unitStr = ""+unitStore.unitID
    return unitStr.padStart(9,'0')
 }
 
@@ -157,8 +158,7 @@ onMounted( async () => {
       unitStore.currPage = parseInt(route.query.page, 10)
    }
 
-   unitStore.containerType = projectStore.detail.containerType
-   await unitStore.getUnitMasterFiles( projectStore.detail.unit.id )
+   await unitStore.getMasterFiles( projectStore.detail )
    await unitStore.getMetadataPage( )
    if ( route.query.view ) {
       unitStore.viewMode = route.query.view
@@ -172,10 +172,6 @@ onBeforeUnmount( async () => {
 </script>
 
 <style lang="scss" scoped>
-.sure {
-   text-align: right;
-   margin-top: 15px;
-}
 .unit {
    padding: 0;
    input[type=checkbox] {

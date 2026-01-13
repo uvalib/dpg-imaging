@@ -24,6 +24,7 @@ type workflow struct {
 	Steps       []step `gorm:"foreignKey:WorkflowID" json:"steps"`
 }
 
+// FIXME probably shouldn't have this here
 type containerType struct {
 	ID         uint   `json:"id"`
 	Name       string `json:"name"`
@@ -68,7 +69,7 @@ type assignment struct {
 	ProjectID       uint             `json:"projectID"`
 	StepID          uint             `json:"-"`
 	Step            step             `gorm:"foreignKey:StepID" json:"step"`
-	StaffMemberID   uint             `json:"-"`
+	StaffMemberID   uint             `json:"staffMemberID"`
 	StaffMember     staffMember      `gorm:"foreignKey:StaffMemberID" json:"staffMember"`
 	AssignedAt      *time.Time       `json:"assignedAt,omitempty"`
 	StartedAt       *time.Time       `json:"startedAt,omitempty"`
@@ -101,11 +102,15 @@ type projectEquipment struct {
 	UpdatedAt   *time.Time `json:"updated_at,omitempty"`
 }
 
+func (projectEquipment) TableName() string {
+	return "project_equipment"
+}
+
 type project struct {
 	ID                uint           `json:"id"`
 	WorkflowID        uint           `json:"-"`
 	Workflow          workflow       `gorm:"foreignKey:WorkflowID" json:"workflow"`
-	UnitID            uint           `json:"-"`
+	UnitID            uint           `json:"unitID"`
 	Unit              unit           `gorm:"foreignKey:UnitID" json:"unit"`
 	OwnerID           *uint          `json:"-"`
 	Owner             *staffMember   `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
@@ -126,7 +131,7 @@ type project struct {
 	Workstation       workstation    `json:"workstation"`
 	ItemCondition     uint           `json:"itemCondition"`
 	ConditionNote     string         `json:"conditionNote,omitempty"`
-	ContainerTypeID   *uint          `json:"-"`
+	ContainerTypeID   *uint          `json:"containerTypeID"`
 	ContainerType     *containerType `gorm:"foreignKey:ContainerTypeID" json:"containerType"`
 	Notes             []*note        `gorm:"foreignKey:ProjectID" json:"notes,omitempty"`
 	Equipment         []*equipment   `gorm:"many2many:project_equipment" json:"equipment,omitempty"`
@@ -137,7 +142,7 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 	claims := getJWTClaims(c)
 	log.Printf("INFO: user %s is requesting project %s details", claims.ComputeID, projID)
 
-	// TODO pull unit info from API
+	// FIXME pull unit info from API
 	var proj *project
 	projQ := svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").InnerJoins("Unit").
 		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").Joins("Unit.Metadata.OCRHint").
@@ -151,21 +156,18 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 		return
 	}
 
-	// TODO lookuop all staff from API
 	log.Printf("INFO: get project %d assignments", proj.ID)
 	err = svc.DB.Where("project_id=?", proj.ID).
-		Joins("Step").Joins("StaffMember").
-		Order("assigned_at DESC").Find(&proj.Assignments).Error
+		Joins("Step").Order("assigned_at DESC").Find(&proj.Assignments).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get project %d assignments: %s", proj.ID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// TODO lookuop all staff from API
 	log.Printf("INFO: get project %d notes", proj.ID)
 	err = svc.DB.Where("project_id=?", proj.ID).
-		Joins("Step").Joins("StaffMember").Preload("Problems").
+		Joins("Step").Preload("Problems").
 		Order("notes.created_at DESC").Find(&proj.Notes).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get project %d notes: %s", proj.ID, err.Error())
@@ -445,6 +447,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 		return
 	}
 
+	// FIXME staffmember is not in this DB
 	log.Printf("INFO: lookup active assignent for project %s", projID)
 	var activeAssign assignment
 	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").
@@ -546,7 +549,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 		}
 	}
 
-	// TODO staff mamber lookups
+	// FIXME staff mamber lookups
 	log.Printf("INFO: update data for reassigned project %d", proj.ID)
 	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").Order("assigned_at DESC").Find(&out.Assignments).Error
 	if err != nil {
@@ -554,7 +557,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Joins("StaffMember").Preload("Problems").Order("notes.created_at DESC").Find(&out.Notes).Error
+	err = svc.DB.Where("project_id=?", proj.ID).Joins("Step").Preload("Problems").Order("notes.created_at DESC").Find(&out.Notes).Error
 	if err != nil {
 		log.Printf("ERROR: unable to refresh assigned project %s notes: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -761,6 +764,7 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 		return nil
 	}
 
+	// FIXME staff member lookupo
 	// Prior owner
 	if proj.CurrentStep.OwnerType == 1 {
 		lastAssign := proj.Assignments[0]
@@ -808,7 +812,7 @@ func (svc *serviceContext) canAssignProject(assignee *staffMember, assigner *jwt
 }
 
 func (svc *serviceContext) getBaseSearchQuery() (tx *gorm.DB) {
-	// TODO this is a mess
+	// FIXME this is a mess
 	return svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").InnerJoins("Unit").
 		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").
 		Joins("Unit.Order.Customer").Joins("Unit.Order.Agency").

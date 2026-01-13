@@ -8,7 +8,7 @@
             <div class="note-info">
                <div>
                   <p class="note-date">{{formatDate(n.createdAt)}}</p>
-                  <p class="note-by">{{n.staffMember.firstName}} {{n.staffMember.lastName}}</p>
+                  <p class="note-by">{{ getStaffMemberName(n.staffMemberID) }}</p>
                </div>
                <div class="right">
                   <p class="note-type">{{noteTypeString(n.type)}}</p>
@@ -28,6 +28,7 @@
 </template>
 
 <script setup>
+import {useSystemStore} from "@/stores/system"
 import {useProjectStore} from "@/stores/project"
 import NoteModal from '@/components/project/NoteModal.vue'
 import { storeToRefs } from 'pinia'
@@ -35,6 +36,7 @@ import { useDateFormat } from '@vueuse/core'
 import Panel from 'primevue/panel'
 
 const projectStore = useProjectStore()
+const system = useSystemStore()
 const { detail } = storeToRefs(projectStore)
 
 const problemsString = ((probs) => {
@@ -47,6 +49,14 @@ const noteTypeString =((typeID) => {
    let types = ["COMMENT", "SUGGESTION", "PROBLEM", "ITEM CONDITION"]
    if ( typeID < 0 || typeID > types.length-1) return "COMMENT"
    return types[typeID]
+})
+
+const getStaffMemberName = ( (staffID) => {
+   let staff = system.getStaffMember( staffID )
+   if (staff == null ) {
+      return "Unknown"
+   }
+   return `${staff.firstName} ${staff.lastName}`
 })
 
 const formatDate =((d) => {

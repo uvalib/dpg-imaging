@@ -1,9 +1,11 @@
 <template>
-   <DPGButton @click="renameClicked" severity="secondary" label="Rename All"/>
-   <ConfirmDialog>
+   <DPGButton @click="renameClicked" severity="secondary" label="Rename All" />
+   <ConfirmDialog  position="top">
       <template #message>
-         <div>All files will be renamed to match the following format:</div>
-         <code>{{paddedUnit()}}_0001.tif - {{paddedUnit()}}_nnnn.tif</code>
+         <div style="display:flex; flex-direction: column; gap: 10px; align-items: flex-start;">
+            <div>All files will be renamed to match the following format:</div>
+            <code>{{paddedUnit()}}_0001.tif - {{paddedUnit()}}_nnnn.tif</code>
+         </div>
       </template>
    </ConfirmDialog>
 </template>
@@ -49,7 +51,7 @@ function renameClicked() {
 }
 
 function paddedUnit() {
-   let unitStr = ""+unitStore.currUnit
+   let unitStr = ""+unitStore.unitID
    return unitStr.padStart(9,'0')
 }
 </script>

@@ -1,6 +1,5 @@
 <template>
    <div id="app">
-      <ConfirmDialog position="top" :closable="false"/>
       <div class="header" role="banner" id="uva-header">
          <div class="main-header">
             <div class="library-link">
@@ -22,7 +21,7 @@
             </div>
          </div>
       </div>
-      <router-view v-if="systemStore.working==false"/>
+      <router-view v-if="systemStore.initializing==false"/>
       <div v-else style="margin-top:5%">
          <WaitSpinner :overlay="false" message="Initializing sysem..." />
       </div>

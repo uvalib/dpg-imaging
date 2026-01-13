@@ -1,6 +1,6 @@
 <template>
    <div class="viewer">
-      <WaitSpinner v-if="systemStore.working" :overlay="true" message="Working..." />
+      <WaitSpinner v-if="unitStore.working" :overlay="true" message="Working..." />
       <div id="iiif-header" class="toolbar" v-show="fullScreen == false">
          <div class="header-top">
             <table class="info" v-if="projectStore.hasDetail">
@@ -252,7 +252,7 @@ onBeforeMount( async () => {
 
    if (projectStore.hasDetail == false) {
       await projectStore.getProject(route.params.id)
-      await unitStore.getUnitMasterFiles(projectStore.detail.unit.id)
+      await unitStore.getMasterFiles( projectStore.detail )
       await unitStore.getMasterFileMetadata( currPageIndex )
    }
    nextTick(()=>{

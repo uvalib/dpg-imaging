@@ -1,4 +1,5 @@
 <template>
+   <ConfirmDialog position="top" :closable="false"/>
    <h2>
       <span>Manage Equipment</span>
       <div class="actions" >
@@ -134,7 +135,6 @@ onBeforeMount( async () => {
 })
 
 const homeClicked = (() => {
-   alert("EFs ")
    router.push("/")
 })
 

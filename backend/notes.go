@@ -17,17 +17,16 @@ type problem struct {
 }
 
 type note struct {
-	ID            uint        `json:"id"`
-	ProjectID     uint        `json:"-"`
-	StepID        uint        `json:"-"`
-	Step          step        `gorm:"foreignKey:StepID" json:"step"`
-	NoteType      uint        `json:"type"`
-	Note          string      `json:"text"`
-	CreatedAt     *time.Time  `json:"createdAt,omitempty"`
-	UpdatedAt     *time.Time  `json:"-"`
-	Problems      []problem   `gorm:"many2many:notes_problems"  json:"problems"`
-	StaffMemberID uint        `json:"-"`
-	StaffMember   staffMember `gorm:"foreignKey:StaffMemberID" json:"staffMember"`
+	ID            uint       `json:"id"`
+	ProjectID     uint       `json:"-"`
+	StepID        uint       `json:"-"`
+	Step          step       `gorm:"foreignKey:StepID" json:"step"`
+	NoteType      uint       `json:"type"`
+	Note          string     `json:"text"`
+	CreatedAt     *time.Time `json:"createdAt,omitempty"`
+	UpdatedAt     *time.Time `json:"-"`
+	Problems      []problem  `gorm:"many2many:notes_problems"  json:"problems"`
+	StaffMemberID uint       `json:"staffMemberID"`
 }
 
 func (svc *serviceContext) addNoteRequest(c *gin.Context) {
@@ -89,7 +88,7 @@ func (svc *serviceContext) addNote(proj project, newNote note, problemIDs []uint
 	}
 
 	err = svc.DB.Where("project_id=?", proj.ID).
-		Joins("Step").Joins("StaffMember").Preload("Problems").
+		Joins("Step").Preload("Problems").
 		Order("notes.created_at DESC").Find(&notes).Error
 	if err != nil {
 		return nil, err

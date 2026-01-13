@@ -1,6 +1,6 @@
 <template>
    <div class="home">
-      <WaitSpinner v-if="searchStore.working || systemStore.working" :overlay="true" message="Loading projects..." />
+      <WaitSpinner v-if="searchStore.working" :overlay="true" message="Loading projects..." />
       <div class="toolbar pin-target" id="pin-target">
          <div class="filter">
             <label for="me">
@@ -36,7 +36,7 @@
             <div class="search-col">
                <SearchPanel />
             </div>
-            <template v-if="searchStore.working == false && systemStore.working == false">
+            <template v-if="searchStore.working == false">
                <div class="none" v-if="!searchStore.working && searchStore.projects.length == 0">
                   No projects match your search criteria
                </div>

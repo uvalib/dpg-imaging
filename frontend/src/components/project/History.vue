@@ -33,7 +33,7 @@
                               </template>
                            </span>
                         </td>
-                        <td>{{a.staffMember.firstName}} {{a.staffMember.lastName}}</td>
+                        <td>{{ getStaffMemberName(a.staffMemberID) }} {{a.staffMember.lastName}}</td>
                      </tr>
                   </template>
                   <template v-if="a.startedAt">
@@ -71,10 +71,12 @@
 <script setup>
 import { useDateFormat } from '@vueuse/core'
 import { useProjectStore } from "@/stores/project"
+import {useSystemStore} from "@/stores/system"
 import { computed } from 'vue'
 import Panel from 'primevue/panel'
 
 const projectStore = useProjectStore()
+const system = useSystemStore()
 
 const totalWorkTime = computed(() => {
    let mins = 0
@@ -87,6 +89,14 @@ const totalWorkTime = computed(() => {
       mins -= (h*60)
    }
    return `${(""+h).padStart(2,"0")}:${(""+mins).padStart(2,"0")}`
+})
+
+const getStaffMemberName = ( (staffID) => {
+   let staff = system.getStaffMember( staffID )
+   if (staff == null ) {
+      return "Unknown"
+   }
+   return `${staff.firstName} ${staff.lastName}`
 })
 
 const formatDate = ( (d) => {
