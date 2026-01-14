@@ -106,34 +106,33 @@ func (projectEquipment) TableName() string {
 }
 
 type project struct {
-	ID                uint           `json:"id"`
-	WorkflowID        uint           `json:"-"`
-	Workflow          workflow       `gorm:"foreignKey:WorkflowID" json:"workflow"`
-	UnitID            uint           `json:"unitID"`
-	Unit              unit           `gorm:"foreignKey:UnitID" json:"unit"`
-	OwnerID           *uint          `json:"-"`
-	Owner             *staffMember   `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
-	ImageCount        int            `json:"imageCount"`
-	Assignments       []*assignment  `gorm:"foreignKey:ProjectID" json:"assignments"`
-	CurrentStepID     uint           `json:"-"`
-	CurrentStep       step           `gorm:"foreignKey:CurrentStepID" json:"currentStep"`
-	AddedAt           *time.Time     `json:"addedAt,omitempty"`
-	StartedAt         *time.Time     `json:"startedAt,omitempty"`
-	FinishedAt        *time.Time     `json:"finishedAt,omitempty"`
-	TotalDurationMins *int64         `json:"totalDuration,omitempty"`
-	CategoryID        uint           `json:"-"`
-	Category          category       `gorm:"foreignKey:CategoryID" json:"category"`
-	CaptureResolution uint           `json:"captureResolution"`
-	ResizedResolution uint           `json:"resizedResolution"`
-	ResolutionNote    string         `json:"resolutionNote"`
-	WorkstationID     uint           `json:"-"`
-	Workstation       workstation    `json:"workstation"`
-	ItemCondition     uint           `json:"itemCondition"`
-	ConditionNote     string         `json:"conditionNote,omitempty"`
-	ContainerTypeID   *uint          `json:"containerTypeID"`
-	ContainerType     *containerType `gorm:"foreignKey:ContainerTypeID" json:"containerType"`
-	Notes             []*note        `gorm:"foreignKey:ProjectID" json:"notes,omitempty"`
-	Equipment         []*equipment   `gorm:"many2many:project_equipment" json:"equipment,omitempty"`
+	ID                uint          `json:"id"`
+	WorkflowID        uint          `json:"-"`
+	Workflow          workflow      `gorm:"foreignKey:WorkflowID" json:"workflow"`
+	UnitID            uint          `json:"unitID"`
+	Unit              unit          `gorm:"foreignKey:UnitID" json:"unit"`
+	OwnerID           *uint         `json:"-"`
+	Owner             *staffMember  `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
+	ImageCount        int           `json:"imageCount"`
+	Assignments       []*assignment `gorm:"foreignKey:ProjectID" json:"assignments"`
+	CurrentStepID     uint          `json:"-"`
+	CurrentStep       step          `gorm:"foreignKey:CurrentStepID" json:"currentStep"`
+	AddedAt           *time.Time    `json:"addedAt,omitempty"`
+	StartedAt         *time.Time    `json:"startedAt,omitempty"`
+	FinishedAt        *time.Time    `json:"finishedAt,omitempty"`
+	TotalDurationMins *int64        `json:"totalDuration,omitempty"`
+	CategoryID        uint          `json:"-"`
+	Category          category      `gorm:"foreignKey:CategoryID" json:"category"`
+	CaptureResolution uint          `json:"captureResolution"`
+	ResizedResolution uint          `json:"resizedResolution"`
+	ResolutionNote    string        `json:"resolutionNote"`
+	WorkstationID     uint          `json:"-"`
+	Workstation       workstation   `json:"workstation"`
+	ItemCondition     uint          `json:"itemCondition"`
+	ConditionNote     string        `json:"conditionNote,omitempty"`
+	ContainerTypeID   *uint         `json:"containerTypeID"`
+	Notes             []*note       `gorm:"foreignKey:ProjectID" json:"notes,omitempty"`
+	Equipment         []*equipment  `gorm:"many2many:project_equipment" json:"equipment,omitempty"`
 }
 
 func (svc *serviceContext) getProject(c *gin.Context) {

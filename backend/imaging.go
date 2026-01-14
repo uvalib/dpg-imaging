@@ -168,14 +168,7 @@ func (svc *serviceContext) getUpdatedLocation(unitID, tgtFile, updateField, upda
 		if dbErr != nil {
 			return "", fmt.Errorf("unable to load project for unit %s: %s", unitID, dbErr.Error())
 		}
-
-		ctID := *tgtProject.ContainerTypeID
-		log.Printf("INFO: lookkup container type id %d", ctID)
-		rawResp, reqErr := svc.getRequest(fmt.Sprintf("%s/containertypes/%d", svc.TrackSys.API, ctID))
-		if reqErr != nil {
-			return "", fmt.Errorf("unable to load project for unit %s: %s", unitID, reqErr.Message)
-		}
-		containerTypeName = string(rawResp)
+		containerTypeName = svc.getContainerTypeName(*tgtProject.ContainerTypeID)
 	} else {
 		log.Printf("INFO: %s has sub-location [%s]; extract container type", tgtFile, md.Location)
 		// if location is set, the container type is the first part of that string; extract it

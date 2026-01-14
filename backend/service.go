@@ -370,6 +370,16 @@ func (svc *serviceContext) getStaff(staffID uint) (*staffMember, error) {
 	return &sm, nil
 }
 
+func (svc *serviceContext) getContainerTypeName(ctID uint) string {
+	log.Printf("INFO: lookup container type id %d", ctID)
+	rawResp, reqErr := svc.getRequest(fmt.Sprintf("%s/containertypes/%d", svc.TrackSys.API, ctID))
+	if reqErr != nil {
+		log.Printf("ERROR: unable to get container type %d name; default to box: %s", ctID, reqErr.Message)
+		return "Box"
+	}
+	return string(rawResp)
+}
+
 func (svc *serviceContext) getComputeID(staffID uint) string {
 	sm, err := svc.getStaff(staffID)
 	if err != nil {
