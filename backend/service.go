@@ -357,17 +357,26 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (svc *serviceContext) getComputeID(staffID uint) (string, error) {
+func (svc *serviceContext) getStaff(staffID uint) (*staffMember, error) {
 	respBytes, reqErr := svc.getRequest(fmt.Sprintf("%s/staff/lookup?id=%d", svc.TrackSys.API, staffID))
 	if reqErr != nil {
-		return "", fmt.Errorf("staff %d not found", staffID)
+		return nil, fmt.Errorf("staff %d not found", staffID)
 	}
 
 	var sm staffMember
 	if err := json.Unmarshal(respBytes, &sm); err != nil {
-		return "", err
+		return nil, err
 	}
-	return sm.ComputingID, nil
+	return &sm, nil
+}
+
+func (svc *serviceContext) getComputeID(staffID uint) string {
+	sm, err := svc.getStaff(staffID)
+	if err != nil {
+		log.Printf("ERROR: %s", err.Error())
+		return fmt.Sprintf("id[%d]", staffID)
+	}
+	return sm.ComputingID
 }
 
 func padLeft(str string, tgtLen int) string {
