@@ -91,6 +91,9 @@ export const useProjectStore = defineStore('project', {
          await axios.get(`/api/projects/${projectID}`).then(response => {
             this.detail = response.data
             this.detail.containerType = system.getContainerType(this.detail.containerTypeID)
+            delete this.detail.containerTypeID
+            this.detail.owner = system.getStaffMember(this.detail.ownerID)
+            delete this.detail.ownerID
             this.working = false
             axios.put(`/api/projects/${projectID}/images/count`)
          }).catch( e => {

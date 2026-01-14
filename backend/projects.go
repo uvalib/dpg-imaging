@@ -111,8 +111,7 @@ type project struct {
 	Workflow          workflow      `gorm:"foreignKey:WorkflowID" json:"workflow"`
 	UnitID            uint          `json:"unitID"`
 	Unit              unit          `gorm:"foreignKey:UnitID" json:"unit"`
-	OwnerID           *uint         `json:"-"`
-	Owner             *staffMember  `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
+	OwnerID           *uint         `json:"ownerID"`
 	ImageCount        int           `json:"imageCount"`
 	Assignments       []*assignment `gorm:"foreignKey:ProjectID" json:"assignments"`
 	CurrentStepID     uint          `json:"-"`
@@ -144,8 +143,7 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 	var proj *project
 	projQ := svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").InnerJoins("Unit").
 		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").Joins("Unit.Metadata.OCRHint").
-		Joins("Unit.Order.Customer").Joins("Unit.Order.Agency").
-		Joins("Owner").Joins("CurrentStep").Preload("Equipment").Preload("Workstation")
+		Joins("Unit.Order.Customer").Joins("Unit.Order.Agency").Joins("CurrentStep").Preload("Equipment").Preload("Workstation")
 
 	err := projQ.First(&proj, projID).Error
 	if err != nil {
@@ -804,7 +802,7 @@ func (svc *serviceContext) getBaseSearchQuery() (tx *gorm.DB) {
 	return svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").InnerJoins("Unit").
 		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").
 		Joins("Unit.Order.Customer").Joins("Unit.Order.Agency").
-		Joins("Owner").Joins("CurrentStep").
+		Joins("CurrentStep").
 		Joins("LEFT OUTER JOIN assignments on assignments.project_id=projects.id").
 		Joins("LEFT OUTER JOIN steps as assignstep on assignments.step_id=assignstep.id").
 		Group("projects.id")

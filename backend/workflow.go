@@ -34,8 +34,7 @@ const (
 func (svc *serviceContext) getProjectInfo(projID string) (*project, error) {
 	log.Printf("INFO: look up basic info for project %s", projID)
 	var tgtProject *project
-	// FIXME lookup OWNER
-	if err := svc.DB.Preload("CurrentStep").Preload("Owner").Preload("Workflow").First(&tgtProject, projID).Error; err != nil {
+	if err := svc.DB.Preload("CurrentStep").Preload("Workflow").First(&tgtProject, projID).Error; err != nil {
 		return nil, err
 	}
 
@@ -58,7 +57,7 @@ func (svc *serviceContext) startProjectStep(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)
 	log.Printf("INFO: user %s is looking for project %s to start active step", claims.ComputeID, projID)
-	proj, err := svc.getProjectInfo(projID) // FIXME this is OK to hust have staff / owner ID
+	proj, err := svc.getProjectInfo(projID)
 	if err != nil {
 		log.Printf("ERROR: unable to getp project %s: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -259,7 +258,6 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 	default:
 		// any, unique or supervisor for this step. Someone must claim it, so set owner nil.
 		log.Printf("INFO: project %s workflow %s advancing to new step %s with no owner set", projID, proj.Workflow.Name, nextStep.Name)
-		proj.Owner = nil
 		err = svc.nextStep(proj, nextStepID, nil)
 	}
 

@@ -137,6 +137,7 @@ export const useSearchStore = defineStore('search', {
    },
    actions: {
       setProjects(data) {
+         const system = useSystemStore()
          this.totals.me  = data.totalMe
          this.totals.active  = data.totalActive
          this.totals.unassigned  = data.totalUnassigned
@@ -144,8 +145,12 @@ export const useSearchStore = defineStore('search', {
          this.totals.errors  = data.totalError
          this.pageSize = data.pageSize
          data.currPage = data.page
-         this.projects.splice(0, this.projects.length)
-         data.projects.forEach( p => this.projects.push(p))
+         this.projects = []
+         data.projects.forEach( p => {
+            p.owner = system.getStaffMember(p.ownerID)
+            delete p.ownerID
+            this.projects.push(p)
+         })
       },
 
       changeFilter( newFilter ) {
