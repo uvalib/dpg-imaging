@@ -71,7 +71,7 @@ func (svc *serviceContext) authenticate(c *gin.Context) {
 	}
 
 	log.Printf("INFO: lookup staff member %s", computingID)
-	respBytes, reqErr := svc.getRequest(fmt.Sprintf("%s/staff/%s", svc.TrackSys.API, computingID))
+	respBytes, reqErr := svc.getRequest(fmt.Sprintf("%s/staff/lookup?cid=%s", svc.TrackSys.API, computingID))
 	if reqErr != nil {
 		log.Printf("ERROR: could not find staff member %s: %s", computingID, reqErr.Message)
 		c.Redirect(http.StatusFound, "/forbidden")
