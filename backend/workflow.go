@@ -35,23 +35,19 @@ func (svc *serviceContext) getProjectInfo(projID string) (*project, error) {
 	log.Printf("INFO: look up basic info for project %s", projID)
 	var tgtProject *project
 	// FIXME lookup OWNER
-	err := svc.DB.Preload("CurrentStep").Preload("Owner").Preload("Workflow").First(&tgtProject, projID).Error
-	if err != nil {
+	if err := svc.DB.Preload("CurrentStep").Preload("Owner").Preload("Workflow").First(&tgtProject, projID).Error; err != nil {
 		return nil, err
 	}
 
-	// FIXME lookup STAFF
 	log.Printf("INFO: get project %d assignments", tgtProject.ID)
-	err = svc.DB.Where("project_id=?", tgtProject.ID).Joins("Step").Joins("StaffMember").
-		Order("assigned_at DESC").Find(&tgtProject.Assignments).Error
-	if err != nil {
+	if err := svc.DB.Where("project_id=?", tgtProject.ID).Joins("Step").
+		Order("assigned_at DESC").Find(&tgtProject.Assignments).Error; err != nil {
 		return nil, err
 	}
 
 	log.Printf("INFO: get project %d notes", tgtProject.ID)
-	err = svc.DB.Where("project_id=?", tgtProject.ID).Joins("Step").Preload("Problems").
-		Order("notes.created_at DESC").Find(&tgtProject.Notes).Error
-	if err != nil {
+	if err := svc.DB.Where("project_id=?", tgtProject.ID).Joins("Step").Preload("Problems").
+		Order("notes.created_at DESC").Find(&tgtProject.Notes).Error; err != nil {
 		return nil, err
 	}
 
@@ -62,7 +58,7 @@ func (svc *serviceContext) startProjectStep(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)
 	log.Printf("INFO: user %s is looking for project %s to start active step", claims.ComputeID, projID)
-	proj, err := svc.getProjectInfo(projID)
+	proj, err := svc.getProjectInfo(projID) // FIXME this is OK to hust have staff / owner ID
 	if err != nil {
 		log.Printf("ERROR: unable to getp project %s: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -333,17 +329,18 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		return
 	}
 
-	// FIXME lookup compoute ID for owner and assignee
 	log.Printf("INFO: enforce next step %s owner type %d", nextStep.Name, nextStep.OwnerType)
 	switch nextStep.OwnerType {
-	case 1: // prior owner
+	case 1:
+		// prior owner
 		log.Printf("INFO: project %s workflow %s advancing to new step %s with current owner %s",
-			projID, proj.Workflow.Name, nextStep.Name, proj.Owner.ComputingID)
+			projID, proj.Workflow.Name, nextStep.Name, svc.getComputeID(*proj.OwnerID))
 		err = svc.nextStep(proj, nextStepID, proj.OwnerID)
-	case 3: // original owner
+	case 3:
+		// original owner
 		firstA := proj.Assignments[len(proj.Assignments)-1]
 		log.Printf("INFO: project %s workflow %s advancing to new step %s with originial owner %s",
-			projID, proj.Workflow.Name, nextStep.Name, firstA.StaffMember.ComputingID)
+			projID, proj.Workflow.Name, nextStep.Name, svc.getComputeID(firstA.StaffMemberID))
 		err = svc.nextStep(proj, nextStepID, &firstA.StaffMemberID)
 	default:
 		// any, unique or supervisor for this step. Someone must claim it, so set owner nil.

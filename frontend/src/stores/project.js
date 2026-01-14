@@ -101,13 +101,15 @@ export const useProjectStore = defineStore('project', {
    },
    actions: {
       async getProject(projectID) {
+         const system = useSystemStore()
          this.working = true
          await axios.get(`/api/projects/${projectID}`).then(response => {
             this.detail = response.data
+            this.detail.containerType = system.getContainerType(this.detail.containerTypeID)
             this.working = false
             axios.put(`/api/projects/${projectID}/images/count`)
          }).catch( e => {
-            const system = useSystemStore()
+
             system.error = e
             this.working = false
          })
@@ -245,13 +247,18 @@ export const useProjectStore = defineStore('project', {
       },
       async assignProject({projectID, ownerID}) {
          this.working = true
+         const system = useSystemStore()
          return axios.post(`/api/projects/${projectID}/assign/${ownerID}`).then(response => {
+            console.log(response.data)
             this.detail.notes = response.data.notes
             this.detail.assignments = response.data.assignments
-            this.detail.owner = response.data.owner
+            this.detail.owner = null
+            if ( response.data.ownerID > 0) {
+               this.detail.owner = system.getStaffMember( response.data.ownerID )
+            }
             this.working = false
          }).catch( e => {
-            const system = useSystemStore()
+
             system.error = e
             this.working = false
          })
