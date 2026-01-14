@@ -168,7 +168,7 @@ func (svc *serviceContext) getUpdatedLocation(unitID, tgtFile, updateField, upda
 		if dbErr != nil {
 			return "", fmt.Errorf("unable to load project for unit %s: %s", unitID, dbErr.Error())
 		}
-		containerTypeName = svc.getContainerTypeName(*tgtProject.ContainerTypeID)
+		containerTypeName = svc.getContainerTypeName(tgtProject.ContainerTypeID)
 	} else {
 		log.Printf("INFO: %s has sub-location [%s]; extract container type", tgtFile, md.Location)
 		// if location is set, the container type is the first part of that string; extract it

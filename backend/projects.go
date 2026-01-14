@@ -130,7 +130,7 @@ type project struct {
 	Workstation       workstation   `json:"workstation"`
 	ItemCondition     uint          `json:"itemCondition"`
 	ConditionNote     string        `json:"conditionNote,omitempty"`
-	ContainerTypeID   *uint         `json:"containerTypeID"`
+	ContainerTypeID   uint          `json:"containerTypeID"`
 	Notes             []*note       `gorm:"foreignKey:ProjectID" json:"notes,omitempty"`
 	Equipment         []*equipment  `gorm:"many2many:project_equipment" json:"equipment,omitempty"`
 }
@@ -609,7 +609,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	proj.ItemCondition = updateData.Condition
 	proj.ConditionNote = updateData.Note
 	if updateData.ContainerTypeID > 0 && proj.Workflow.Name == "Manuscript" {
-		proj.ContainerTypeID = &updateData.ContainerTypeID
+		proj.ContainerTypeID = updateData.ContainerTypeID
 	}
 	err = svc.DB.Model(&proj).Select("ContainerTypeID", "CategoryID", "ItemCondition", "ConditionNote").Updates(proj).Error
 	if err != nil {

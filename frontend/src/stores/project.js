@@ -27,21 +27,6 @@ export const useProjectStore = defineStore('project', {
          if (!state.detail.unit ) return ""
          return  state.detail.unit.order.dateDue.split("T")[0]
       },
-      canChangeWorkflow: state => {
-         if ( state.detail == null ) return false
-         let assignments = state.detail.assignments
-         if ( assignments == null || assignments === undefined) return true
-
-         let canChange = true
-         assignments.some( a => {
-            if (a.finishedAt) {
-               canChange = false
-            }
-            return canChange == false
-
-         })
-         return canChange
-      },
       // NOTES : enums from tracksys models
       // assignment status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing]
       canReject: state => {
@@ -261,20 +246,6 @@ export const useProjectStore = defineStore('project', {
 
             system.error = e
             this.working = false
-         })
-      },
-      async changeWorkflow( newWorkflowID, newContainerTypeID ) {
-         this.working = true
-         return axios.post(`/api/projects/${this.detail.id}/workflow`, {workflow: newWorkflowID, containerType: newContainerTypeID}).then(response => {
-            this.detail.workflow = response.data.workflow
-            this.detail.currentStep = response.data.step
-            this.detail.containerType = response.data.containerType
-            this.detail.assignments = response.data.assignments
-            this.working = false
-         }).catch( e => {
-            this.working = false
-            const system = useSystemStore()
-            system.error = e
          })
       }
    }

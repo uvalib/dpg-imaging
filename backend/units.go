@@ -414,7 +414,7 @@ func (svc *serviceContext) finalizeUnitData(proj *project) (*finalizeResponse, e
 			// the below checks
 			mfMD, _ := getExifData(path)
 			if mfMD != nil && mfMD.Location == "" && mfMD.Box != "" {
-				containerTypeName := svc.getContainerTypeName(*proj.ContainerTypeID)
+				containerTypeName := svc.getContainerTypeName(proj.ContainerTypeID)
 				log.Printf("INFO: image %s is missing location header; generate it from box/folder headers", path)
 				missingLocation := fmt.Sprintf("%s %s, Folder %s", containerTypeName, mfMD.Box, mfMD.Folder)
 				cmd.Commands = append(cmd.Commands, fmt.Sprintf("-iptc:sub-location=%s", missingLocation))

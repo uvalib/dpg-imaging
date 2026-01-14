@@ -66,7 +66,6 @@ func main() {
 		api.POST("/projects/:id/start", svc.startProjectStep)
 		api.POST("/projects/:id/finish", svc.finishProjectStep)
 		api.POST("/projects/:id/reject", svc.rejectProjectStep)
-		api.POST("/projects/:id/workflow", svc.changeProjectWorkflow)
 
 		api.GET("/units/:uid/validate/components", svc.validateComponentSettings)
 		api.GET("/units/:uid/masterfiles", svc.getUnitMasterFiles)

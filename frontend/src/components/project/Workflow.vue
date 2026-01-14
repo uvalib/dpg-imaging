@@ -50,7 +50,6 @@
          <WaitSpinner :overlay="false" message="Finalization in progress..." />
       </div>
       <div class="workflow-btns" v-else-if="isFinished == false">
-         <DPGButton @click="changeWorkflowClicked()" severity="secondary" v-if="projectStore.canChangeWorkflow &&  (isSupervisor || isAdmin)" label="Change Workflow"/>
          <DPGButton @click="viewerClicked" severity="secondary" v-if="isScanning == false && (isOwner(userStore.computeID) || isSupervisor || isAdmin)" label="Open QA Viewer"/>
          <DPGButton v-if="hasOwner && (isAdmin || isSupervisor)"
             @click="clearClicked()" severity="secondary" label="Clear Assignment"/>
@@ -78,34 +77,6 @@
          @closed="rejectCanceled" @submitted="rejectSubmitted"
          instructions="Rejection requires the addition of a problem note that details the reason why it occurred" />
    </Panel>
-   <Dialog v-model:visible="showWorkflowPicker" :modal="true" header="Change Workflow" style="width:300px">
-      <div class="workflow-picker">
-         <p>Current workflow: {{ detail.workflow.name }}</p>
-         <p>Select a new workflow:</p>
-         <div class="workflow-list">
-            <div class="workflow-val" v-for="(w,idx) in activeWorkflows" :key="w.id"
-               :class="{selected: idx == selectedWorkflowIdx}" @click="selectWorkflow(idx)"
-            >
-               {{  w.name }}
-            </div>
-         </div>
-         <div class="container-types" v-if="isManuscriptSelected">
-            <p>Select container type:</p>
-            <div class="workflow-list">
-               <div class="workflow-val" v-for="(ct,idx) in systemStore.containerTypes" :key="ct.id"
-                  :class="{selected: idx == selectedContainerTypeIdx}" @click="selectContainerType(idx)"
-               >
-                  {{  ct.name }}
-               </div>
-            </div>
-         </div>
-      </div>
-      <template #footer>
-         <DPGButton @click="cancelWorkflowChange()" label="Cancel" severity="secondary"/>
-         <span class="spacer"></span>
-         <DPGButton @click="submitWorkflowChange()" label="Submit" :disabled="isWorkflowChangeDisabled"/>
-      </template>
-   </Dialog>
 </template>
 
 <script setup>
@@ -121,7 +92,6 @@ import { useRouter } from 'vue-router'
 import Select from 'primevue/select'
 import Panel from 'primevue/panel'
 import InputNumber from 'primevue/inputnumber'
-import Dialog from 'primevue/dialog'
 import ProgressSpinner from 'primevue/progressspinner'
 import { useFocus } from '@vueuse/core'
 
@@ -144,31 +114,9 @@ const { focused: timeFocus } = useFocus(time)
 const stepMinutes = ref(1)
 const action = ref("finish")
 const showRejectNote = ref(false)
-const showWorkflowPicker = ref(false)
-const selectedWorkflowIdx = ref(-1)
-const selectedContainerTypeIdx = ref(-1)
 
 const isManuscript = computed(() => {
    return detail.value.workflow.name == "Manuscript"
-})
-const activeWorkflows = computed(() => {
-   return systemStore.workflows.filter( wf => wf.isActive == true)
-})
-
-const isWorkflowChangeDisabled = computed(() => {
-   if ( selectedWorkflowIdx.value == -1 ) return true
-   if (isManuscriptSelected.value) {
-      if ( selectedContainerTypeIdx.value == -1 ) return true
-   }
-   return false
-})
-const isManuscriptSelected = computed(()=>{
-   if ( selectedWorkflowIdx.value == -1 ) return false
-   let wf = activeWorkflows.value[selectedWorkflowIdx.value]
-   if (wf) {
-      return wf.name == "Manuscript"
-   }
-   return false
 })
 const currStepName = computed(()=>{
    return detail.value.currentStep.name
@@ -246,31 +194,6 @@ const componentChanged = ( async ()=> {
       }
    }
 })
-
-function changeWorkflowClicked() {
-   selectedWorkflowIdx.value = -1
-   selectedContainerTypeIdx.value = -1
-   showWorkflowPicker.value = true
-}
-function cancelWorkflowChange() {
-   showWorkflowPicker.value = false
-}
-async function submitWorkflowChange()  {
-   let workflowID = activeWorkflows.value[selectedWorkflowIdx.value].id
-   let containerTypeID = 0
-   if ( isManuscriptSelected.value ) {
-      containerTypeID = systemStore.containerTypes[selectedContainerTypeIdx.value].id
-   }
-   await projectStore.changeWorkflow( workflowID, containerTypeID )
-   showWorkflowPicker.value = false
-}
-function selectWorkflow( idx ) {
-   selectedWorkflowIdx.value = idx
-   selectedContainerTypeIdx.value = -1
-}
-function selectContainerType( idx ) {
-   selectedContainerTypeIdx.value = idx
-}
 
 function clearClicked() {
    projectStore.assignProject({projectID: detail.value.id, ownerID: 0} )
@@ -425,32 +348,6 @@ function unitDirectory(unitID) {
       border-top: 1px solid var(--uvalib-grey-light);
       text-align: center;
       color: var(--uvalib-red-emergency);
-   }
-}
-div.workflow-picker {
-   p {
-      margin: 0 0 10px 0;
-      color: #999;
-   }
-   .workflow-list {
-      margin: 0 0 15px 0;
-      background: white;
-      border: 1px solid var(--uvalib-grey-light);
-      padding: 5px 0;
-      .workflow-val {
-         padding: 2px 10px 3px 10px;
-         cursor: pointer;
-         display: flex;
-         flex-flow: row nowrap;
-         justify-content: space-between;
-         &:hover  {
-            background: var(--uvalib-blue-alt-light);
-         }
-      }
-      .workflow-val.selected {
-         background: var(--uvalib-blue-alt);
-         color: white;
-      }
    }
 }
 </style>
