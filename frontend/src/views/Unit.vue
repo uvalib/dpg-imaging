@@ -115,7 +115,6 @@ const keyboardHandler = ((event) => {
       }
    }
    if ( event.key == '.' || event.key == '>') {
-      // FIXME
       if (unitStore.currPage < unitStore.totalPages) {
          nextClicked()
          return

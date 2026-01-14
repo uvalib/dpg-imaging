@@ -150,10 +150,8 @@ export const useUnitStore = defineStore('unit', {
          // dont try to reload a unit if the data is already present
          if (this.unitID == project.unitID && this.masterFiles.length > 0 || this.working == true) return
 
-         const system = useSystemStore()
-         this.containerType =  system.getContainerType( project.containerTypeID )
-
          this.unitID = project.unitID
+         this.containerType =  project.containerType
          this.working = true
          this.clearUnitDetails()
          return axios.get(`/api/units/${this.unitID}/masterfiles`).then(response => {
@@ -166,6 +164,7 @@ export const useUnitStore = defineStore('unit', {
             this.problems = response.data.problems
             this.working = false
          }).catch( e => {
+            const system = useSystemStore()
             system.setError(e)
             this.working = false
          })
@@ -360,7 +359,6 @@ export const useUnitStore = defineStore('unit', {
                   this.masterFiles[i].description = update.value
                }
                if ( field == "folder" || field == "box" ) {
-                  // FIXME broken
                   this.masterFiles[i].location = `${ this.containerType.name} ${this.masterFiles[i].box}`
                   if ( this.masterFiles[i].folder) {
                      this.masterFiles[i].location += `, Folder ${this.masterFiles[i].folder}`

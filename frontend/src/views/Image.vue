@@ -193,9 +193,10 @@ const focusViewer = (() => {
 })
 
 const keyboardHandler = ((event) => {
-   if (event.target.id == "edit-desc" || event.target.id == "title-input-box") {
+   if ( editField.value != "" ) {
       return
    }
+
    if ( event.key == '1') {
       event.stopPropagation()
       viewActualSize()
