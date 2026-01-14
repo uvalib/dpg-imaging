@@ -314,7 +314,7 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 	log.Printf("INFO: validate project [%d] step [%s] finish", proj.ID, proj.CurrentStep.Name)
 
 	isManuscript := proj.Workflow.Name == "Manuscript"
-	if isManuscript && proj.ContainerTypeID == 0 {
+	if isManuscript && proj.ContainerTypeID == nil {
 		// container type is required for manuscript workflows
 		svc.failStep(proj, "Other", "<p>This project is missing the required Container Type setting.</p>")
 		return errors.New("manuscript is missing container type")

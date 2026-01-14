@@ -98,7 +98,7 @@ export const useProjectStore = defineStore('project', {
             axios.put(`/api/projects/${projectID}/images/count`)
          }).catch( e => {
 
-            system.error = e
+            system.setError( e )
             this.working = false
          })
       },
@@ -120,7 +120,7 @@ export const useProjectStore = defineStore('project', {
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
-            system.error = e
+            system.setError( e )
             this.working = false
          })
       },
@@ -128,18 +128,22 @@ export const useProjectStore = defineStore('project', {
       async updateProject(data) {
          // data contains { categoryID, containerTypeID, condition, note, ocrHintID, ocrLangage, ocrMasterFiles }
          this.working = true
+         const system = useSystemStore()
          return axios.put(`/api/projects/${this.detail.id}`, data).then(response => {
-            this.detail.category = response.data.category
-            this.detail.containerType = response.data.containerType
+            console.log("GOT RESPONSE FOR UPDATE")
+            console.log(response.data)
+            this.detail.category = system.getCategory( response.data.categoryID )
+            this.detail.containerType = system.getContainerType( response.data.containerTypeID )
             this.detail.itemCondition = response.data.condition
             this.detail.conditionNote = response.data.note
             this.detail.unit.ocrMasterFiles = response.data.ocrMasterFiles
-            this.detail.unit.metadata.ocrHint = response.data.ocrHint
-            this.detail.unit.metadata.ocrLanguageHint = response.data.ocrLangage
+            // FIXME
+            // this.detail.unit.metadata.ocrHint = response.data.ocrHint
+            // this.detail.unit.metadata.ocrLanguageHint = response.data.ocrLangage
             this.working = false
          }).catch( e => {
-            const system = useSystemStore()
-            system.error = e
+            console.error(e)
+            system.setError( e )
             this.working = false
          })
       },
@@ -152,7 +156,7 @@ export const useProjectStore = defineStore('project', {
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
-            system.error = e
+            system.setError( e )
             this.working = false
          })
       },
@@ -164,7 +168,7 @@ export const useProjectStore = defineStore('project', {
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
-            system.error = e
+            system.setError( e )
             this.working = false
          })
       },
@@ -182,7 +186,7 @@ export const useProjectStore = defineStore('project', {
             }
          }).catch( e => {
             const system = useSystemStore()
-            system.error = e
+            system.setError( e )
             this.working = false
          })
       },
@@ -213,7 +217,7 @@ export const useProjectStore = defineStore('project', {
                   this.statusCheckIntervalID = -1
                }
             }).catch( e => {
-               system.error = e
+               system.setError( e )
                clearInterval(this.statusCheckIntervalID )
                this.statusCheckIntervalID = -1
             })
@@ -229,7 +233,7 @@ export const useProjectStore = defineStore('project', {
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
-            system.error = e
+            system.setError( e )
             this.working = false
          })
       },
@@ -247,7 +251,7 @@ export const useProjectStore = defineStore('project', {
             this.working = false
          }).catch( e => {
 
-            system.error = e
+            system.setError( e )
             this.working = false
          })
       }

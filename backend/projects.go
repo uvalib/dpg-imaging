@@ -24,7 +24,6 @@ type workflow struct {
 	Steps       []step `gorm:"foreignKey:WorkflowID" json:"steps"`
 }
 
-// FIXME probably shouldn't have this here
 type containerType struct {
 	ID         uint   `json:"id"`
 	Name       string `json:"name"`
@@ -129,7 +128,7 @@ type project struct {
 	Workstation       workstation   `json:"workstation"`
 	ItemCondition     uint          `json:"itemCondition"`
 	ConditionNote     string        `json:"conditionNote,omitempty"`
-	ContainerTypeID   uint          `json:"containerTypeID"`
+	ContainerTypeID   *uint         `json:"containerTypeID"`
 	Notes             []*note       `gorm:"foreignKey:ProjectID" json:"notes,omitempty"`
 	Equipment         []*equipment  `gorm:"many2many:project_equipment" json:"equipment,omitempty"`
 }
@@ -547,16 +546,13 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	projID := c.Param("id")
 	claims := getJWTClaims(c)
 	var updateData struct {
-		ContainerTypeID uint           `json:"containerTypeID"`
-		ContainerType   *containerType `json:"containerType"`
-		CategoryID      uint           `json:"categoryID"`
-		Category        category       `json:"category"`
-		Condition       uint           `json:"condition"`
-		Note            string         `json:"note"`
-		OCRHintID       uint           `json:"ocrHintID"`
-		OCRHint         ocrHint        `json:"ocrHint"`
-		OCRLanguageHint string         `json:"ocrLangage"`
-		OCRMasterFiles  bool           `json:"ocrMasterFiles"`
+		ContainerTypeID uint   `json:"containerTypeID"`
+		CategoryID      uint   `json:"categoryID"`
+		Condition       uint   `json:"condition"`
+		Note            string `json:"note"`
+		OCRHintID       uint   `json:"ocrHintID"`
+		OCRLanguageHint string `json:"ocrLangage"`
+		OCRMasterFiles  bool   `json:"ocrMasterFiles"`
 	}
 
 	qpErr := c.ShouldBindJSON(&updateData)
@@ -569,35 +565,9 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 
 	log.Printf("INFO: lookup project %s", projID)
 	var proj project
-	err := svc.DB.Joins("Unit").First(&proj, projID).Error // TODO UNIT NEEDED TO GET METADATA ID
+	err := svc.DB.Joins("Unit").Preload("Workflow").First(&proj, projID).Error // FIXME UNIT NEEDED TO GET METADATA ID
 	if err != nil {
 		log.Printf("ERROR: unable to get project %s update: %s", projID, err.Error())
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	if updateData.ContainerTypeID > 0 {
-		log.Printf("INFO: lookup container type %d", updateData.ContainerTypeID)
-		err = svc.DB.First(&updateData.ContainerType, updateData.ContainerTypeID).Error
-		if err != nil {
-			log.Printf("ERROR: unable to get container type %d project %s update: %s", updateData.ContainerTypeID, projID, err.Error())
-			c.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-	}
-
-	log.Printf("INFO: lookup category %d", updateData.CategoryID)
-	err = svc.DB.First(&updateData.Category, updateData.CategoryID).Error
-	if err != nil {
-		log.Printf("ERROR: unable to get category %d project %s update: %s", updateData.CategoryID, projID, err.Error())
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	log.Printf("INFO: lookup ocr hint %d", updateData.OCRHintID)
-	err = svc.DB.First(&updateData.OCRHint, updateData.OCRHintID).Error
-	if err != nil {
-		log.Printf("ERROR: unable to get ocr hint %d project %s update: %s", updateData.OCRHintID, projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -607,7 +577,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	proj.ItemCondition = updateData.Condition
 	proj.ConditionNote = updateData.Note
 	if updateData.ContainerTypeID > 0 && proj.Workflow.Name == "Manuscript" {
-		proj.ContainerTypeID = updateData.ContainerTypeID
+		proj.ContainerTypeID = &updateData.ContainerTypeID
 	}
 	err = svc.DB.Model(&proj).Select("ContainerTypeID", "CategoryID", "ItemCondition", "ConditionNote").Updates(proj).Error
 	if err != nil {
@@ -616,7 +586,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 		return
 	}
 
-	// TODO API call to update OCR for unit; PROBLEM TSAPI is readonly. Single call PUT unit/:id/ocr that accepts all 3 OCR settings. Possible: call TS direct OR make it a job instead
+	// FIXME API call to update OCR for unit; PROBLEM TSAPI is readonly. Single call PUT unit/:id/ocr that accepts all 3 OCR settings. Possible: call TS direct OR make it a job instead
 	log.Printf("INFO: update OCR settings for project %s", projID)
 	tgtUnit := unit{ID: proj.UnitID, OCRMasterFiles: updateData.OCRMasterFiles}
 	err = svc.DB.Model(&tgtUnit).Select("OCRMasterFiles").Updates(tgtUnit).Error
@@ -625,8 +595,9 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+
 	if updateData.OCRHintID > 0 {
-		// TODO API call to lookup unit to get ID then API call to update OCR : Problem, TS API is readonly
+		// FIXME API call to lookup unit to get ID then API call to update OCR : Problem, TS API is readonly
 		tgtMD := metadata{ID: proj.Unit.MetadataID, OCRHintID: updateData.OCRHintID}
 		err = svc.DB.Model(&tgtMD).Select("OCRHintID").Updates(tgtMD).Error
 		if err != nil {
@@ -634,8 +605,8 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-
 	}
+
 	if updateData.OCRLanguageHint != "" {
 		tgtMD := metadata{ID: proj.Unit.MetadataID, OCRLanguageHint: updateData.OCRLanguageHint}
 		err = svc.DB.Model(&tgtMD).Select("OCRLanguageHint").Updates(tgtMD).Error

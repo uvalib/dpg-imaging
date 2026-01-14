@@ -31,6 +31,17 @@ export const useSystemStore = defineStore('system', {
          "Epigraph", "Prologue/Preface", "Dedication", "Errata"].sort()
 	}),
 	getters: {
+      getCategory: state => {
+         return (cID) => {
+            let cat = null
+            state.categories.forEach( val => {
+               if (val.id == cID) {
+                  cat = val
+               }
+            })
+            return cat
+         }
+      },
       getContainerType: state => {
          return (ctID) => {
             let ct = null

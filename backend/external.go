@@ -142,7 +142,7 @@ func (svc *serviceContext) createProject(c *gin.Context) {
 	}
 	if req.ContainerTypeID != 0 {
 		cID := uint(req.ContainerTypeID)
-		newProj.ContainerTypeID = cID
+		newProj.ContainerTypeID = &cID
 	}
 	if err := svc.DB.Create(&newProj).Error; err != nil {
 		log.Printf("ERROR: unable to create project for unit %d: %s", req.UnitID, err.Error())

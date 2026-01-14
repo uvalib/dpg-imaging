@@ -150,9 +150,9 @@ const ocrMasterFiles = ref(false)
 const ocrCandidate = ref(true)
 
 const canEdit = computed(() => {
-   if ( projectStore.detail.workflow.name == 'Vendor') return false
-   if (projectStore.isOwner(userStore.computeID) == false) return false
-   if (projectStore.isFinalizeRunning || projectStore.isFinished || projectStore.isWorking) {
+   if ( projectStore.detail.workflow.name == 'Vendor' ) return false
+   if ( projectStore.isOwner(userStore.computeID) == false ) return false
+   if ( projectStore.isFinalizeRunning || projectStore.isFinished || projectStore.isWorking ) {
       return false
    }
    return true
