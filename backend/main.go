@@ -46,7 +46,7 @@ func main() {
 		// external calls used by TS/jobs
 		api.POST("/projects/create", svc.createProject)
 		api.POST("/projects/:id/cancel", svc.cancelProject)
-		api.POST("/projects/:id/finish", svc.finishProject)
+		api.POST("/projects/:id/done", svc.finishProject)
 		api.POST("/projects/:id/fail", svc.failProject)
 
 		api.GET("/components/:id", svc.getComponent)
