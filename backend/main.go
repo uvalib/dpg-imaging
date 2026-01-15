@@ -44,6 +44,8 @@ func main() {
 		ext.GET("/projects/lookup/:uid", svc.lookupProjectForUnit)
 		ext.POST("/projects/create", svc.extAuthMiddleware, svc.createProject)
 		ext.POST("/projects/:id/cancel", svc.extAuthMiddleware, svc.cancelProject)
+		ext.POST("/projects/:id/finish", svc.extAuthMiddleware, svc.finishProject)
+		ext.POST("/projects/:id/fail", svc.extAuthMiddleware, svc.failProject)
 	}
 
 	api := router.Group("/api", svc.authMiddleware)
