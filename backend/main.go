@@ -62,6 +62,7 @@ func main() {
 		api.GET("/projects", svc.getProjects)
 		api.GET("/projects/:id", svc.getProject)
 		api.PUT("/projects/:id", svc.updateProject)
+		api.DELETE("/projects/:id", svc.deleteProject)
 		api.PUT("/projects/:id/images/count", svc.updateProjecImageCount)
 		api.GET("/projects/:id/status", svc.getProjectStatus)
 		api.POST("/projects/:id/assign/:uid", svc.assignProject)

@@ -237,6 +237,16 @@ export const useProjectStore = defineStore('project', {
             this.working = false
          })
       },
+      async deleteProject( projectID ) {
+         this.working = true
+         const system = useSystemStore()
+         return axios.delete(`/api/projects/${projectID}`).then(() => {
+            this.router.push("/")
+         }).catch( e => {
+            system.setError( e )
+            this.working = false
+         })
+      },
       async assignProject({projectID, ownerID}) {
          this.working = true
          const system = useSystemStore()

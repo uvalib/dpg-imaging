@@ -173,6 +173,46 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 	c.JSON(http.StatusOK, proj)
 }
 
+func (svc *serviceContext) deleteProject(c *gin.Context) {
+	projID := c.Param("id")
+	claims := getJWTClaims(c)
+	log.Printf("INFO: %s requests project %s delete", claims.ComputeID, projID)
+	if claims.Role != "admin" && claims.Role != "supervisor" {
+		c.String(http.StatusForbidden, "you cannot delete this project")
+		return
+	}
+
+	log.Printf("INFO: delete notes associated with project %s", projID)
+	if err := svc.DB.Exec("delete from notes where project_id=?", projID).Error; err != nil {
+		log.Printf("ERROR: unable to delete notes for canceled project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: delete equipment associated with project %s", projID)
+	if err := svc.DB.Exec("delete from project_equipment where project_id=?", projID).Error; err != nil {
+		log.Printf("ERROR: unable to delete equipment for canceled project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: delete assigmnents associated with project %s", projID)
+	if err := svc.DB.Exec("delete from assignments where project_id=?", projID).Error; err != nil {
+		log.Printf("ERROR: unable to delete assignments for canceled project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: delete project %s", projID)
+	if err := svc.DB.Exec("delete from projects where id=?", projID).Error; err != nil {
+		log.Printf("ERROR: unable to project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.String(http.StatusOK, "deleted")
+}
+
 func (svc *serviceContext) updateProjecImageCount(c *gin.Context) {
 	projID := c.Param("id")
 	log.Printf("INFO: check project %s image count", projID)

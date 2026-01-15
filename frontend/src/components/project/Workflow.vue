@@ -1,5 +1,9 @@
 <template>
-   <ConfirmDialog position="top"/>
+   <ConfirmDialog position="top">
+      <template #message="slotProps">
+         <div style="text-align: left;" v-html="slotProps.message.message"/>
+      </template>
+   </ConfirmDialog>
    <Panel header="Workflow" class="panel">
       <dl>
          <dt>Name:</dt>
@@ -50,6 +54,7 @@
          <WaitSpinner :overlay="false" message="Finalization in progress..." />
       </div>
       <div class="workflow-btns" v-else-if="isFinished == false">
+         <DPGButton @click="deleteProjectClicked" class="delete" severity="danger" v-if="isSupervisor || isAdmin" label="Delete Project"/>
          <DPGButton @click="viewerClicked" severity="secondary" v-if="isScanning == false && (isOwner(userStore.computeID) || isSupervisor || isAdmin)" label="Open QA Viewer"/>
          <DPGButton v-if="hasOwner && (isAdmin || isSupervisor)"
             @click="clearClicked()" severity="secondary" label="Clear Assignment"/>
@@ -94,7 +99,9 @@ import Panel from 'primevue/panel'
 import InputNumber from 'primevue/inputnumber'
 import ProgressSpinner from 'primevue/progressspinner'
 import { useFocus } from '@vueuse/core'
+import { useConfirm } from "primevue/useconfirm"
 
+const confirm = useConfirm()
 const router = useRouter()
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
@@ -195,14 +202,34 @@ const componentChanged = ( async ()=> {
    }
 })
 
-function clearClicked() {
-   projectStore.assignProject({projectID: detail.value.id, ownerID: 0} )
-}
+const deleteProjectClicked = (() => {
+   let note = `<p><b>Important</b>: any images asoociated with this project will be left<br/>in the processing directory for unit ${detail.value.unitID} </p>`
+   confirm.require({
+      message: `Delete this project? This cannot be reversed. ${note}`,
+      header: 'Confirm Delete',
+      icon: 'pi pi-exclamation-triangle',
+      rejectProps: {
+         label: 'Cancel',
+         severity: 'secondary'
+      },
+      acceptProps: {
+         label: 'Delete',
+         severity: 'danger'
+      },
+      accept: async () => {
+          await projectStore.deleteProject(detail.value.id)
+      }
+   })
+})
 
-function rejectStepClicked() {
+const clearClicked = (() => {
+   projectStore.assignProject({projectID: detail.value.id, ownerID: 0} )
+})
+
+const rejectStepClicked = (() => {
    action.value = "reject"
    showTimeEntry()
-}
+})
 
 function claimClicked() {
    projectStore.assignProject({projectID: detail.value.id, ownerID: userStore.ID} )
@@ -294,6 +321,9 @@ function unitDirectory(unitID) {
       justify-content: flex-end;
       align-items: flex-start;
       gap: 10px;
+      .delete {
+         margin-right: auto;
+      }
    }
    .workflow-btns.time {
       text-align: left;
