@@ -37,11 +37,14 @@ func main() {
 	router.GET("/authenticate", svc.authenticate)
 	router.POST("/units/:uid/cleanup", svc.cleanupImageFilenames)
 
-	// external API used by TrackSys
-	router.GET("/constants", svc.getConstants)
-	router.GET("/projects/lookup/:uid", svc.lookupProjectForUnit)
-	router.POST("/projects/create", svc.extAuthMiddleware, svc.createProject)
-	router.POST("/projects/:id/cancel", svc.extAuthMiddleware, svc.cancelProject)
+	// external API used by TrackSys / dpg-jobs
+	ext := router.Group("/ext")
+	{
+		ext.GET("/constants", svc.getConstants)
+		ext.GET("/projects/lookup/:uid", svc.lookupProjectForUnit)
+		ext.POST("/projects/create", svc.extAuthMiddleware, svc.createProject)
+		ext.POST("/projects/:id/cancel", svc.extAuthMiddleware, svc.cancelProject)
+	}
 
 	api := router.Group("/api", svc.authMiddleware)
 	{

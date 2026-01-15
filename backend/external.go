@@ -157,3 +157,11 @@ func (svc *serviceContext) createProject(c *gin.Context) {
 func (svc *serviceContext) cancelProject(c *gin.Context) {
 	c.String(http.StatusNotImplemented, "NO")
 }
+
+func (svc *serviceContext) failProject(c *gin.Context) {
+	c.String(http.StatusNotImplemented, "NO")
+}
+
+func (svc *serviceContext) finishProject(c *gin.Context) {
+	c.String(http.StatusNotImplemented, "NO")
+}
