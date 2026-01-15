@@ -13,11 +13,10 @@ type dbConfig struct {
 	Name string
 }
 
-type tracksysCfg struct {
+type tracksysURLs struct {
 	Client string
 	API    string
 	Jobs   string
-	JWTKey string
 }
 
 type configData struct {
@@ -28,7 +27,7 @@ type configData struct {
 	finalizeDir string
 	iiifURL     string
 	serviceURL  string
-	tracksys    tracksysCfg
+	tracksys    tracksysURLs
 	jwtKey      string
 	devAuthUser string
 }
@@ -47,7 +46,6 @@ func getConfiguration() *configData {
 	flag.StringVar(&config.tracksys.API, "tsapiurl", "https://tracksys-api-ws.internal.lib.virginia.edu/api", "URL for TrackSysAPI service")
 	flag.StringVar(&config.tracksys.Client, "tsurl", "https://tracksys.lib.virginia.edu", "URL for TrackSys")
 	flag.StringVar(&config.tracksys.Jobs, "finalizeurl", "", "URL for finalization processing")
-	flag.StringVar(&config.tracksys.JWTKey, "tskey", "", "TrackSys JWT key")
 
 	// DB connection params
 	flag.StringVar(&config.db.Host, "dbhost", "", "Database host")
@@ -97,9 +95,6 @@ func getConfiguration() *configData {
 	}
 	if config.tracksys.Jobs == "" {
 		log.Fatal("Parameter finalizeurl is required")
-	}
-	if config.tracksys.JWTKey == "" {
-		log.Fatal("Parameter tskey is required")
 	}
 
 	log.Printf("[CONFIG] port          = [%d]", config.port)

@@ -31,7 +31,7 @@ type serviceContext struct {
 	ScanDir              string
 	FinalizeDir          string
 	IIIFURL              string
-	TrackSys             tracksysCfg
+	TrackSys             tracksysURLs
 	HTTPClient           *http.Client
 	DB                   *gorm.DB
 	DevAuthUser          string

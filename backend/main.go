@@ -35,21 +35,20 @@ func main() {
 	router.GET("/version", svc.getVersion)
 	router.GET("/healthcheck", svc.healthCheck)
 	router.GET("/authenticate", svc.authenticate)
-	router.POST("/units/:uid/cleanup", svc.cleanupImageFilenames)
 
 	// external API used by TrackSys / dpg-jobs
-	ext := router.Group("/ext")
-	{
-		ext.GET("/constants", svc.getConstants)
-		ext.GET("/projects/lookup/:uid", svc.lookupProjectForUnit)
-		ext.POST("/projects/create", svc.extAuthMiddleware, svc.createProject)
-		ext.POST("/projects/:id/cancel", svc.extAuthMiddleware, svc.cancelProject)
-		ext.POST("/projects/:id/finish", svc.extAuthMiddleware, svc.finishProject)
-		ext.POST("/projects/:id/fail", svc.extAuthMiddleware, svc.failProject)
-	}
+	router.GET("/constants", svc.getConstants)
+	router.GET("/projects/lookup/:uid", svc.lookupProjectForUnit)
+	router.POST("/units/:uid/cleanup", svc.cleanupImageFilenames)
 
 	api := router.Group("/api", svc.authMiddleware)
 	{
+		// external calls used by TS/jobs
+		api.POST("/projects/create", svc.createProject)
+		api.POST("/projects/:id/cancel", svc.cancelProject)
+		api.POST("/projects/:id/finish", svc.finishProject)
+		api.POST("/projects/:id/fail", svc.failProject)
+
 		api.GET("/components/:id", svc.getComponent)
 
 		// equipment management

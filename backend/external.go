@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 )
 
@@ -20,36 +19,6 @@ type conatantVal struct {
 type constants struct {
 	Categories []conatantVal `json:"categories"`
 	Workflows  []conatantVal `json:"workflows"`
-}
-
-func (svc *serviceContext) extAuthMiddleware(c *gin.Context) {
-	log.Printf("Authorize external access to %s", c.Request.URL)
-	tokenStr, err := getBearerToken(c.Request.Header.Get("Authorization"))
-	if err != nil {
-		log.Printf("Authentication failed: [%s]", err.Error())
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-
-	if tokenStr == "undefined" {
-		log.Printf("Authentication failed; bearer token is undefined")
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-
-	log.Printf("Validating JWT auth token with tracksys key...")
-	jwtClaims := jwtClaims{}
-	_, jwtErr := jwt.ParseWithClaims(tokenStr, &jwtClaims, func(token *jwt.Token) (any, error) {
-		return []byte(svc.TrackSys.JWTKey), nil
-	})
-	if jwtErr != nil {
-		log.Printf("Authentication failed; token validation failed: %+v", jwtErr)
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-
-	log.Printf("got valid bearer token for external auth: [%s] for %v", tokenStr, jwtClaims)
-	c.Next()
 }
 
 func (svc *serviceContext) getConstants(c *gin.Context) {
