@@ -153,6 +153,13 @@ export const useSearchStore = defineStore('search', {
          })
       },
 
+      updateOwner(projectID, newOwner) {
+         let p = this.projects.find( proj => proj.id = projectID)
+         if ( p ) {
+            p.owner = newOwner
+         }
+      },
+
       changeFilter( newFilter ) {
          this.pageSize =  20
          this.currPage = 1

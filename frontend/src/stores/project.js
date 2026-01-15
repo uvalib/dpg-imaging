@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { useSystemStore } from './system'
+import { useSearchStore } from './search'
 import axios from 'axios'
 
 export const useProjectStore = defineStore('project', {
@@ -241,15 +242,20 @@ export const useProjectStore = defineStore('project', {
          const system = useSystemStore()
          return axios.post(`/api/projects/${projectID}/assign/${ownerID}`).then(response => {
             console.log(response.data)
-            this.detail.notes = response.data.notes
-            this.detail.assignments = response.data.assignments
-            this.detail.owner = null
+            let newOwner = null
             if ( response.data.ownerID > 0) {
-               this.detail.owner = system.getStaffMember( response.data.ownerID )
+               newOwner = system.getStaffMember( response.data.ownerID )
             }
+            if ( this.detail ) {
+               this.detail.notes = response.data.notes
+               this.detail.assignments = response.data.assignments
+               this.detail.owner = newOwner
+            }
+            const search = useSearchStore()
+            search.updateOwner(projectID, newOwner)
             this.working = false
          }).catch( e => {
-
+            console.error(e)
             system.setError( e )
             this.working = false
          })
