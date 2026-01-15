@@ -565,7 +565,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 
 	log.Printf("INFO: lookup project %s", projID)
 	var proj project
-	err := svc.DB.Joins("Unit").Preload("Workflow").First(&proj, projID).Error // FIXME UNIT NEEDED TO GET METADATA ID
+	err := svc.DB.Preload("Workflow").First(&proj, projID).Error
 	if err != nil {
 		log.Printf("ERROR: unable to get project %s update: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
@@ -586,35 +586,12 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 		return
 	}
 
-	// FIXME API call to update OCR for unit; PROBLEM TSAPI is readonly. Single call PUT unit/:id/ocr that accepts all 3 OCR settings. Possible: call TS direct OR make it a job instead
-	log.Printf("INFO: update OCR settings for project %s", projID)
-	tgtUnit := unit{ID: proj.UnitID, OCRMasterFiles: updateData.OCRMasterFiles}
-	err = svc.DB.Model(&tgtUnit).Select("OCRMasterFiles").Updates(tgtUnit).Error
-	if err != nil {
-		log.Printf("ERROR: unable to update unit OCR settings for project %s: %s", projID, err.Error())
-		c.String(http.StatusInternalServerError, err.Error())
+	log.Printf("INFO: call jobs service to upload ocr settings for project %s", projID)
+	_, httpErr := svc.postRequest(fmt.Sprintf("%s/units/%d/ocr-settings", svc.TrackSys.Jobs, proj.UnitID), updateData)
+	if httpErr != nil {
+		log.Printf("ERROR: update ocr settings request failed: %s", httpErr.Message)
+		c.String(httpErr.StatusCode, httpErr.Message)
 		return
-	}
-
-	if updateData.OCRHintID > 0 {
-		// FIXME API call to lookup unit to get ID then API call to update OCR : Problem, TS API is readonly
-		tgtMD := metadata{ID: proj.Unit.MetadataID, OCRHintID: updateData.OCRHintID}
-		err = svc.DB.Model(&tgtMD).Select("OCRHintID").Updates(tgtMD).Error
-		if err != nil {
-			log.Printf("ERROR: unable to update OCR Hint for project %s: %s", projID, err.Error())
-			c.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-	}
-
-	if updateData.OCRLanguageHint != "" {
-		tgtMD := metadata{ID: proj.Unit.MetadataID, OCRLanguageHint: updateData.OCRLanguageHint}
-		err = svc.DB.Model(&tgtMD).Select("OCRLanguageHint").Updates(tgtMD).Error
-		if err != nil {
-			log.Printf("ERROR: unable to update OCR Language for project %s: %s", projID, err.Error())
-			c.String(http.StatusInternalServerError, err.Error())
-			return
-		}
 	}
 
 	c.JSON(http.StatusOK, updateData)

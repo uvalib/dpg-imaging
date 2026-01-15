@@ -45,7 +45,7 @@ func getConfiguration() *configData {
 	// tracksys config
 	flag.StringVar(&config.tracksys.API, "tsapiurl", "https://tracksys-api-ws.internal.lib.virginia.edu/api", "URL for TrackSysAPI service")
 	flag.StringVar(&config.tracksys.Client, "tsurl", "https://tracksys.lib.virginia.edu", "URL for TrackSys")
-	flag.StringVar(&config.tracksys.Jobs, "finalizeurl", "", "URL for finalization processing")
+	flag.StringVar(&config.tracksys.Jobs, "jobsurl", "", "URL for dpg-jobs processing")
 
 	// DB connection params
 	flag.StringVar(&config.db.Host, "dbhost", "", "Database host")
@@ -94,7 +94,7 @@ func getConfiguration() *configData {
 		log.Fatal("Parameter tsurl is required")
 	}
 	if config.tracksys.Jobs == "" {
-		log.Fatal("Parameter finalizeurl is required")
+		log.Fatal("Parameter jobsurl is required")
 	}
 
 	log.Printf("[CONFIG] port          = [%d]", config.port)
@@ -105,7 +105,7 @@ func getConfiguration() *configData {
 	log.Printf("[CONFIG] serviceURL    = [%s]", config.serviceURL)
 	log.Printf("[CONFIG] tracksysAPI   = [%s]", config.tracksys.API)
 	log.Printf("[CONFIG] tracksysURL   = [%s]", config.tracksys.Client)
-	log.Printf("[CONFIG] finalizeURL   = [%s]", config.tracksys.Jobs)
+	log.Printf("[CONFIG] jobsURL       = [%s]", config.tracksys.Jobs)
 	log.Printf("[CONFIG] dbhost        = [%s]", config.db.Host)
 	log.Printf("[CONFIG] dbport        = [%d]", config.db.Port)
 	log.Printf("[CONFIG] dbname        = [%s]", config.db.Name)

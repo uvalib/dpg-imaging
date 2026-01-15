@@ -35,7 +35,7 @@
          </dd>
          <dt>OCR Language Hint:</dt>
          <dd>
-            <span v-if="detail.unit.metadata.ocrLanguageHint">{{detail.unit.metadata.ocrLanguageHint}}</span>
+            <span v-if="detail.unit.metadata.ocrLanguageHint">{{ systemStore.getOCRLanguageHint(detail.unit.metadata.ocrLanguageHint).language }}</span>
             <span v-else class="na">EMPTY</span>
          </dd>
          <dt>OCR Master Files:</dt>

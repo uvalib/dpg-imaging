@@ -53,6 +53,28 @@ export const useSystemStore = defineStore('system', {
             return ct
          }
       },
+      getOCRHint: state => {
+         return (id) => {
+            let hint = null
+            state.ocrHints.forEach( val => {
+               if (val.id == id) {
+                  hint = val
+               }
+            })
+            return hint
+         }
+      },
+      getOCRLanguageHint: state => {
+         return (code) => {
+            let hint = null
+            state.ocrLanguageHints.forEach( val => {
+               if (val.code == code) {
+                  hint = val
+               }
+            })
+            return hint
+         }
+      },
       getStaffMember: state => {
          return (staffID) => {
             let staff = null

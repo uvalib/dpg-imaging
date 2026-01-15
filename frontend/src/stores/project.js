@@ -137,9 +137,8 @@ export const useProjectStore = defineStore('project', {
             this.detail.itemCondition = response.data.condition
             this.detail.conditionNote = response.data.note
             this.detail.unit.ocrMasterFiles = response.data.ocrMasterFiles
-            // FIXME
-            // this.detail.unit.metadata.ocrHint = response.data.ocrHint
-            // this.detail.unit.metadata.ocrLanguageHint = response.data.ocrLangage
+            this.detail.unit.metadata.ocrHint = system.getOCRHint( response.data.ocrHintID )
+            this.detail.unit.metadata.ocrLanguageHint = response.data.ocrLangage
             this.working = false
          }).catch( e => {
             console.error(e)
