@@ -75,7 +75,7 @@ export const useSearchStore = defineStore('search', {
             }
 
             if ( !p.currentStep )  {
-               return "Status unknowm"
+               return "Status unknown"
             }
 
             let out = `${p.currentStep.name}: `

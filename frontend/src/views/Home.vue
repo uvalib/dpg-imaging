@@ -107,7 +107,7 @@
                      <div class="status" v-if="!p.finishedAt || p.finishedAt == ''">
                         <div class="progress-panel">
                            <span :class="{error: searchStore.hasError(idx)}">{{searchStore.statusText(p.id)}}</span>
-                           <div class="progress-bar">
+                           <div class="progress-bar" v-if="p.currentStep">
                               <div class="percentage" :style="{width: searchStore.percentComplete(p.id) }"></div>
                            </div>
                         </div>
