@@ -41,7 +41,7 @@
                   No projects match your search criteria
                </div>
                <ul v-else class="projects">
-                  <li class="card" v-for="(p,idx) in searchStore.projects" :key="`p${p.id}`">
+                  <li class="card" v-for="(p,idx) in searchStore.projects" :key="`p${p.id}`" :class="{finished: p.finishedAt}">
                      <div class="top">
                         <div class="due">
                            <span>
@@ -357,6 +357,9 @@ const isOverdue = ((projIdx) => {
       flex-grow: 1;
       background: transparent;
 
+      .card.finished {
+         padding-bottom: 0px;
+      }
       .card {
          flex: 0 1 calc(25% - 1em);
          border: 1px solid var(--uvalib-grey-light);
