@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -39,13 +40,21 @@ func (svc *serviceContext) getConstants(c *gin.Context) {
 }
 
 func (svc *serviceContext) lookupProjectForUnit(c *gin.Context) {
-	uid := c.Param("uid")
+	uid := c.Query("unit")
+	if uid == "" {
+		log.Printf("INFO: project lookup request is missing required unit param")
+		c.String(http.StatusBadRequest, "missing required unit param")
+		return
+	}
 	type lookupResp struct {
-		Exists    bool `json:"exists"`
-		ProjectID uint `json:"projectID"`
+		Exists      bool   `json:"exists"`
+		ProjectID   uint   `json:"projectID"`
+		Workflow    string `json:"workflow"`
+		CurrentStep string `json:"currentStep"`
+		Finished    bool   `json:"finished"`
 	}
 	var proj project
-	if err := svc.DB.Where("unit_id=?", uid).First(&proj).Error; err != nil {
+	if err := svc.DB.Preload("CurrentStep").Preload("Workflow").Where("unit_id=?", uid).First(&proj).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) == false {
 			log.Printf("ERROR: lookup project for unit %s failed: %s", uid, err.Error())
 			c.String(http.StatusInternalServerError, err.Error())
@@ -56,7 +65,15 @@ func (svc *serviceContext) lookupProjectForUnit(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, lookupResp{Exists: true, ProjectID: proj.ID})
+	stepName := "None"
+	if proj.CurrentStepID != nil {
+		stepName = proj.CurrentStep.Name
+	}
+	c.JSON(http.StatusOK, lookupResp{Exists: true,
+		ProjectID:   proj.ID,
+		Workflow:    proj.Workflow.Name,
+		CurrentStep: stepName,
+		Finished:    proj.FinishedAt != nil})
 }
 
 type createProjectRequest struct {
@@ -103,7 +120,7 @@ func (svc *serviceContext) createProject(c *gin.Context) {
 	newProj := project{
 		WorkflowID:    uint(req.WorkflowID),
 		UnitID:        uint(req.UnitID),
-		CurrentStepID: firstStep.ID,
+		CurrentStepID: &firstStep.ID,
 		AddedAt:       &now,
 		CategoryID:    uint(req.CategoryID),
 		ItemCondition: uint(req.Condition),
@@ -124,13 +141,130 @@ func (svc *serviceContext) createProject(c *gin.Context) {
 }
 
 func (svc *serviceContext) cancelProject(c *gin.Context) {
+	projID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	claims := getJWTClaims(c)
+	log.Printf("INFO: %s requests cancelation of project %d", claims.ComputeID, projID)
+	if claims.Role != "admin" && claims.Role != "supervisor" {
+		c.String(http.StatusForbidden, "you cannot cancel this project")
+		return
+	}
+
+	if err := svc.doProjectDelete(projID); err != nil {
+		log.Printf("ERROR: %s", err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: project %d has been canceled and all associated data deleted", projID)
 	c.String(http.StatusNotImplemented, "NO")
 }
 
 func (svc *serviceContext) failProject(c *gin.Context) {
-	c.String(http.StatusNotImplemented, "NO")
+	projID := c.Param("id")
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	if qpErr := c.ShouldBindJSON(&req); qpErr != nil {
+		log.Printf("ERROR: invalid fail project payload: %v", qpErr)
+		c.String(http.StatusBadRequest, "Invalid request")
+		return
+	}
+
+	log.Printf("INFO: fail project %s for reason [%s]", projID, req.Reason)
+
+	var tgtProj project
+	if err := svc.DB.Preload("CurrentStep").First(&tgtProj, projID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) == false {
+			log.Printf("ERROR: unable to load project %s: %s", projID, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			log.Printf("INFO: project %s not found", projID)
+			c.String(http.StatusNotFound, fmt.Sprintf("project %s not found", projID))
+		}
+		return
+	}
+
+	msg := fmt.Sprintf("<p>%s failed</p><p>%s</p>", tgtProj.CurrentStep.Name, req.Reason)
+	svc.failStep(&tgtProj, "Other", msg)
+
+	c.String(http.StatusOK, "ok")
 }
 
 func (svc *serviceContext) finishProject(c *gin.Context) {
-	c.String(http.StatusNotImplemented, "NO")
+	projID := c.Param("id")
+	var req struct {
+		ProcessingMins uint `json:"processingMins"`
+	}
+	if qpErr := c.ShouldBindJSON(&req); qpErr != nil {
+		log.Printf("ERROR: invalid finish project payload: %v", qpErr)
+		c.String(http.StatusBadRequest, "Invalid request")
+		return
+	}
+
+	log.Printf("INFO: request to finish project %s with finalization duration %d mins", projID, req.ProcessingMins)
+
+	var tgtProj project
+	if err := svc.DB.Preload("CurrentStep").First(&tgtProj, projID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) == false {
+			log.Printf("ERROR: unable to load project %s: %s", projID, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			log.Printf("INFO: project %s not found", projID)
+			c.String(http.StatusNotFound, fmt.Sprintf("project %s not found", projID))
+		}
+		return
+	}
+
+	// stepType 1 is the end step. Must be on it to finish project
+	log.Printf("INFO: validate current step is a final step for project %s", projID)
+	if tgtProj.CurrentStep.StepType != 1 {
+		log.Printf("ERROR: project %s is on non-final step %s and cannot be finished", projID, tgtProj.CurrentStep.Name)
+		c.String(http.StatusPreconditionFailed, fmt.Sprintf("project is on non-final step %s and cannot be finished", tgtProj.CurrentStep.Name))
+		return
+	}
+
+	log.Printf("INFO: get active assignment for project %s", projID)
+	var activeAssign assignment
+	if err := svc.DB.Where("project_id=?", tgtProj.ID).Order("assigned_at DESC").First(&activeAssign).Error; err != nil {
+		log.Printf("ERROR: unable to get active assignment for project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	now := time.Now()
+	tgtProj.FinishedAt = &now
+	tgtProj.OwnerID = nil
+	tgtProj.CurrentStepID = nil
+
+	// note: do this first so the calculation of total time below accounts for finalization time
+	log.Printf("INFO: update project %s finalization assignment", projID)
+	activeAssign.FinishedAt = &now
+	activeAssign.Status = 2 // finished
+	activeAssign.DurationMinutes = activeAssign.DurationMinutes + req.ProcessingMins
+	if err := svc.DB.Model(&activeAssign).Select("FinishedAt", "Status", "DurationMinutes").Updates(activeAssign).Error; err != nil {
+		log.Printf("ERROR: unable project %s finalization assignmnent with completion info: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	log.Printf("INFO: calculate total duration for project %s", projID)
+	fields := []string{"FinishedAt", "OwnerID", "CurrentStepID"}
+	sql := "select SUM(duration_minutes) as total from assignments where project_id=?"
+	var total int64
+	if err := svc.DB.Raw(sql, tgtProj.ID).Scan(&total).Error; err != nil {
+		log.Printf("ERROR: unable to calculate project %s duration: %s", projID, err.Error())
+	} else {
+		tgtProj.TotalDurationMins = &total
+		fields = append(fields, "TotalDurationMins")
+		log.Printf("INFO: project %s total duration (minutes): %d", projID, total)
+	}
+
+	log.Printf("INFO: update project %s to reflect completed finalization", projID)
+	if err := svc.DB.Model(tgtProj).Select(fields).Updates(tgtProj).Error; err != nil {
+		log.Printf("ERROR: unable project %s completion info: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	log.Printf("INFO: project %s successfully marked as finished", projID)
+	c.String(http.StatusOK, "ok")
 }

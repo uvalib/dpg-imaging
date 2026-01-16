@@ -127,7 +127,7 @@ func (svc *serviceContext) rejectProjectStep(c *gin.Context) {
 	failStepID := proj.CurrentStep.FailStepID
 	firstA := proj.Assignments[len(proj.Assignments)-1]
 	proj.OwnerID = &firstA.StaffMemberID
-	proj.CurrentStepID = failStepID
+	proj.CurrentStepID = &failStepID
 	svc.DB.Model(proj).Select("CurrentStepID", "OwnerID").Updates(proj)
 	newAssign := assignment{ProjectID: proj.ID, StepID: failStepID, StaffMemberID: firstA.StaffMemberID, AssignedAt: &now}
 	svc.DB.Create(&newAssign)
@@ -291,7 +291,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 
 func (svc *serviceContext) nextStep(proj *project, nextStepID uint, ownerID *uint) error {
 	log.Printf("INFO: advance project %d to step %d", proj.ID, nextStepID)
-	proj.CurrentStepID = nextStepID
+	proj.CurrentStepID = &nextStepID
 	proj.OwnerID = ownerID
 	resp := svc.DB.Model(proj).Select("CurrentStepID", "OwnerID").Updates(proj)
 	if resp.Error != nil {

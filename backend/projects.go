@@ -104,6 +104,7 @@ func (projectEquipment) TableName() string {
 	return "project_equipment"
 }
 
+// IMPORTANT: if there are any projects where current_step is invalid, ALL current step info in the search resuls are blanked out
 type project struct {
 	ID                uint          `json:"id"`
 	WorkflowID        uint          `json:"-"`
@@ -113,8 +114,8 @@ type project struct {
 	OwnerID           *uint         `json:"ownerID"`
 	ImageCount        int           `json:"imageCount"`
 	Assignments       []*assignment `gorm:"foreignKey:ProjectID" json:"assignments"`
-	CurrentStepID     uint          `json:"-"`
-	CurrentStep       step          `gorm:"foreignKey:CurrentStepID" json:"currentStep"`
+	CurrentStepID     *uint         `json:"currentStepID"`
+	CurrentStep       *step         `gorm:"foreignKey:CurrentStepID" json:"currentStep"`
 	AddedAt           *time.Time    `json:"addedAt,omitempty"`
 	StartedAt         *time.Time    `json:"startedAt,omitempty"`
 	FinishedAt        *time.Time    `json:"finishedAt,omitempty"`
@@ -174,43 +175,44 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 }
 
 func (svc *serviceContext) deleteProject(c *gin.Context) {
-	projID := c.Param("id")
+	projID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	claims := getJWTClaims(c)
-	log.Printf("INFO: %s requests project %s delete", claims.ComputeID, projID)
+	log.Printf("INFO: %s requests project %d delete", claims.ComputeID, projID)
 	if claims.Role != "admin" && claims.Role != "supervisor" {
 		c.String(http.StatusForbidden, "you cannot delete this project")
 		return
 	}
 
-	log.Printf("INFO: delete notes associated with project %s", projID)
-	if err := svc.DB.Exec("delete from notes where project_id=?", projID).Error; err != nil {
-		log.Printf("ERROR: unable to delete notes for canceled project %s: %s", projID, err.Error())
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	log.Printf("INFO: delete equipment associated with project %s", projID)
-	if err := svc.DB.Exec("delete from project_equipment where project_id=?", projID).Error; err != nil {
-		log.Printf("ERROR: unable to delete equipment for canceled project %s: %s", projID, err.Error())
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	log.Printf("INFO: delete assigmnents associated with project %s", projID)
-	if err := svc.DB.Exec("delete from assignments where project_id=?", projID).Error; err != nil {
-		log.Printf("ERROR: unable to delete assignments for canceled project %s: %s", projID, err.Error())
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	log.Printf("INFO: delete project %s", projID)
-	if err := svc.DB.Exec("delete from projects where id=?", projID).Error; err != nil {
-		log.Printf("ERROR: unable to project %s: %s", projID, err.Error())
+	if err := svc.doProjectDelete(projID); err != nil {
+		log.Printf("ERROR: %s", err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	c.String(http.StatusOK, "deleted")
+}
+
+func (svc *serviceContext) doProjectDelete(projID int64) error {
+	log.Printf("INFO: delete notes associated with project %d", projID)
+	if err := svc.DB.Exec("delete from notes where project_id=?", projID).Error; err != nil {
+		return fmt.Errorf("unable to delete notes for canceled project %d: %s", projID, err.Error())
+	}
+
+	log.Printf("INFO: delete equipment associated with project %d", projID)
+	if err := svc.DB.Exec("delete from project_equipment where project_id=?", projID).Error; err != nil {
+		return fmt.Errorf("unable to delete equipment for canceled project %d: %s", projID, err.Error())
+	}
+
+	log.Printf("INFO: delete assigmnents associated with project %d", projID)
+	if err := svc.DB.Exec("delete from assignments where project_id=?", projID).Error; err != nil {
+		return fmt.Errorf("unable to delete assignments for canceled project %d: %s", projID, err.Error())
+	}
+
+	log.Printf("INFO: delete project %d", projID)
+	if err := svc.DB.Exec("delete from projects where id=?", projID).Error; err != nil {
+		return fmt.Errorf("unable to project %d: %s", projID, err.Error())
+	}
+	return nil
 }
 
 func (svc *serviceContext) updateProjecImageCount(c *gin.Context) {
@@ -342,7 +344,8 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	log.Printf("INFO: user %s requests projects page %d", claims.ComputeID, page)
 
 	// ALWAYS exclude caneled projects. exclude done projects when filter is not finished.
-	// TODO projects need to track if they are canceled too: add canceled_at
+	// FIXME remove this once bad data is cleaned up.
+	// this is the problem project: https://dpg-imaging.lib.virginia.edu/projects/6062
 	whereQ := " AND unit_status != 'canceled'"
 
 	qWorkflow := c.Query("workflow")
@@ -502,7 +505,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 		// In a clear POST, userID will be 0 and all owner lookups and error checks are skipped
 		now := time.Now()
 		msg := fmt.Sprintf("<p>Admin user canceled assignment to %s</p>", svc.getComputeID(*proj.OwnerID))
-		newNote := note{ProjectID: proj.ID, StepID: proj.CurrentStepID, StaffMemberID: *proj.OwnerID,
+		newNote := note{ProjectID: proj.ID, StepID: *proj.CurrentStepID, StaffMemberID: *proj.OwnerID,
 			NoteType: 0, Note: msg, CreatedAt: &now, UpdatedAt: &now}
 		problemIDs := make([]uint, 0)
 		_, err := svc.addNote(proj, newNote, problemIDs)
@@ -549,7 +552,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 
 			log.Printf("INFO: create assigmment for new owner %d", out.OwnerID)
 			now := time.Now()
-			newA := assignment{ProjectID: proj.ID, StepID: proj.CurrentStepID, StaffMemberID: out.OwnerID, AssignedAt: &now}
+			newA := assignment{ProjectID: proj.ID, StepID: *proj.CurrentStepID, StaffMemberID: out.OwnerID, AssignedAt: &now}
 			if err := svc.DB.Create(&newA).Error; err != nil {
 				log.Printf("ERROR: unable to create new assignment for project %d step %d: %s", proj.ID, proj.CurrentStepID, err.Error())
 				c.String(http.StatusInternalServerError, err.Error())

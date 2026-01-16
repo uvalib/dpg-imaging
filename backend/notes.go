@@ -104,7 +104,7 @@ func (svc *serviceContext) failStep(proj *project, problemName string, message s
 
 	log.Printf("INFO: adding problem(%s) note to project %d step %s", problemName, proj.ID, proj.CurrentStep.Name)
 	now := time.Now()
-	newNote := note{ProjectID: proj.ID, StepID: proj.CurrentStepID, StaffMemberID: *proj.OwnerID,
+	newNote := note{ProjectID: proj.ID, StepID: *proj.CurrentStepID, StaffMemberID: *proj.OwnerID,
 		NoteType: 2, Note: message, CreatedAt: &now, UpdatedAt: &now}
 	err := svc.DB.Model(&proj).Association("Notes").Append(&newNote)
 	if err != nil {
