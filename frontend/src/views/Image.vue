@@ -211,12 +211,13 @@ const keyboardHandler = ((event) => {
       if (fullScreen.value ) {
          ele.style.top = `0px`
          ele.style.height = `100%`
-      } else {
-         ele.style.top = `${viewerTop.value}px`
-         ele.style.height = `${viewerH.value}px`
       }
       focusViewer()
       setTimeout( () => {
+         if ( fullScreen.value == false ) {
+            ele.style.top = `${viewerTop.value}px`
+            ele.style.height = `${viewerH.value}px`
+         }
          if (zoom.value != origZoom)  {
             zoom.value = origZoom
             viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(origZoom))
