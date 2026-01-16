@@ -73,7 +73,11 @@ export const useSearchStore = defineStore('search', {
             if (p.finishedAt != null) {
                return `Finished at ${p.finishedAt.split("T")[0]}`
             }
-            let out = `${p.currentStep.name}: `
+            let stepName = "Unknown step: "
+            if ( p.currentStep ) {
+               stepName = `${p.currentStep.name}: `
+            }
+            let out = stepName
             let a = p.assignments.find(a => a.step.id == p.currentStep.id)
             if ( a ) {
                if (a.finishedAt != null) {
