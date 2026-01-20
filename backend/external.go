@@ -162,7 +162,9 @@ func (svc *serviceContext) cancelProject(c *gin.Context) {
 func (svc *serviceContext) failProject(c *gin.Context) {
 	projID := c.Param("id")
 	var req struct {
-		Reason string `json:"reason"`
+		Reason         string `json:"reason"`
+		ProcessingMins uint   `json:"processingMins"`
+		JobID          int64  `json:"jobID"` // optional
 	}
 	if qpErr := c.ShouldBindJSON(&req); qpErr != nil {
 		log.Printf("ERROR: invalid fail project payload: %v", qpErr)
@@ -184,8 +186,33 @@ func (svc *serviceContext) failProject(c *gin.Context) {
 		return
 	}
 
-	msg := fmt.Sprintf("<p>%s failed</p><p>%s</p>", tgtProj.CurrentStep.Name, req.Reason)
-	svc.failStep(&tgtProj, "Other", msg)
+	// lookup the active assignment
+	log.Printf("INFO: get assignment for project %s, step %s", projID, tgtProj.CurrentStep.Name)
+	var activeAssign assignment
+	if err := svc.DB.Where("project_id=?", projID).Order("assigned_at DESC").Limit(1).First(&activeAssign).Error; err != nil {
+		log.Printf("ERROR: unable to get active assignment for failed project %s: %s", projID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// fail the assign and increase time spent
+	log.Printf("INFO: fail assignment for project %s, step %s and add duration %d mins", projID, tgtProj.CurrentStep.Name, req.ProcessingMins)
+	activeAssign.DurationMinutes += req.ProcessingMins
+	activeAssign.Status = 4 // error
+	if err := svc.DB.Model(&activeAssign).Select("DurationMinutes", "Status").Updates(activeAssign); err != nil {
+		log.Printf("ERROR: unable to update assignment %d to failed: %s", activeAssign.ID, err.Error)
+	}
+
+	// add a note describing the failure
+	if tgtProj.CurrentStep.Name == "Finalization" {
+		msg := fmt.Sprintf("<p>%s</p>", req.Reason)
+		msg += "<p>Please manually correct the finalization problems. Once complete, press the Finish button to restart finalization.</p>"
+		msg += fmt.Sprintf("<p>Error details <a href='%s/job_statuses/%d'>here</a></p>", svc.TrackSys.Client, req.JobID)
+		svc.failStep(&tgtProj, "Finalization", msg)
+	} else {
+		msg := fmt.Sprintf("<p>%s failed</p><p>%s</p>", tgtProj.CurrentStep.Name, req.Reason)
+		svc.failStep(&tgtProj, "Other", msg)
+	}
 
 	c.String(http.StatusOK, "ok")
 }
