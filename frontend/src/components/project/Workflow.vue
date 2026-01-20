@@ -4,7 +4,10 @@
          <div style="text-align: left;" v-html="slotProps.message.message"/>
       </template>
    </ConfirmDialog>
-   <Panel header="Workflow" class="panel">
+   <Panel v-if="isFinished" header="Workflow" class="panel">
+      <div class="finished">This project was completed {{ projectFinishedAt }}<br/>Workflow: {{ detail.workflow.name }}</div>
+   </Panel>
+   <Panel v-else header="Workflow" class="panel">
       <dl>
          <dt>Name:</dt>
          <dd>{{detail.workflow.name}}</dd>
@@ -161,6 +164,12 @@ const startedAt = computed(()=>{
    let currA = detail.value.assignments[0]
    if ( currA && currA.startedAt ) {
       return useDateFormat(currA.startedAt, "YYYY-MM-DD hh:mm A")
+   }
+   return ""
+})
+const projectFinishedAt = computed(()=>{
+   if ( detail.value.finishedAt ) {
+      return useDateFormat( detail.value.finishedAt, "YYYY-MM-DD hh:mm A")
    }
    return ""
 })
@@ -371,6 +380,12 @@ function unitDirectory(unitID) {
             align-items: flex-end;
          }
       }
+   }
+   div.finished {
+      text-align: center;
+      font-size: 1.1em;
+      font-weight: bold;
+      padding: 25px 0;
    }
    .workflow-message {
       padding: 15px 0 0 0;

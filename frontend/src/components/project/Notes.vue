@@ -22,7 +22,7 @@
          </div>
       </div>
       <template #footer>
-         <NoteModal id="note-modal" />
+         <NoteModal v-if="!detail.finishedAt" id="note-modal" />
       </template>
    </Panel>
 </template>

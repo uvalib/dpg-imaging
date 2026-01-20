@@ -96,7 +96,9 @@ export const useProjectStore = defineStore('project', {
             this.detail.owner = system.getStaffMember(this.detail.ownerID)
             delete this.detail.ownerID
             this.working = false
-            axios.put(`/api/projects/${projectID}/images/count`)
+            if (!this.detail.finishedAt ) {
+               axios.put(`/api/projects/${projectID}/images/count`)
+            }
          }).catch( e => {
 
             system.setError( e )

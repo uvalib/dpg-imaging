@@ -98,7 +98,12 @@ func (svc *serviceContext) addNote(proj project, newNote note, problemIDs []uint
 
 func (svc *serviceContext) failStep(proj *project, problemName string, message string) {
 	log.Printf("INFO: flag project %d step %s with an error", proj.ID, proj.CurrentStep.Name)
-	currA := proj.Assignments[0]
+	var currA assignment
+	if err := svc.DB.Where("project_id=?", proj.ID).Order("assigned_at DESC").First(&currA).Error; err != nil {
+		log.Printf("ERROR: unable to get active assignment for project %d: %s", proj.ID, err.Error())
+		return
+	}
+
 	currA.Status = StepError
 	svc.DB.Model(&currA).Select("Status").Updates(currA)
 

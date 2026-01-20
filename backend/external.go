@@ -51,6 +51,7 @@ func (svc *serviceContext) lookupProjectForUnit(c *gin.Context) {
 		ProjectID   uint   `json:"projectID"`
 		Workflow    string `json:"workflow"`
 		CurrentStep string `json:"currentStep"`
+		Started     bool   `json:"started"`
 		Finished    bool   `json:"finished"`
 	}
 	var proj project
@@ -73,6 +74,7 @@ func (svc *serviceContext) lookupProjectForUnit(c *gin.Context) {
 		ProjectID:   proj.ID,
 		Workflow:    proj.Workflow.Name,
 		CurrentStep: stepName,
+		Started:     proj.StartedAt != nil,
 		Finished:    proj.FinishedAt != nil})
 }
 
