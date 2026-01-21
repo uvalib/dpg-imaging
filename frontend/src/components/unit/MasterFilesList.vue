@@ -17,7 +17,7 @@
             <input type="checkbox" style="width: 20px;height: 20px" v-model="slotProps.data.selected" @click="masterFileCheckboxClicked(slotProps.data)"/>
          </template>
       </Column>
-      <Column header="" headerStyle="width: 70px">
+      <Column headerStyle="width: 70px">
          <template #body="slotProps">
             <div class="centered">
                <router-link :to="imageViewerURL(slotProps.data)" @click="imageClicked"><img :src="slotProps.data.thumbURL"/></router-link>
@@ -40,7 +40,7 @@
       <Column header="Title" field="title">
          <template #body="slotProps"><span class="editable">{{ slotProps.data.title }}</span></template>
          <template #editor="{ data, field }">
-            <Select v-model="data[field]" fluid editable :options="system.titleVocab" />
+            <TitlePicker v-model="data[field]"/>
          </template>
       </Column>
       <Column header="Caption" field="description">
@@ -88,15 +88,14 @@
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import TagPicker from '@/components/TagPicker.vue'
-import Select from 'primevue/select'
 import InputText from 'primevue/inputtext'
 import { useProjectStore } from "@/stores/project"
 import { useUnitStore } from "@/stores/unit"
-import { useSystemStore } from "@/stores/system"
 import ViewMode from '@/components/ViewMode.vue'
 import UnitActions from '@/components/unit/UnitActions.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePinnable } from '@/composables/pin'
+import TitlePicker from "@/components/TitlePicker.vue"
 
 usePinnable("mf-table")
 
@@ -104,7 +103,6 @@ const route = useRoute()
 const router = useRouter()
 const projectStore = useProjectStore()
 const unitStore = useUnitStore()
-const system = useSystemStore()
 
 const imageClicked = (() => {
    unitStore.lastURL = route.fullPath
