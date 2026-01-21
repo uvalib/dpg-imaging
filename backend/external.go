@@ -198,11 +198,11 @@ func (svc *serviceContext) failProject(c *gin.Context) {
 	}
 
 	// fail the assign and increase time spent
-	log.Printf("INFO: fail assignment for project %s, step %s and add duration %d mins", projID, tgtProj.CurrentStep.Name, req.ProcessingMins)
+	log.Printf("INFO: fail assignment %d for project %s, step %s and add duration %d mins", activeAssign.ID, projID, tgtProj.CurrentStep.Name, req.ProcessingMins)
 	activeAssign.DurationMinutes += req.ProcessingMins
 	activeAssign.Status = 4 // error
-	if err := svc.DB.Model(&activeAssign).Select("DurationMinutes", "Status").Updates(activeAssign); err != nil {
-		log.Printf("ERROR: unable to update assignment %d to failed: %s", activeAssign.ID, err.Error)
+	if err := svc.DB.Model(&activeAssign).Select("DurationMinutes", "Status").Updates(activeAssign).Error; err != nil {
+		log.Printf("ERROR: unable to update assignment %d to failed: %s", activeAssign.ID, err.Error())
 	}
 
 	// add a note describing the failure
