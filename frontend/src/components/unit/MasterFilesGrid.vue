@@ -36,12 +36,12 @@
                      <div class="metadata">
                         <div class="row">
                            <label>Title</label>
-                           <div tabindex="0" @focus.stop.prevent="editMetadata(image, 'title')"  class="data editable" @click="editMetadata(image, 'title')">
+                           <div tabindex="0" @focus.stop.prevent="editMetadata(image, 'title')"  class="data" @click="editMetadata(image, 'title')">
                               <template v-if="isEditing(image, 'title')">
-                                 <Select id="title-edit" v-model="newValue" fluid editable :options="system.titleVocab" @keydown.enter="submitEdit(image)" @keydown.tab="cancelEdit"/>
+                                  <TitlePicker  v-model="newValue" @cancel="cancelEdit(image)" @submit="submitEdit(image)"/>
                               </template>
                               <template v-else>
-                                 <template v-if="image.title">{{ image.title }}</template>
+                                 <span v-if="image.title" class="editable">{{ image.title }}</span>
                                  <span v-else class="undefined">Undefined</span>
                               </template>
                            </div>
@@ -87,13 +87,12 @@ import TagPicker from '@/components/TagPicker.vue'
 import Card from 'primevue/card'
 import { useProjectStore } from "@/stores/project"
 import { useUnitStore } from "@/stores/unit"
-import { useSystemStore } from "@/stores/system"
 import { ref, nextTick } from 'vue'
-import Select from 'primevue/select'
 import ViewMode from '@/components/ViewMode.vue'
 import UnitActions from '@/components/unit/UnitActions.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePinnable } from '@/composables/pin'
+import TitlePicker from '../TitlePicker.vue'
 
 usePinnable("mf-grid")
 
@@ -101,7 +100,6 @@ const route = useRoute()
 const router = useRouter()
 const projectStore = useProjectStore()
 const unitStore = useUnitStore()
-const system = useSystemStore()
 
 const gallery = ref()
 const editMF = ref(null)

@@ -16,7 +16,7 @@
                      <td class="label">Title:</td>
                      <td class="data" @click="editMetadata('title')" >
                         <template v-if="isEditing('title')">
-                           <Select id="title-edit" v-model="newValue" editable fluid :options="systemStore.titleVocab" @keydown.enter="submitEdit" @keydown.tab="cancelEdit"/>
+                           <TitlePicker v-model="newValue" @cancel="cancelEdit" @submit="submitEdit"/>
                         </template>
                         <template v-else>
                            <span v-if="currMasterFile && currMasterFile.title" class="editable">{{currMasterFile.title}}</span>
@@ -70,12 +70,12 @@
 <script setup>
 import OpenSeadragon from "openseadragon"
 import TagPicker from '../components/TagPicker.vue'
-import Select from 'primevue/select'
 import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUnitStore} from "@/stores/unit"
 import { computed, ref, onBeforeMount, onUnmounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import TitlePicker from "../components/TitlePicker.vue"
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
@@ -136,19 +136,6 @@ const editMetadata = ((field) => {
       newValue.value = mf.description
    }
    editField.value = field
-   nextTick( ()=> {
-      let ele = null
-      if ( field == "description") {
-         ele = document.getElementById("edit-desc")
-      }
-      if ( field == "title") {
-         ele = document.querySelector("#title-edit .p-select-label")
-      }
-      if (ele) {
-         ele.focus()
-         ele.select()
-      }
-   })
 })
 
 const cancelEdit= (() => {
