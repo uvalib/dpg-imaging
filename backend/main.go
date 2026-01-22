@@ -39,7 +39,6 @@ func main() {
 	// external API used by TrackSys / dpg-jobs
 	router.GET("/constants", svc.getConstants)
 	router.GET("/projects/lookup", svc.lookupProjectForUnit)
-	router.POST("/units/:uid/cleanup", svc.cleanupImageFilenames)
 
 	api := router.Group("/api", svc.authMiddleware)
 	{
@@ -85,6 +84,11 @@ func main() {
 		api.POST("/user/:id/messages/:msgid/delete", svc.deleteMessage)
 		api.POST("/user/:id/messages/:msgid/read", svc.markMessageRead)
 		api.POST("/user/:id/messages/send", svc.sendMessage)
+	}
+
+	admin := router.Group("/admin", svc.adminMiddleware)
+	{
+		admin.POST("/cleanup", svc.adminCleanupOldProjects)
 	}
 
 	// Note: in dev mode, this is never actually used. The front end is served

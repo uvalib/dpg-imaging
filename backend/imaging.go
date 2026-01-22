@@ -8,8 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -52,53 +50,6 @@ type updateProblem struct {
 type exifFileCommands struct {
 	File     string
 	Commands []string
-}
-
-func (svc *serviceContext) cleanupImageFilenames(c *gin.Context) {
-	uid := padLeft(c.Param("uid"), 9)
-	unitDir := fmt.Sprintf("%s/%s", svc.ImagesDir, uid)
-
-	log.Printf("INFO: rename or remove  .tif_orignal files in %s", unitDir)
-	renameCnt := 0
-	originalTifRegex := regexp.MustCompile(`^.*\.tif_original$`)
-	err := filepath.Walk(unitDir, func(fullPath string, f os.FileInfo, err error) error {
-		if err != nil {
-			log.Printf("ERROR: directory %s traverse failed: %s", unitDir, err.Error())
-			return nil
-		}
-
-		if f.IsDir() {
-			log.Printf("INFO: directory %s", f.Name())
-			return nil
-		}
-
-		fName := f.Name()
-		if originalTifRegex.Match([]byte(fName)) {
-			fixedName := strings.Replace(fName, "tif_original", "tif", 1)
-			fixedFullPath := path.Join(unitDir, fixedName)
-			log.Printf("INFO: rename %s to %s", fullPath, fixedFullPath)
-			if exists(fixedFullPath) {
-				log.Printf("ERROR: cannot rename %s: %s already exists", fName, fixedFullPath)
-				return nil
-			}
-			err = os.Rename(fullPath, fixedFullPath)
-			if err != nil {
-				log.Printf("ERROR: unable to rename %s: %s", fullPath, err.Error())
-				return nil
-			}
-			renameCnt++
-		}
-
-		return nil
-	})
-	if err != nil {
-		log.Printf("ERROR: unable to walk contents of %s: %s", unitDir, err.Error())
-		c.String(http.StatusInternalServerError, "unable to find units")
-		return
-	}
-
-	log.Printf("INFO: renamed %d files", renameCnt)
-	c.String(http.StatusOK, "ok")
 }
 
 func (svc *serviceContext) updateImageMetadata(c *gin.Context) {
