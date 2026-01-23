@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -49,7 +50,12 @@ func (svc *serviceContext) adminMiddleware(c *gin.Context) {
 
 func (svc *serviceContext) adminCleanupOldProjects(c *gin.Context) {
 	claims := getJWTClaims(c)
+	limit, _ := strconv.ParseUint(c.Query("limit"), 10, 64)
 	log.Printf("INFO: admin %s requests cleanup of projects older than 3 years", claims.ComputeID)
+	if limit > 0 {
+		log.Printf("INFO: limit to %d deletions", limit)
+	}
+
 	threeYearsAgo := time.Now().AddDate(-3, 0, 0)
 	dateStr := threeYearsAgo.Format("2006-01-02")
 	log.Printf("INFO: cutoff date is %s", dateStr)
@@ -78,7 +84,11 @@ func (svc *serviceContext) adminCleanupOldProjects(c *gin.Context) {
 			}
 
 			time.Sleep(100 * time.Millisecond)
-			if delCnt >= 500 {
+			if limit > 0 && delCnt >= int(limit) {
+				log.Printf("INFO: max deletions of 500 projects reached")
+				break
+
+			} else if delCnt >= 500 {
 				log.Printf("INFO: max deletions of 500 projects reached")
 				break
 			}
