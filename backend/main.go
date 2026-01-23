@@ -86,9 +86,10 @@ func main() {
 		api.POST("/user/:id/messages/send", svc.sendMessage)
 	}
 
-	admin := router.Group("/admin", svc.adminMiddleware)
+	cleanup := router.Group("/cleanup", svc.cleanupMiddleware)
 	{
-		admin.POST("/cleanup", svc.adminCleanupOldProjects)
+		cleanup.POST("/finished-projects", svc.cleanupOldProjects)
+		cleanup.POST("/deleted-messages", svc.cleanupDeletedMessages)
 	}
 
 	// Note: in dev mode, this is never actually used. The front end is served
