@@ -86,7 +86,7 @@ func main() {
 		api.POST("/user/:id/messages/send", svc.sendMessage)
 	}
 
-	cleanup := router.Group("/cleanup", svc.cleanupMiddleware)
+	cleanup := router.Group("/cleanup")
 	{
 		cleanup.POST("/finished-projects", svc.cleanupOldProjects)
 		cleanup.POST("/deleted-messages", svc.cleanupDeletedMessages)

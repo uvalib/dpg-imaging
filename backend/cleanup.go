@@ -10,48 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (svc *serviceContext) cleanupMiddleware(c *gin.Context) {
-	log.Printf("Authorize admin access to %s", c.Request.URL)
-	//
-	// TODO if needed, add a config for the min-token service shared secret. Use it to validate the JWT
-	//
-	// tokenStr, err := getBearerToken(c.Request.Header.Get("Authorization"))
-	// if err != nil {
-	// 	log.Printf("Authentication failed: [%s]", err.Error())
-	// 	c.AbortWithStatus(http.StatusUnauthorized)
-	// 	return
-	// }
-
-	// if tokenStr == "undefined" {
-	// 	log.Printf("Authentication failed; bearer token is undefined")
-	// 	c.AbortWithStatus(http.StatusUnauthorized)
-	// 	return
-	// }
-
-	// log.Printf("Validating JWT auth token...")
-	// jwtClaims := jwtClaims{}
-	// _, jwtErr := jwt.ParseWithClaims(tokenStr, &jwtClaims, func(token *jwt.Token) (any, error) {
-	// 	return []byte(svc.JWTKey), nil
-	// })
-	// if jwtErr != nil {
-	// 	log.Printf("Authentication failed; token validation failed: %+v", jwtErr)
-	// 	c.AbortWithStatus(http.StatusUnauthorized)
-	// 	return
-	// }
-
-	// if jwtClaims.Role != "admin" {
-	// 	log.Printf("Authentication failed; admin required")
-	// 	c.AbortWithStatus(http.StatusUnauthorized)
-	// 	return
-	// }
-
-	// log.Printf("got valid bearer token: [%s] for %s", tokenStr, jwtClaims.ComputeID)
-	// c.Set("jwt", tokenStr)
-	// c.Set("claims", jwtClaims)
-	log.Printf("INFO: auth check stubbed and all are granted access")
-	c.Next()
-}
-
 func (svc *serviceContext) cleanupOldProjects(c *gin.Context) {
 	limit, _ := strconv.ParseUint(c.Query("limit"), 10, 64)
 	log.Printf("INFO: cleanup of projects older than 3 years requested")
