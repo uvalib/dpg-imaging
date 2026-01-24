@@ -72,6 +72,13 @@ func (svc *serviceContext) cleanupDeletedMessages(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	if delCount == 0 {
+		log.Printf("INFO: there are no messages to delete")
+		c.String(http.StatusOK, "no messages to delete")
+		return
+	}
+
 	log.Printf("INFO: delete %d deleted messages", delCount)
 	if err := svc.DB.Exec("DELETE from messages where deleted=? and deleted_at < ?", 1, dateStr).Error; err != nil {
 		log.Printf("ERROR: unable to delete messages: %s", err.Error())
