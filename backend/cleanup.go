@@ -46,7 +46,7 @@ func (svc *serviceContext) cleanupOldProjects(c *gin.Context) {
 
 			time.Sleep(100 * time.Millisecond)
 			if limit > 0 && delCnt >= int(limit) {
-				log.Printf("INFO: max deletions of 500 projects reached")
+				log.Printf("INFO: deletion limit of %d projects reached", limit)
 				break
 
 			} else if delCnt >= 500 {
