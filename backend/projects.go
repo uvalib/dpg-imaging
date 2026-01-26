@@ -342,7 +342,12 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	}
 
 	log.Printf("INFO: user %s requests projects page %d", claims.ComputeID, page)
-	whereQ := ""
+
+	// ALWAYS exclude caneled projects. exclude done projects when filter is not finished.
+	// FIXME remove this once bad data is cleaned up.
+	// this is the problem project: https://dpg-imaging.lib.virginia.edu/projects/6062
+	whereQ := " AND unit_status != 'canceled'"
+
 	qWorkflow := c.Query("workflow")
 	if qWorkflow != "" {
 		id, _ := strconv.Atoi(qWorkflow)
