@@ -22,15 +22,17 @@ func main() {
 	// log.Printf("HACK THE PROJECT UPDATES =============================")
 	// var projs []project
 	// cnt := 0
-	// var errors []uint
-	// var missing []uint
+	// var errors []string
+	// var missing []string
 	// if err := svc.DB.Where("title is null").Find(&projs).Error; err != nil {
 	// 	log.Fatal(err.Error())
 	// }
 
+	// log.Printf("%d projects found that need to be updated", len(projs))
+	// limit := 1000
 	// qStr := "select order_id, customer_id, agency_id, title, call_number from units u inner join orders o on o.id = order_id inner join metadata m on m.id = metadata_id where u.id=?"
 	// for _, tgtProj := range projs {
-	// 	log.Printf("ADD METADATA TO PROJECT %d", tgtProj.ID)
+	// 	log.Printf("Lookup metadata for project %d with unit %d", tgtProj.ID, tgtProj.UnitID)
 	// 	var info struct {
 	// 		OrderID    uint
 	// 		CustomerID uint
@@ -38,12 +40,13 @@ func main() {
 	// 		CallNumber string
 	// 		Title      string
 	// 	}
-	// 	if err := svc.DB.Raw(qStr, tgtProj.ID).Scan(&info).Error; err != nil {
+	// 	if err := svc.DB.Raw(qStr, tgtProj.UnitID).Scan(&info).Error; err != nil {
 	// 		log.Fatal(err.Error())
 	// 	}
+
 	// 	if info.OrderID == 0 {
 	// 		log.Printf("NO UNIT/ORDER FOR PROJECT %d", tgtProj.ID)
-	// 		missing = append(missing, tgtProj.ID)
+	// 		missing = append(missing, fmt.Sprintf("%d", tgtProj.ID))
 	// 		continue
 	// 	}
 
@@ -74,17 +77,23 @@ func main() {
 	// 	if len(fields) > 0 {
 	// 		if err := svc.DB.Model(&tgtProj).Select(fields).Updates(tgtProj).Error; err != nil {
 	// 			log.Fatalf("unable to update project %d metadata: %s", tgtProj.ID, err.Error())
+	// 			errors = append(errors, fmt.Sprintf("%d", tgtProj.ID))
 	// 		}
 	// 	}
 
 	// 	cnt++
+	// 	if cnt >= limit {
+	// 		log.Printf("STOP AFTER %d", limit)
+	// 		break
+	// 	}
+	// 	time.Sleep(50 * time.Millisecond)
 	// }
-	// log.Printf("UPDATE %d projects", cnt)
+	// log.Printf("===> Updated %d projects of %d with missing metadata", cnt, len(projs))
 	// if len(errors) > 0 {
-	// 	log.Printf("FAILED UPDATES: %v", errors)
+	// 	log.Printf("===> %d PROJECT UPDATES FAILED (%s)", len(errors), strings.Join(errors, ","))
 	// }
 	// if len(missing) > 0 {
-	// 	log.Printf("MNISSING UNITS %v", missing)
+	// 	log.Printf("===> %d PROJECTS MISSING UNITS (%s)", len(missing), strings.Join(missing, ","))
 	// }
 	// log.Fatal("DONE")
 
