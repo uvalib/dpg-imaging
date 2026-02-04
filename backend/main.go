@@ -24,13 +24,13 @@ func main() {
 	// cnt := 0
 	// var errors []string
 	// var missing []string
-	// if err := svc.DB.Where("title is null").Find(&projs).Error; err != nil {
+	// if err := svc.DB.Where("date_due is null").Find(&projs).Error; err != nil {
 	// 	log.Fatal(err.Error())
 	// }
 
 	// log.Printf("%d projects found that need to be updated", len(projs))
-	// limit := 1000
-	// qStr := "select order_id, customer_id, agency_id, title, call_number from units u inner join orders o on o.id = order_id inner join metadata m on m.id = metadata_id where u.id=?"
+	// limit := 50
+	// qStr := "select order_id, customer_id, agency_id, title, call_number, date_due from units u inner join orders o on o.id = order_id inner join metadata m on m.id = metadata_id where u.id=?"
 	// for _, tgtProj := range projs {
 	// 	log.Printf("Lookup metadata for project %d with unit %d", tgtProj.ID, tgtProj.UnitID)
 	// 	var info struct {
@@ -39,6 +39,7 @@ func main() {
 	// 		AgencyID   *uint
 	// 		CallNumber string
 	// 		Title      string
+	// 		DateDue    time.Time
 	// 	}
 	// 	if err := svc.DB.Raw(qStr, tgtProj.UnitID).Scan(&info).Error; err != nil {
 	// 		log.Fatal(err.Error())
@@ -51,6 +52,10 @@ func main() {
 	// 	}
 
 	// 	fields := make([]string, 0)
+	// 	if info.DateDue != tgtProj.DateDue {
+	// 		tgtProj.DateDue = info.DateDue
+	// 		fields = append(fields, "DateDue")
+	// 	}
 	// 	if info.Title != tgtProj.Title {
 	// 		tgtProj.Title = info.Title
 	// 		fields = append(fields, "Title")

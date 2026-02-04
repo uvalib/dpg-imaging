@@ -107,6 +107,7 @@ func (projectEquipment) TableName() string {
 // IMPORTANT: if there are any projects where current_step is invalid, ALL current step info in the search resuls are blanked out
 type project struct {
 	ID                uint          `json:"id"`
+	DateDue           time.Time     `json:"dateDue"`
 	Title             string        `json:"title"`
 	CallNumber        string        `json:"callNumber"`
 	WorkflowID        uint          `json:"-"`
