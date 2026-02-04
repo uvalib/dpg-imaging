@@ -80,11 +80,24 @@ func (svc *serviceContext) lookupProjectForUnit(c *gin.Context) {
 
 type createProjectRequest struct {
 	UnitID          int64  `json:"unitID"`
+	OrderID         int64  `json:"orderID"`
+	Title           string `json:"title"`
+	CallNumber      string `json:"callNumber"`
 	WorkflowID      int64  `json:"workflowID"`
 	ContainerTypeID int64  `json:"containerTypeID"`
 	CategoryID      int64  `json:"categoryID"`
 	Condition       int64  `json:"condition"`
 	Notes           string `json:"notes"`
+	CustomerID      int64  `json:"customerID"`
+	AgencyID        int64  `json:"agencyID"`
+}
+
+type updateProjectMetadataRequest struct {
+	Title      string `json:"title"`
+	CallNumber string `json:"callNumber"`
+	CustomerID int64  `json:"customerID"`
+	AgencyID   int64  `json:"agencyID"`
+	OrderID    int64  `json:"orderID"`
 }
 
 func (svc *serviceContext) createProject(c *gin.Context) {
@@ -120,13 +133,20 @@ func (svc *serviceContext) createProject(c *gin.Context) {
 	log.Printf("INFO: create project for unit %d", req.UnitID)
 	now := time.Now()
 	newProj := project{
+		Title:         req.Title,
+		CallNumber:    req.CallNumber,
 		WorkflowID:    uint(req.WorkflowID),
 		UnitID:        uint(req.UnitID),
+		OrderID:       uint(req.OrderID),
+		CustomerID:    uint(req.CustomerID),
 		CurrentStepID: &firstStep.ID,
 		AddedAt:       &now,
 		CategoryID:    uint(req.CategoryID),
 		ItemCondition: uint(req.Condition),
 		ConditionNote: req.Notes,
+	}
+	if req.AgencyID > 0 {
+		newProj.AgencyID = uint(req.AgencyID)
 	}
 	if req.ContainerTypeID != 0 {
 		cID := uint(req.ContainerTypeID)
@@ -140,6 +160,69 @@ func (svc *serviceContext) createProject(c *gin.Context) {
 
 	log.Printf("INFO: new project %d created for unit %d", newProj.ID, req.UnitID)
 	c.String(http.StatusOK, fmt.Sprintf("%d", newProj.ID))
+}
+
+func (svc *serviceContext) updateProjectMetadata(c *gin.Context) {
+	projID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	claims := getJWTClaims(c)
+	log.Printf("INFO: %s requests update of project %d metadata", claims.ComputeID, projID)
+	if claims.Role != "admin" && claims.Role != "supervisor" {
+		c.String(http.StatusForbidden, "you cannot update this project")
+		return
+	}
+
+	var req updateProjectMetadataRequest
+	if qpErr := c.ShouldBindJSON(&req); qpErr != nil {
+		log.Printf("ERROR: invalid create update project metadata payload: %v", qpErr)
+		c.String(http.StatusBadRequest, "Invalid request")
+		return
+	}
+
+	log.Printf("INFO: update project %d metadata with %+v", projID, req)
+	var tgtProj project
+	if err := svc.DB.First(&tgtProj, projID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) == false {
+			log.Printf("ERROR: unable to load project %d: %s", projID, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			log.Printf("INFO: project %d not found", projID)
+			c.String(http.StatusNotFound, fmt.Sprintf("project %d not found", projID))
+		}
+	}
+
+	fields := make([]string, 0)
+	if req.Title != tgtProj.Title {
+		tgtProj.Title = req.Title
+		fields = append(fields, "Title")
+	}
+	if req.CallNumber != tgtProj.CallNumber {
+		tgtProj.CallNumber = req.CallNumber
+		fields = append(fields, "CallNumber")
+	}
+	if req.OrderID != int64(tgtProj.OrderID) {
+		tgtProj.OrderID = uint(req.OrderID)
+		fields = append(fields, "OrderID")
+	}
+	if req.CustomerID != int64(tgtProj.CustomerID) {
+		tgtProj.CustomerID = uint(req.CustomerID)
+		fields = append(fields, "CustomerID")
+	}
+	if req.AgencyID != int64(tgtProj.AgencyID) {
+		tgtProj.AgencyID = uint(req.AgencyID)
+		fields = append(fields, "AgencyID")
+	}
+
+	if len(fields) > 0 {
+		if err := svc.DB.Model(&tgtProj).Select(fields).Updates(tgtProj).Error; err != nil {
+			log.Printf("ERROR: unable to update project %d metadata: %s", projID, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+		}
+		log.Printf("INFO: project %d metadata updated", projID)
+	} else {
+		log.Printf("INFO: no change in project %d metadata needed", projID)
+	}
+
+	c.String(http.StatusOK, "ok")
 }
 
 func (svc *serviceContext) cancelProject(c *gin.Context) {
@@ -158,7 +241,7 @@ func (svc *serviceContext) cancelProject(c *gin.Context) {
 	}
 
 	log.Printf("INFO: project %d has been canceled and all associated data deleted", projID)
-	c.String(http.StatusNotImplemented, "NO")
+	c.String(http.StatusOK, "ok")
 }
 
 func (svc *serviceContext) failProject(c *gin.Context) {

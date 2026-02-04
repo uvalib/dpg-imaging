@@ -107,10 +107,15 @@ func (projectEquipment) TableName() string {
 // IMPORTANT: if there are any projects where current_step is invalid, ALL current step info in the search resuls are blanked out
 type project struct {
 	ID                uint          `json:"id"`
+	Title             string        `json:"title"`
+	CallNumber        string        `json:"callNumber"`
 	WorkflowID        uint          `json:"-"`
 	Workflow          workflow      `gorm:"foreignKey:WorkflowID" json:"workflow"`
 	UnitID            uint          `json:"unitID"`
 	Unit              unit          `gorm:"foreignKey:UnitID" json:"unit"`
+	OrderID           uint          `json:"orderID"`
+	CustomerID        uint          `json:"customerID"`
+	AgencyID          uint          `json:"agencyID"`
 	OwnerID           *uint         `json:"ownerID"`
 	ImageCount        int           `json:"imageCount"`
 	Assignments       []*assignment `gorm:"foreignKey:ProjectID" json:"assignments"`
@@ -344,8 +349,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	log.Printf("INFO: user %s requests projects page %d", claims.ComputeID, page)
 
 	// ALWAYS exclude caneled projects. exclude done projects when filter is not finished.
-	// FIXME remove this once bad data is cleaned up.
-	// this is the problem project: https://dpg-imaging.lib.virginia.edu/projects/6062
+	// FIXME remove this once bad data is cleaned up?
 	whereQ := " AND unit_status != 'canceled'"
 
 	qWorkflow := c.Query("workflow")

@@ -190,6 +190,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		svc.DB.Model(&currA).Select("Status").Updates(currA)
 
 		go func() {
+			// FIXME
 			if proj.Unit.UnitStatus != "error" {
 				err := svc.validateFinishStep(proj)
 				if err != nil {
