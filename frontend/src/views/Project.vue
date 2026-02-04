@@ -4,30 +4,30 @@
       <WaitSpinner v-if="projectStore.working" :overlay="true" message="Working..." />
       <div v-if="projectStore.hasDetail" class="project-head">
          <h3>
-            <a target="_blank" :href="metadataLink">{{detail.unit.metadata.title}}</a>
+            <a target="_blank" :href="metadataLink">{{detail.title}}</a>
          </h3>
          <div class="row">
             <div>
                <label>Customer:</label>
-               <span class="data">{{detail.unit.order.customer.firstName}} {{detail.unit.order.customer.lastName}}</span>
+               <span class="data">{{ systemStore.getCustomerName(detail.customerID) }}</span>
             </div>
-            <div v-if="detail.unit.order.agency.id > 0">
+            <div v-if="detail.agencyID > 0">
                <label>Agency:</label>
-               <span class="data">{{detail.unit.order.agency.name}}</span>
+               <span class="data">{{ systemStore.getAgency(detail.agencyID) }}</span>
             </div>
             <div>
                <label>Intended Use:</label>
-               <span class="data">{{detail.unit.intendedUse.description}}</span>
+               <span class="data">{{detail.intendedUse}}</span>
             </div>
          </div>
          <div class="row">
             <div>
                <label>Unit:</label>
-               <a target="_blank" :href="`${systemStore.adminURL}/units/${detail.unit.id}`">{{detail.unit.id}}</a>
+               <a target="_blank" :href="`${systemStore.adminURL}/units/${detail.unitID}`">{{detail.unitID}}</a>
             </div>
             <div>
                <label>Order:</label>
-               <a target="_blank" :href="`${systemStore.adminURL}/orders/${detail.unit.orderID}`">{{detail.unit.orderID}}</a>
+               <a target="_blank" :href="`${systemStore.adminURL}/orders/${detail.orderID}`">{{detail.orderID}}</a>
             </div>
          </div>
 
@@ -70,7 +70,7 @@ const router = useRouter()
 const { detail } = storeToRefs(projectStore)
 
 const metadataLink = computed(() => {
-   return `${systemStore.adminURL}/metadata/${detail.value.unit.metadata.id}`
+   return `${systemStore.adminURL}/metadata/${detail.value.metadataID}`
 })
 
 onMounted( async () => {

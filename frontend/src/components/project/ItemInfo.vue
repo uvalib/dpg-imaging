@@ -13,12 +13,12 @@
          </dd>
          <dt>Call Number:</dt>
          <dd>
-            <span v-if="detail.unit.metadata.callNumber">{{detail.unit.metadata.callNumber}}</span>
+            <span v-if="detail.callNumber">{{detail.callNumber}}</span>
             <span v-else class="na">EMPTY</span>
          </dd>
          <dt>Special Instructions:</dt>
          <dd>
-            <span v-if="detail.unit.specialInstructions">{{detail.unit.specialInstructions}}</span>
+            <span v-if="detail.specialInstructions">{{detail.specialInstructions}}</span>
             <span v-else class="na">EMPTY</span>
          </dd>
          <dt>Condition:</dt>
@@ -30,17 +30,17 @@
          </dd>
          <dt>OCR Hint:</dt>
          <dd>
-            <span v-if="detail.unit.metadata.ocrHint.id > 0">{{detail.unit.metadata.ocrHint.name}}</span>
+            <span v-if="detail.ocrHintID > 0">{{ systemStore.getOCRHint(detail.ocrHintID ) }}</span>
             <span v-else class="na">EMPTY</span>
          </dd>
          <dt>OCR Language Hint:</dt>
          <dd>
-            <span v-if="detail.unit.metadata.ocrLanguageHint">{{ systemStore.getOCRLanguageHint(detail.unit.metadata.ocrLanguageHint).language }}</span>
+            <span v-if="detail.ocrLanguage">{{ systemStore.getOCRLanguageHint(detail.ocrLanguage) }}</span>
             <span v-else class="na">EMPTY</span>
          </dd>
          <dt>OCR Master Files:</dt>
          <dd>
-            <span v-if="detail.unit.ocrMasterFiles" class="yes-no">Yes</span>
+            <span v-if="detail.ocrMasterFiles" class="yes-no">Yes</span>
             <span v-else class="yes-no">No</span>
          </dd>
       </dl>
@@ -66,12 +66,12 @@
             </tr>
             <tr class="row">
                <td class="label"><label for="call-numbber">Call Number:</label></td>
-               <td class="data">{{detail.unit.metadata.callNumber}}</td>
+               <td class="data">{{detail.callNumber}}</td>
             </tr>
             <tr class="row">
                <td class="label"><label for="instructions">Special Instructions:</label></td>
                <td class="data">
-                  <span v-if="detail.unit.specialInstructions">{{detail.unit.specialInstructions}}</span>
+                  <span v-if="detail.specialInstructions">{{detail.specialInstructions}}</span>
                   <span v-else class="na">EMPTY</span>
                </td>
             </tr>

@@ -33,7 +33,7 @@
                               </template>
                            </span>
                         </td>
-                        <td>{{ getStaffMemberName(a.staffMemberID) }}</td>
+                        <td>{{ system.getStaffMemberName(a.staffMemberID) }}</td>
                      </tr>
                   </template>
                   <template v-if="a.startedAt">
@@ -44,7 +44,7 @@
                         <td v-else-if="a.status == 6">Finalizing...</td>
                         <td v-else-if="a.status == 7">Working...</td>
                         <td v-else>Started</td>
-                        <td>{{ getStaffMemberName(a.staffMemberID) }}</td>
+                        <td>{{ system.getStaffMemberName(a.staffMemberID) }}</td>
                      </tr>
                   </template>
                   <tr v-else :class="{reassign: a.status == 5}">
@@ -52,7 +52,7 @@
                      <td>{{a.step.name}}</td>
                      <td v-if="a.status == 5">Reassigned</td>
                      <td v-else>Assigned</td>
-                     <td>{{ getStaffMemberName(a.staffMemberID) }}</td>
+                     <td>{{ system.getStaffMemberName(a.staffMemberID) }}</td>
                   </tr>
 
                </template>
@@ -89,14 +89,6 @@ const totalWorkTime = computed(() => {
       mins -= (h*60)
    }
    return `${(""+h).padStart(2,"0")}:${(""+mins).padStart(2,"0")}`
-})
-
-const getStaffMemberName = ( (staffID) => {
-   let staff = system.getStaffMember( staffID )
-   if (staff == null ) {
-      return "Unknown"
-   }
-   return `${staff.firstName} ${staff.lastName}`
 })
 
 const formatDate = ( (d) => {

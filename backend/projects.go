@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -106,37 +107,60 @@ func (projectEquipment) TableName() string {
 
 // IMPORTANT: if there are any projects where current_step is invalid, ALL current step info in the search resuls are blanked out
 type project struct {
-	ID                uint          `json:"id"`
-	Title             string        `json:"title"`
-	CallNumber        string        `json:"callNumber"`
-	WorkflowID        uint          `json:"-"`
-	Workflow          workflow      `gorm:"foreignKey:WorkflowID" json:"workflow"`
-	UnitID            uint          `json:"unitID"`
-	Unit              unit          `gorm:"foreignKey:UnitID" json:"unit"`
-	OrderID           uint          `json:"orderID"`
-	CustomerID        uint          `json:"customerID"`
-	AgencyID          uint          `json:"agencyID"`
-	OwnerID           *uint         `json:"ownerID"`
-	ImageCount        int           `json:"imageCount"`
-	Assignments       []*assignment `gorm:"foreignKey:ProjectID" json:"assignments"`
-	CurrentStepID     *uint         `json:"currentStepID"`
-	CurrentStep       *step         `gorm:"foreignKey:CurrentStepID" json:"currentStep"`
-	AddedAt           *time.Time    `json:"addedAt,omitempty"`
-	StartedAt         *time.Time    `json:"startedAt,omitempty"`
-	FinishedAt        *time.Time    `json:"finishedAt,omitempty"`
-	TotalDurationMins *int64        `json:"totalDuration,omitempty"`
-	CategoryID        uint          `json:"-"`
-	Category          category      `gorm:"foreignKey:CategoryID" json:"category"`
-	CaptureResolution uint          `json:"captureResolution"`
-	ResizedResolution uint          `json:"resizedResolution"`
-	ResolutionNote    string        `json:"resolutionNote"`
-	WorkstationID     uint          `json:"-"`
-	Workstation       workstation   `json:"workstation"`
-	ItemCondition     uint          `json:"itemCondition"`
-	ConditionNote     string        `json:"conditionNote,omitempty"`
-	ContainerTypeID   *uint         `json:"containerTypeID"`
-	Notes             []*note       `gorm:"foreignKey:ProjectID" json:"notes,omitempty"`
-	Equipment         []*equipment  `gorm:"many2many:project_equipment" json:"equipment,omitempty"`
+	ID                  uint          `json:"id"`
+	Title               string        `json:"title"`
+	CallNumber          string        `json:"callNumber"`
+	WorkflowID          uint          `json:"-"`
+	Workflow            workflow      `gorm:"foreignKey:WorkflowID" json:"workflow"`
+	UnitID              uint          `json:"unitID"`
+	OrderID             uint          `json:"orderID"`
+	CustomerID          uint          `json:"customerID"`
+	AgencyID            uint          `json:"agencyID"`
+	OwnerID             *uint         `json:"ownerID"`
+	MetadataID          uint          `gorm:"-" json:"metadataID"`          // pulled from TS API call, not gorm
+	SpecialInstructions string        `gorm:"-" json:"specialInstructions"` // pulled from TS API call, not gorm
+	IntendedUse         string        `gorm:"-" json:"intendedUse"`         // pulled from TS API call, not gorm
+	OCRHintID           uint          `gorm:"-" json:"ocrHintID"`           // pulled from TS API call, not gorm
+	OCRLanguage         string        `gorm:"-" json:"ocrLanguage"`         // pulled from TS API call, not gorm
+	OCRMasterFiles      bool          `gorm:"-" json:"ocrMasterFiles"`      // pulled from TS API call, not gorm
+	Status              string        `gorm:"-" json:"status"`              // pulled from TS API call, not gorm
+	ImageCount          int           `json:"imageCount"`
+	Assignments         []*assignment `gorm:"foreignKey:ProjectID" json:"assignments"`
+	CurrentStepID       *uint         `json:"currentStepID"`
+	CurrentStep         *step         `gorm:"foreignKey:CurrentStepID" json:"currentStep"`
+	AddedAt             *time.Time    `json:"addedAt,omitempty"`
+	StartedAt           *time.Time    `json:"startedAt,omitempty"`
+	FinishedAt          *time.Time    `json:"finishedAt,omitempty"`
+	TotalDurationMins   *int64        `json:"totalDuration,omitempty"`
+	CategoryID          uint          `json:"-"`
+	Category            category      `gorm:"foreignKey:CategoryID" json:"category"`
+	CaptureResolution   uint          `json:"captureResolution"`
+	ResizedResolution   uint          `json:"resizedResolution"`
+	ResolutionNote      string        `json:"resolutionNote"`
+	WorkstationID       uint          `json:"-"`
+	Workstation         workstation   `json:"workstation"`
+	ItemCondition       uint          `json:"itemCondition"`
+	ConditionNote       string        `json:"conditionNote,omitempty"`
+	ContainerTypeID     *uint         `json:"containerTypeID"`
+	Notes               []*note       `gorm:"foreignKey:ProjectID" json:"notes,omitempty"`
+	Equipment           []*equipment  `gorm:"many2many:project_equipment" json:"equipment,omitempty"`
+}
+
+// Structture of data returned from the tracksys-api /units/:id call
+type unitInfo struct {
+	ID                  int64  `json:"id"`
+	MetadataID          int64  `json:"metadataID"`
+	MetadataPID         string `json:"metadataPID"`
+	Title               string `json:"title"`
+	CallNumber          string `json:"callNumber"`
+	CatalogKey          string `json:"catalogKey"`
+	SpecialInstructions string `json:"specialInstructions"`
+	StaffNotes          string `json:"staffNotes"`
+	IntendedUse         string `json:"intendedUse"`
+	OCRHintID           int64  `json:"ocrHintID"`
+	OCRLanguage         string `json:"ocrLanguage"`
+	OCRMasterFiles      bool   `json:"ocrMasterFiles"`
+	Status              string `json:"status"`
 }
 
 func (svc *serviceContext) getProject(c *gin.Context) {
@@ -144,33 +168,47 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 	claims := getJWTClaims(c)
 	log.Printf("INFO: user %s is requesting project %s details", claims.ComputeID, projID)
 
-	// FIXME pull unit info from API
 	var proj *project
-	projQ := svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").InnerJoins("Unit").
-		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").Joins("Unit.Metadata.OCRHint").
-		Joins("Unit.Order.Customer").Joins("Unit.Order.Agency").Joins("CurrentStep").Preload("Equipment").Preload("Workstation")
-
-	err := projQ.First(&proj, projID).Error
-	if err != nil {
+	projQ := svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").Joins("CurrentStep").Preload("Equipment").Preload("Workstation")
+	if err := projQ.First(&proj, projID).Error; err != nil {
 		log.Printf("ERROR: unable to get project %s: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
+	// now pull some details from the API
+	respBytes, reqErr := svc.getRequest(fmt.Sprintf("%s/units/%d", svc.TrackSys.API, proj.UnitID))
+	if reqErr != nil {
+		log.Printf("ERROR: could get unit %d details: %s", proj.UnitID, reqErr.Message)
+		c.String(http.StatusInternalServerError, reqErr.Message)
+		return
+	}
+
+	var unitMD unitInfo
+	if err := json.Unmarshal(respBytes, &unitMD); err != nil {
+		log.Printf("ERROR: unable to parse unit %d details: %s", proj.UnitID, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	proj.MetadataID = uint(unitMD.MetadataID)
+	proj.SpecialInstructions = unitMD.SpecialInstructions
+	proj.IntendedUse = unitMD.IntendedUse
+	proj.OCRHintID = uint(unitMD.OCRHintID)
+	proj.OCRLanguage = unitMD.OCRLanguage
+	proj.OCRMasterFiles = unitMD.OCRMasterFiles
+	proj.Status = unitMD.Status
+
 	log.Printf("INFO: get project %d assignments", proj.ID)
-	err = svc.DB.Where("project_id=?", proj.ID).
-		Joins("Step").Order("assigned_at DESC").Find(&proj.Assignments).Error
-	if err != nil {
+	if err := svc.DB.Where("project_id=?", proj.ID).Joins("Step").Order("assigned_at DESC").Find(&proj.Assignments).Error; err != nil {
 		log.Printf("ERROR: unable to get project %d assignments: %s", proj.ID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	log.Printf("INFO: get project %d notes", proj.ID)
-	err = svc.DB.Where("project_id=?", proj.ID).
-		Joins("Step").Preload("Problems").
-		Order("notes.created_at DESC").Find(&proj.Notes).Error
-	if err != nil {
+	if err := svc.DB.Where("project_id=?", proj.ID).Joins("Step").Preload("Problems").
+		Order("notes.created_at DESC").Find(&proj.Notes).Error; err != nil {
 		log.Printf("ERROR: unable to get project %d notes: %s", proj.ID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
@@ -348,14 +386,15 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 
 	log.Printf("INFO: user %s requests projects page %d", claims.ComputeID, page)
 
-	// ALWAYS exclude caneled projects. exclude done projects when filter is not finished.
-	// FIXME remove this once bad data is cleaned up?
-	whereQ := " AND unit_status != 'canceled'"
+	// // ALWAYS exclude caneled projects. exclude done projects when filter is not finished.
+	// // FIXME remove this once bad data is cleaned up?
+	// whereQ := " AND unit_status != 'canceled'"
+	whereQ := ""
 
 	qWorkflow := c.Query("workflow")
 	if qWorkflow != "" {
 		id, _ := strconv.Atoi(qWorkflow)
-		whereQ += fmt.Sprintf(" AND projects.workflow_id=%d", id)
+		whereQ += fmt.Sprintf(" AND workflow_id=%d", id)
 	}
 	qStep := c.Query("step")
 	if qStep != "" {
@@ -378,7 +417,7 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	qCustomer := c.Query("customer")
 	if qCustomer != "" {
 		id, _ := strconv.Atoi(qCustomer)
-		whereQ += fmt.Sprintf(" AND Unit__Order__Customer.id=%d", id)
+		whereQ += fmt.Sprintf(" AND customer_id=%d", id)
 	}
 	qAgency := c.Query("agency")
 	if qAgency != "" {
@@ -413,12 +452,13 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	for idx, q := range filterQ {
 		var total int64
 		countQ := q + whereQ
-		if idx != 3 {
-			// NOTE: this is needed for cases where projects fail finailzatiuon and are fixed outside of DPG imaging
-			// in these cases, the unit status gets bumped to done, but the project is left unfinished. Seems to be
-			// a bug that needs to be addressed. There are only 13 units in this situation, so it is an unusual happening.
-			countQ += " AND unit_status != 'done'"
-		}
+		// FIXME verify this can be removed. If not...
+		// if idx != 3 {
+		// 	// NOTE: this is needed for cases where projects fail finailzatiuon and are fixed outside of DPG imaging
+		// 	// in these cases, the unit status gets bumped to done, but the project is left unfinished. Seems to be
+		// 	// a bug that needs to be addressed. There are only 13 units in this situation, so it is an unusual happening.
+		// 	countQ += " AND unit_status != 'done'"
+		// }
 		err = svc.getBaseSearchQuery().Where(countQ).Count(&total).Error
 		if err != nil {
 			log.Printf("WARNING: unable to get count of projects: %s", err.Error())
@@ -438,14 +478,17 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		}
 	}
 
-	orderStr := "date_due asc"
+	// FIXME
+	// orderStr := "date_due asc"
+	orderStr := "id asc"
 	if filter == "finished" {
 		orderStr = "finished_at desc"
 	}
 	whereQ = filterQ[filterIdx] + whereQ
-	if filterIdx != 3 {
-		whereQ += " AND unit_status != 'done'"
-	}
+	// FIXME?
+	// if filterIdx != 3 {
+	// 	whereQ += " AND unit_status != 'done'"
+	// }
 	err = svc.getBaseSearchQuery().
 		Offset(offset).Limit(pageSize).Order(orderStr).
 		Where(whereQ).
@@ -793,10 +836,7 @@ func (svc *serviceContext) canAssignProject(assigneeID uint, assigner *jwtClaims
 }
 
 func (svc *serviceContext) getBaseSearchQuery() (tx *gorm.DB) {
-	// FIXME this is a mess
-	return svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").InnerJoins("Unit").
-		Joins("Unit.Order").Joins("Unit.IntendedUse").Joins("Unit.Metadata").
-		Joins("Unit.Order.Customer").Joins("Unit.Order.Agency").
+	return svc.DB.Model(&project{}).InnerJoins("Workflow").InnerJoins("Category").
 		Joins("CurrentStep").
 		Joins("LEFT OUTER JOIN assignments on assignments.project_id=projects.id").
 		Joins("LEFT OUTER JOIN steps as assignstep on assignments.step_id=assignstep.id").

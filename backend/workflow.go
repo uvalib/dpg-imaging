@@ -190,14 +190,14 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		svc.DB.Model(&currA).Select("Status").Updates(currA)
 
 		go func() {
-			// FIXME
-			if proj.Unit.UnitStatus != "error" {
-				err := svc.validateFinishStep(proj)
-				if err != nil {
-					log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, err.Error())
-					return
-				}
-			}
+			// FIXME need to get unit status
+			// if proj.Unit.UnitStatus != "error" {
+			// 	err := svc.validateFinishStep(proj)
+			// 	if err != nil {
+			// 		log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, err.Error())
+			// 		return
+			// 	}
+			// }
 
 			log.Printf("INFO: sending request to dpg-jobs to begin or restart finalization of unit %d", proj.UnitID)
 			_, httpErr := svc.postRequest(fmt.Sprintf("%s/units/%d/finalize", svc.TrackSys.Jobs, proj.UnitID), nil)
