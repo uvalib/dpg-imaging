@@ -212,7 +212,7 @@ const componentChanged = ( async ()=> {
 })
 
 const deleteProjectClicked = (() => {
-   let note = `<p><b>Important</b>: any images asoociated with this project will be left<br/>in the processing directory for unit ${detail.value.unitID} </p>`
+   let note = `<p><b>Important</b>: any images associated with this project will be left<br/>in the processing directory for unit ${detail.value.unitID} </p>`
    confirm.require({
       message: `Delete this project? This cannot be reversed. ${note}`,
       header: 'Confirm Delete',

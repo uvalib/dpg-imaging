@@ -1,4 +1,9 @@
 <template>
+   <ConfirmDialog position="top">
+      <template #message="slotProps">
+         <div style="text-align: left;" v-html="slotProps.message.message"/>
+      </template>
+   </ConfirmDialog>
    <div class="home">
       <WaitSpinner v-if="searchStore.working" :overlay="true" message="Loading projects..." />
       <div class="toolbar pin-target" id="pin-target">
@@ -118,6 +123,7 @@
                               <span v-else class="assigned">{{ownerInfo(p)}}</span>
                            </span>
                            <span class="owner-buttons">
+                              <DPGButton @click="deleteProjectClicked(p)" class="delete" severity="danger" v-if="userStore.isSupervisor || userStore.isAdmin" label="Delete"/>
                               <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)" severity="secondary" label="Claim"/>
                               <AssignModal  v-if="canAssign" :projectID="p.id" @assigned="searchStore.getProjects()" />
                               <DPGButton  severity="secondary" @click="viewClicked(p.id)" label="View"/>
@@ -143,6 +149,7 @@ import { useUserStore } from "@/stores/user"
 import { useRoute, useRouter } from 'vue-router'
 import { onBeforeMount, ref } from 'vue'
 import { usePinnable } from '@/composables/pin'
+import { useConfirm } from "primevue/useconfirm"
 
 usePinnable("pin-target", "scroll-body", ( (isPinned, toolbarBottom) => {
    let p = document.getElementById("search-panel")
@@ -159,6 +166,7 @@ usePinnable("pin-target", "scroll-body", ( (isPinned, toolbarBottom) => {
    }
 }))
 
+const confirm = useConfirm()
 const searchStore = useSearchStore()
 const systemStore = useSystemStore()
 const userStore = useUserStore()
@@ -260,6 +268,27 @@ const isOverdue = ((projIdx) => {
    let due = new Date(searchStore.dueDate(projIdx))
    let now = new Date()
    return now > due
+})
+
+const deleteProjectClicked = ((p) => {
+   let note = `<p><b>Important</b>: any images associated with this project will be left<br/>in the processing directory for unit ${p.unitID} </p>`
+   confirm.require({
+      message: `Delete this project? This cannot be reversed. ${note}`,
+      header: 'Confirm Delete',
+      icon: 'pi pi-exclamation-triangle',
+      rejectProps: {
+         label: 'Cancel',
+         severity: 'secondary'
+      },
+      acceptProps: {
+         label: 'Delete',
+         severity: 'danger'
+      },
+      accept: async () => {
+          await projectStore.deleteProject(p.id)
+          window.location.reload()
+      }
+   })
 })
 </script>
 
