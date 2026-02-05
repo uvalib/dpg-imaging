@@ -141,8 +141,8 @@ const isFinishEnabled = computed(()=>{
    if ( detail.value.workflow.name == "Manuscript" && currStepName.value == "Scan" && detail.value.containerType == null) return false
    if ( currStepName.value == "Scan" && detail.value.workstation.id == 0) return false
    if ( currStepName.value == "Finalize") {
-      if ( detail.value.unit.metadata.ocrHint.id == 0) return false
-      if ( detail.value.unit.metadata.ocrHint.id == 1 && detail.value.unit.metadata.ocrLanguageHint == "") return false
+      if ( detail.value.ocrHintID == 0) return false
+      if ( detail.value.ocrHintID == 1 && detail.value.ocrLanguage == "") return false
    }
    return true
 })
@@ -180,7 +180,7 @@ const workflowNote = computed(()=>{
    if ( detail.value.workflow.name == "Manuscript" && currStepName.value == "Scan" && detail.value.containerType == null) {
       return "Assignment cannot be finished until container type is set."
    }
-   if ( currStepName.value == "Finalize" && detail.value.unit.metadata.ocrHint.id == 0) {
+   if ( currStepName.value == "Finalize" && detail.value.ocrHintID == 0) {
       return "Assignment cannot be finished until the OCR hint has been set."
    }
    if ( detail.value.ocrHintID > 1 && detail.value.ocrMasterFiles == true) {
