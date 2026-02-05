@@ -182,8 +182,8 @@ function editClicked() {
    }
    condition.value = detail.value.itemCondition
    note.value = detail.value.conditionNote
-   ocrHintID.value = detail.value.unit.metadata.ocrHint.id
-   ocrLangage.value = detail.value.unit.metadata.ocrLanguageHint
+   ocrHintID.value = detail.value.ocrHintID
+   ocrLangage.value = detail.value.ocrLanguage
    nextTick( ()=> categoryFocus.value = true )
 }
 
