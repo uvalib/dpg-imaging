@@ -55,7 +55,7 @@ const router = useRouter()
 const confirm = useConfirm()
 
 const title = computed(() => {
-   let t = projectStore.detail.unit.metadata.title
+   let t = projectStore.detail.title
    if ( t == "") {
       t = "Unknown"
    }
@@ -63,7 +63,7 @@ const title = computed(() => {
 })
 
 const callNumber = computed(() => {
-   let t = projectStore.detail.unit.metadata.callNumber
+   let t = projectStore.detail.callNumber
    if ( t == "") {
       t = "Unknown"
    }
@@ -71,7 +71,7 @@ const callNumber = computed(() => {
 })
 
 const workingDir = computed(()=>{
-   let unitDir =  paddedUnit(projectStore.detail.unit.id)
+   let unitDir =  paddedUnit(projectStore.detail.unitID)
    if (projectStore.detail.currentStep.name == "Process" || projectStore.detail.currentStep.name == "Scan") {
       return `${systemStore.scanDir}/${unitDir}`
    }
