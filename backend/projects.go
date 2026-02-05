@@ -124,7 +124,7 @@ type project struct {
 	OCRHintID           uint          `gorm:"-" json:"ocrHintID"`           // pulled from TS API call, not gorm
 	OCRLanguage         string        `gorm:"-" json:"ocrLanguage"`         // pulled from TS API call, not gorm
 	OCRMasterFiles      bool          `gorm:"-" json:"ocrMasterFiles"`      // pulled from TS API call, not gorm
-	Status              string        `gorm:"-" json:"status"`              // pulled from TS API call, not gorm
+	UnitStatus          string        `gorm:"-" json:"-"`                   // pulled from TS API call, not gorm (used for backend checks)
 	ImageCount          int           `json:"imageCount"`
 	Assignments         []*assignment `gorm:"foreignKey:ProjectID" json:"assignments"`
 	CurrentStepID       *uint         `json:"currentStepID"`
@@ -178,27 +178,11 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 	}
 
 	// now pull some details from the API
-	respBytes, reqErr := svc.getRequest(fmt.Sprintf("%s/units/%d", svc.TrackSys.API, proj.UnitID))
-	if reqErr != nil {
-		log.Printf("ERROR: could get unit %d details: %s", proj.UnitID, reqErr.Message)
-		c.String(http.StatusInternalServerError, reqErr.Message)
-		return
-	}
-
-	var unitMD unitInfo
-	if err := json.Unmarshal(respBytes, &unitMD); err != nil {
-		log.Printf("ERROR: unable to parse unit %d details: %s", proj.UnitID, err.Error())
+	if err := svc.getProjectUnitDetails(proj); err != nil {
+		log.Printf("ERROR: unable to get project %d unit %d detail: %s", proj.ID, proj.UnitID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	proj.MetadataID = uint(unitMD.MetadataID)
-	proj.SpecialInstructions = unitMD.SpecialInstructions
-	proj.IntendedUse = unitMD.IntendedUse
-	proj.OCRHintID = uint(unitMD.OCRHintID)
-	proj.OCRLanguage = unitMD.OCRLanguage
-	proj.OCRMasterFiles = unitMD.OCRMasterFiles
-	proj.Status = unitMD.Status
 
 	log.Printf("INFO: get project %d assignments", proj.ID)
 	if err := svc.DB.Where("project_id=?", proj.ID).Joins("Step").Order("assigned_at DESC").Find(&proj.Assignments).Error; err != nil {
@@ -216,6 +200,27 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, proj)
+}
+
+func (svc *serviceContext) getProjectUnitDetails(proj *project) error {
+	respBytes, reqErr := svc.getRequest(fmt.Sprintf("%s/units/%d", svc.TrackSys.API, proj.UnitID))
+	if reqErr != nil {
+		return fmt.Errorf("%s", reqErr.Message)
+	}
+
+	var unitMD unitInfo
+	if err := json.Unmarshal(respBytes, &unitMD); err != nil {
+		return err
+	}
+	proj.MetadataID = uint(unitMD.MetadataID)
+	proj.SpecialInstructions = unitMD.SpecialInstructions
+	proj.IntendedUse = unitMD.IntendedUse
+	proj.OCRHintID = uint(unitMD.OCRHintID)
+	proj.OCRLanguage = unitMD.OCRLanguage
+	proj.OCRMasterFiles = unitMD.OCRMasterFiles
+	proj.UnitStatus = unitMD.Status
+
+	return nil
 }
 
 func (svc *serviceContext) deleteProject(c *gin.Context) {
@@ -387,15 +392,11 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 
 	log.Printf("INFO: user %s requests projects page %d", claims.ComputeID, page)
 
-	// // ALWAYS exclude caneled projects. exclude done projects when filter is not finished.
-	// // FIXME remove this once bad data is cleaned up?
-	// whereQ := " AND unit_status != 'canceled'"
 	whereQ := ""
-
 	qWorkflow := c.Query("workflow")
 	if qWorkflow != "" {
 		id, _ := strconv.Atoi(qWorkflow)
-		whereQ += fmt.Sprintf(" AND workflow_id=%d", id)
+		whereQ += fmt.Sprintf(" AND projects.workflow_id=%d", id)
 	}
 	qStep := c.Query("step")
 	if qStep != "" {
@@ -453,13 +454,6 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 	for idx, q := range filterQ {
 		var total int64
 		countQ := q + whereQ
-		// FIXME verify this can be removed. If not...
-		// if idx != 3 {
-		// 	// NOTE: this is needed for cases where projects fail finailzatiuon and are fixed outside of DPG imaging
-		// 	// in these cases, the unit status gets bumped to done, but the project is left unfinished. Seems to be
-		// 	// a bug that needs to be addressed. There are only 13 units in this situation, so it is an unusual happening.
-		// 	countQ += " AND unit_status != 'done'"
-		// }
 		err = svc.getBaseSearchQuery().Where(countQ).Count(&total).Error
 		if err != nil {
 			log.Printf("WARNING: unable to get count of projects: %s", err.Error())
@@ -479,17 +473,11 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		}
 	}
 
-	// FIXME
-	// orderStr := "date_due asc"
-	orderStr := "id asc"
+	orderStr := "date_due asc"
 	if filter == "finished" {
 		orderStr = "finished_at desc"
 	}
 	whereQ = filterQ[filterIdx] + whereQ
-	// FIXME?
-	// if filterIdx != 3 {
-	// 	whereQ += " AND unit_status != 'done'"
-	// }
 	err = svc.getBaseSearchQuery().
 		Offset(offset).Limit(pageSize).Order(orderStr).
 		Where(whereQ).
@@ -500,11 +488,18 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		return
 	}
 
+	// iterate all results to get details held outdide of dpg imaging and all assignments
 	for _, p := range out.Projects {
-		err = svc.DB.Where("project_id=?", p.ID).
-			Joins("Step").
-			Order("assigned_at DESC").Find(&p.Assignments).Error
-		if err != nil {
+		// get external data
+		if err := svc.getProjectUnitDetails(p); err != nil {
+			log.Printf("ERROR: unable to get project %d unit %d detail: %s", p.ID, p.UnitID, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		// get assignments
+		if err := svc.DB.Where("project_id=?", p.ID).Joins("Step").
+			Order("assigned_at DESC").Find(&p.Assignments).Error; err != nil {
 			log.Printf("ERROR: unable to get project %d assignments: %s", p.ID, err.Error())
 			c.String(http.StatusInternalServerError, err.Error())
 			return

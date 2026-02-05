@@ -79,17 +79,18 @@ func (svc *serviceContext) lookupProjectForUnit(c *gin.Context) {
 }
 
 type createProjectRequest struct {
-	UnitID          int64  `json:"unitID"`
-	OrderID         int64  `json:"orderID"`
-	Title           string `json:"title"`
-	CallNumber      string `json:"callNumber"`
-	WorkflowID      int64  `json:"workflowID"`
-	ContainerTypeID int64  `json:"containerTypeID"`
-	CategoryID      int64  `json:"categoryID"`
-	Condition       int64  `json:"condition"`
-	Notes           string `json:"notes"`
-	CustomerID      int64  `json:"customerID"`
-	AgencyID        int64  `json:"agencyID"`
+	UnitID          int64     `json:"unitID"`
+	OrderID         int64     `json:"orderID"`
+	Title           string    `json:"title"`
+	CallNumber      string    `json:"callNumber"`
+	WorkflowID      int64     `json:"workflowID"`
+	ContainerTypeID int64     `json:"containerTypeID"`
+	CategoryID      int64     `json:"categoryID"`
+	Condition       int64     `json:"condition"`
+	Notes           string    `json:"notes"`
+	CustomerID      int64     `json:"customerID"`
+	AgencyID        int64     `json:"agencyID"`
+	DateDue         time.Time `json:"dateDue"`
 }
 
 type updateProjectMetadataRequest struct {
@@ -144,6 +145,7 @@ func (svc *serviceContext) createProject(c *gin.Context) {
 		CategoryID:    uint(req.CategoryID),
 		ItemCondition: uint(req.Condition),
 		ConditionNote: req.Notes,
+		DateDue:       req.DateDue,
 	}
 	if req.AgencyID > 0 {
 		newProj.AgencyID = uint(req.AgencyID)
