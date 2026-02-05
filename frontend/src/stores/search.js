@@ -34,7 +34,7 @@ export const useSearchStore = defineStore('search', {
          return (projIdx) => {
             if (projIdx < 0 || projIdx > state.projects.length-1 ) return "Unknown"
             let p = state.projects[projIdx]
-            return  p.unit.order.dateDue.split("T")[0]
+            return  p.dateDue.split("T")[0]
          }
       },
       hasError: state => {

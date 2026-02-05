@@ -25,8 +25,7 @@ export const useProjectStore = defineStore('project', {
       },
       dueDate: state => {
          if ( state.detail == null ) return ""
-         if (!state.detail.unit ) return ""
-         return  state.detail.unit.order.dateDue.split("T")[0]
+         return  state.detail.dateDue.split("T")[0]
       },
       // NOTES : enums from tracksys models
       // assignment status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing]
@@ -139,9 +138,9 @@ export const useProjectStore = defineStore('project', {
             this.detail.containerType = system.getContainerType( response.data.containerTypeID )
             this.detail.itemCondition = response.data.condition
             this.detail.conditionNote = response.data.note
-            this.detail.unit.ocrMasterFiles = response.data.ocrMasterFiles
-            this.detail.unit.metadata.ocrHint = system.getOCRHint( response.data.ocrHintID )
-            this.detail.unit.metadata.ocrLanguageHint = response.data.ocrLangage
+            this.detail.ocrMasterFiles = response.data.ocrMasterFiles
+            this.detail.ocrHintID = response.data.ocrHintID
+            this.detail.ocrLanguage = response.data.ocrLangage
             this.working = false
          }).catch( e => {
             console.error(e)
@@ -198,7 +197,7 @@ export const useProjectStore = defineStore('project', {
             return
          }
          this.missingComponents = []
-         await axios.get(  `/api/units/${this.detail.unit.id}/validate/components` ).then(response => {
+         await axios.get(  `/api/units/${this.detail.unitID}/validate/components` ).then(response => {
             if (response.data.valid == false) {
                this.missingComponents = response.data.missing
             }

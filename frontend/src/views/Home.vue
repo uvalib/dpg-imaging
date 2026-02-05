@@ -69,40 +69,40 @@
                                     <label>Images:</label><span>{{p.imageCount}}</span>
                                  </span>
                               </div>
-                              <div>{{p.unit.metadata.title}}</div>
+                              <div>{{p.title}}</div>
                            </div>
                         </router-link>
                      </div>
                      <div class="data">
                         <dl>
                            <dt>Customer:</dt>
-                           <dd>{{p.unit.order.customer.lastName}}, {{p.unit.order.customer.firstName}} </dd>
-                           <template v-if="p.unit.order.agency.id > 0">
+                           <dd>{{ systemStore.getCustomerName(p.customerID) }} </dd>
+                           <template v-if="p.agencyID > 0">
                               <dt>Agency:</dt>
-                              <dd>{{p.unit.order.agency.name}}</dd>
+                              <dd>{{ systemStore.getAgency(p.agencyID)}}</dd>
                            </template>
                            <dt>Call Number:</dt>
                            <dd>
-                              <span v-if="p.unit.metadata.callNumber">{{p.unit.metadata.callNumber}}</span>
+                              <span v-if="p.callNumber">{{p.callNumber}}</span>
                               <span v-else class="na">N/A</span>
                            </dd>
                            <dt>Intended Use:</dt>
-                           <dd>{{p.unit.intendedUse.description}}</dd>
+                           <dd>{{ p.intendedUse }}</dd>
                         </dl>
                         <dl class="right">
                            <dt>Order:</dt>
-                           <dd><a target="_blank" :href="`${systemStore.adminURL}/orders/${p.unit.order.id}`">{{p.unit.order.id}}</a></dd>
+                           <dd><a target="_blank" :href="`${systemStore.adminURL}/orders/${p.orderID}`">{{p.orderID}}</a></dd>
                            <dt>Unit:</dt>
-                           <dd><a target="_blank" :href="`${systemStore.adminURL}/units/${p.unit.id}`">{{p.unit.id}}</a></dd>
+                           <dd><a target="_blank" :href="`${systemStore.adminURL}/units/${p.unitID}`">{{p.unitID}}</a></dd>
                            <dt>Workflow:</dt>
                            <dd>{{p.workflow.name}}</dd>
                            <dt>Category:</dt>
                            <dd>{{p.category.name}}</dd>
                         </dl>
                      </div>
-                     <div class="special-instructions" v-if="p.unit.specialInstructions">
+                     <div class="special-instructions" v-if="p.specialInstructions">
                         <label>Special Instructions:</label>
-                        <p>{{p.unit.specialInstructions}}</p>
+                        <p>{{p.specialInstructions}}</p>
                      </div>
                      <div class="status" v-if="!p.finishedAt || p.finishedAt == ''">
                         <div class="progress-panel">

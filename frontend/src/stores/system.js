@@ -55,35 +55,52 @@ export const useSystemStore = defineStore('system', {
       },
       getOCRHint: state => {
          return (id) => {
-            let hint = null
-            state.ocrHints.forEach( val => {
-               if (val.id == id) {
-                  hint = val
-               }
-            })
-            return hint
+            let tgt = state.ocrHints.find( val => val.id == id)
+            if ( tgt ) {
+               return tgt.name
+            }
+            return "Unknown"
          }
       },
       getOCRLanguageHint: state => {
          return (code) => {
-            let hint = null
-            state.ocrLanguageHints.forEach( val => {
-               if (val.code == code) {
-                  hint = val
-               }
-            })
-            return hint
+            let tgt = state.ocrLanguageHints.find( val => val.code == code)
+            if ( tgt ) {
+               return tgt.language
+            }
+            return "Unknown"
+         }
+      },
+      getStaffMemberName: state => {
+         return (staffID) => {
+            let tgt = state.staffMembers.find( c => c.id == staffID)
+            if ( tgt ) {
+               return `${tgt.firstName} ${tgt.lastName}`
+            }
+            return "Unknown"
          }
       },
       getStaffMember: state => {
          return (staffID) => {
-            let staff = null
-            state.staffMembers.forEach( sm => {
-               if (sm.id == staffID) {
-                  staff = sm
-               }
-            })
-            return staff
+            return state.staffMembers.find( c => c.id == staffID)
+         }
+      },
+      getAgency: state => {
+         return (id) => {
+            let tgt = state.agencies.find( a => a.id == id)
+            if ( tgt ) {
+               return tgt.name
+            }
+            return "Unknown"
+         }
+      },
+      getCustomerName: state => {
+         return (id) => {
+            let tgt = state.customers.find( c => c.id == id)
+            if ( tgt ) {
+               return `${tgt.lastName}, ${tgt.firstName}`
+            }
+            return "Unknown"
          }
       }
 	},

@@ -141,13 +141,13 @@ const isFinishEnabled = computed(()=>{
    if ( detail.value.workflow.name == "Manuscript" && currStepName.value == "Scan" && detail.value.containerType == null) return false
    if ( currStepName.value == "Scan" && detail.value.workstation.id == 0) return false
    if ( currStepName.value == "Finalize") {
-      if ( detail.value.unit.metadata.ocrHint.id == 0) return false
-      if ( detail.value.unit.metadata.ocrHint.id == 1 && detail.value.unit.metadata.ocrLanguageHint == "") return false
+      if ( detail.value.ocrHintID == 0) return false
+      if ( detail.value.ocrHintID == 1 && detail.value.ocrLanguage == "") return false
    }
    return true
 })
 const workingDir = computed(()=>{
-   let unitDir =  unitDirectory(detail.value.unit.id)
+   let unitDir =  unitDirectory(detail.value.unitID)
    if (detail.value.currentStep.name == "Process" || detail.value.currentStep.name == "Scan") {
       return `${systemStore.scanDir}/${unitDir}`
    }
@@ -180,16 +180,16 @@ const workflowNote = computed(()=>{
    if ( detail.value.workflow.name == "Manuscript" && currStepName.value == "Scan" && detail.value.containerType == null) {
       return "Assignment cannot be finished until container type is set."
    }
-   if ( currStepName.value == "Finalize" && detail.value.unit.metadata.ocrHint.id == 0) {
+   if ( currStepName.value == "Finalize" && detail.value.ocrHintID == 0) {
       return "Assignment cannot be finished until the OCR hint has been set."
    }
-   if ( detail.value.unit.metadata.ocrHint.id > 1 && detail.value.unit.ocrMasterFiles == true) {
+   if ( detail.value.ocrHintID > 1 && detail.value.ocrMasterFiles == true) {
       return "Cannot OCR items that are not regular text."
    }
-   if ( detail.value.unit.metadata.ocrHint.id == 1 && detail.value.unit.metadata.ocrLanguageHint == "" && currStepName.value == "Finalize") {
+   if ( detail.value.ocrHintID == 1 && detail.value.ocrLanguageHint == "" && currStepName.value == "Finalize") {
       return "Assignment cannot be finished until the OCR Language Hint has been set."
    }
-   if ( detail.value.unit.status == "error" ) {
+   if ( detail.status == "error" ) {
       return "Finalization has failed. Correct the problem then click 'Retry Finalization'."
    }
    return ""

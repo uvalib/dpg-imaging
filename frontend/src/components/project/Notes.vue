@@ -8,7 +8,7 @@
             <div class="note-info">
                <div>
                   <p class="note-date">{{formatDate(n.createdAt)}}</p>
-                  <p class="note-by">{{ getStaffMemberName(n.staffMemberID) }}</p>
+                  <p class="note-by">{{ system.getStaffMemberName(n.staffMemberID) }}</p>
                </div>
                <div class="right">
                   <p class="note-type">{{noteTypeString(n.type)}}</p>
@@ -49,14 +49,6 @@ const noteTypeString =((typeID) => {
    let types = ["COMMENT", "SUGGESTION", "PROBLEM", "ITEM CONDITION"]
    if ( typeID < 0 || typeID > types.length-1) return "COMMENT"
    return types[typeID]
-})
-
-const getStaffMemberName = ( (staffID) => {
-   let staff = system.getStaffMember( staffID )
-   if (staff == null ) {
-      return "Unknown"
-   }
-   return `${staff.firstName} ${staff.lastName}`
 })
 
 const formatDate =((d) => {

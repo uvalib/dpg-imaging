@@ -38,6 +38,11 @@ func (svc *serviceContext) getProjectInfo(projID string) (*project, error) {
 		return nil, err
 	}
 
+	log.Printf("INFO: get project %d external unit data", tgtProject.ID)
+	if err := svc.getProjectUnitDetails(tgtProject); err != nil {
+		return nil, err
+	}
+
 	log.Printf("INFO: get project %d assignments", tgtProject.ID)
 	if err := svc.DB.Where("project_id=?", tgtProject.ID).Joins("Step").
 		Order("assigned_at DESC").Find(&tgtProject.Assignments).Error; err != nil {
@@ -152,7 +157,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 
 	proj, err := svc.getProjectInfo(projID)
 	if err != nil {
-		log.Printf("ERROR: unable to getp project %s: %s", projID, err.Error())
+		log.Printf("ERROR: unable to get project %s: %s", projID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -190,8 +195,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 		svc.DB.Model(&currA).Select("Status").Updates(currA)
 
 		go func() {
-			// FIXME
-			if proj.Unit.UnitStatus != "error" {
+			if proj.UnitStatus != "error" {
 				err := svc.validateFinishStep(proj)
 				if err != nil {
 					log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, err.Error())
