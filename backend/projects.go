@@ -493,16 +493,16 @@ func (svc *serviceContext) getProjects(c *gin.Context) {
 		// get external data
 		if err := svc.getProjectUnitDetails(p); err != nil {
 			log.Printf("ERROR: unable to get project %d unit %d detail: %s", p.ID, p.UnitID, err.Error())
-			c.String(http.StatusInternalServerError, err.Error())
-			return
+			// c.String(http.StatusInternalServerError, err.Error())
+			// return
 		}
 
 		// get assignments
 		if err := svc.DB.Where("project_id=?", p.ID).Joins("Step").
 			Order("assigned_at DESC").Find(&p.Assignments).Error; err != nil {
 			log.Printf("ERROR: unable to get project %d assignments: %s", p.ID, err.Error())
-			c.String(http.StatusInternalServerError, err.Error())
-			return
+			// c.String(http.StatusInternalServerError, err.Error())
+			// return
 		}
 	}
 

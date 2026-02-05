@@ -29,7 +29,7 @@ func main() {
 	// }
 
 	// log.Printf("%d projects found that need to be updated", len(projs))
-	// limit := 50
+	// limit := 500
 	// qStr := "select order_id, customer_id, agency_id, title, call_number, date_due from units u inner join orders o on o.id = order_id inner join metadata m on m.id = metadata_id where u.id=?"
 	// for _, tgtProj := range projs {
 	// 	log.Printf("Lookup metadata for project %d with unit %d", tgtProj.ID, tgtProj.UnitID)
@@ -80,6 +80,7 @@ func main() {
 	// 	}
 
 	// 	if len(fields) > 0 {
+	// 		log.Printf("   project needs an update for %v", fields)
 	// 		if err := svc.DB.Model(&tgtProj).Select(fields).Updates(tgtProj).Error; err != nil {
 	// 			log.Fatalf("unable to update project %d metadata: %s", tgtProj.ID, err.Error())
 	// 			errors = append(errors, fmt.Sprintf("%d", tgtProj.ID))
