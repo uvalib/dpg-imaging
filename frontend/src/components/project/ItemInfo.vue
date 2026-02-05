@@ -184,6 +184,9 @@ function editClicked() {
    note.value = detail.value.conditionNote
    ocrHintID.value = detail.value.ocrHintID
    ocrLangage.value = detail.value.ocrLanguage
+   if (ocrHintID.value != 1) {
+      ocrLangage.value = ""
+   }
    nextTick( ()=> categoryFocus.value = true )
 }
 
