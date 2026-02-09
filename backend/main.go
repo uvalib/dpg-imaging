@@ -19,90 +19,6 @@ func main() {
 	cfg := getConfiguration()
 	svc := initializeService(Version, cfg)
 
-	// log.Printf("HACK THE PROJECT UPDATES =============================")
-	// var projs []project
-	// cnt := 0
-	// var errors []string
-	// var missing []string
-	// if err := svc.DB.Where("date_due is null").Find(&projs).Error; err != nil {
-	// 	log.Fatal(err.Error())
-	// }
-
-	// log.Printf("%d projects found that need to be updated", len(projs))
-	// limit := 500
-	// qStr := "select order_id, customer_id, agency_id, title, call_number, date_due from units u inner join orders o on o.id = order_id inner join metadata m on m.id = metadata_id where u.id=?"
-	// for _, tgtProj := range projs {
-	// 	log.Printf("Lookup metadata for project %d with unit %d", tgtProj.ID, tgtProj.UnitID)
-	// 	var info struct {
-	// 		OrderID    uint
-	// 		CustomerID uint
-	// 		AgencyID   *uint
-	// 		CallNumber string
-	// 		Title      string
-	// 		DateDue    time.Time
-	// 	}
-	// 	if err := svc.DB.Raw(qStr, tgtProj.UnitID).Scan(&info).Error; err != nil {
-	// 		log.Fatal(err.Error())
-	// 	}
-
-	// 	if info.OrderID == 0 {
-	// 		log.Printf("NO UNIT/ORDER FOR PROJECT %d", tgtProj.ID)
-	// 		missing = append(missing, fmt.Sprintf("%d", tgtProj.ID))
-	// 		continue
-	// 	}
-
-	// 	fields := make([]string, 0)
-	// 	if info.DateDue != tgtProj.DateDue {
-	// 		tgtProj.DateDue = info.DateDue
-	// 		fields = append(fields, "DateDue")
-	// 	}
-	// 	if info.Title != tgtProj.Title {
-	// 		tgtProj.Title = info.Title
-	// 		fields = append(fields, "Title")
-	// 	}
-	// 	if info.CallNumber != tgtProj.CallNumber {
-	// 		tgtProj.CallNumber = info.CallNumber
-	// 		fields = append(fields, "CallNumber")
-	// 	}
-	// 	if info.OrderID != tgtProj.OrderID {
-	// 		tgtProj.OrderID = info.OrderID
-	// 		fields = append(fields, "OrderID")
-	// 	}
-	// 	if info.CustomerID != tgtProj.CustomerID {
-	// 		tgtProj.CustomerID = info.CustomerID
-	// 		fields = append(fields, "CustomerID")
-	// 	}
-	// 	if info.AgencyID != nil {
-	// 		if *info.AgencyID != tgtProj.AgencyID {
-	// 			tgtProj.AgencyID = *info.AgencyID
-	// 			fields = append(fields, "AgencyID")
-	// 		}
-	// 	}
-
-	// 	if len(fields) > 0 {
-	// 		log.Printf("   project needs an update for %v", fields)
-	// 		if err := svc.DB.Model(&tgtProj).Select(fields).Updates(tgtProj).Error; err != nil {
-	// 			log.Fatalf("unable to update project %d metadata: %s", tgtProj.ID, err.Error())
-	// 			errors = append(errors, fmt.Sprintf("%d", tgtProj.ID))
-	// 		}
-	// 	}
-
-	// 	cnt++
-	// 	if cnt >= limit {
-	// 		log.Printf("STOP AFTER %d", limit)
-	// 		break
-	// 	}
-	// 	time.Sleep(50 * time.Millisecond)
-	// }
-	// log.Printf("===> Updated %d projects of %d with missing metadata", cnt, len(projs))
-	// if len(errors) > 0 {
-	// 	log.Printf("===> %d PROJECT UPDATES FAILED (%s)", len(errors), strings.Join(errors, ","))
-	// }
-	// if len(missing) > 0 {
-	// 	log.Printf("===> %d PROJECTS MISSING UNITS (%s)", len(missing), strings.Join(missing, ","))
-	// }
-	// log.Fatal("DONE")
-
 	// Set routes and start server
 	gin.SetMode(gin.ReleaseMode)
 	gin.DisableConsoleColor()
@@ -169,6 +85,14 @@ func main() {
 		api.POST("/user/:id/messages/:msgid/delete", svc.deleteMessage)
 		api.POST("/user/:id/messages/:msgid/read", svc.markMessageRead)
 		api.POST("/user/:id/messages/send", svc.sendMessage)
+
+		// reporting endpoints
+		api.GET("/reports/deliveries", svc.getDeliveriesReport)
+		api.GET("/reports/productivity", svc.getProductivityReport)
+		api.GET("/reports/problems", svc.getProblemsReport)
+		api.GET("/reports/pagetimes", svc.getPageTimesReport)
+		api.GET("/reports/rejections", svc.getRejectionsReport)
+		api.GET("/reports/rates", svc.getRatesReport)
 	}
 
 	cleanup := router.Group("/cleanup")
@@ -192,3 +116,87 @@ func main() {
 	log.Printf("INFO: start DPG Imaging Service on port %s with CORS support enabled", portStr)
 	log.Fatal(router.Run(portStr))
 }
+
+// log.Printf("HACK THE PROJECT UPDATES =============================")
+// var projs []project
+// cnt := 0
+// var errors []string
+// var missing []string
+// if err := svc.DB.Where("date_due is null").Find(&projs).Error; err != nil {
+// 	log.Fatal(err.Error())
+// }
+
+// log.Printf("%d projects found that need to be updated", len(projs))
+// limit := 1000
+// qStr := "select order_id, customer_id, agency_id, title, call_number, date_due from units u inner join orders o on o.id = order_id inner join metadata m on m.id = metadata_id where u.id=?"
+// for _, tgtProj := range projs {
+// 	log.Printf("Lookup metadata for project %d with unit %d", tgtProj.ID, tgtProj.UnitID)
+// 	var info struct {
+// 		OrderID    uint
+// 		CustomerID uint
+// 		AgencyID   *uint
+// 		CallNumber string
+// 		Title      string
+// 		DateDue    time.Time
+// 	}
+// 	if err := svc.DB.Raw(qStr, tgtProj.UnitID).Scan(&info).Error; err != nil {
+// 		log.Fatal(err.Error())
+// 	}
+
+// 	if info.OrderID == 0 {
+// 		log.Printf("NO UNIT/ORDER FOR PROJECT %d", tgtProj.ID)
+// 		missing = append(missing, fmt.Sprintf("%d", tgtProj.ID))
+// 		continue
+// 	}
+
+// 	fields := make([]string, 0)
+// 	if info.DateDue != tgtProj.DateDue {
+// 		tgtProj.DateDue = info.DateDue
+// 		fields = append(fields, "DateDue")
+// 	}
+// 	if info.Title != tgtProj.Title {
+// 		tgtProj.Title = info.Title
+// 		fields = append(fields, "Title")
+// 	}
+// 	if info.CallNumber != tgtProj.CallNumber {
+// 		tgtProj.CallNumber = info.CallNumber
+// 		fields = append(fields, "CallNumber")
+// 	}
+// 	if info.OrderID != tgtProj.OrderID {
+// 		tgtProj.OrderID = info.OrderID
+// 		fields = append(fields, "OrderID")
+// 	}
+// 	if info.CustomerID != tgtProj.CustomerID {
+// 		tgtProj.CustomerID = info.CustomerID
+// 		fields = append(fields, "CustomerID")
+// 	}
+// 	if info.AgencyID != nil {
+// 		if *info.AgencyID != tgtProj.AgencyID {
+// 			tgtProj.AgencyID = *info.AgencyID
+// 			fields = append(fields, "AgencyID")
+// 		}
+// 	}
+
+// 	if len(fields) > 0 {
+// 		log.Printf("   project needs an update for %v", fields)
+// 		if err := svc.DB.Model(&tgtProj).Select(fields).Updates(tgtProj).Error; err != nil {
+// 			log.Fatalf("unable to update project %d metadata: %s", tgtProj.ID, err.Error())
+// 			errors = append(errors, fmt.Sprintf("%d", tgtProj.ID))
+// 		}
+// 	}
+
+// 	cnt++
+// 	if cnt >= limit {
+// 		log.Printf("STOP AFTER %d", limit)
+// 		break
+// 	}
+// 	time.Sleep(50 * time.Millisecond)
+// }
+// log.Printf("===> Updated %d projects of %d with missing metadata", cnt, len(projs))
+// if len(errors) > 0 {
+// 	log.Printf("===> %d PROJECT UPDATES FAILED (%s)", len(errors), strings.Join(errors, ","))
+// }
+// if len(missing) > 0 {
+// 	log.Printf("===> %d PROJECTS MISSING UNITS (%s)", len(missing), strings.Join(missing, ","))
+// }
+// log.Fatal("DONE")

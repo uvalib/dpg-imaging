@@ -31,6 +31,9 @@ export const useSystemStore = defineStore('system', {
          "Epigraph", "Prologue/Preface", "Dedication", "Errata"].sort()
 	}),
 	getters: {
+      activeWorkflows: state => {
+         return state.workflows.filter( w => w.isActive == true )
+      },
       getCategory: state => {
          return (cID) => {
             let cat = null

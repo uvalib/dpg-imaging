@@ -34,6 +34,11 @@ const routes = [
       name: 'messages',
       component: () => import('../views/Messages.vue')
     },
+    {
+      path: '/reports',
+      name: 'repostrs',
+      component: () => import('../views/Reports.vue')
+   },
    {
       path: '/forbidden',
       name: 'forbidden',

@@ -18,6 +18,7 @@
                <DPGButton icon="pi pi-envelope" @click="messagesClicked" :label="`${messageStore.unreadMessageCount}`" size="small"/>
                <DPGButton v-if="userStore.isAdmin || userStore.isSupervisor" @click="equipmentClicked" icon="pi pi-cog" label="Manage Equipment" size="small"/>
                <DPGButton label="Projects" icon="pi pi-home" @click="homeClicked" size="small"/>
+               <DPGButton v-if="userStore.isAdmin || userStore.isSupervisor" label="Reports" icon="pi pi-chart-line" @click="reportsClicked" size="small"/>
                <DPGButton icon="pi pi-sign-out" @click="signout" label="Sign out" size="small"/>
             </div>
          </div>
@@ -66,7 +67,9 @@ const messagesClicked = (() => {
 const equipmentClicked = (() => {
    router.push("/equipment")
 })
-
+const reportsClicked = (() => {
+   router.push("/reports")
+})
 const signout = (() => {
    userStore.signout()
    router.push("/signedout")
