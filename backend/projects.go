@@ -116,7 +116,7 @@ type project struct {
 	UnitID              uint          `json:"unitID"`
 	OrderID             uint          `json:"orderID"`
 	CustomerID          uint          `json:"customerID"`
-	AgencyID            uint          `json:"agencyID"`
+	AgencyID            *uint         `json:"agencyID"`
 	OwnerID             *uint         `json:"ownerID"`
 	MetadataID          uint          `gorm:"-" json:"metadataID"`          // pulled from TS API call, not gorm
 	SpecialInstructions string        `gorm:"-" json:"specialInstructions"` // pulled from TS API call, not gorm

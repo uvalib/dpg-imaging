@@ -79,26 +79,27 @@ func (svc *serviceContext) lookupProjectForUnit(c *gin.Context) {
 }
 
 type createProjectRequest struct {
-	UnitID          int64     `json:"unitID"`
-	OrderID         int64     `json:"orderID"`
+	UnitID          uint      `json:"unitID"`
+	OrderID         uint      `json:"orderID"`
 	Title           string    `json:"title"`
 	CallNumber      string    `json:"callNumber"`
-	WorkflowID      int64     `json:"workflowID"`
-	ContainerTypeID int64     `json:"containerTypeID"`
-	CategoryID      int64     `json:"categoryID"`
-	Condition       int64     `json:"condition"`
+	WorkflowID      uint      `json:"workflowID"`
+	ContainerTypeID uint      `json:"containerTypeID"`
+	CategoryID      uint      `json:"categoryID"`
+	Condition       uint      `json:"condition"`
 	Notes           string    `json:"notes"`
-	CustomerID      int64     `json:"customerID"`
-	AgencyID        int64     `json:"agencyID"`
+	CustomerID      uint      `json:"customerID"`
+	AgencyID        uint      `json:"agencyID"`
 	DateDue         time.Time `json:"dateDue"`
 }
 
 type updateProjectMetadataRequest struct {
-	Title      string `json:"title"`
-	CallNumber string `json:"callNumber"`
-	CustomerID int64  `json:"customerID"`
-	AgencyID   int64  `json:"agencyID"`
-	OrderID    int64  `json:"orderID"`
+	Title      string    `json:"title"`
+	CallNumber string    `json:"callNumber"`
+	CustomerID uint      `json:"customerID"`
+	AgencyID   uint      `json:"agencyID"`
+	OrderID    uint      `json:"orderID"`
+	DateDue    time.Time `json:"dateDue"`
 }
 
 func (svc *serviceContext) createProject(c *gin.Context) {
@@ -136,19 +137,19 @@ func (svc *serviceContext) createProject(c *gin.Context) {
 	newProj := project{
 		Title:         req.Title,
 		CallNumber:    req.CallNumber,
-		WorkflowID:    uint(req.WorkflowID),
-		UnitID:        uint(req.UnitID),
-		OrderID:       uint(req.OrderID),
-		CustomerID:    uint(req.CustomerID),
+		WorkflowID:    req.WorkflowID,
+		UnitID:        req.UnitID,
+		OrderID:       req.OrderID,
+		CustomerID:    req.CustomerID,
 		CurrentStepID: &firstStep.ID,
 		AddedAt:       &now,
-		CategoryID:    uint(req.CategoryID),
-		ItemCondition: uint(req.Condition),
+		CategoryID:    req.CategoryID,
+		ItemCondition: req.Condition,
 		ConditionNote: req.Notes,
 		DateDue:       req.DateDue,
 	}
 	if req.AgencyID > 0 {
-		newProj.AgencyID = uint(req.AgencyID)
+		newProj.AgencyID = &req.AgencyID
 	}
 	if req.ContainerTypeID != 0 {
 		cID := uint(req.ContainerTypeID)
@@ -201,17 +202,21 @@ func (svc *serviceContext) updateProjectMetadata(c *gin.Context) {
 		tgtProj.CallNumber = req.CallNumber
 		fields = append(fields, "CallNumber")
 	}
-	if req.OrderID != int64(tgtProj.OrderID) {
-		tgtProj.OrderID = uint(req.OrderID)
-		fields = append(fields, "OrderID")
-	}
-	if req.CustomerID != int64(tgtProj.CustomerID) {
-		tgtProj.CustomerID = uint(req.CustomerID)
+	if req.CustomerID != tgtProj.CustomerID {
+		tgtProj.CustomerID = req.CustomerID
 		fields = append(fields, "CustomerID")
 	}
-	if req.AgencyID != int64(tgtProj.AgencyID) {
-		tgtProj.AgencyID = uint(req.AgencyID)
+	if req.AgencyID != *tgtProj.AgencyID {
+		tgtProj.AgencyID = &req.AgencyID
 		fields = append(fields, "AgencyID")
+	}
+	if req.OrderID != tgtProj.OrderID {
+		tgtProj.OrderID = req.OrderID
+		fields = append(fields, "OrderID")
+	}
+	if req.DateDue.Compare(tgtProj.DateDue) != 0 {
+		tgtProj.DateDue = req.DateDue
+		fields = append(fields, "DateDue")
 	}
 
 	if len(fields) > 0 {
