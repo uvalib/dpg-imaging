@@ -67,7 +67,7 @@ func (svc *serviceContext) lookupProjectForUnit(c *gin.Context) {
 	}
 
 	stepName := "None"
-	if proj.CurrentStepID != nil {
+	if proj.CurrentStep != nil {
 		stepName = proj.CurrentStep.Name
 	}
 	c.JSON(http.StatusOK, lookupResp{Exists: true,
@@ -174,6 +174,7 @@ func (svc *serviceContext) updateProjectMetadata(c *gin.Context) {
 		return
 	}
 
+	// NOTE: only fields that are populated will be updated
 	var req updateProjectMetadataRequest
 	if qpErr := c.ShouldBindJSON(&req); qpErr != nil {
 		log.Printf("ERROR: invalid create update project metadata payload: %v", qpErr)
@@ -194,27 +195,27 @@ func (svc *serviceContext) updateProjectMetadata(c *gin.Context) {
 	}
 
 	fields := make([]string, 0)
-	if req.Title != tgtProj.Title {
+	if req.Title != "" && req.Title != tgtProj.Title {
 		tgtProj.Title = req.Title
 		fields = append(fields, "Title")
 	}
-	if req.CallNumber != tgtProj.CallNumber {
+	if req.CallNumber != "" && req.CallNumber != tgtProj.CallNumber {
 		tgtProj.CallNumber = req.CallNumber
 		fields = append(fields, "CallNumber")
 	}
-	if req.CustomerID != tgtProj.CustomerID {
+	if req.CustomerID != 0 && req.CustomerID != tgtProj.CustomerID {
 		tgtProj.CustomerID = req.CustomerID
 		fields = append(fields, "CustomerID")
 	}
-	if req.AgencyID != *tgtProj.AgencyID {
+	if req.AgencyID != 0 && tgtProj.AgencyID == nil || tgtProj.AgencyID != nil && req.AgencyID != *tgtProj.AgencyID {
 		tgtProj.AgencyID = &req.AgencyID
 		fields = append(fields, "AgencyID")
 	}
-	if req.OrderID != tgtProj.OrderID {
+	if req.OrderID != 0 && req.OrderID != tgtProj.OrderID {
 		tgtProj.OrderID = req.OrderID
 		fields = append(fields, "OrderID")
 	}
-	if req.DateDue.Compare(tgtProj.DateDue) != 0 {
+	if req.DateDue.IsZero() == false && req.DateDue.Compare(tgtProj.DateDue) != 0 {
 		tgtProj.DateDue = req.DateDue
 		fields = append(fields, "DateDue")
 	}
