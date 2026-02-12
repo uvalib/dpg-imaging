@@ -1,11 +1,7 @@
 <template>
    <DPGButton @click="show" :label="props.label" severity="secondary"/>
-   <Dialog v-model:visible="isOpen" :modal="true" header="Assign Project">
-      <div class="candidate-scroller">
-         <div class="val" v-for="(c,idx) in systemStore.staffMembers" :key="c.id" :class="{selected: idx == selectedIdx}" @click="selectCandidate(idx)">
-            <span class="candidate">{{c.lastName}}, {{c.firstName}}</span> ({{c.computingID}})
-         </div>
-      </div>
+   <Dialog v-model:visible="isOpen" :modal="true" header="Assign Project" :closable="false">
+      <Listbox v-model="assignee" :options="staff" filter optionLabel="name" optionValue="value" />
       <p class="error">{{error}}</p>
       <template #footer>
          <DPGButton @click="hide" label="Cancel" severity="secondary"/>
@@ -16,10 +12,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import {useSystemStore} from '@/stores/system'
 import {useProjectStore} from '@/stores/project'
 import Dialog from 'primevue/dialog'
+import Listbox from 'primevue/listbox'
 
 const emit = defineEmits( ['assigned' ])
 
@@ -38,33 +35,37 @@ const props = defineProps({
    })
 
 const isOpen = ref(false)
-const selectedIdx = ref(-1)
+const assignee = ref()
 const error = ref("")
 
-const selectCandidate = ((idx) => {
-   selectedIdx.value = idx
+const staff = computed( () => {
+   let out = []
+   systemStore.activeStaff.forEach( s => {
+      out.push({name: `${s.lastName}, ${s.firstName}`, value: s})
+   })
+   return out
 })
 
 const assignClicked = ( async () => {
    error.value = ""
-   if ( selectedIdx.value == -1) {
+   if ( !assignee.value ) {
       error.value = "Please select a user"
       return
    }
-   let userID = systemStore.staffMembers[selectedIdx.value].id
-   await projectStore.assignProject( {projectID: props.projectID, ownerID: userID} )
+   await projectStore.assignProject( {projectID: props.projectID, ownerID: assignee.value.id} )
    hide()
    emit('assigned')
 })
 
-function hide() {
+const hide = (() => {
    isOpen.value=false
-}
-function show() {
+})
+
+const show = (() => {
    isOpen.value = true
    error.value = ""
-   selectedIdx.value = -1
-}
+   assignee.value = null
+})
 </script>
 
 <style lang="scss" scoped>
@@ -73,31 +74,5 @@ function show() {
    margin: 0;
    text-align: center;
    color: var(--uvalib-red-emergency);
-}
-
-.candidate-scroller {
-   max-height: 300px;
-   overflow: scroll;
-   padding: 0;
-   margin:  5px 0;
-   border: 1px solid var(--uvalib-grey-light);
-   border-radius: 4px;
-   .val {
-      padding: 2px 10px 3px 10px;
-      cursor: pointer;
-      display: flex;
-      flex-flow: row nowrap;
-      justify-content: space-between;
-      &:hover  {
-         background: var(--uvalib-blue-alt-light);
-      }
-   }
-   .val.selected {
-      background: var(--uvalib-blue-alt);
-      color: white;
-   }
-   .candidate {
-      font-weight: bold;
-   }
 }
 </style>

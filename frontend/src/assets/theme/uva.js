@@ -90,7 +90,7 @@ const UVA = definePreset(Aura, {
                },
                bodyCell: {
                   selectedBorderColor: 'var(--uvalib-teal-light)',
-                  borderColor: 'var(--uvalib-grey-lightest)',
+                  borderColor: 'var(--uvalib-teal-light)',
                }
             }
          }
@@ -112,6 +112,14 @@ const UVA = definePreset(Aura, {
                   fontSize: '1em',
                }
             }
+         }
+      },
+      listbox: {
+         option: {
+            focusBackground: 'var(--uvalib-grey-lightest)',
+            selectedBackground: 'var( --uvalib-blue-alt-light )',
+            selectedFocusBackground: 'var( --uvalib-blue-alt-light)',
+            selectedFocusColor: 'black'
          }
       },
       paginator: {

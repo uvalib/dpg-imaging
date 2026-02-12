@@ -9,38 +9,67 @@ export const useMessageStore = defineStore('message', {
       targetMessageID: -1,
       viewMesage: false,
       showCreateModal: false,
-      newMessage:  {to: 0, subject: "", message: ""},
+      newMessage:  {to: [], subject: "", message: ""},
       isResponse: false,
       userID: -1,
       error: ""
    }),
    getters: {
       unreadMessageCount: state => {
-         let cnt = 0
-         state.inbox.forEach( m=> {
-            if (m.read == false) {
-               cnt++
-            }
-         })
-         return cnt
+         return (staffID) => {
+            let cnt = 0
+            state.inbox.forEach( m=> {
+               m.recipients.forEach( r => {
+                  if (r.staffID == staffID && r.read == false ) {
+                      cnt++
+                  }
+               })
+            })
+            return cnt
+         }
       }
    },
    actions: {
+      viewMessage(userID, msgID) {
+         this.targetMessageID = msgID
+         this.viewMesage = true
+         var m = this.inbox.find(m => m.id == msgID)
+         if (m) {
+            let recip = m.recipients.find(r => r.staffID == userID)
+            if (recip) {
+              recip.read = true
+            }
+         }
+      },
       beginMessageCreate() {
          this.showCreateModal = true
-         this.newMessage = {to: 0, subject: "", message: ""}
+         this.newMessage = {to: [], subject: "", message: ""}
          this.error = ""
          this.isResponse = false
       },
-      beginReply() {
+      beginReply( userID ) {
          if ( this.targetMessageID == -1) return
 
+         const system = useSystemStore()
          let srcMsg = this.inbox.find( m => m.id == this.targetMessageID)
          this.viewMesage = false
 
          this.isResponse = true
          this.showCreateModal = true
-         this.newMessage = {to: srcMsg.from.id, subject: `RE: ${srcMsg.subject}`, message: ""}
+         let allRecipients = []
+         srcMsg.recipients.forEach( r => {
+            if (r.staffID != userID) {
+               let sm = system.getStaffMember(r.staffID)
+               if (sm.active) {
+                  allRecipients.push(r.staffID)
+               }
+            }
+         })
+         let sm = system.getStaffMember(srcMsg.fromID)
+         if (sm.active) {
+            allRecipients.push(r.staffID)
+         }
+         this.newMessage = {to: allRecipients, subject: `RE: ${srcMsg.subject}`, message: ""}
          this.error = ""
       },
       cancelMessage() {
@@ -96,8 +125,8 @@ export const useMessageStore = defineStore('message', {
       },
 
       sendMessage() {
-         if (this.newMessage.to == 0) {
-            this.error = "Please select a recipient"
+         if ( this.newMessage.to.length == 0) {
+            this.error = "Please select at least one recipient"
             return
          }
          if (this.newMessage.subject == "") {

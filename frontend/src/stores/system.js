@@ -83,6 +83,18 @@ export const useSystemStore = defineStore('system', {
             return "Unknown"
          }
       },
+      getStaffMemberEmail: state => {
+         return (staffID) => {
+            let tgt = state.staffMembers.find( c => c.id == staffID)
+            if ( tgt ) {
+               return `${tgt.firstName} ${tgt.lastName} <${tgt.email}>`
+            }
+            return "Unknown"
+         }
+      },
+      activeStaff: state => {
+         return state.staffMembers.filter( s => s.active === true)
+      },
       getStaffMember: state => {
          return (staffID) => {
             return state.staffMembers.find( c => c.id == staffID)

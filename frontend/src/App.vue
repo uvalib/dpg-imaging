@@ -15,7 +15,7 @@
          <div class="user-banner" v-if="userStore.jwt">
             <div class="acts">
                <span class="signed-in-as">{{ userStore.signedInUser }}</span>
-               <DPGButton icon="pi pi-envelope" @click="messagesClicked" :label="`${messageStore.unreadMessageCount}`" size="small"/>
+               <DPGButton icon="pi pi-envelope" @click="messagesClicked" :label="`${messageStore.unreadMessageCount(userStore.ID) }`" size="small"/>
                <DPGButton v-if="userStore.isAdmin || userStore.isSupervisor" @click="equipmentClicked" icon="pi pi-cog" label="Manage Equipment" size="small"/>
                <DPGButton label="Projects" icon="pi pi-home" @click="homeClicked" size="small"/>
                <DPGButton v-if="userStore.isAdmin || userStore.isSupervisor" label="Reports" icon="pi pi-chart-line" @click="reportsClicked" size="small"/>

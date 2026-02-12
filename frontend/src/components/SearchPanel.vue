@@ -80,7 +80,7 @@ const systemStore = useSystemStore()
 
 const staffMembers = computed( () => {
    let out = [ {name: "Any", id: 0} ]
-   systemStore.staffMembers.forEach( sm => {
+   systemStore.activeStaff.forEach( sm => {
       out.push( { name: `${sm.lastName}, ${sm.firstName}`, id: sm.id})
    })
    return out

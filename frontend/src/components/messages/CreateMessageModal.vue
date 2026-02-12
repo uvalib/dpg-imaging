@@ -4,10 +4,10 @@
       <div class="content">
          <div class="row">
             <label>To</label>
-            <Select id="assigned" v-model="messageStore.newMessage.to" :options="staffMembers"
-               optionLabel="name" optionValue="id"
+            <MultiSelect v-model="messageStore.newMessage.to" :options="staffMembers"
+               optionLabel="name" optionValue="id" display="chip"
                filter autoFilterFocus resetFilterOnHide filterMatchMode="startsWith"
-               placeholder="Select a recipient" />
+               placeholder="Select recipients" />
          </div>
          <div class="row">
             <label>Subject</label>
@@ -35,7 +35,7 @@
 import { useMessageStore } from "@/stores/messages"
 import { useSystemStore } from "@/stores/system"
 import Dialog from 'primevue/dialog'
-import Select from 'primevue/select'
+import MultiSelect from 'primevue/multiselect'
 import { computed } from 'vue'
 
 const messageStore = useMessageStore()
@@ -43,7 +43,7 @@ const systemStore = useSystemStore()
 
 const staffMembers = computed( () => {
    let out = []
-   systemStore.staffMembers.forEach( sm => {
+   systemStore.activeStaff.forEach( sm => {
       out.push( { name: `${sm.lastName}, ${sm.firstName}`, id: sm.id})
    })
    return out
@@ -66,19 +66,14 @@ const sendMessage = (() => {
 .content {
    display: flex;
    flex-direction: column;
-   row-gap: 15px;;
+   align-items: flex-start;
+   gap: 15px;
    div.row {
-      label {
-         font-weight: 500;
-         margin-bottom: 5px;
-         display: block;
-      }
-      div.p-dropdown.p-component  {
-         width: 100%;
-      }
-      input {
-         padding: 10px;
-      }
+      width: 100%;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
    }
    p.error {
       padding: 0;

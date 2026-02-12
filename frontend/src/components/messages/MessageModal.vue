@@ -2,9 +2,13 @@
    <Dialog v-model:visible="messageStore.viewMesage" :modal="true" header="Message Viewer"  :closable="false" style="width: 650px">
       <dl>
          <dt>Sent:</dt>
-         <dd>{{formatDate(message.sentAt)}}</dd>
+         <dd><pre>{{ formatDate(message.sentAt) }}</pre></dd>
          <dt>From:</dt>
-         <dd>{{message.from.email}}</dd>
+         <dd><pre>{{ system.getStaffMemberEmail( message.fromID ) }}</pre></dd>
+         <template v-if="message.recipients.length > 0">
+            <dt>To:</dt>
+            <dd><pre>{{ recipients }}</pre></dd>
+         </template>
          <dt>Subject:</dt>
          <dd>{{message.subject}}</dd>
       </dl>
@@ -18,14 +22,27 @@
 
 <script setup>
 import { computed } from 'vue'
-import {useMessageStore} from '@/stores/messages'
+import { useMessageStore } from '@/stores/messages'
+import { useSystemStore } from '@/stores/system'
+import { useUserStore } from '@/stores/user'
 import Dialog from 'primevue/dialog'
 import { useDateFormat } from '@vueuse/core'
 
 const messageStore = useMessageStore()
+const system = useSystemStore()
+const user = useUserStore()
 
 const message = computed( () => {
    return messageStore.inbox.find(m => m.id == messageStore.targetMessageID)
+})
+
+const recipients = computed( () => {
+   let out = []
+   message.value.recipients.forEach(r => {
+      let email = system.getStaffMemberEmail(r.staffID)
+      out.push( email )
+   })
+   return out.join("\n")
 })
 
 const formatDate = (( date ) => {
@@ -33,7 +50,7 @@ const formatDate = (( date ) => {
 })
 
 const replyClicked = (() => {
-   messageStore.beginReply()
+   messageStore.beginReply( user.ID )
 })
 
 const hide =(() => {
@@ -47,6 +64,7 @@ const hide =(() => {
       padding: 15px;
       border-top: 1px solid var(--uvalib-grey-light);
       white-space: pre-wrap;
+      text-align: left;
    }
    dl {
       margin: 10px 30px 0 30px;
@@ -68,6 +86,9 @@ const hide =(() => {
          -webkit-hyphens: auto;
          -moz-hyphens: auto;
          hyphens: auto;
+         pre {
+            margin: 0;
+         }
       }
    }
 </style>
