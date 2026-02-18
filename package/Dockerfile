@@ -45,6 +45,10 @@ WORKDIR $APP_HOME
 RUN mkdir -p $APP_HOME $APP_HOME/bin $APP_HOME/scripts
 RUN chown -R libsnlocal $APP_HOME && chgrp -R lb-digiserv $APP_HOME
 
+# add the migrate tool
+ENV MIGRATE_VERSION=v4.19.1
+RUN cd $APP_HOME/bin && curl -L https://github.com/golang-migrate/migrate/releases/download/${MIGRATE_VERSION}/migrate.linux-amd64.tar.gz | tar xvz && rm LICENSE README.md
+
 # port and run command
 EXPOSE 8080
 CMD ["scripts/entry.sh"]
@@ -52,6 +56,7 @@ CMD ["scripts/entry.sh"]
 # Move in necessary assets
 COPY package/data/container_bash_profile /home/libsnlocal/.profile
 COPY package/scripts/entry.sh $APP_HOME/scripts/entry.sh
+COPY package/scripts/migrate.ksh $APP_HOME/scripts/migrate.ksh
 COPY --from=builder /build/bin/imagingsvc.linux $APP_HOME/bin/imagingsvc
 COPY --from=builder /build/bin/public $APP_HOME/bin/public
 COPY --from=builder /build/bin/data $APP_HOME/bin/data
