@@ -7,12 +7,6 @@ export const useReportStore = defineStore('report', {
 		workflowID: 1,
 		startDate: null,
 		endDate: null,
-		deliveries: {
-			labels: [],
-			datasets: [],
-			loading: false,
-			error: ""
-		},
 		productivity: {
 			loading: false,
 			labels: [],
@@ -24,24 +18,23 @@ export const useReportStore = defineStore('report', {
 			loading: false,
 			labels: [],
 			datasets: [],
+			totalProjects: 0,
 			error: ""
 		},
-		pageTimes: {
+		reports: {
 			loading: false,
 			error: "",
-			labels: [],
-			datasets: [],
-			raw: []
-		},
-		rejections: {
-			loading: false,
-			error: "",
-			data: [],
-		},
-		rates: {
-			loading: false,
-			error: "",
-			data: [],
+			pageTimes: {
+				labels: [],
+				datasets: [],
+				raw: []
+			},
+			rejections: {
+				data: [],
+			},
+			rates: {
+				data: [],
+			}
 		}
 	}),
 	getters: {
@@ -54,26 +47,6 @@ export const useReportStore = defineStore('report', {
 			this.endDate = new Date()
 		},
 
-		getDeliveriesReport( year ) {
-			let url = `/api/reports/deliveries?year=${year}`
-			this.deliveries.loading = true
-			axios.get(url).then(response => {
-				// convert the response data to the datastructure needed by chart.js
-				this.deliveries.labels = response.data.months
-				this.deliveries.datasets.splice(0, this.deliveries.datasets.length)
-				var totalDataset = {data: response.data.total, backgroundColor: "#44cc44", fill: false, borderColor: "#44cc44", label: "Total", tension: 0.4}
-				var okDataset = {data: response.data.onTime, backgroundColor: "#44aacc", fill: false, borderColor: "#44aacc", label: "On-Time", tension: 0.4}
-				var errDataset = {data: response.data.late, backgroundColor: "#cc4444", fill: false, borderColor: "#cc4444", label: "Late", tension: 0.4}
-				this.deliveries.datasets.push(totalDataset)
-				this.deliveries.datasets.push(okDataset)
-				this.deliveries.datasets.push(errDataset)
-				this.deliveries.loading = false
-				this.deliveries.error = ""
-			}).catch(e => {
-            this.deliveries.error = e
-				this.deliveries.loading = false
-         })
-		},
 		getProductivityReport( workflowID, start, end ) {
 			let url = `/api/reports/productivity?workflow=${workflowID}&start=${dayjs(start).format("YYYY-MM-DD")}&end=${dayjs(end).format("YYYY-MM-DD")}`
 			this.productivity.loading = true
@@ -92,63 +65,44 @@ export const useReportStore = defineStore('report', {
 		getProblemsReport( workflowID, start, end ) {
 			let url = `/api/reports/problems?workflow=${workflowID}&start=${dayjs(start).format("YYYY-MM-DD")}&end=${dayjs(end).format("YYYY-MM-DD")}`
 			this.problems.loading = true
+			this.problems.error = ""
 			axios.get(url).then(response => {
 				this.problems.labels = response.data.types
 				let dataset = {data: response.data.problems, backgroundColor: "#cc4444"}
-				this.problems.datasets.splice(0, this.problems.datasets.length)
+				this.problems.datasets = []
 				this.problems.datasets.push(dataset)
+				this.problems.totalProjects = response.data.totalProjects
 				this.problems.loading = false
-				this.problems.error = ""
 			}).catch(e => {
             this.problems.error = e
 				this.problems.loading = false
          })
 		},
-		getPageTimesReport( workflowID, start, end ) {
-			let url = `/api/reports/pagetimes?workflow=${workflowID}&start=${dayjs(start).format("YYYY-MM-DD")}&end=${dayjs(end).format("YYYY-MM-DD")}`
-			this.pageTimes.loading = true
+		getRateReports( workflowID, start, end ) {
+			let url = `/api/reports/rates?workflow=${workflowID}&start=${dayjs(start).format("YYYY-MM-DD")}&end=${dayjs(end).format("YYYY-MM-DD")}`
+			this.reports.loading = true
+			this.reports.error = ""
 			axios.get(url).then(response => {
-				this.pageTimes.labels.splice(0, this.pageTimes.labels.length)
-				this.pageTimes.datasets.splice(0, this.pageTimes.datasets.length)
-				this.pageTimes.raw.splice(0, this.pageTimes.raw.length)
+				this.reports.rates.data = response.data.ratesReport
+				this.reports.rejections.data = response.data.rejectionsReport
+
+				this.reports.pageTimes.labels = []
+				this.reports.pageTimes.datasets = []
+				this.reports.pageTimes.raw = []
 				let timeDS = {data: [], backgroundColor: "#44aacc"}
-				for (const [category, stats] of Object.entries(response.data)) {
-					this.pageTimes.labels.push(category)
+				for (const [category, stats] of Object.entries(response.data.pageTimesReport)) {
+					this.reports.pageTimes.labels.push(category)
 					timeDS.data.push(stats.avgPageTime)
 					let row = {category: category, units: stats.units, totalMins: stats.mins,
 						totalPages: stats.images, avgPageTime:  Number.parseFloat(stats.avgPageTime).toFixed(2)}
-					this.pageTimes.raw.push(row)
+					this.reports.pageTimes.raw.push(row)
 				}
-				this.pageTimes.datasets.push(timeDS)
-				this.pageTimes.loading = false
-				this.pageTimes.error = ""
+				this.reports.pageTimes.datasets.push(timeDS)
+
+				this.reports.loading = false
 			}).catch(e => {
-            this.problems.error = e
-				this.problems.loading = false
-         })
-		},
-		getRejectionsReport( workflowID, start, end ) {
-			let url = `/api/reports/rejections?workflow=${workflowID}&start=${dayjs(start).format("YYYY-MM-DD")}&end=${dayjs(end).format("YYYY-MM-DD")}`
-			this.rejections.loading = true
-			axios.get(url).then(response => {
-				this.rejections.data = response.data
-				this.rejections.loading = false
-				this.rejections.error = ""
-			}).catch(e => {
-            this.rejections.error = e
-				this.rejections.loading = false
-         })
-		},
-		getRatesReport( workflowID, start, end ) {
-			let url = `/api/reports/rates?workflow=${workflowID}&start=${dayjs(start).format("YYYY-MM-DD")}&end=${dayjs(end).format("YYYY-MM-DD")}`
-			this.rates.loading = true
-			axios.get(url).then(response => {
-				this.rates.data = response.data
-				this.rates.loading = false
-				this.rates.error = ""
-			}).catch(e => {
-            this.rates.error = e
-				this.rates.loading = false
+            this.reports.error = e
+				this.reports.loading = false
          })
 		},
 	}

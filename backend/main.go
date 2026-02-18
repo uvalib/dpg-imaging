@@ -11,7 +11,7 @@ import (
 )
 
 // Version of the service
-const Version = "5.10.0"
+const Version = "6.0.0"
 
 func main() {
 	// Load cfg
@@ -87,12 +87,9 @@ func main() {
 		api.POST("/user/:id/messages/send", svc.sendMessage)
 
 		// reporting endpoints
-		api.GET("/reports/deliveries", svc.getDeliveriesReport)
 		api.GET("/reports/productivity", svc.getProductivityReport)
 		api.GET("/reports/problems", svc.getProblemsReport)
-		api.GET("/reports/pagetimes", svc.getPageTimesReport)
-		api.GET("/reports/rejections", svc.getRejectionsReport)
-		api.GET("/reports/rates", svc.getRatesReport)
+		api.GET("/reports/rates", svc.getRateReports)
 	}
 
 	cleanup := router.Group("/cleanup")

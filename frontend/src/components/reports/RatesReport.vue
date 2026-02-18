@@ -1,6 +1,9 @@
 <template>
    <div class="reports-card">
       <h3>Rates</h3>
+      <div v-if="reportStore.reports.loading" class="wait-wrap">
+         <WaitSpinner/>
+      </div>
       <div class="report">
          <table class="rate-stats">
             <tbody>
@@ -32,8 +35,8 @@
                      <span>Images/Minute</span>
                   </th>
                </tr>
-               <tr v-for="r in reportStore.rates.data" :key="`reject${r.staffID}`">
-                  <td class="left">{{r.staffName}}</td>
+               <tr v-for="r in reportStore.reports.rates.data" :key="`reject${r.staffID}`">
+                  <td class="left">{{ system.getStaffMemberName(r.staffID) }}</td>
                   <td class="left-bar">{{r.scans.images}}</td>
                   <td>{{r.scans.minutes}}</td>
                   <td>{{r.scans.rate.toFixed(2)}}</td>
@@ -43,26 +46,19 @@
                </tr>
             </tbody>
          </table>
-         <p class="error" v-if="reportStore.rates.error">{{reportStore.rates.error}}</p>
-      </div>
-      <div  v-if="reportStore.rates.loading" class="wait-wrap">
-         <WaitSpinner/>
+         <p class="error" v-if="reportStore.reports.error">{{reportStore.reports.error}}</p>
       </div>
    </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
-import {useReportStore} from '@/stores/reporting'
+import { useReportStore } from '@/stores/reporting'
+import { useSystemStore } from '@/stores/system'
 import WaitSpinner from '@/components/WaitSpinner.vue'
 
 const reportStore = useReportStore()
+const system = useSystemStore()
 
-onMounted( () => {
-   if (reportStore.rates.data.length == 0) {
-      reportStore.getRatesReport(reportStore.workflowID, reportStore.startDate, reportStore.endDate)
-   }
-})
 </script>
 
 <style lang="scss" scoped>

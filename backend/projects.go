@@ -161,6 +161,7 @@ type unitInfo struct {
 	OCRHintID           int64  `json:"ocrHintID"`
 	OCRLanguage         string `json:"ocrLanguage"`
 	OCRMasterFiles      bool   `json:"ocrMasterFiles"`
+	MasterFileCount     uint   `json:"masterFileCount"`
 	Status              string `json:"status"`
 }
 

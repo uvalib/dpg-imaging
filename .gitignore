@@ -14,6 +14,7 @@ dist/
 env.*
 web/test.html
 info.txt
+local_db.sh
 run.sh
 brun.sh
 /scripts

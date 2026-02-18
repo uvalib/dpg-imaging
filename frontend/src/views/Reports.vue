@@ -30,7 +30,6 @@
          <RejectionsReport />
          <RatesReport />
       </div>
-      <DeliveriesReport />
    </div>
 </template>
 
@@ -42,7 +41,6 @@ import DatePicker from 'primevue/datepicker'
 import PageTimeReport from '@/components/reports/PageTimeReport.vue'
 import ProductivityReport from '@/components/reports/ProductivityReport.vue'
 import ProblemsReport from '@/components/reports/ProblemsReport.vue'
-import DeliveriesReport from '@/components/reports/DeliveriesReport.vue'
 import RejectionsReport from '@/components/reports/RejectionsReport.vue'
 import RatesReport from '@/components/reports/RatesReport.vue'
 
@@ -57,9 +55,8 @@ onMounted( () => {
 const loadStats = (() => {
    reportStore.getProductivityReport(reportStore.workflowID, reportStore.startDate, reportStore.endDate)
    reportStore.getProblemsReport(reportStore.workflowID, reportStore.startDate, reportStore.endDate)
-   reportStore.getPageTimesReport(reportStore.workflowID, reportStore.startDate, reportStore.endDate)
-   reportStore.getRejectionsReport(reportStore.workflowID, reportStore.startDate, reportStore.endDate)
-   reportStore.getRatesReport(reportStore.workflowID, reportStore.startDate, reportStore.endDate)
+   reportStore.getRateReports(reportStore.workflowID, reportStore.startDate, reportStore.endDate)
+
 })
 
 </script>

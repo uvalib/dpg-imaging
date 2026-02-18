@@ -1,11 +1,11 @@
 <template>
    <div class="reports-card">
       <h3>Average Page Completion Time</h3>
-      <div v-if="reportStore.pageTimes.loading" class="wait-wrap">
+      <div v-if="reportStore.reports.loading" class="wait-wrap">
          <WaitSpinner message="Loading Page Completion Time report..."/>
       </div>
       <div class="report">
-         <Chart type="bar" :data="reportStore.pageTimes" :options="options"/>
+         <Chart type="bar" :data="reportStore.reports.pageTimes" :options="options"/>
          <table class="raw-data">
             <tbody>
                <tr>
@@ -15,23 +15,23 @@
                   <th>Total Pages</th>
                   <th>Avg. Mins</th>
                </tr>
-               <tr v-for="(r,idx) in reportStore.pageTimes.raw" :key="`raw${idx}`">
-                  <td>{{r.category}}</td>
-                  <td>{{r.units}}</td>
-                  <td>{{r.totalMins}}</td>
-                  <td>{{r.totalPages}}</td>
-                  <td>{{r.avgPageTime}}</td>
+               <tr v-for="(r,idx) in reportStore.reports.pageTimes.raw" :key="`raw${idx}`">
+                  <td>{{ r.category }}</td>
+                  <td>{{ r.units }}</td>
+                  <td>{{ r.totalMins }}</td>
+                  <td>{{ r.totalPages }}</td>
+                  <td>{{ r.avgPageTime }}</td>
                </tr>
             </tbody>
          </table>
-         <p class="error" v-if="reportStore.pageTimes.error">{{reportStore.pageTimes.error}}</p>
+         <p class="error" v-if="reportStore.reports.error">{{reportStore.reports.error}}</p>
       </div>
    </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import {useReportStore} from '@/stores/reporting'
+import { useReportStore } from '@/stores/reporting'
 import WaitSpinner from '@/components/WaitSpinner.vue'
 import Chart from 'primevue/chart'
 
