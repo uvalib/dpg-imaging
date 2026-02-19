@@ -44,7 +44,7 @@ checkenv "DB_PASSWORD" "${DB_PASSWORD}"
 #MIGRATE_CMD=${1}
 #shift
 
-MIGRATE_DIR=backend/db
+MIGRATE_DIR=db
 DB_MIGRATE_TABLE=migrations
 MIGRATE_CMD=up
 

@@ -42,7 +42,7 @@ ENV APP_HOME=/dpg-imaging
 WORKDIR $APP_HOME
 
 # Create necessary directories
-RUN mkdir -p $APP_HOME $APP_HOME/bin $APP_HOME/scripts
+RUN mkdir -p $APP_HOME $APP_HOME/bin $APP_HOME/scripts $APP_HOME/db
 RUN chown -R libsnlocal $APP_HOME && chgrp -R lb-digiserv $APP_HOME
 
 # add the migrate tool
@@ -56,6 +56,7 @@ CMD ["scripts/entry.sh"]
 # Move in necessary assets
 COPY package/data/container_bash_profile /home/libsnlocal/.profile
 COPY package/scripts/entry.sh $APP_HOME/scripts/entry.sh
+COPY backend/db/migrations/*.sql $APP_HOME/db/
 COPY package/scripts/migrate.ksh $APP_HOME/scripts/migrate.ksh
 COPY --from=builder /build/bin/imagingsvc.linux $APP_HOME/bin/imagingsvc
 COPY --from=builder /build/bin/public $APP_HOME/bin/public
@@ -63,7 +64,7 @@ COPY --from=builder /build/bin/data $APP_HOME/bin/data
 
 # Ensure permissions are correct
 RUN chown libsnlocal:lb-digiserv /home/libsnlocal/.profile $APP_HOME/scripts/entry.sh $APP_HOME/bin/imagingsvc && chmod 755 /home/libsnlocal/.profile $APP_HOME/scripts/entry.sh $APP_HOME/bin/imagingsvc
-RUN chown -R libsnlocal:lb-digiserv $APP_HOME/bin/public $APP_HOME/bin/data && chmod -R 755 $APP_HOME/bin/public $APP_HOME/bin/data
+RUN chown -R libsnlocal:lb-digiserv $APP_HOME/bin/public $APP_HOME/bin/data $APP_HOME/db && chmod -R 755 $APP_HOME/bin/public $APP_HOME/bin/data $APP_HOME/db
 
 # Add the build tag
 ARG BUILD_TAG
