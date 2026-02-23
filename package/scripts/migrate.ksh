@@ -31,21 +31,25 @@ checkenv "DB_USER" "${DB_USER}"
 checkenv "DB_PASSWORD" "${DB_PASSWORD}"
 
 # verify commands
-if [ $# -ne 3 ]; then
-   echo "use: ${0} <migrate dir> <migrate table> <up|down>"
-   exit 1
-fi
+#if [ $# -ne 3 ]; then
+#   echo "use: ${0} <migrate dir> <migrate table> <up|down>"
+#   exit 1
+#fi
 
 # for clarity
-MIGRATE_DIR=${1}
-shift
-DB_MIGRATE_TABLE=${1}
-shift
-MIGRATE_CMD=${1}
-shift
+#MIGRATE_DIR=${1}
+#shift
+#DB_MIGRATE_TABLE=${1}
+#shift
+#MIGRATE_CMD=${1}
+#shift
+
+MIGRATE_DIR=db
+DB_MIGRATE_TABLE=migrations
+MIGRATE_CMD=up
 
 # our connection string
-CONNECTION_STR=""mysql://${DB_USER}:${DB_PASSWORD}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}?x-migrations-table=${DB_MIGRATE_TABLE}"
+CONNECTION_STR="mysql://${DB_USER}:${DB_PASSWORD}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}?x-migrations-table=${DB_MIGRATE_TABLE}"
 
 # run the migration
 ${MIGRATE_TOOL} -path ${MIGRATE_DIR} --database ${CONNECTION_STR} ${MIGRATE_CMD}
