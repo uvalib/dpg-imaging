@@ -53,6 +53,7 @@ onMounted( () => {
 })
 
 const loadStats = (() => {
+   reportStore.clearStats()
    reportStore.getProductivityReport(reportStore.workflowID, reportStore.startDate, reportStore.endDate)
    reportStore.getProblemsReport(reportStore.workflowID, reportStore.startDate, reportStore.endDate)
    reportStore.getRateReports(reportStore.workflowID, reportStore.startDate, reportStore.endDate)

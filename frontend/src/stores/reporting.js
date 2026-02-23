@@ -47,6 +47,23 @@ export const useReportStore = defineStore('report', {
 			this.endDate = new Date()
 		},
 
+		clearStats() {
+			this.productivity.loading = false
+			this.productivity.datasets = []
+			this.productivity.totalCompleted = 0
+			this.productivity.error = ""
+
+			this.problems.loading = false
+			this.problems.datasets = []
+			this.problems.totalProjects = 0
+
+			this.reports.loading = false
+			this.reports.pageTimes.datasets = []
+			this.reports.raw = []
+			this.reports.rejections.data = []
+			this.reports.rates.data = []
+		},
+
 		getProductivityReport( workflowID, start, end ) {
 			let url = `/api/reports/productivity?workflow=${workflowID}&start=${dayjs(start).format("YYYY-MM-DD")}&end=${dayjs(end).format("YYYY-MM-DD")}`
 			this.productivity.loading = true
