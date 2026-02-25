@@ -155,7 +155,8 @@ func (svc *serviceContext) createProject(c *gin.Context) {
 		cID := uint(req.ContainerTypeID)
 		newProj.ContainerTypeID = &cID
 	}
-	if err := svc.DB.Create(&newProj).Error; err != nil {
+	if err := svc.DB.Omit("workstation_id", "finished_at", "started_at", "capture_resolution", "resized_resolution", "resolution_note", "owner_id").
+		Create(&newProj).Error; err != nil {
 		log.Printf("ERROR: unable to create project for unit %d: %s", req.UnitID, err.Error())
 		c.String(http.StatusInternalServerError, err.Error())
 		return
