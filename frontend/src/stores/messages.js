@@ -65,10 +65,6 @@ export const useMessageStore = defineStore('message', {
                }
             }
          })
-         let sm = system.getStaffMember(srcMsg.fromID)
-         if (sm.active) {
-            allRecipients.push(r.staffID)
-         }
          this.newMessage = {to: allRecipients, subject: `RE: ${srcMsg.subject}`, message: ""}
          this.error = ""
       },
