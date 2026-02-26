@@ -1,5 +1,6 @@
 <template>
    <span class="actions">
+      <JulianBondSequenceDialog   v-if="projectStore.isJulianBond"/>
       <RenameFilesDialog />
       <PageNumDialog />
       <BatchUpdateDialog title="Title" field="title" />
@@ -18,6 +19,7 @@ import ComponentDialog from '@/components/unit/ComponentDialog.vue'
 import BatchUpdateDialog from '@/components/unit/BatchUpdateDialog.vue'
 import PageNumDialog from '@/components/unit/PageNumDialog.vue'
 import RenameFilesDialog from '@/components/unit/RenameFilesDialog.vue'
+import JulianBondSequenceDialog from "./JulianBondSequenceDialog.vue"
 
 const projectStore = useProjectStore()
 

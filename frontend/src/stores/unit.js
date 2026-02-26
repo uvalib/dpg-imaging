@@ -277,6 +277,54 @@ export const useUnitStore = defineStore('unit', {
          })
       },
 
+      updateJulianBondSequence(startSequenceNumber, overwrite) {
+         const system = useSystemStore()
+         this.working = true
+         let data = []
+         let seq = parseInt(startSequenceNumber,10)
+         let seqRegex = /,\s{1}PJB\s{1}\d+\s*$/g
+         let existingSeq = ""
+         for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+            let mf = this.masterFiles[i]
+            let title = mf.title.trim()
+            let matchIdx = title.search(seqRegex)
+            if ( matchIdx > -1) {
+               if ( overwrite == false ) {
+                  existingSeq = title
+                  break
+               } else {
+                  title = title.substring(0, matchIdx)
+               }
+            }
+
+            let seqStr = `, PJB ${seq}`
+            title += seqStr
+            data.push( {file: mf.path, field: "title", value: title})
+
+            seq++
+         }
+
+         if ( existingSeq != "" && overwrite == false) {
+            system.setError(`One or more images starting with '${existingSeq}' were found to contain a sequence number.\nPlease correct this or check the overwrite option to proceed.`)
+            return
+         }
+
+         axios.post(`/api/units/${this.unitID}/update`, data).then( resp => {
+            for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+               let update = data.shift()
+               this.masterFiles[i].title = update.value
+            }
+            this.working = false
+            if (resp.data.success == false) {
+               system.setError("Some images were not updated")
+               this.setMasterFileProblems(resp.data.problems)
+            }
+         }).catch( e => {
+            system.setError(e)
+            this.working = false
+         })
+      },
+
       updatePageNumbers( start, verso ) {
          const system = useSystemStore()
          this.working = true

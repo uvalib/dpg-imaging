@@ -20,6 +20,11 @@ export const useProjectStore = defineStore('project', {
          if (state.detail == null) return false
          return state.detail.workflow && state.detail.workflow.name=='Manuscript'
       },
+      isJulianBond: state => {
+          if (state.detail == null) return false
+          if ( state.isManuscript == false) return false
+          return state.detail.callNumber.indexOf("MSS 13347") == 0
+      },
       hasDetail: state => {
          return state.detail != null
       },
