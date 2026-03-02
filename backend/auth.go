@@ -148,6 +148,14 @@ func (svc *serviceContext) authMiddleware(c *gin.Context) {
 	c.Next()
 }
 
+func getJWT(c *gin.Context) string {
+	jwt, ok := c.Get("jwt")
+	if !ok {
+		return ""
+	}
+	return fmt.Sprintf("%v", jwt)
+}
+
 func getJWTClaims(c *gin.Context) *jwtClaims {
 	claims, signedIn := c.Get("claims")
 	if !signedIn {

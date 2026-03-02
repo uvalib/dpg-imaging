@@ -284,8 +284,13 @@ export const useUnitStore = defineStore('unit', {
          let seq = parseInt(startSequenceNumber,10)
          let seqRegex = /,\s{1}PJB\s{1}\d+\s*$/g
          let existingSeq = ""
+         let backendReqestNeeed = false
          for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
             let mf = this.masterFiles[i]
+            if (!mf.title) {
+               backendReqestNeeed = true
+               break
+            }
             let title = mf.title.trim()
             let matchIdx = title.search(seqRegex)
             if ( matchIdx > -1) {
@@ -305,24 +310,29 @@ export const useUnitStore = defineStore('unit', {
          }
 
          if ( existingSeq != "" && overwrite == false) {
-            system.setError(`One or more images starting with '${existingSeq}' were found to contain a sequence number.\nPlease correct this or check the overwrite option to proceed.`)
+            system.setError(`One or more images starting with '${existingSeq}' were found to contain a sequence number. Please correct this or check the overwrite option to proceed.`)
             return
          }
 
-         axios.post(`/api/units/${this.unitID}/update`, data).then( resp => {
-            for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
-               let update = data.shift()
-               this.masterFiles[i].title = update.value
-            }
+         if (backendReqestNeeed) {
+            system.setError("Sequece can only by added to images that have already been loaded.<br/>Either go to each page and try again, or limit the sequence range to the currently visible page.")
             this.working = false
-            if (resp.data.success == false) {
-               system.setError("Some images were not updated")
-               this.setMasterFileProblems(resp.data.problems)
-            }
-         }).catch( e => {
-            system.setError(e)
-            this.working = false
-         })
+         } else {
+            axios.post(`/api/units/${this.unitID}/update`, data).then( resp => {
+               for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
+                  let update = data.shift()
+                  this.masterFiles[i].title = update.value
+               }
+               this.working = false
+               if (resp.data.success == false) {
+                  system.setError("Some images were not updated")
+                  this.setMasterFileProblems(resp.data.problems)
+               }
+            }).catch( e => {
+               system.setError(e)
+               this.working = false
+            })
+         }
       },
 
       updatePageNumbers( start, verso ) {

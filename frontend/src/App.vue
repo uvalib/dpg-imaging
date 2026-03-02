@@ -28,7 +28,7 @@
          <WaitSpinner :overlay="false" message="Initializing sysem..." />
       </div>
       <Dialog v-model:visible="systemStore.showError" :modal="true" header="System Error" @hide="errorClosed()" class="error">
-         {{systemStore.error}}
+         <div style="text-align: left" v-html="systemStore.error"></div>
          <template #footer>
             <DPGButton @click="errorClosed()" label="OK" severity="secondary"/>
          </template>

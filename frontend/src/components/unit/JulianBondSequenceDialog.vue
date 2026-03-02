@@ -5,6 +5,10 @@
    <Dialog v-model:visible="showDialog" :modal="true" header="Add Sequence Number">
       <div class="panel">
          <div class="info">This will append ", PJB ####" to the title of the selected images.<br/>If requested, it will replace any PJB info already present.</div>
+         <div class="info">
+            <b>IMPORTANT</b>: sequence can only be added to images that have already been loaded.
+            You can accomplish this by paging through all images in the unit before requesting the seqence.
+         </div>
          <div class="row">
             <span class="entry pad-right">
                <label>Start Image:</label>
@@ -101,6 +105,7 @@ const selectAllClicked = (() => {
    .info {
       text-align: left;
       margin: 0 0 10px 0;
+      max-width: 450px;
    }
 
    .row {
