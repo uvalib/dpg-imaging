@@ -204,7 +204,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 			}
 
 			log.Printf("INFO: sending request to dpg-jobs to begin or restart finalization of unit %d", proj.UnitID)
-			_, httpErr := svc.postRequest(fmt.Sprintf("%s/units/%d/finalize", svc.TrackSys.Jobs, proj.UnitID), nil)
+			_, httpErr := svc.postJobsRequest(fmt.Sprintf("%s/units/%d/finalize", svc.TrackSys.Jobs, proj.UnitID), nil, getJWT(c))
 			if httpErr != nil {
 				log.Printf("ERROR: finalize request failed: %s", httpErr.Message)
 				msg := fmt.Sprintf("<p>Request to start finalization failed: %s</p>", httpErr.Message)

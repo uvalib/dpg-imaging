@@ -225,7 +225,6 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 	}
 	type cfgData struct {
 		TrackSysURL    string          `json:"tracksysURL"`
-		JobsURL        string          `json:"jobsURL"`
 		QAImageDir     string          `json:"qaImageDir"`
 		ScanDir        string          `json:"scanDir"`
 		Agencies       []agency        `json:"agencies"`
@@ -241,7 +240,6 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 	}
 	resp := cfgData{
 		TrackSysURL: svc.TrackSys.Client,
-		JobsURL:     svc.TrackSys.Jobs,
 		QAImageDir:  svc.ImagesDir,
 		ScanDir:     svc.ScanDir,
 	}
@@ -418,12 +416,13 @@ func (svc *serviceContext) getRequest(url string) ([]byte, *RequestError) {
 	return resp, err
 }
 
-func (svc *serviceContext) postRequest(url string, payload any) ([]byte, *RequestError) {
-	log.Printf("POST request: %s", url)
+func (svc *serviceContext) postJobsRequest(url string, payload any, jwt string) ([]byte, *RequestError) {
+	log.Printf("INFO: jobs post request: %s", url)
 	startTime := time.Now()
 	b, _ := json.Marshal(payload)
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(b))
 	req.Header.Add("Content-type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", jwt))
 	httpClient := svc.HTTPClient
 	rawResp, rawErr := httpClient.Do(req)
 	resp, err := handleAPIResponse(url, rawResp, rawErr)

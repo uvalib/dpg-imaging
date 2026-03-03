@@ -674,7 +674,7 @@ func (svc *serviceContext) updateProject(c *gin.Context) {
 	}
 
 	log.Printf("INFO: call jobs service to upload ocr settings for project %s", projID)
-	_, httpErr := svc.postRequest(fmt.Sprintf("%s/units/%d/ocr-settings", svc.TrackSys.Jobs, proj.UnitID), updateData)
+	_, httpErr := svc.postJobsRequest(fmt.Sprintf("%s/units/%d/ocr-settings", svc.TrackSys.Jobs, proj.UnitID), updateData, getJWT(c))
 	if httpErr != nil {
 		log.Printf("ERROR: update ocr settings request failed: %s", httpErr.Message)
 		c.String(httpErr.StatusCode, httpErr.Message)

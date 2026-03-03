@@ -19,7 +19,6 @@ export const useSystemStore = defineStore('system', {
       ocrLanguageHints: [],
       problemTypes: [],
       adminURL: "",
-      jobsURL: "",
       qaDir: "",
       scanDir: "",
       titleVocab: [
@@ -141,7 +140,6 @@ export const useSystemStore = defineStore('system', {
       getConfig() {
          this.initializing = true
          axios.get("/config").then(response => {
-            this.jobsURL = response.data.jobsURL
             this.adminURL = response.data.tracksysURL
             this.qaDir =  response.data.qaImageDir
             this.scanDir =  response.data.scanDir
