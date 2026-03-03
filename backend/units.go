@@ -218,11 +218,14 @@ func (svc *serviceContext) getUnitMasterFiles(c *gin.Context) {
 	log.Printf("INFO: found %d files in %s", len(out.MasterFiles), unitDir)
 	if len(out.MasterFiles) > 0 {
 		lastMF := out.MasterFiles[len(out.MasterFiles)-1]
-		lastSeq := strings.Split(lastMF.FileName, "_")[1]
-		lastSeq = strings.Replace(lastSeq, ".tif", "", 1)
-		lastSeqNum, _ := strconv.Atoi(lastSeq)
-		if len(out.MasterFiles) != lastSeqNum {
-			out.Problems = append(out.Problems, "Last image number doesn't match count")
+		fileBits := strings.Split(lastMF.FileName, "_")
+		if len(fileBits) == 2 {
+			lastSeq := fileBits[1]
+			lastSeq = strings.Replace(lastSeq, ".tif", "", 1)
+			lastSeqNum, _ := strconv.Atoi(lastSeq)
+			if len(out.MasterFiles) != lastSeqNum {
+				out.Problems = append(out.Problems, "Last image number doesn't match count")
+			}
 		}
 	} else {
 		out.Problems = append(out.Problems, "No images found")
