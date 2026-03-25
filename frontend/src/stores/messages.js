@@ -76,15 +76,19 @@ export const useMessageStore = defineStore('message', {
          const system = useSystemStore()
          this.userID = userID
          axios.get(`/api/user/${userID}/messages`).then(response => {
+            console.log(response.data)
             this.inbox = response.data.inbox
             this.sent = response.data.sent
             this.targetMessageID = -1
             this.viewMesage = false
             this.inbox.some( m => {
-               if (m.read == false ) {
-                  this.targetMessageID = m.id
-                  this.viewMesage = true
-               }
+               m.recipients.some( r => {
+                  if (r.read == false && r.staffID == userID ) {
+                     this.targetMessageID = m.id
+                     this.viewMesage = true
+                  }
+                  return this.viewMesage == true
+               })
                return this.viewMesage == true
             })
          }).catch( e => {

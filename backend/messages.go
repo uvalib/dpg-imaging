@@ -30,14 +30,14 @@ func (svc *serviceContext) getMessages(c *gin.Context) {
 	userID := c.Param("id")
 	log.Printf("INFO: get messages for user %s", userID)
 	var inbox []message
-	err := svc.DB.Preload("Recipients").Joins("inner join message_recipients as r on message_id=messages.id").Where("r.deleted=? and r.staff_id=?", 0, userID).Find(&inbox).Error
-	if err != nil {
+	if err := svc.DB.Preload("Recipients").Joins("inner join message_recipients as r on message_id=messages.id").
+		Where("r.deleted=? and r.staff_id=?", 0, userID).Find(&inbox).Error; err != nil {
 		log.Printf("ERROR: unable to get messages for user %s: %s", userID, err.Error())
 	}
+
 	var sent []message
-	err = svc.DB.Preload("Recipients").Joins("inner join message_recipients as r on message_id=messages.id").
-		Group("messages.id").Where("r.deleted=? and from_id=?", 0, userID).Find(&sent).Error
-	if err != nil {
+	if err := svc.DB.Preload("Recipients").Joins("inner join message_recipients as r on message_id=messages.id").
+		Group("messages.id").Where("r.deleted=? and from_id=?", 0, userID).Find(&sent).Error; err != nil {
 		log.Printf("ERROR: unable to get sent messages for user %s: %s", userID, err.Error())
 	}
 
