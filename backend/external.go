@@ -338,7 +338,7 @@ func (svc *serviceContext) finishProject(c *gin.Context) {
 
 	// stepType 1 is the end step. Must be on it to finish project
 	log.Printf("INFO: validate current step is a final step for project %s", projID)
-	if tgtProj.CurrentStep.StepType != 1 {
+	if tgtProj.CurrentStep != nil && tgtProj.CurrentStep.StepType != 1 {
 		log.Printf("ERROR: project %s is on non-final step %s and cannot be finished", projID, tgtProj.CurrentStep.Name)
 		c.String(http.StatusPreconditionFailed, fmt.Sprintf("project is on non-final step %s and cannot be finished", tgtProj.CurrentStep.Name))
 		return
