@@ -183,6 +183,9 @@ const workflowNote = computed(()=>{
    if ( currStepName.value == "Finalize" && detail.value.ocrHintID == 0) {
       return "Assignment cannot be finished until the OCR hint has been set."
    }
+   if ( currStepName.value == "Finalize" && detail.value.ocrHintID == 1 && detail.value.ocrLanguage == "") {
+      return "Assignment cannot be finished until the OCR language has been set."
+   }
    if ( detail.value.ocrHintID > 1 && detail.value.ocrMasterFiles == true) {
       return "Cannot OCR items that are not regular text."
    }
