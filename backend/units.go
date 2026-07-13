@@ -29,24 +29,6 @@ type ocrLanguageHint struct {
 	Language string `json:"language"`
 }
 
-// type metadata struct {
-// 	ID              uint    `json:"id"`
-// 	PID             string  `gorm:"column:pid" json:"pid"`
-// 	CallNumber      string  `json:"callNumber,omitempty"`
-// 	Title           string  `json:"title"`
-// 	Type            string  `json:"type"`
-// 	OCRHintID       uint    `json:"-"`
-// 	OCRHint         ocrHint `gorm:"foreignKey:OCRHintID" json:"ocrHint"`
-// 	OCRLanguageHint string  `json:"ocrLanguageHint"`
-// }
-
-// type intendedUse struct {
-// 	ID                    uint   `json:"id"`
-// 	Description           string `json:"description"`
-// 	DeliverableFormat     string `json:"deliverableFormat"`
-// 	DeliverableResolution string `json:"deliverableResolution"`
-// }
-
 type agency struct {
 	ID          uint   `json:"id"`
 	Name        string `json:"name"`
@@ -59,15 +41,6 @@ type customer struct {
 	LastName  string `json:"lastName"`
 	Email     string `json:"email"`
 }
-
-// type order struct {
-// 	ID         uint      `json:"id"`
-// 	CustomerID uint      `json:"customerID"`
-// 	Customer   customer  `gorm:"foreignKey:CustomerID" json:"customer"`
-// 	AgencyID   uint      `json:"-"`
-// 	Agency     agency    `gorm:"foreignKey:AgencyID" json:"agency"`
-// 	DateDue    time.Time `json:"dateDue"`
-// }
 
 type masterFileInfo struct {
 	FileName  string `json:"fileName"`
