@@ -181,8 +181,8 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 	// now pull some details from the API
 	if err := svc.getProjectUnitDetails(proj); err != nil {
 		log.Printf("ERROR: unable to get project %d unit %d details: %s", proj.ID, proj.UnitID, err.Error())
-		// c.String(http.StatusInternalServerError, err.Error())
-		// return
+		c.String(http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	log.Printf("INFO: get project %d assignments", proj.ID)
