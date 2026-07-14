@@ -373,15 +373,6 @@ func (svc *serviceContext) finalizeUnitData(proj *project) (*finalizeResponse, e
 		if isManuscript {
 			cmd.Commands = append(cmd.Commands, fmt.Sprintf("-iptc:Keywords=%s", ""))            // clear temp box info
 			cmd.Commands = append(cmd.Commands, fmt.Sprintf("-iptc:ContentLocationName=%s", "")) // clear temp folder info
-			// TODO once all manuscript projects that were in-process when this change went in are complete, remove
-			// the below checks
-			mfMD, _ := getExifData(path)
-			if mfMD != nil && mfMD.Location == "" && mfMD.Box != "" {
-				containerTypeName := svc.getContainerTypeName(*proj.ContainerTypeID)
-				log.Printf("INFO: image %s is missing location header; generate it from box/folder headers", path)
-				missingLocation := fmt.Sprintf("%s %s, Folder %s", containerTypeName, mfMD.Box, mfMD.Folder)
-				cmd.Commands = append(cmd.Commands, fmt.Sprintf("-iptc:sub-location=%s", missingLocation))
-			}
 		}
 
 		cmd.Commands = append(cmd.Commands, path)

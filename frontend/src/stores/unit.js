@@ -199,26 +199,18 @@ export const useUnitStore = defineStore('unit', {
          mf.width = md.width
          mf.height = md.height
          mf.status = md.status
-         mf.location = "Undefined"
+         mf.location = ""
          mf.box = ""
          mf.folder = ""
-         if (md.location ) {
-               mf.location = md.location
-         }
-         if ( md.box && md.box != "<nil>" ) {
-            mf.box = md.box
-            if ( this.containerType.hasFolders && md.folder ) {
-               mf.folder = md.folder
-            }
-            // for existing projects before this update, location will not be set
-            // generate it from the box/folder info
-            if (mf.location == "Undefined") {
-               mf.location = `${ this.containerType.name} ${mf.box}`
-               if ( mf.folder) {
-                  mf.location += `, Folder ${mf.folder}`
-               }
-            }
-         }
+         if ( md.location ) {
+            console.log("SET BOX/FOLDER from location "+md.location)
+            mf.location = md.location
+            var locBits = md.location.split(", ")
+            mf.folder = locBits[1].replace("Folder ", "")
+            var containerStr = locBits[0]
+            containerStr = containerStr.replace(this.containerType.name, "")
+            mf.box = containerStr.trim()
+         } 
          mf.componentID = md.componentID
       },
 

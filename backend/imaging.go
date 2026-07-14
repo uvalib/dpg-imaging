@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"strings"
 	"sync"
 	"time"
 
@@ -38,7 +37,7 @@ type exifData struct {
 	ClassifyState string `json:"ClassifyState"`       // tag
 	Box           any    `json:"Keywords"`            // temporary container ID
 	Folder        any    `json:"ContentLocationName"` // temporary folder ID
-	Location      any    `json:"sub-location"`        // location
+	Location      any    `json:"Sub-location"`        // location
 	Component     any    `json:"OwnerID"`             // component
 }
 
@@ -79,9 +78,11 @@ func (svc *serviceContext) updateImageMetadata(c *gin.Context) {
 	}
 
 	// initially, just update the target field. If the field was box or folder, generate a
-	// new location string and update iptc:sub-location as well
+	// new location string and update iptc:sub-location as well. The individual header fields for box and
+	// folder are temporary. The actual location will be held in iptc:sub-location
 	cmd := []string{fmt.Sprintf("-%s=%s", exifTag, updateValue)}
 	if updateField == "box" || updateField == "folder" {
+		log.Printf("INFO: updating %s to %s; generate a lew location string", updateField, updateValue)
 		loc, err := svc.getUpdatedLocation(rawUnitID, tgtFile, updateField, updateValue)
 		if err != nil {
 			log.Printf("ERROR: %s", err.Error())
@@ -110,24 +111,14 @@ func (svc *serviceContext) getUpdatedLocation(unitID, tgtFile, updateField, upda
 	if err != nil {
 		return "", fmt.Errorf("unable to get existing metadata for %s update: %s", tgtFile, err.Error())
 	}
+	log.Printf("INFO: %s exif headers currently have box [%s] and folder [%s]", tgtFile, md.Box, md.Folder)
 
-	containerTypeName := ""
-	if md.Location == "" {
-		log.Printf("INFO: %s has no sub-location in exif headers; lookup unit and container type", tgtFile)
-		var tgtProject project
-		dbErr := svc.DB.Where("unit_id=?", unitID).First(&tgtProject).Error
-		if dbErr != nil {
-			return "", fmt.Errorf("unable to load project for unit %s: %s", unitID, dbErr.Error())
-		}
-		containerTypeName = svc.getContainerTypeName(*tgtProject.ContainerTypeID)
-	} else {
-		log.Printf("INFO: %s has sub-location [%s]; extract container type", tgtFile, md.Location)
-		// if location is set, the container type is the first part of that string; extract it
-		// from full location string [container name] [containerid], Folder [id]
-		bits := strings.Split(md.Location, ",")
-		containerBits := strings.Split(bits[0], " ")
-		containerTypeName = strings.Join(containerBits[0:len(containerBits)-1], " ")
+	var tgtProject project
+	dbErr := svc.DB.Where("unit_id=?", unitID).First(&tgtProject).Error
+	if dbErr != nil {
+		return "", fmt.Errorf("unable to load project for unit %s: %s", unitID, dbErr.Error())
 	}
+	containerTypeName := svc.getContainerTypeName(*tgtProject.ContainerTypeID)
 
 	// add the new container and folder id to the string
 	containerID := md.Box
@@ -144,7 +135,8 @@ func (svc *serviceContext) getUpdatedLocation(unitID, tgtFile, updateField, upda
 }
 
 func getExifTag(fieldName string) string {
-	// log.Printf("INFO: lookup exif tag for field %s", fieldName)
+	// This is used to map the data field from client update request to the correct EXIF header
+	// NOTE: iptc:sub-location is not needed here as it is never updated from a client request
 	fields := []exifMapping{{FieldName: "title", ExifTag: "iptc:headline"}, {FieldName: "description", ExifTag: "iptc:caption-abstract"},
 		{FieldName: "box", ExifTag: "iptc:Keywords"}, {FieldName: "folder", ExifTag: "iptc:ContentLocationName"},
 		{FieldName: "tag", ExifTag: "iptc:ClassifyState"}, {FieldName: "component", ExifTag: "iptc:OwnerID"},
@@ -379,9 +371,9 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 		return
 	}
 
-	// grab the currrent data inthe exif headers ad the rotate command wipes it all
+	// grab the currrent data in the exif headers ad the rotate command wipes it all
 	cmdArray := []string{"-json", "-iptc:OwnerID", "-iptc:headline", "-iptc:caption-abstract",
-		"-iptc:ClassifyState", "-iptc:ContentLocationName", "-iptc:Keywords", fullPath}
+		"-iptc:ClassifyState", "-iptc:ContentLocationName", "-iptc:Keywords", "-iptc:Sub-location", fullPath}
 	stdout, err := exec.Command("exiftool", cmdArray...).Output()
 	if err != nil {
 		log.Printf("ERROR: unable to get %s metadata before rotation: %s", file, err.Error())
@@ -419,6 +411,7 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 	cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%v", origMD[0].ClassifyState))
 	cmd = append(cmd, fmt.Sprintf("-iptc:ContentLocationName=%v", origMD[0].Folder))
 	cmd = append(cmd, fmt.Sprintf("-iptc:Keywords=%v", origMD[0].Box))
+	cmd = append(cmd, fmt.Sprintf("-iptc:Sub-location=%v", origMD[0].Location))
 	cmd = append(cmd, fullPath)
 	_, err = exec.Command("exiftool", cmd...).Output()
 	if err != nil {
@@ -450,7 +443,7 @@ func batchUpdateExifData(fileCommands []exifFileCommands, channel chan updatePro
 func checkExifHeaders(files []string, checkLocation bool, channel chan updateProblem) {
 	log.Printf("INFO: start batch of %d validate commands", len(files))
 	startTime := time.Now()
-	cmdArray := []string{"-json", "-iptc:headline", "-iptc:ContentLocationName", "-iptc:Keywords"}
+	cmdArray := []string{"-json", "-iptc:headline", "-iptc:Sub-location"}
 	cmdArray = append(cmdArray, files...)
 	cmd := exec.Command("exiftool", cmdArray...)
 	stdout, err := cmd.Output()
@@ -472,13 +465,14 @@ func checkExifHeaders(files []string, checkLocation bool, channel chan updatePro
 			}
 
 			if checkLocation {
-				if md.Box == "" {
-					log.Printf("ERROR: %s is missing a box", md.SourceFile)
-					channel <- updateProblem{File: md.SourceFile, Problem: "Missing box metadata"}
+				log.Printf("INFO: files require location check; location is [%s]", md.Location)
+				location := ""
+				if md.Location != nil {
+					location = fmt.Sprintf("%v", md.Title)
 				}
-				if md.Folder == "" {
-					log.Printf("ERROR: %s is missing a folder", md.SourceFile)
-					channel <- updateProblem{File: md.SourceFile, Problem: "Missing folder metadata"}
+				if location == "" {
+					log.Printf("ERROR: %s is missing a location", md.SourceFile)
+					channel <- updateProblem{File: md.SourceFile, Problem: "Missing location metadata"}
 				}
 			}
 		}
