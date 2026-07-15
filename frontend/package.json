@@ -15,12 +15,12 @@
     "dayjs": "^1.11.21",
     "jwt-decode": "^4.0.0",
     "openseadragon": "^6.0.2",
-    "pinia": "^3.0.4",
+    "pinia": "^4.0.2",
     "primeicons": "^7.0.0",
     "primevue": "^4.5.5",
     "sortablejs": "^1.15.7",
     "vue": "^3.5.39",
-    "vue-router": "^5.1.0",
+    "vue-router": "^5.2.0",
     "vue3-cookies": "^1.0.6"
   },
   "devDependencies": {
