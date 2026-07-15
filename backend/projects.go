@@ -203,6 +203,24 @@ func (svc *serviceContext) getProject(c *gin.Context) {
 	c.JSON(http.StatusOK, proj)
 }
 
+func (svc *serviceContext) getProjectContainerType(proj *project) (*containerType, error) {
+	var tgtContainer *containerType
+	cTypes, err := svc.getContainerTypes()
+	if err != nil {
+		return nil, fmt.Errorf("unable to load container types for project %d: %s", proj.ID, err.Error())
+	}
+	for _, ct := range cTypes {
+		if ct.ID == *proj.ContainerTypeID {
+			tgtContainer = &ct
+			break
+		}
+	}
+	if tgtContainer == nil {
+		return nil, fmt.Errorf("unable to get container type for project %d", proj.ID)
+	}
+	return tgtContainer, nil
+}
+
 func (svc *serviceContext) getProjectUnitDetails(proj *project) error {
 	respBytes, reqErr := svc.getRequest(fmt.Sprintf("%s/units/%d", svc.TrackSys.API, proj.UnitID))
 	if reqErr != nil {
