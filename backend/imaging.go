@@ -488,22 +488,22 @@ func checkExifHeaders(files []string, checkLocation bool, channel chan updatePro
 
 		var parsed []exifData
 		json.Unmarshal(stdout, &parsed)
-		for _, md := range parsed {
-			title := fmt.Sprintf("%v", md.Title)
-			if title == "" || title == "<nil>" {
-				log.Printf("ERROR: %s is missing a title", md.SourceFile)
-				channel <- updateProblem{File: md.SourceFile, Problem: "Missing title metadata"}
+		for _, exifMD := range parsed {
+			if exifMD.Title == nil {
+				log.Printf("ERROR: %s is missing a title", exifMD.SourceFile)
+				channel <- updateProblem{File: exifMD.SourceFile, Problem: "Missing title metadata"}
 			}
 
 			if checkLocation {
-				log.Printf("INFO: files require location check; location is [%s]", md.Location)
-				location := fmt.Sprintf("%v", md.Location)
-				if location == "" || location == "<nil>" {
-					log.Printf("ERROR: %s is missing a location", md.SourceFile)
-					channel <- updateProblem{File: md.SourceFile, Problem: "Missing location metadata"}
-				}
-				if strings.Contains(location, "UNK") {
-					channel <- updateProblem{File: md.SourceFile, Problem: "Incomplete location metadata"}
+				log.Printf("INFO: files require location check; location is [%s]", exifMD.Location)
+				if exifMD.Location == nil {
+					log.Printf("ERROR: %s is missing a location", exifMD.SourceFile)
+					channel <- updateProblem{File: exifMD.SourceFile, Problem: "Missing location metadata"}
+				} else {
+					location := fmt.Sprintf("%v", exifMD.Location)
+					if strings.Contains(location, "UNK") {
+						channel <- updateProblem{File: exifMD.SourceFile, Problem: "Incomplete location metadata"}
+					}
 				}
 			}
 		}
@@ -567,16 +567,10 @@ func parseExifData(exifMD *exifData) masterFileMetadata {
 		mdRec.ComponentID = fmt.Sprintf("%v", exifMD.Component)
 	}
 	if exifMD.Box != nil {
-		boxStr := fmt.Sprintf("%v", exifMD.Box)
-		if boxStr != "<nil>" {
-			mdRec.Box = boxStr
-		}
+		mdRec.Box = fmt.Sprintf("%v", exifMD.Box)
 	}
 	if exifMD.Folder != nil {
-		folderStr := fmt.Sprintf("%v", exifMD.Folder)
-		if folderStr != "<nil>" {
-			mdRec.Folder = folderStr
-		}
+		mdRec.Folder = fmt.Sprintf("%v", exifMD.Folder)
 	}
 
 	if exifMD.Resolution != nil {
@@ -605,6 +599,6 @@ func baseExifCmd() []string {
 	out := []string{"-json", "-ImageWidth", "-ImageHeight",
 		"-FileType", "-XResolution", "-FileSize", "-icc_profile:ProfileDescription", "-iptc:OwnerID",
 		"-iptc:headline", "-iptc:caption-abstract", "-iptc:ClassifyState",
-		"-iptc:ContentLocationName", "-iptc:Keywords", "-iptc:sub-location"}
+		"-iptc:ContentLocationName", "-iptc:Keywords", "-iptc:Sub-location"}
 	return out
 }
