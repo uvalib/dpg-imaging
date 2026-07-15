@@ -189,38 +189,29 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 	currA.Status = StepWorking
 	svc.DB.Model(&currA).Select("Status").Updates(currA)
 
-	// is this the last step of a workflow?
-	if proj.CurrentStep.StepType == 1 {
-		currA.Status = StepFinalizing
-		svc.DB.Model(&currA).Select("Status").Updates(currA)
-
-		go func() {
-			if proj.UnitStatus != "error" {
-				err := svc.validateFinishStep(proj)
-				if err != nil {
-					log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, err.Error())
-					return
-				}
-			}
-
-			log.Printf("INFO: sending request to dpg-jobs to begin or restart finalization of unit %d", proj.UnitID)
-			_, httpErr := svc.postJobsRequest(fmt.Sprintf("%s/units/%d/finalize", svc.TrackSys.Jobs, proj.UnitID), nil, getJWT(c))
-			if httpErr != nil {
-				log.Printf("ERROR: finalize request failed: %s", httpErr.Message)
-				msg := fmt.Sprintf("<p>Request to start finalization failed: %s</p>", httpErr.Message)
-				svc.failStep(proj, "Other", msg)
-				return
-			}
-		}()
-
+	// validate the directory, images names and metadata (if applicable)
+	validateErr := svc.validateFinishStep(proj)
+	if validateErr != nil {
+		log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, validateErr.Error())
 		proj, _ = svc.getProjectInfo(projID)
 		c.JSON(http.StatusOK, proj)
 		return
 	}
 
-	validateErr := svc.validateFinishStep(proj)
-	if validateErr != nil {
-		log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, validateErr.Error())
+	// is this the last step of a workflow?
+	if proj.CurrentStep.StepType == 1 {
+		currA.Status = StepFinalizing
+		svc.DB.Model(&currA).Select("Status").Updates(currA)
+
+		log.Printf("INFO: sending request to dpg-jobs to begin or restart finalization of unit %d", proj.UnitID)
+		_, httpErr := svc.postJobsRequest(fmt.Sprintf("%s/units/%d/finalize", svc.TrackSys.Jobs, proj.UnitID), nil, getJWT(c))
+		if httpErr != nil {
+			log.Printf("ERROR: finalize request failed: %s", httpErr.Message)
+			msg := fmt.Sprintf("<p>Request to start finalization failed: %s</p>", httpErr.Message)
+			svc.failStep(proj, "Other", msg)
+			return
+		}
+
 		proj, _ = svc.getProjectInfo(projID)
 		c.JSON(http.StatusOK, proj)
 		return
