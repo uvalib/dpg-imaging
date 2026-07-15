@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"sync"
 	"time"
 
@@ -82,14 +83,13 @@ func (svc *serviceContext) updateImageMetadata(c *gin.Context) {
 	// folder are temporary. The actual location will be held in iptc:sub-location
 	cmd := []string{fmt.Sprintf("-%s=%s", exifTag, updateValue)}
 	if updateField == "box" || updateField == "folder" {
-		log.Printf("INFO: updating %s to %s; generate a lew location string", updateField, updateValue)
 		loc, err := svc.getUpdatedLocation(rawUnitID, tgtFile, updateField, updateValue)
 		if err != nil {
 			log.Printf("ERROR: %s", err.Error())
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-		cmd = append(cmd, fmt.Sprintf("-iptc:sub-location=%s", loc))
+		cmd = append(cmd, fmt.Sprintf("-iptc:Sub-location=%s", loc))
 	}
 	cmd = append(cmd, tgtFile)
 
@@ -101,35 +101,69 @@ func (svc *serviceContext) updateImageMetadata(c *gin.Context) {
 		return
 	}
 	cleanupExifToolDups(tgtFile)
-	md, _ := getExifData(tgtFile)
-
-	c.JSON(http.StatusOK, md)
+	exifMD, _ := getExifData(tgtFile)
+	mdRec := parseExifData(exifMD)
+	c.JSON(http.StatusOK, mdRec)
 }
 
 func (svc *serviceContext) getUpdatedLocation(unitID, tgtFile, updateField, updateValue string) (string, error) {
-	md, err := getExifData(tgtFile)
+	log.Printf("INFO: update %s to [%s]: generate new location data for %s", updateField, updateValue, tgtFile)
+	exifMD, err := getExifData(tgtFile)
 	if err != nil {
 		return "", fmt.Errorf("unable to get existing metadata for %s update: %s", tgtFile, err.Error())
 	}
-	log.Printf("INFO: %s exif headers currently have box [%s] and folder [%s]", tgtFile, md.Box, md.Folder)
 
 	var tgtProject project
 	dbErr := svc.DB.Where("unit_id=?", unitID).First(&tgtProject).Error
 	if dbErr != nil {
 		return "", fmt.Errorf("unable to load project for unit %s: %s", unitID, dbErr.Error())
 	}
-	containerTypeName := svc.getContainerTypeName(*tgtProject.ContainerTypeID)
 
-	// add the new container and folder id to the string
-	containerID := md.Box
-	folderID := md.Folder
-	if updateField == "box" {
-		containerID = updateValue
-	} else {
-		folderID = updateValue
+	tgtContainer, err := svc.getProjectContainerType(&tgtProject)
+	if err != nil {
+		return "", err
 	}
 
-	newLoc := fmt.Sprintf("%s %s, Folder %s", containerTypeName, containerID, folderID)
+	// add the new container and folder id to the string
+	locParts := make([]string, 0)
+	containerID := "UNK"
+	if updateField == "box" {
+		if updateValue != "" {
+			containerID = updateValue
+		}
+	} else {
+		if exifMD.Box != nil {
+			containerID = fmt.Sprintf("%v", exifMD.Box)
+		}
+	}
+	locParts = append(locParts, fmt.Sprintf("%s %s", tgtContainer.Name, containerID))
+
+	if tgtContainer.HasFolders {
+		folderID := "UNK"
+		if updateField == "folder" {
+			if updateValue != "" {
+				folderID = updateValue
+			}
+		} else {
+			if exifMD.Folder != nil {
+				folderID = fmt.Sprintf("%v", exifMD.Folder)
+			}
+		}
+		locParts = append(locParts, fmt.Sprintf("Folder %s", folderID))
+	}
+
+	missingCnt := 0
+	for _, p := range locParts {
+		if strings.Contains(p, "UNK") {
+			missingCnt++
+		}
+	}
+	if missingCnt == len(locParts) {
+		log.Printf("INFO: %s has no location data set; remove iptc:sub-location", tgtFile)
+		return "", nil
+	}
+
+	newLoc := strings.Join(locParts, ", ")
 	log.Printf("INFO: %s has new location [%s]", tgtFile, newLoc)
 	return newLoc, nil
 }
@@ -201,7 +235,7 @@ func (svc *serviceContext) updateMetadataBatch(c *gin.Context) {
 				c.String(http.StatusInternalServerError, err.Error())
 				return
 			}
-			cmd.Commands = append(cmd.Commands, fmt.Sprintf("-iptc:sub-location=%s", loc))
+			cmd.Commands = append(cmd.Commands, fmt.Sprintf("-iptc:Sub-location=%s", loc))
 		}
 
 		cmd.Commands = append(cmd.Commands, change.File)
@@ -455,24 +489,21 @@ func checkExifHeaders(files []string, checkLocation bool, channel chan updatePro
 		var parsed []exifData
 		json.Unmarshal(stdout, &parsed)
 		for _, md := range parsed {
-			title := ""
-			if md.Title != nil {
-				title = fmt.Sprintf("%v", md.Title)
-			}
-			if title == "" {
+			title := fmt.Sprintf("%v", md.Title)
+			if title == "" || title == "<nil>" {
 				log.Printf("ERROR: %s is missing a title", md.SourceFile)
 				channel <- updateProblem{File: md.SourceFile, Problem: "Missing title metadata"}
 			}
 
 			if checkLocation {
 				log.Printf("INFO: files require location check; location is [%s]", md.Location)
-				location := ""
-				if md.Location != nil {
-					location = fmt.Sprintf("%v", md.Title)
-				}
-				if location == "" {
+				location := fmt.Sprintf("%v", md.Location)
+				if location == "" || location == "<nil>" {
 					log.Printf("ERROR: %s is missing a location", md.SourceFile)
 					channel <- updateProblem{File: md.SourceFile, Problem: "Missing location metadata"}
+				}
+				if strings.Contains(location, "UNK") {
+					channel <- updateProblem{File: md.SourceFile, Problem: "Incomplete location metadata"}
 				}
 			}
 		}
@@ -496,7 +527,7 @@ func getExifMetadataBatch(tgtFiles []string, channel chan masterFileMetadata) {
 	var parsed []exifData
 	json.Unmarshal(cmdOut, &parsed)
 	for _, exifMD := range parsed {
-		mdRec := parseExifResponse(&exifMD)
+		mdRec := parseExifData(&exifMD)
 		channel <- mdRec
 	}
 
@@ -504,7 +535,7 @@ func getExifMetadataBatch(tgtFiles []string, channel chan masterFileMetadata) {
 	log.Printf("INFO: get metadata batch of %d files has finished in %d ms", len(tgtFiles), elapsed.Milliseconds())
 }
 
-func getExifData(tgtFile string) (*masterFileMetadata, error) {
+func getExifData(tgtFile string) (*exifData, error) {
 	log.Printf("INFO: get exif metadata for %s", tgtFile)
 	cmdArray := baseExifCmd()
 	cmdArray = append(cmdArray, tgtFile)
@@ -517,14 +548,13 @@ func getExifData(tgtFile string) (*masterFileMetadata, error) {
 	}
 
 	var parsed []exifData
-	json.Unmarshal(cmdOut, &parsed)
-	md := parsed[0]
-	mdRec := parseExifResponse(&md)
-
-	return &mdRec, nil
+	if err := json.Unmarshal(cmdOut, &parsed); err != nil {
+		return nil, fmt.Errorf("unable to parse exif headers: %s", err.Error())
+	}
+	return &parsed[0], nil
 }
 
-func parseExifResponse(exifMD *exifData) masterFileMetadata {
+func parseExifData(exifMD *exifData) masterFileMetadata {
 	mdRec := masterFileMetadata{}
 	mdRec.FileName = path.Base(fmt.Sprintf("%v", exifMD.SourceFile))
 	if exifMD.Title != nil {
@@ -548,9 +578,7 @@ func parseExifResponse(exifMD *exifData) masterFileMetadata {
 			mdRec.Folder = folderStr
 		}
 	}
-	if exifMD.Location != nil {
-		mdRec.Location = fmt.Sprintf("%v", exifMD.Location)
-	}
+
 	if exifMD.Resolution != nil {
 		valType := fmt.Sprintf("%T", exifMD.Resolution)
 		switch valType {

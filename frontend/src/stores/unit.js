@@ -202,15 +202,16 @@ export const useUnitStore = defineStore('unit', {
          mf.location = ""
          mf.box = ""
          mf.folder = ""
-         if ( md.location ) {
-            console.log("SET BOX/FOLDER from location "+md.location)
-            mf.location = md.location
-            var locBits = md.location.split(", ")
-            mf.folder = locBits[1].replace("Folder ", "")
-            var containerStr = locBits[0]
-            containerStr = containerStr.replace(this.containerType.name, "")
-            mf.box = containerStr.trim()
-         } 
+         let parts = []
+         if (md.box != "") {
+            mf.box = md.box
+            parts.push( `${this.containerType.name} ${mf.box}` )
+         }
+         if (md.folder != "") {
+            mf.folder = md.folder
+            parts.push(`Folder ${ mf.folder }`)
+         }
+         mf.location = parts.join(", ")
          mf.componentID = md.componentID
       },
 

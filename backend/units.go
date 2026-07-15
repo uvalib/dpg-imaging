@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -65,7 +66,6 @@ type masterFileMetadata struct {
 	ComponentID  string `json:"componentID"`
 	Box          string `json:"box"`
 	Folder       string `json:"folder"`
-	Location     string `json:"location"`
 }
 
 type unitMasterfiles struct {
@@ -217,11 +217,12 @@ func (svc *serviceContext) getMasterFilesMetadata(c *gin.Context) {
 	tgtFile := c.Query("file")
 	if tgtFile != "" {
 		log.Printf("INFO: get metadata for masterfile %s", tgtFile)
-		mfMD, err := getExifData(tgtFile)
+		exifMD, err := getExifData(tgtFile)
 		if err != nil {
 			log.Printf("ERROR: unable to get %s metadata: %s", tgtFile, err.Error())
 			c.String(http.StatusInternalServerError, err.Error())
 		} else {
+			mfMD := parseExifData(exifMD)
 			c.JSON(http.StatusOK, mfMD)
 		}
 		return
@@ -352,12 +353,12 @@ func (svc *serviceContext) finalizeUnitData(proj *project) (*finalizeResponse, e
 	mfRegex := regexp.MustCompile(`^\d{9}_\w{4,}\.tif$`)
 	tifRegex := regexp.MustCompile(`^.*\.tif$`)
 	hiddenRegex := regexp.MustCompile(`^\..*`)
-	err := filepath.Walk(unitDir, func(path string, f os.FileInfo, err error) error {
-		if err != nil || f.IsDir() {
+	err := filepath.WalkDir(unitDir, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() {
 			return nil
 		}
 
-		fName := f.Name()
+		fName := entry.Name()
 		if hiddenRegex.Match([]byte(fName)) || !tifRegex.Match([]byte(fName)) || !mfRegex.Match([]byte(fName)) {
 			return nil
 		}

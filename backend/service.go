@@ -284,16 +284,13 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 	}
 
 	log.Printf("INFO: load container types")
-	rawResp, err = svc.getRequest(fmt.Sprintf("%s/containertypes", svc.TrackSys.API))
-	if err != nil {
-		log.Printf("ERROR: unable to get container types: %s", err.Message)
-		c.String(err.StatusCode, err.Message)
+	cTypes, ctErr := svc.getContainerTypes()
+	if ctErr != nil {
+		log.Printf("ERROR: %s", ctErr)
+		c.String(http.StatusInternalServerError, ctErr.Error())
 		return
-	}
-	if err := json.Unmarshal(rawResp, &resp.ContainerTypes); err != nil {
-		log.Printf("ERROR: unable to parse container types: %s", err.Error())
-		c.String(http.StatusInternalServerError, err.Error())
-		return
+	} else {
+		resp.ContainerTypes = cTypes
 	}
 
 	log.Printf("INFO: load ocr hints")
@@ -355,6 +352,19 @@ func (svc *serviceContext) getConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+func (svc *serviceContext) getContainerTypes() ([]containerType, error) {
+	rawResp, err := svc.getRequest(fmt.Sprintf("%s/containertypes", svc.TrackSys.API))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get container types: %s", err.Message)
+	}
+	var out []containerType
+	if err := json.Unmarshal(rawResp, &out); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 func (svc *serviceContext) getStaff(staffID uint) (*staffMember, error) {
 	respBytes, reqErr := svc.getRequest(fmt.Sprintf("%s/staff/lookup?id=%d", svc.TrackSys.API, staffID))
 	if reqErr != nil {
@@ -366,16 +376,6 @@ func (svc *serviceContext) getStaff(staffID uint) (*staffMember, error) {
 		return nil, err
 	}
 	return &sm, nil
-}
-
-func (svc *serviceContext) getContainerTypeName(ctID uint) string {
-	log.Printf("INFO: lookup container type id %d", ctID)
-	rawResp, reqErr := svc.getRequest(fmt.Sprintf("%s/containertypes/%d", svc.TrackSys.API, ctID))
-	if reqErr != nil {
-		log.Printf("ERROR: unable to get container type %d name; default to box: %s", ctID, reqErr.Message)
-		return "Box"
-	}
-	return string(rawResp)
 }
 
 func (svc *serviceContext) getComputeID(staffID uint) string {
@@ -481,6 +481,7 @@ func findFile(basePath, tgtFileName string) string {
 		}
 		if entry.Name() == tgtFileName {
 			fullPath = path
+			return filepath.SkipAll //
 		}
 		return nil
 	})
