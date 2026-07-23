@@ -442,10 +442,16 @@ func (svc *serviceContext) rotateFile(c *gin.Context) {
 	if origMD[0].Description != nil {
 		cmd = append(cmd, fmt.Sprintf("-iptc:caption-abstract=%v", origMD[0].Description))
 	}
+	if origMD[0].Box != nil {
+		cmd = append(cmd, fmt.Sprintf("-iptc:Keywords=%v", origMD[0].Box))
+	}
+	if origMD[0].Folder != nil {
+		cmd = append(cmd, fmt.Sprintf("-iptc:ContentLocationName=%v", origMD[0].Folder))
+	}
+	if origMD[0].Location != nil {
+		cmd = append(cmd, fmt.Sprintf("-iptc:Sub-location=%v", origMD[0].Location))
+	}
 	cmd = append(cmd, fmt.Sprintf("-iptc:ClassifyState=%v", origMD[0].ClassifyState))
-	cmd = append(cmd, fmt.Sprintf("-iptc:ContentLocationName=%v", origMD[0].Folder))
-	cmd = append(cmd, fmt.Sprintf("-iptc:Keywords=%v", origMD[0].Box))
-	cmd = append(cmd, fmt.Sprintf("-iptc:Sub-location=%v", origMD[0].Location))
 	cmd = append(cmd, fullPath)
 	_, err = exec.Command("exiftool", cmd...).Output()
 	if err != nil {
@@ -559,18 +565,33 @@ func parseExifData(exifMD *exifData) masterFileMetadata {
 	mdRec.FileName = path.Base(fmt.Sprintf("%v", exifMD.SourceFile))
 	if exifMD.Title != nil {
 		mdRec.Title = fmt.Sprintf("%v", exifMD.Title)
+		if mdRec.Title == "<nil>" {
+			mdRec.Title = ""
+		}
 	}
 	if exifMD.Description != nil {
 		mdRec.Description = fmt.Sprintf("%v", exifMD.Description)
+		if mdRec.Description == "<nil>" {
+			mdRec.Description = ""
+		}
 	}
 	if exifMD.Component != nil {
 		mdRec.ComponentID = fmt.Sprintf("%v", exifMD.Component)
+		if mdRec.ComponentID == "<nil>" {
+			mdRec.ComponentID = ""
+		}
 	}
 	if exifMD.Box != nil {
 		mdRec.Box = fmt.Sprintf("%v", exifMD.Box)
+		if mdRec.Box == "<nil>" {
+			mdRec.Box = ""
+		}
 	}
 	if exifMD.Folder != nil {
 		mdRec.Folder = fmt.Sprintf("%v", exifMD.Folder)
+		if mdRec.Folder == "<nil>" {
+			mdRec.Folder = ""
+		}
 	}
 
 	if exifMD.Resolution != nil {
