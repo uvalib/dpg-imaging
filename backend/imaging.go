@@ -45,6 +45,7 @@ type exifData struct {
 type updateProblem struct {
 	File    string `json:"file"`
 	Problem string `json:"problem"`
+	Type    string `json:"type"` // WARN or ERROR
 }
 
 type exifFileCommands struct {
@@ -164,6 +165,10 @@ func (svc *serviceContext) getUpdatedLocation(unitID, tgtFile, updateField, upda
 	}
 
 	newLoc := strings.Join(locParts, ", ")
+
+	// remove Folder UNK if present and just leave box info as location
+	newLoc = strings.Replace(newLoc, ", Folder UNK", "", 1)
+
 	log.Printf("INFO: %s has new location [%s]", tgtFile, newLoc)
 	return newLoc, nil
 }
@@ -471,7 +476,7 @@ func batchUpdateExifData(fileCommands []exifFileCommands, channel chan updatePro
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			log.Printf("ERROR: unable to update %s metadata with %v: %s", fc.File, cmd, out)
-			channel <- updateProblem{File: path.Base(fc.File), Problem: err.Error()}
+			channel <- updateProblem{File: path.Base(fc.File), Problem: err.Error(), Type: "ERROR"}
 		} else {
 			cleanupExifToolDups(fc.File)
 		}
@@ -489,7 +494,7 @@ func checkExifHeaders(files []string, checkLocation bool, channel chan updatePro
 	stdout, err := cmd.Output()
 	if err != nil {
 		log.Printf("ERROR: unable to get qa metadata: %s", err.Error())
-		channel <- updateProblem{File: "all", Problem: err.Error()}
+		channel <- updateProblem{File: "all", Problem: err.Error(), Type: "ERROR"}
 	} else {
 
 		var parsed []exifData
@@ -497,18 +502,19 @@ func checkExifHeaders(files []string, checkLocation bool, channel chan updatePro
 		for _, exifMD := range parsed {
 			if exifMD.Title == nil {
 				log.Printf("ERROR: %s is missing a title", exifMD.SourceFile)
-				channel <- updateProblem{File: exifMD.SourceFile, Problem: "Missing title metadata"}
+				channel <- updateProblem{File: exifMD.SourceFile, Problem: "Missing title metadata", Type: "ERROR"}
 			}
 
 			if checkLocation {
 				log.Printf("INFO: files require location check; location is [%s]", exifMD.Location)
 				if exifMD.Location == nil {
-					log.Printf("ERROR: %s is missing a location", exifMD.SourceFile)
-					channel <- updateProblem{File: exifMD.SourceFile, Problem: "Missing location metadata"}
+					log.Printf("WARNING: %s is missing a location", exifMD.SourceFile)
+					channel <- updateProblem{File: exifMD.SourceFile, Problem: "Missing location metadata", Type: "WARN"}
 				} else {
 					location := fmt.Sprintf("%v", exifMD.Location)
-					if strings.Contains(location, "UNK") {
-						channel <- updateProblem{File: exifMD.SourceFile, Problem: "Incomplete location metadata"}
+					if strings.Contains(location, "UNK") || strings.Contains(location, ", Folder") == false {
+						log.Printf("WARNING: %s has incomplete location data [%s]", exifMD.SourceFile, location)
+						channel <- updateProblem{File: exifMD.SourceFile, Problem: "Incomplete location metadata", Type: "WARN"}
 					}
 				}
 			}

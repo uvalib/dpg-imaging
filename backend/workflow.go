@@ -329,7 +329,7 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 		}
 
 		if !resp.Success {
-			log.Printf("INFO: unit %d has finalize errors: %v", proj.UnitID, resp.Problems)
+			log.Printf("INFO: unit %d has finalize preparation errors: %v", proj.UnitID, resp.Problems)
 			msg := "<p>Prep for finalization failed</p>"
 			for _, p := range resp.Problems {
 				msg += fmt.Sprintf("<p>%s: %s</p>", p.File, p.Problem)
@@ -545,12 +545,26 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string) error {
 	}()
 
 	errorMsg := ""
+	warnMsg := ""
 	for problem := range errChannel {
 		if problem.File == "all" {
 			svc.failStep(proj, "Metadata", "<p>Unable to extract metadata from images.</p>")
 			return fmt.Errorf("unable to extract metadata from images")
 		}
-		errorMsg += fmt.Sprintf("<li>%s - %s</li>", path.Base(problem.File), problem.Problem)
+		if problem.Type == "ERROR" {
+			errorMsg += fmt.Sprintf("<li>%s - %s</li>", path.Base(problem.File), problem.Problem)
+		} else {
+			warnMsg += fmt.Sprintf("<li>%s - %s</li>", path.Base(problem.File), problem.Problem)
+		}
+	}
+
+	if warnMsg != "" {
+		noteMsg := fmt.Sprintf("Potential metadata issues found: <ul>%s<ul>", warnMsg)
+		newNote := note{ProjectID: proj.ID, StepID: proj.CurrentStep.ID, StaffMemberID: *proj.OwnerID, NoteType: 0, Note: noteMsg}
+		_, err := svc.addNote(*proj, newNote, make([]uint, 0))
+		if err != nil {
+			log.Printf("ERROR: unable to add step warnings %s", err.Error())
+		}
 	}
 
 	if errorMsg != "" {
