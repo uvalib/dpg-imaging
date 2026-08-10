@@ -262,6 +262,9 @@ func (svc *serviceContext) deleteProject(c *gin.Context) {
 
 func (svc *serviceContext) doProjectDelete(projID int64) error {
 	log.Printf("INFO: delete notes associated with project %d", projID)
+	if err := svc.DB.Exec("delete from notes_problems where note_id in (select id from notes where project_id=?)", projID).Error; err != nil {
+		return fmt.Errorf("unable to delete notes_problems for canceled project %d: %s", projID, err.Error())
+	}
 	if err := svc.DB.Exec("delete from notes where project_id=?", projID).Error; err != nil {
 		return fmt.Errorf("unable to delete notes for canceled project %d: %s", projID, err.Error())
 	}
