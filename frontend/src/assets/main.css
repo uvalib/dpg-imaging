@@ -79,7 +79,7 @@
   -moz-osx-font-smoothing: grayscale;
   font-size: 16px;
   
-  input,
+  /* input,
    select,
    textarea {
       box-sizing: border-box;
@@ -141,13 +141,13 @@
       justify-content: flex-end;
       align-items: flex-start;
       gap: 10px;
-   }
+   }*/
 
-   .sticky {
+   .sticky-bar {
       position: fixed;
       z-index: 1000;
       top: 0;
       border-bottom: 1px solid var(--uvalib-grey-light);
-   }
+   } 
 }
 

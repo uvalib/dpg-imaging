@@ -12,7 +12,7 @@ export function usePinnable( pinID, scrollID, pinCallback ) {
       if ( pinnedY.value < 0) {
          if ( toolbarBounds.value.top <= 0 ) {
             pinnedY.value = y.value+toolbarBounds.value.top
-            toolbar.value.classList.add("sticky")
+            toolbar.value.classList.add("sticky-bar")
             toolbar.value.style.width = `${toolbarBounds.value.width}px`
             scrollBody.value.style.top = `${toolbarBounds.value.height}px`
             if ( pinCallback) {
@@ -24,7 +24,7 @@ export function usePinnable( pinID, scrollID, pinCallback ) {
       } else {
          if ( newY <=  pinnedY.value) {
             pinnedY.value = -1
-            toolbar.value.classList.remove("sticky")
+            toolbar.value.classList.remove("sticky-bar")
             toolbar.value.style.width = `auto`
             scrollBody.value.style.top = `0px`
             if ( pinCallback ) {

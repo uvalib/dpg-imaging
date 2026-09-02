@@ -40,7 +40,7 @@ export default defineConfig({
                   right: "text-white",
                   body: "bg-brand-blue",
                   header:  "!bg-brand-blue",
-                  content: "bg-brand-blue"
+                  content: "bg-brand-blue",
                }
             },
             modal: {
@@ -64,7 +64,10 @@ export default defineConfig({
                   item: "!py-1",
                   link: "gap-1",
                   linkLabel: "text-white hover:bg-brand-blue-alt px-2 py-1 rounded-lg",
-                  linkLeadingIcon: "!text-white"
+                  linkLeadingIcon: "!text-white",
+                  childLinkIcon: "!text-white",
+                  childLinkLabel: "hover:bg-brand-blue-alt  px-2 py-1 rounded-lg",
+                  linkTrailingIcon: "!text-white"
                },
             },
             toast: {
