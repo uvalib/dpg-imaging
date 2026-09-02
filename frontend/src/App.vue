@@ -1,5 +1,5 @@
 <template>
-   <div id="app">
+   <UApp :toaster="toaster">
       <div class="header" role="banner" id="uva-header">
          <div class="main-header">
             <div class="library-link">
@@ -36,7 +36,7 @@
       <MessageModal />
       <CreateMessageModal />
       <ScrollTop />
-   </div>
+   </UApp>
 </template>
 
 <script setup>
@@ -55,6 +55,8 @@ const systemStore = useSystemStore()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
 const router = useRouter()
+
+const toaster = { duration: 5000, position: "top-center" }
 
 const errorClosed = (() => {
    systemStore.clearError()

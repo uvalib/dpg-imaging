@@ -3,14 +3,90 @@
 import { fileURLToPath, URL } from 'url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import ui from '@nuxt/ui/vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-   define: {
-      // enable hydration mismatch details in production build
-      __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'true'
-   },
-   plugins: [vue()],
+   plugins: [
+      vue(),
+      ui({
+         ui: {
+            button: {
+               default: {
+                  class: "cursor-pointer"
+               },
+               compoundVariants: [
+                  {
+                     color: "primary",
+                     variant: "solid",
+                     class: "text-white focus:outline-offset-2 focus:outline-1 focus:outline-dashed",
+                  },
+                  {
+                     color: "secondary",
+                     variant: "solid",
+                     class: "border border-muted hover:bg-gray-200 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100",
+                  },
+                  {
+                     color: "error",
+                     variant: "solid",
+                     class: "text-white focus:outline-offset-2 focus:outline-1 focus:outline-dashed",
+                  },
+               ],
+            },
+            header: {
+               slots: {
+                  root: "!bg-brand-blue",
+                  container: "!px-5 !py-5 !max-w-full",
+                  right: "text-white",
+                  body: "bg-brand-blue",
+                  header:  "!bg-brand-blue",
+                  content: "bg-brand-blue"
+               }
+            },
+            modal: {
+               rounded: 'rounded-sm',
+               slots: {
+                  header: "bg-brand-teal-200 flex items-center gap-0 p-2.5 sm:px-2.5 min-h-0",
+                  title: 'font-semibold text-black',
+                  close: 'absolute top-1.5 end-1.5 rounded-full text-black hover:bg-brand-teal-100',
+                  content: "bg-white",
+                  footer: "justify-end sm:px-4 p-4",
+                  body: "border-0"
+                  // body: () => 'text-base font-bold' // this syntax removes all default styles
+               }
+            },
+            navigationMenu: {
+               defaultVariants: {
+                  color: 'neutral',
+               },
+               slots: {
+                  root: '!justify-end',
+                  item: "!py-1",
+                  link: "gap-1",
+                  linkLabel: "text-white hover:bg-brand-blue-alt px-2 py-1 rounded-lg",
+                  linkLeadingIcon: "!text-white"
+               },
+            },
+            toast: {
+               slots: {
+                  progress: 'bottom-1',
+                  close: 'rounded-full'
+               },
+               variants: {
+                  color: {
+                     error: {
+                        root: 'bg-brand-red-100',
+                        icon: 'text-black',
+                        title: 'text-black font-semibold font-size-1.5',
+                        description: 'text-black',   
+                        close: 'text-black hover:text-black hover:bg-brand-red'
+                     }
+                  }
+               }
+            }
+         }
+      })
+   ],
    resolve: {
       alias: {
          '@': fileURLToPath(new URL('./src', import.meta.url))

@@ -3,7 +3,7 @@ import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
 import 'primeicons/primeicons.css'
-import './assets/stylesheets/main.scss'
+import './assets/main.css'
 
 const app = createApp(App)
 
@@ -40,10 +40,15 @@ import ConfirmDialog from 'primevue/confirmdialog'
 app.component("DPGButton", Button)
 app.component("ConfirmDialog", ConfirmDialog)
 
+// NuxtUI
+import ui from '@nuxt/ui/vue-plugin'
+app.use(ui)
+
 // Per some suggestions on vue / pinia git hub issue reports, create and add pinia support LAST
 // and use the chained form of the setup. This to avid problems where the vuew dev tools fail to
 // include pinia in the tools
 app.use( router )
+
 app.use(createPinia().use( ({ store }) => {
    store.router = markRaw(router)
 }))

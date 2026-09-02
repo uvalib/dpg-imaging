@@ -1,0 +1,153 @@
+@import './base.css';
+@import './uva-colors.css';
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* GLOBAL FOCUS STYLE */
+/* *,
+::before,
+::after {
+  @apply outline-offset-2 outline-blue-300;
+}
+
+*:focus-visible,
+*:has(> a:focus-visible) {
+  outline-style: dotted;
+} */
+
+ /* 
+    values here: https://tailwindcss.com/docs/theme#default-theme-variable-reference
+    stuff like colors, fonts, fine sizing, spacing, radius
+    These create utility classes that can be used: <span class="font-sans">hey</span>
+    These utility classes can also be used in vite.cong.js to define global component styling
+ */
+@theme {
+  --font-sans: "franklin-gothic-urw", arial, sans-serif;
+
+  --color-brand-blue-300: #87B9D9;
+  --color-brand-blue-200: #3395D4;   
+  --color-brand-blue-100: #0370B7; 
+  --color-brand-blue: #232D4B;  
+
+  --color-brand-blue-alt-400: #E6F2F7;
+  --color-brand-blue-alt-300: #BFE7F7;
+  --color-brand-blue-alt-200: #91D8F2;
+  --color-brand-blue-alt-100: #55C4EC;
+  --color-brand-blue-alt: #007BAC;     
+  --color-brand-blue-alt-A: #005679;  
+  --color-brand-blue-alt-B: #141E3C; 
+
+  --color-brand-red-100: #FBCFDA;  
+  --color-brand-red: #EF3F6B;       
+  --color-brand-red-A: #DF1E43;     
+  --color-brand-red-B: #B30000; 
+  --color-brand-emergency: var( --uvalib-red-emergency );
+
+  --color-brand-grey-200: #F1F1F1;
+  --color-brand-grey-100: #DADADA;
+  --color-brand-grey-50: #ADADAD;
+  --color-brand-grey: #808080;
+  --color-brand-grey-A: #4F4F4F;
+  --color-brand-grey-B: #2B2B2B;  
+
+  --color-brand-teal-200: #C8F2F4; 
+  --color-brand-teal-100: #5BD7DE;  
+  --color-brand-teal: #25CAD3;
+
+  --color-black: var(--color-brand-grey-B);
+}
+
+:root {
+  --ui-border: var( --color-brand-grey );
+  --ui-border-muted: var( --color-brand-grey-100 );
+  --ui-border-accented: var(--color-brand-grey-B);
+  --ui-border-inverted: var(--color-white);
+ 
+  --ui-radius: 0.25rem;
+
+  --ui-primary: var( --color-brand-blue-100 );
+  --ui-secondary: var( --uvalib-grey-lightest);
+  --ui-success: var(--ui-color-success-500);
+  --ui-error: var( --uvalib-red-emergency);
+}
+
+#app {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans), arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 16px;
+  
+  input,
+   select,
+   textarea {
+      box-sizing: border-box;
+      border-radius: 4px;
+      padding: 5px 8px;
+      border: 1px solid var(--uvalib-grey-light);
+      width: 100%;
+   }
+   input[type=checkbox] {
+      cursor: pointer;
+   }
+
+   h2 {
+      color: var(--uvalib-brand-blue);
+      margin: 10px 0;
+      position: relative;
+  }
+
+  a {
+      color: var(--uvalib-blue-alt-dark);
+      font-weight: 500;
+      text-decoration: none;
+      &:hover {
+        text-decoration: underline;
+      }
+  }
+
+   dl {
+      margin: 10px 30px 0 30px;
+      display: inline-grid;
+      grid-template-columns: max-content 2fr;
+      grid-column-gap: 10px;
+      font-size: 0.9em;
+      text-align: left;
+      box-sizing: border-box;
+
+      dt {
+         font-weight: bold;
+         text-align: right;
+         white-space: nowrap;
+      }
+      dd {
+         margin: 0 0 10px 0;
+         word-break: break-word;
+         -webkit-hyphens: auto;
+         -moz-hyphens: auto;
+         hyphens: auto;
+         color: var(--uvalib-text);
+         .na {
+            color: #ddd;
+         }
+      }
+   }
+
+   .panel-actions {
+      padding: 0;
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 10px;
+   }
+
+   .sticky {
+      position: fixed;
+      z-index: 1000;
+      top: 0;
+      border-bottom: 1px solid var(--uvalib-grey-light);
+   }
+}
+

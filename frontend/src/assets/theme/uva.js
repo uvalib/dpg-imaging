@@ -2,7 +2,7 @@ import { definePreset } from '@primeuix/themes'
 import Aura from '@primeuix/themes/aura'
 import ripple from '@primeuix/themes/aura/ripple'
 import tooltip from '@primeuix/themes/aura/tooltip'
-import './uva-colors.css'
+import '../uva-colors.css'
 import './styleoverrides.scss'
 
 const UVA = definePreset(Aura, {
