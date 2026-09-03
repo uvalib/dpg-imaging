@@ -42,12 +42,15 @@ div.spinner-overlay {
    z-index: 1000;
    background: rgba(100,100,100,0.3);
    .spinner {
+      position: relative;
       box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);;
+      left: 50%;
+      top: 25%;
+      transform: translate(-50%, -50%);
    }
 }
 div.spinner {
    background: white;
-   margin: 12vw auto;
    text-align: center;
    padding: 10px 150px 25px 150px;
    display: inline-block;

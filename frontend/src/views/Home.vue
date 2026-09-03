@@ -6,36 +6,6 @@
    </ConfirmDialog>
    <div class="home">
       <WaitSpinner v-if="searchStore.working" :overlay="true" message="Loading projects..." />
-      <div class="toolbar pin-target" id="pin-target">
-         <div class="filter">
-            <label for="me">
-               <input id="me" type="radio" value="me" name="filter" v-model="activeFilter" @change="filterChanged">
-               <span>Assigned to me <span class="count">({{searchStore.totals.me}})</span></span>
-            </label>
-            <label for="active">
-               <input id="active" type="radio" value="active" name="filter" v-model="activeFilter" @change="filterChanged">
-               <span>Active <span class="count">({{searchStore.totals.active}})</span></span>
-            </label>
-            <label for="errors">
-               <input id="errors" type="radio" value="errors" name="filter" v-model="activeFilter" @change="filterChanged">
-               <span>Problems <span class="count">({{searchStore.totals.errors}})</span></span>
-            </label>
-            <label for="unassigned">
-               <input id="unassigned" type="radio" value="unassigned" name="filter" v-model="activeFilter" @change="filterChanged">
-               <span>Unassigned <span class="count">({{searchStore.totals.unassigned}})</span></span>
-            </label>
-            <label for="finished">
-               <input id="finished" type="radio" value="finished" name="filter" v-model="activeFilter" @change="filterChanged">
-               <span>Finished <span class="count">({{searchStore.totals.finished}})</span></span>
-            </label>
-         </div>
-         <div class="page-ctl" v-if="!searchStore.working && searchStore.projects.length>0">
-            <DPGPagination :currPage="searchStore.currPage" :pageSize="searchStore.pageSize" :totalPages="searchStore.totalPages"
-               @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
-               @jump="pageJumpClicked"
-            />
-         </div>
-      </div>
       <div class="scroll-body" id="scroll-body">
          <div class="project-board" id="project-board">
             <div class="search-col">
@@ -139,7 +109,6 @@
 </template>
 
 <script setup>
-import DPGPagination from "../components/DPGPagination.vue"
 import AssignModal from "@/components/AssignModal.vue"
 import SearchPanel from "@/components/SearchPanel.vue"
 import { useSearchStore } from "@/stores/search"
@@ -148,23 +117,7 @@ import { useProjectStore } from "@/stores/project"
 import { useUserStore } from "@/stores/user"
 import { useRoute, useRouter } from 'vue-router'
 import { onBeforeMount, ref } from 'vue'
-import { usePinnable } from '@/composables/pin'
 import { useConfirm } from "primevue/useconfirm"
-
-usePinnable("pin-target", "scroll-body", ( (isPinned, toolbarBottom) => {
-   let p = document.getElementById("search-panel")
-   if ( p ) {
-      if ( isPinned ) {
-         const board = document.getElementById("project-board")
-         const pad = parseInt(window.getComputedStyle(board, null).getPropertyValue('padding-top'),10)
-         p.style.top = `${toolbarBottom+pad}px`
-         p.style.width = `${p.getBoundingClientRect().width}px`
-         p.classList.add("pinned")
-      } else {
-         p.classList.remove("pinned")
-      }
-   }
-}))
 
 const confirm = useConfirm()
 const searchStore = useSearchStore()
@@ -173,8 +126,6 @@ const userStore = useUserStore()
 const projectStore = useProjectStore()
 const route = useRoute()
 const router = useRouter()
-
-const activeFilter = ref("active")
 
 onBeforeMount( () => {
    if ( route.query.workflow) {
@@ -205,19 +156,8 @@ onBeforeMount( () => {
       searchStore.search.workstation = parseInt(route.query.workstation,10)
    }
    if ( route.query.filter) {
-      activeFilter.value = route.query.filter
       searchStore.filter = route.query.filter
    }
-
-   searchStore.getProjects()
-})
-
-const filterChanged = ( async () => {
-   let query = Object.assign({}, route.query)
-   query.filter = activeFilter.value
-   searchStore.changeFilter(activeFilter.value)
-   await router.push({query})
-   searchStore.lastSearchURL = route.fullPath
 
    searchStore.getProjects()
 })
@@ -239,25 +179,6 @@ const viewClicked = ((projID) => {
 
 const canAssign = (() => {
    return (userStore.isAdmin || userStore.isSupervisor)
-})
-
-const nextClicked = (() => {
-   searchStore.setCurrentPage(searchStore.currPage+1 )
-})
-
-const priorClicked = (() => {
-   searchStore.setCurrentPage(searchStore.currPage-1 )
-})
-const firstClicked = (() => {
-   searchStore.setCurrentPage( 1 )
-})
-
-const lastClicked = (() => {
-   searchStore.setCurrentPage(searchStore.totalPages )
-})
-
-const pageJumpClicked = ((p) => {
-   searchStore.setCurrentPage( p )
 })
 
 const ownerInfo = ((p) => {
@@ -310,59 +231,7 @@ const deleteProjectClicked = ((p) => {
       margin-top: 50px;
       flex-grow: 1;
    }
-   .toolbar {
-      padding: 5px 10px;
-      text-align: right;
-      background: var(--uvalib-grey-lightest);
-      border-top: 1px solid var(--uvalib-grey);
-      border-bottom: 1px solid var(--uvalib-grey);
-      display: flex;
-      flex-flow: row;
-      justify-content: flex-start;
-      align-items: center;
 
-      .filter {
-         display: flex;
-         flex-flow: row nowrap;
-         justify-content: flex-start;
-         align-items: baseline;
-
-         label {
-            display: flex;
-            flex-flow: row nowrap;
-            align-items: center;
-            margin: 0;
-            padding: 0;
-            margin-right: 25px;
-            cursor: pointer;
-            span {
-               display: inline-block;
-               position: relative;
-               top: 2px;
-            }
-            .count {
-               display: inline-block;
-               top: 0;
-               color: var(--uvalib-grey);
-            }
-            &:hover {
-               text-decoration: underline;
-            }
-         }
-         input {
-            cursor: pointer;
-            margin-right: 8px;
-            display: inline-block;
-            width: 15px;
-            height: 15px;
-         }
-      }
-
-      .page-ctl {
-         margin-left: auto;
-         display: inline-block;
-      }
-   }
    .scroll-body {
       display: block;
       position: relative;

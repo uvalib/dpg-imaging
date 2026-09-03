@@ -1,23 +1,27 @@
 <template>
-   <Dialog v-model:visible="messageStore.viewMesage" :modal="true" header="Message Viewer"  :closable="false" style="width: 650px">
-      <dl>
-         <dt>Sent:</dt>
-         <dd><pre>{{ formatDate(message.sentAt) }}</pre></dd>
-         <dt>From:</dt>
-         <dd><pre>{{ system.getStaffMemberEmail( message.fromID ) }}</pre></dd>
-         <template v-if="message.recipients.length > 0">
-            <dt>To:</dt>
-            <dd><pre>{{ recipients }}</pre></dd>
-         </template>
-         <dt>Subject:</dt>
-         <dd>{{message.subject}}</dd>
-      </dl>
-      <div class="msg">{{message.message}}</div>
-      <template #footer>
-         <DPGButton @click="replyClicked" label="Reply" severity="secondary"/>
-         <DPGButton @click="hide" label="OK" severity="secondary"/>
+   <UModal v-model:open="messageStore.viewMesage" :modal="true" :dismissible="false" :close="false" title="Message Viewer">
+      <template #body v-if="message">
+         <dl>
+            <template>
+               <dt>Sent:</dt>
+               <dd><pre>{{ formatDate(message.sentAt) }}</pre></dd>
+            </template>
+            <dt>From:</dt>
+            <dd><pre>{{ system.getStaffMemberEmail( message.fromID ) }}</pre></dd>
+            <template v-if="message.recipients.length > 0">
+               <dt>To:</dt>
+               <dd><pre>{{ recipients }}</pre></dd>
+            </template>
+            <dt>Subject:</dt>
+            <dd>{{message.subject}}</dd>
+         </dl>
+         <div class="msg">{{message.message}}</div>
       </template>
-   </Dialog>
+      <template #footer="{ close }">
+         <UButton label="Reply" color="secondary" @click="replyClicked" />
+         <UButton label="OK" color="secondary"  @click="hide" />
+      </template>
+   </UModal>
 </template>
 
 <script setup>
@@ -25,7 +29,6 @@ import { computed } from 'vue'
 import { useMessageStore } from '@/stores/messages'
 import { useSystemStore } from '@/stores/system'
 import { useUserStore } from '@/stores/user'
-import Dialog from 'primevue/dialog'
 import { useDateFormat } from '@vueuse/core'
 
 const messageStore = useMessageStore()
@@ -60,8 +63,7 @@ const hide =(() => {
 
 <style lang="scss" scoped>
    div.msg {
-      margin-top: 5px;
-      padding: 15px;
+      padding-top: 15px;
       border-top: 1px solid var(--uvalib-grey-light);
       white-space: pre-wrap;
       text-align: left;

@@ -24,17 +24,17 @@
 
          <div class="row">
             <label for="order">Order</label>
-            <input id="order" v-model="searchStore.search.orderID" @keyup.enter="doSearch()">
+            <input type="text" id="order" v-model="searchStore.search.orderID" @keyup.enter="doSearch()">
          </div>
 
          <div class="row">
             <label for="unit">Unit</label>
-            <input id="unit" v-model="searchStore.search.unitID" @keyup.enter="doSearch()">
+            <input type="text" id="unit" v-model="searchStore.search.unitID" @keyup.enter="doSearch()">
          </div>
 
          <div class="row">
             <label for="call">Call Number</label>
-            <input id="call" v-model="searchStore.search.callNumber" @keyup.enter="doSearch()">
+            <input type="text" id="call" v-model="searchStore.search.callNumber" @keyup.enter="doSearch()">
          </div>
 
          <div class="row">

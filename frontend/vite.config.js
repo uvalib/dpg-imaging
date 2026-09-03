@@ -35,7 +35,7 @@ export default defineConfig({
             },
             header: {
                slots: {
-                  root: "!bg-brand-blue",
+                  root: "!bg-brand-blue h-auto", // h-auto needed to make header height include bottom slot
                   container: "!px-5 !py-5 !max-w-full",
                   right: "text-white",
                   body: "bg-brand-blue",
@@ -69,6 +69,24 @@ export default defineConfig({
                   childLinkLabel: "hover:bg-brand-blue-alt  px-2 py-1 rounded-lg",
                   linkTrailingIcon: "!text-white"
                },
+            },
+            radioGroup: {
+               slots: {
+                  fieldset: 'flex gap-6',
+                  legend: 'mb-1 block font-medium text-default',
+                  item: 'flex items-start gap-2',
+                  container: 'flex items-center',
+                  base: 'rounded-full ring ring-inset ring-accented overflow-hidden focus-visible:outline-none',
+                  indicator:  'flex items-center justify-center size-full after:bg-default after:rounded-full ',
+                  label: 'text-black',
+               },
+               variants: {
+                  color: {
+                     info: {
+                        base: 'focus-visible:outline-none hover:bg-brand-blue-alt-300  focus:outline-offset-2 focus:outline-dotted focus:outline-brand-blue-alt-100',   
+                     }
+                  }
+               }
             },
             toast: {
                slots: {

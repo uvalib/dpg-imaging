@@ -1,40 +1,40 @@
 <template>
-   <Dialog v-model:visible="messageStore.showCreateModal" :modal="true" header="New Message"
-      @hide="cancelMessage" style="width:650px;" :closable="false">
-      <div class="content">
-         <div class="row">
-            <label>To</label>
-            <MultiSelect v-model="messageStore.newMessage.to" :options="staffMembers"
-               optionLabel="name" optionValue="id" display="chip"
-               filter autoFilterFocus resetFilterOnHide filterMatchMode="startsWith"
-               placeholder="Select recipients" />
+   <UModal v-model:open="messageStore.showCreateModal" :modal="true" :dismissible="false" :close="false" title="New Message">
+      <template #body>
+         <div class="content">
+            <div class="row">
+               <label>To</label>
+               <MultiSelect v-model="messageStore.newMessage.to" :options="staffMembers"
+                  optionLabel="name" optionValue="id" display="chip"
+                  filter autoFilterFocus resetFilterOnHide filterMatchMode="startsWith"
+                  placeholder="Select recipients" />
+            </div>
+            <div class="row">
+               <label>Subject</label>
+               <input type="text" v-model="messageStore.newMessage.subject" />
+            </div>
+            <div class="row">
+               <label v-if="messageStore.isResponse">Response</label>
+               <label v-else>Message</label>
+               <textarea :rows="10" v-model="messageStore.newMessage.message"></textarea>
+            </div>
+            <div class="row" v-if="messageStore.isResponse">
+               <label>Original Message</label>
+               <textarea :rows="5" v-model="message.message" readonly disabled></textarea>
+            </div>
+            <p class="error" v-if="messageStore.error">{{messageStore.error}}</p>
          </div>
-         <div class="row">
-            <label>Subject</label>
-            <input  v-model="messageStore.newMessage.subject" />
-         </div>
-         <div class="row">
-            <label v-if="messageStore.isResponse">Response</label>
-            <label v-else>Message</label>
-            <textarea :rows="10" v-model="messageStore.newMessage.message"></textarea>
-         </div>
-         <div class="row" v-if="messageStore.isResponse">
-            <label>Original Message</label>
-            <textarea :rows="5" v-model="message.message" readonly disabled></textarea>
-         </div>
-         <p class="error" v-if="messageStore.error">{{messageStore.error}}</p>
-      </div>
-      <template #footer>
-         <DPGButton @click="cancelMessage" label="Cancel" severity="secondary"/>
-         <DPGButton @click="sendMessage" label="Send"/>
       </template>
-   </Dialog>
+      <template #footer="{}">
+         <UButton label="Cancel" color="secondary" @click="cancelMessage" />
+         <UButton label="Send"  @click="sendMessage" />
+      </template>
+   </UModal>
 </template>
 
 <script setup>
 import { useMessageStore } from "@/stores/messages"
 import { useSystemStore } from "@/stores/system"
-import Dialog from 'primevue/dialog'
 import MultiSelect from 'primevue/multiselect'
 import { computed } from 'vue'
 

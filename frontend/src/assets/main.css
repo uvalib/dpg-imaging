@@ -71,6 +71,27 @@
   --ui-error: var( --uvalib-red-emergency);
 }
 
+
+input[type=text],
+select,
+textarea {
+   box-sizing: border-box;
+   border-radius: 0.3rem;
+   border: 1px solid var(--uvalib-grey-light);
+   width: 100%;
+}
+input[type=checkbox] {
+   cursor: pointer;
+}
+
+h2 {
+   color: var(--uvalib-brand-blue);
+   margin: 10px 0;
+   position: relative;
+   font-size: 1.5em;
+   font-weight: bold;
+}
+
 #app {
   margin: 0;
   padding: 0;
@@ -78,25 +99,8 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-size: 16px;
-  
-  /* input,
-   select,
-   textarea {
-      box-sizing: border-box;
-      border-radius: 4px;
-      padding: 5px 8px;
-      border: 1px solid var(--uvalib-grey-light);
-      width: 100%;
-   }
-   input[type=checkbox] {
-      cursor: pointer;
-   }
 
-   h2 {
-      color: var(--uvalib-brand-blue);
-      margin: 10px 0;
-      position: relative;
-  }
+/* 
 
   a {
       color: var(--uvalib-blue-alt-dark);
@@ -132,22 +136,13 @@
             color: #ddd;
          }
       }
-   }
-
-   .panel-actions {
-      padding: 0;
-      display: flex;
-      flex-flow: row nowrap;
-      justify-content: flex-end;
-      align-items: flex-start;
-      gap: 10px;
    }*/
 
-   .sticky-bar {
+   /* .sticky-bar {
       position: fixed;
       z-index: 1000;
       top: 0;
       border-bottom: 1px solid var(--uvalib-grey-light);
-   } 
+   }  */
 }
 

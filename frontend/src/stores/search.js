@@ -165,10 +165,9 @@ export const useSearchStore = defineStore('search', {
          }
       },
 
-      changeFilter( newFilter ) {
+      filterChanged() {
          this.pageSize =  20
          this.currPage = 1
-         this.filter = newFilter
       },
 
       setPage(pg) {

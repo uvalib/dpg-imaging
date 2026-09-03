@@ -10,7 +10,7 @@
          </template>
 
          <!-- this is the main menu. shows up in the center of the header if size allows -->
-         <UNavigationMenu highlight content-orientation="vertical" :items="menuItems" />
+         <UNavigationMenu v-if="userStore.isSignedIn" highlight content-orientation="vertical" :items="menuItems" />
 
          <template #right>
             <div class="site-link">
@@ -19,27 +19,40 @@
             </div>
          </template>
 
-         <template #body>
+         <template v-if="userStore.isSignedIn"  #body>
             <UNavigationMenu :items="menuItems" orientation="vertical" highlight class="-mx-2.5" />
          </template>
+         
+         <!-- This adds a section below the left/default/right. 
+              The theme needs to be update to make header root h-auto to -include it in the uverall height -->
+         <template v-if="route.path == '/'" #bottom>
+            <div class="toolbar">
+               <URadioGroup orientation="horizontal" size="lg" color="info" v-model="searchStore.filter" value-key="id" :items="filters" @update:modelValue="filterChanged"/>
+               <div class="page-ctl" v-if="!searchStore.working && searchStore.projects.length>0">
+                  <DPGPagination :currPage="searchStore.currPage" :pageSize="searchStore.pageSize" :totalPages="searchStore.totalPages"
+                     @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
+                     @jump="pageJumpClicked"
+                  />
+               </div>
+            </div>
+         </template> 
       </UHeader>
 
-      <main>
+      <UMain>
          <router-view v-if="systemStore.initializing==false"/>
-         <div v-else style="margin-top:5%">
-            <WaitSpinner :overlay="false" message="Initializing sysem..." />
-         </div>
-      </main>
+      </UMain>
 
-      <Dialog v-model:visible="systemStore.showError" :modal="true" header="System Error" @hide="errorClosed()" class="error">
-         <div style="text-align: left" v-html="systemStore.error"></div>
-         <template #footer>
-            <DPGButton @click="errorClosed()" label="OK" severity="secondary"/>
+      <div v-if="systemStore.initializing" style="margin-top:5%">
+         <WaitSpinner :overlay="true" message="Initializing sysem..." />
+      </div>
+
+      <UModal v-model:open="systemStore.showError" :modal="true" :dismissible="false" title="System Error">
+         <template #body>
+            <div style="text-align: left" v-html="systemStore.error"></div>
          </template>
-      </Dialog>
+      </UModal>
       <MessageModal />
       <CreateMessageModal />
-      <ScrollTop />
    </UApp>
 </template>
 
@@ -48,17 +61,29 @@ import UvaLibraryLogo from "@/components/UvaLibraryLogo.vue"
 import {useSystemStore} from "@/stores/system"
 import {useUserStore} from "@/stores/user"
 import {useMessageStore} from "@/stores/messages"
-import { useRouter } from 'vue-router'
+import { useSearchStore } from "@/stores/search"
+import { useRouter, useRoute } from 'vue-router'
 import { onMounted, computed } from 'vue'
-import Dialog from 'primevue/dialog'
 import MessageModal from "./components/messages/MessageModal.vue"
 import CreateMessageModal from "./components/messages/CreateMessageModal.vue"
-import ScrollTop from 'primevue/scrolltop'
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
+const searchStore = useSearchStore()
 const router = useRouter()
+const route = useRoute()
+
+const filters = computed( () => {
+   const out = [
+      {id: "me", label: `Assigned to me (${searchStore.totals.me})`},
+      {id: "active", label: `Active (${searchStore.totals.active})`},
+      {id: "errors", label: `Problems (${searchStore.totals.errors})`},
+      {id: "unassigned", label: `Unassigned (${searchStore.totals.unassigned})`},
+      {id: "finished", label: `Finished (${searchStore.totals.finished})`},
+   ]
+   return out
+})
 
 const toaster = { duration: 5000, position: "top-center" }
 
@@ -85,14 +110,33 @@ const menuItems = computed(() => {
    return menu
 })
 
-const errorClosed = (() => {
-   systemStore.clearError()
+
+const filterChanged = ( async () => {
+   searchStore.filterChanged()
+   let query = Object.assign({}, route.query)
+   query.filter = searchStore.filter
+   await router.push({query})
+   searchStore.lastSearchURL = route.fullPath
+   searchStore.getProjects()
+})
+const nextClicked = (() => {
+   searchStore.setCurrentPage(searchStore.currPage+1 )
 })
 
-const messagesClicked = (() => {
-   router.push("/messages")
+const priorClicked = (() => {
+   searchStore.setCurrentPage(searchStore.currPage-1 )
+})
+const firstClicked = (() => {
+   searchStore.setCurrentPage( 1 )
 })
 
+const lastClicked = (() => {
+   searchStore.setCurrentPage(searchStore.totalPages )
+})
+
+const pageJumpClicked = ((p) => {
+   searchStore.setCurrentPage( p )
+})
 
 const signout = (() => {
    userStore.signout()
@@ -123,6 +167,16 @@ div.library-link {
    
 div.site-link {
    font-size: 1.3em;
+}
+
+.toolbar {
+   padding: 5px 10px;
+   background: var(--uvalib-grey-lightest);
+   display: flex;
+   flex-flow: row;
+   justify-content: space-between;
+   align-items: center;
+   min-height: 50px;
 }
 
 </style>
