@@ -58,8 +58,8 @@
 }
 
 :root {
-  --ui-border: var( --color-brand-grey );
-  --ui-border-muted: var( --color-brand-grey-100 );
+  --ui-border: var( --color-brand-grey-100 );
+  --ui-border-muted: var( --color-brand-grey-200 );
   --ui-border-accented: var(--color-brand-grey-B);
   --ui-border-inverted: var(--color-white);
  
@@ -79,18 +79,23 @@ textarea {
    border-radius: 0.3rem;
    border: 1px solid var(--uvalib-grey-light);
    width: 100%;
+   padding: 4px 12px;
+   &:focus {
+      outline: 2px dashed var(--color-brand-grey-100 );
+      outline-offset: 3px;
+   }
 }
 input[type=checkbox] {
    cursor: pointer;
 }
 
-h2 {
+/* h2 {
    color: var(--uvalib-brand-blue);
    margin: 10px 0;
    position: relative;
    font-size: 1.5em;
    font-weight: bold;
-}
+} */
 
 #app {
   margin: 0;

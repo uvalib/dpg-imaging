@@ -4,10 +4,8 @@
          <div class="content">
             <div class="row">
                <label>To</label>
-               <MultiSelect v-model="messageStore.newMessage.to" :options="staffMembers"
-                  optionLabel="name" optionValue="id" display="chip"
-                  filter autoFilterFocus resetFilterOnHide filterMatchMode="startsWith"
-                  placeholder="Select recipients" />
+               <USelectMenu v-model="messageStore.newMessage.to" multiple :items="staffMembers" 
+                  clear value-key="id" placeholder="Select recipients" />
             </div>
             <div class="row">
                <label>Subject</label>
@@ -35,7 +33,6 @@
 <script setup>
 import { useMessageStore } from "@/stores/messages"
 import { useSystemStore } from "@/stores/system"
-import MultiSelect from 'primevue/multiselect'
 import { computed } from 'vue'
 
 const messageStore = useMessageStore()
@@ -44,7 +41,7 @@ const systemStore = useSystemStore()
 const staffMembers = computed( () => {
    let out = []
    systemStore.activeStaff.forEach( sm => {
-      out.push( { name: `${sm.lastName}, ${sm.firstName}`, id: sm.id})
+      out.push( { label: `${sm.lastName}, ${sm.firstName}`, id: sm.id})
    })
    return out
 })

@@ -1,8 +1,21 @@
 <template>
    <div class="messages">
       <h2>Messages</h2>
-      <DPGButton @click="createClicked" severity="secondary" label="Create Message"/>
-      <Tabs value="inbox">
+      <UButton label="Create Message" color="secondary" @click="createClicked" />
+      <UTabs :items="tabs" variant="link" >
+         <template #inbox>
+            <div v-if="messageStore.inbox.length == 0">
+               <h3>You have no messages in your inbox</h3>
+            </div>
+            <UTable v-else :data="messageStore.inbox" class="flex-1" />
+         </template>
+         <template #sent>
+            <div v-if="messageStore.sent.length == 0">
+               <h3>You have no sent messages</h3>
+            </div>
+         </template>
+      </UTabs>
+      <!-- <Tabs value="inbox">
          <TabList>
             <Tab value="inbox">Inbox</Tab>
              <Tab value="sent">Sent</Tab>
@@ -37,8 +50,8 @@
                   <Column header="">
                      <template #body="slotProps">
                         <div class="acts">
-                           <DPGButton @click="viewClicked(slotProps.data.id)" severity="secondary" size="small" label="View"/>
-                           <DPGButton @click="deleteClicked(slotProps.data.id)" severity="danger" size="small" label="Delete"/>
+                           <UButton label="View" color="secondary" @click="viewClicked(slotProps.data.id)" />
+                           <UButton label="Delete" color="error" @click="deleteClicked(slotProps.data.id)" />
                         </div>
                      </template>
                   </Column>
@@ -79,7 +92,7 @@
                </DataTable>
             </TabPanel>
          </TabPanels>
-      </Tabs>
+      </Tabs> -->
    </div>
 </template>
 
@@ -99,6 +112,17 @@ import { useDateFormat } from '@vueuse/core'
 const system = useSystemStore()
 const messageStore = useMessageStore()
 const user = useUserStore()
+
+const tabs = [
+  {
+    label: 'Inbox',
+    slot: 'inbox'
+  },
+  {
+    label: 'Sent',
+    slot: 'sent'
+  }
+]
 
 const rowStyle = (data) => {
    let style = { fontWeight: '100'}

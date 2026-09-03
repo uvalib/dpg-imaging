@@ -24,7 +24,7 @@ export default defineConfig({
                   {
                      color: "secondary",
                      variant: "solid",
-                     class: "border border-muted hover:bg-gray-200 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100",
+                     class: "border border-brand-grey-100 hover:bg-gray-200 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100",
                   },
                   {
                      color: "error",
@@ -84,6 +84,31 @@ export default defineConfig({
                   color: {
                      info: {
                         base: 'focus-visible:outline-none hover:bg-brand-blue-alt-300  focus:outline-offset-2 focus:outline-dotted focus:outline-brand-blue-alt-100',   
+                     }
+                  }
+               }
+            },
+            input: {
+               slots: {
+                  root: '!bg-white !text-black',
+                  base: '!bg-white !text-black  !border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-blue-alt-100'
+               },
+            },
+            selectMenu: {
+               slots: {
+                  base: "!bg-white !text-black !ring-brand-grey-100  focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100", // ring is the border color
+                  content: "ring-brand-grey-100",
+                  viewport: "bg-white text-black",
+                  item: "text-black",
+                  focusScope: 'bg-white',
+                  empty: 'text-black'
+               },
+            },
+            tabs: {
+               variants: {
+                  variant: {
+                     link: {
+                        trigger: "rounded-none hover:data-[state=inactive]:not-disabled:text-black"
                      }
                   }
                }
