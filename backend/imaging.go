@@ -587,16 +587,28 @@ func parseExifData(exifMD *exifData) masterFileMetadata {
 			mdRec.ComponentID = ""
 		}
 	}
-	if exifMD.Box != nil {
-		mdRec.Box = fmt.Sprintf("%v", exifMD.Box)
-		if mdRec.Box == "<nil>" {
-			mdRec.Box = ""
+
+	locStr := fmt.Sprintf("%v", exifMD.Location)
+	if locStr != "<nil>" {
+		// format: [container type] [container id], Folder [folder id]
+		bits := strings.Split(locStr, ", ")
+		containerBits := strings.Split(bits[0], " ")
+		mdRec.Box = containerBits[len(containerBits)-1]
+		if len(bits) > 1 {
+			mdRec.Folder = strings.Replace(bits[1], "Folder ", "", 1)
 		}
-	}
-	if exifMD.Folder != nil {
-		mdRec.Folder = fmt.Sprintf("%v", exifMD.Folder)
-		if mdRec.Folder == "<nil>" {
-			mdRec.Folder = ""
+	} else {
+		if exifMD.Box != nil {
+			mdRec.Box = fmt.Sprintf("%v", exifMD.Box)
+			if mdRec.Box == "<nil>" {
+				mdRec.Box = ""
+			}
+		}
+		if exifMD.Folder != nil {
+			mdRec.Folder = fmt.Sprintf("%v", exifMD.Folder)
+			if mdRec.Folder == "<nil>" {
+				mdRec.Folder = ""
+			}
 		}
 	}
 
