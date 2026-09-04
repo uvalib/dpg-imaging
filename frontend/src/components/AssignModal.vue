@@ -1,22 +1,22 @@
 <template>
-   <DPGButton @click="show" :label="props.label" severity="secondary"/>
-   <Dialog v-model:visible="isOpen" :modal="true" header="Assign Project" :closable="false">
-      <Listbox v-model="assignee" :options="staff" filter optionLabel="name" optionValue="value" />
-      <p class="error">{{error}}</p>
-      <template #footer>
-         <DPGButton @click="hide" label="Cancel" severity="secondary"/>
-         <span class="spacer"></span>
-         <DPGButton @click="assignClicked" label="Assign"/>
+   <UButton @click="show" :label="props.label" color="secondary"/>
+   <UModal v-model:open="isOpen" :modal="true" :dismissible="false" title="Assign Project">
+      <template #body>
+         <!-- <Listbox v-model="assignee" :options="staff" filter optionLabel="name" optionValue="value" /> -->
+         <UListbox  v-model="assignee" :items="staff" virtualize filter />
+         <p class="error">{{error}}</p>
       </template>
-   </Dialog>
+      <template #footer>
+         <UButton @click="hide" label="Cancel" color="secondary"/>
+         <UButton @click="assignClicked" label="Assign"/>
+      </template>
+   </UModal>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import {useSystemStore} from '@/stores/system'
 import {useProjectStore} from '@/stores/project'
-import Dialog from 'primevue/dialog'
-import Listbox from 'primevue/listbox'
 
 const emit = defineEmits( ['assigned' ])
 
@@ -41,7 +41,7 @@ const error = ref("")
 const staff = computed( () => {
    let out = []
    systemStore.activeStaff.forEach( s => {
-      out.push({name: `${s.lastName}, ${s.firstName}`, value: s})
+      out.push({label: `${s.lastName}, ${s.firstName}`, value: s})
    })
    return out
 })

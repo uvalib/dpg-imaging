@@ -104,6 +104,13 @@ export default defineConfig({
                   base: '!bg-white !text-black  !border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-blue-alt-100'
                },
             },
+            listbox: {
+               slots: {
+                  item: [ // the items style is an ARRY and teh second elemsnt defaults to transition animattion. just override stuff at idx 0
+                     'data-highlighted:not-data-disabled:before:bg-brand-blue-alt-300',
+                  ],
+               }
+            },
             select: {
                slots: {
                   base: "focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100",

@@ -93,10 +93,10 @@
                               <span v-else class="assigned">{{ownerInfo(p)}}</span>
                            </span>
                            <span class="owner-buttons">
-                              <DPGButton @click="deleteProjectClicked(p)" class="delete" severity="danger" v-if="userStore.isSupervisor || userStore.isAdmin" label="Delete"/>
-                              <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)" severity="secondary" label="Claim"/>
+                              <UButton @click="deleteProjectClicked(p)" class="delete" color="error" v-if="userStore.isSupervisor || userStore.isAdmin" label="Delete"/>
+                              <UButton v-if="canClaim(p)" @click="claimClicked(p.id)" color="secondary" label="Claim"/>
                               <AssignModal  v-if="canAssign" :projectID="p.id" @assigned="searchStore.getProjects()" />
-                              <DPGButton  severity="secondary" @click="viewClicked(p.id)" label="View"/>
+                              <UButton  color="secondary" @click="viewClicked(p.id)" label="View"/>
                            </span>
                         </div>
                      </div>
