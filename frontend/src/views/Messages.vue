@@ -1,98 +1,33 @@
 <template>
    <div class="messages">
       <h2>Messages</h2>
-      <UButton label="Create Message" color="secondary" @click="createClicked" />
+      <div style="text-align: center;margin:15px 0">
+         <UButton label="Create Message" color="secondary" @click="createClicked" />
+      </div>
       <UTabs :items="tabs" variant="link" >
          <template #inbox>
             <div v-if="messageStore.inbox.length == 0">
                <h3>You have no messages in your inbox</h3>
             </div>
-            <UTable v-else :data="messageStore.inbox" class="flex-1" />
+            <UTable v-else :data="inboxData" :columns="inboxCols" v-model:column-visibility="columnVisibility">
+               <template #actions-cell="{ row }">
+                  <UDropdownMenu :items="getInboxActions(row.original)">
+                     <UButton
+                        icon="i-lucide-ellipsis-vertical"
+                        color="secondary"
+                        aria-label="Actions"
+                     />
+                  </UDropdownMenu>
+               </template>
+            </UTable>
          </template>
          <template #sent>
             <div v-if="messageStore.sent.length == 0">
                <h3>You have no sent messages</h3>
             </div>
+            <UTable v-else :data="sentData"  v-model:column-visibility="columnVisibility" />
          </template>
       </UTabs>
-      <!-- <Tabs value="inbox">
-         <TabList>
-            <Tab value="inbox">Inbox</Tab>
-             <Tab value="sent">Sent</Tab>
-         </TabList>
-         <TabPanels>
-            <TabPanel value="inbox">
-               <div v-if="messageStore.inbox.length == 0">
-                  <h3>You have no messages in your inbox</h3>
-               </div>
-               <DataTable v-else :value="messageStore.inbox" ref="inboxTable" dataKey="id"
-                   showGridlines responsiveLayout="scroll" class="p-datatable-sm" :rowStyle="rowStyle"
-                  :lazy="false" :paginator="messageStore.inbox.length > 15" :rows="15" :rowsPerPageOptions="[15,30,50]" removableSort
-                  paginatorTemplate="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink RowsPerPageDropdown"
-                  currentPageReportTemplate="{first} - {last} of {totalRecords}"
-               >
-                  <Column field="sentAt" header="Date" class="nowrap">
-                     <template #body="slotProps">
-                        {{formatDate(slotProps.data.sentAt)}}
-                     </template>
-                  </Column>
-                  <Column field="fromID" header="From">
-                     <template #body="slotProps">
-                     <div>{{ system.getStaffMemberEmail(slotProps.data.fromID) }}</div>
-                     </template>
-                  </Column>
-                  <Column field="subject" header="Subject"/>
-                  <Column field="message" header="Message" class="grow">
-                     <template #body="slotProps">
-                        {{truncateMessage(slotProps.data.message)}}
-                     </template>
-                  </Column>
-                  <Column header="">
-                     <template #body="slotProps">
-                        <div class="acts">
-                           <UButton label="View" color="secondary" @click="viewClicked(slotProps.data.id)" />
-                           <UButton label="Delete" color="error" @click="deleteClicked(slotProps.data.id)" />
-                        </div>
-                     </template>
-                  </Column>
-               </DataTable>
-            </TabPanel>
-            <TabPanel value="sent">
-               <div v-if="messageStore.sent.length == 0">
-                  <h3>You have no sent messages</h3>
-               </div>
-               <DataTable v-else :value="messageStore.sent" ref="inboxTable" dataKey="id"
-                  stripedRows showGridlines responsiveLayout="scroll" class="p-datatable-sm"
-                  :lazy="false" :paginator="messageStore.sent.length > 15" :rows="15" :rowsPerPageOptions="[15,30,50]" removableSort
-                  paginatorTemplate="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink RowsPerPageDropdown"
-                  currentPageReportTemplate="{first} - {last} of {totalRecords}"
-               >
-                  <Column field="read" header="Read"  class="icon">
-                     <template #body="slotProps">
-                        <span v-if="slotProps.data.read">Yes</span>
-                        <span e-else>No</span>
-                     </template>
-                  </Column>
-                  <Column field="sentAt" header="Date" class="nowrap">
-                     <template #body="slotProps">
-                        {{formatDate(slotProps.data.sentAt)}}
-                     </template>
-                  </Column>
-                  <Column field="to" header="To">
-                     <template #body="slotProps">
-                        <div>{{ recipients(slotProps.data.recipients) }}</div>
-                     </template>
-                  </Column>
-                  <Column field="subject" header="Subject"/>
-                  <Column field="message" header="Message" class="grow">
-                     <template #body="slotProps">
-                        {{truncateMessage(slotProps.data.message)}}
-                     </template>
-                  </Column>
-               </DataTable>
-            </TabPanel>
-         </TabPanels>
-      </Tabs> -->
    </div>
 </template>
 
@@ -100,14 +35,8 @@
 import {useSystemStore} from "@/stores/system"
 import {useMessageStore} from "@/stores/messages"
 import { useUserStore } from "@/stores/user"
-import Tabs from 'primevue/tabs'
-import TabList from 'primevue/tablist'
-import Tab from 'primevue/tab'
-import TabPanels from 'primevue/tabpanels'
-import TabPanel from 'primevue/tabpanel'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
 import { useDateFormat } from '@vueuse/core'
+import { computed, ref } from "vue"
 
 const system = useSystemStore()
 const messageStore = useMessageStore()
@@ -124,20 +53,16 @@ const tabs = [
   }
 ]
 
-const rowStyle = (data) => {
-   let style = { fontWeight: '100'}
-   data.recipients.forEach( r => {
-      if (r.staffID == user.ID && r.read == false ) {
-         style.fontWeight = 'bold'
-      }
+const sentData = computed(() => {
+   let out = []
+   messageStore.sent.forEach( m => {
+      let read = "No"
+      if  (m.read ) read = "Yes"
+      out.push({id: m.id, read: read, date: formatDate(m.sentAt), to: recipients(m.recipients), 
+         subject: m.subject, message: truncateMessage(m.message) })
    })
-   return style
-}
-
-const createClicked = (() => {
-   messageStore.beginMessageCreate()
+   return out
 })
-
 const recipients = ( list ) => {
    let out = []
    list.forEach( r => {
@@ -146,6 +71,78 @@ const recipients = ( list ) => {
    return out.join("; ")
 }
 
+const inboxData = computed(() => {
+   let out = []
+   messageStore.inbox.forEach( m => {
+      let read = "No"
+      m.recipients.some( r => {
+         if (r.staffID == user.ID && r.read ) {
+            read = "Yes"
+         }
+         return read == "Yes"
+      })
+      out.push({id: m.id, read: read, date: formatDate(m.sentAt), from: system.getStaffMemberEmail(m.fromID), 
+         subject: m.subject, message: truncateMessage(m.message), recipients: m.recipients })
+   })
+   return out
+})
+const inboxCols = [
+   {
+      accessorKey: 'id',
+   },
+   {
+      accessorKey: 'read',
+      header: 'Read'
+   },
+   {
+      accessorKey: 'date',
+      header: 'Date'
+   },
+   {
+      accessorKey: 'from',
+      header: 'From'
+   },
+   {
+      accessorKey: 'subject',
+      header: 'Subject'
+   },
+   {
+      accessorKey: 'message',
+      header: 'Message'
+   },
+   {
+      id: 'actions'
+   }
+]
+
+const columnVisibility = ref({
+  id: false, 
+  recipients: false
+})
+
+const getInboxActions = ((msg) => {
+   return [
+      [
+         {
+            label: 'View',
+            icon: 'i-lucide-view',
+            onSelect: () => messageStore.viewMessage(user.ID, msg.id)
+         }
+      ],
+      [
+         {
+            label: 'Delete',
+            icon: 'i-lucide-trash',
+            onSelect: () => messageStore.deleteMessage(msg.id)
+         }
+      ]
+   ]
+})
+
+const createClicked = (() => {
+   messageStore.beginMessageCreate()
+})
+
 const formatDate =(( date ) => {
    return useDateFormat(date, "YYYY-MM-DD hh:mm A")
 })
@@ -153,14 +150,6 @@ const formatDate =(( date ) => {
 const truncateMessage = ((msg) => {
    if (msg.length < 100) return msg
    return msg.slice(0,100)+"..."
-})
-
-const viewClicked = ((msgID) => {
-   messageStore.viewMessage(user.ID, msgID)
-})
-
-const deleteClicked = ((msgID) => {
-   messageStore.deleteMessage(msgID)
 })
 </script>
 

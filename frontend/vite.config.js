@@ -31,7 +31,19 @@ export default defineConfig({
                      variant: "solid",
                      class: "text-white focus:outline-offset-2 focus:outline-1 focus:outline-dashed",
                   },
+                  {
+                     color: "nettral",
+                     variant: "ghost",
+                     class: "text-white hover:bg-gray-200 focus:outline-offset-2 focus:outline-1 focus:outline-dashed",
+                  },
                ],
+            },
+            dropdownMenu: {
+               slots: {
+                  label: "bg-brand-grey-100 rounded-t-sm font-bold",
+                  viewport: "bg-white text-black",
+                  item: "hover:bg-brand-blue-alt-400 rounded-sm"
+               }
             },
             header: {
                slots: {
@@ -60,13 +72,11 @@ export default defineConfig({
                   color: 'neutral',
                },
                slots: {
-                  root: '!justify-end',
-                  item: "!py-1",
-                  link: "gap-1",
+                  link: "before:rounded-none gap-1 focus-visible:before:outline-dashed focus-visible:before:outline-brand-blue-alt-200 focus-visible:before:outline-1",
                   linkLabel: "text-white hover:bg-brand-blue-alt px-2 py-1 rounded-lg",
                   linkLeadingIcon: "!text-white",
                   childLinkIcon: "!text-white",
-                  childLinkLabel: "hover:bg-brand-blue-alt  px-2 py-1 rounded-lg",
+                  childLinkLabel: "hover:bg-brand-blue-alt  px-2 py-1 rounded-lg text-white",
                   linkTrailingIcon: "!text-white"
                },
             },
@@ -83,7 +93,7 @@ export default defineConfig({
                variants: {
                   color: {
                      info: {
-                        base: 'focus-visible:outline-none hover:bg-brand-blue-alt-300  focus:outline-offset-2 focus:outline-dotted focus:outline-brand-blue-alt-100',   
+                        base: 'focus-visible:outline-none hover:bg-brand-blue-alt-300 focus:outline-offset-2 focus:outline-dotted focus:outline-brand-blue-alt-100',   
                      }
                   }
                }
@@ -108,7 +118,7 @@ export default defineConfig({
                variants: {
                   variant: {
                      link: {
-                        trigger: "rounded-none hover:data-[state=inactive]:not-disabled:text-black"
+                        trigger: "rounded-none hover:data-[state=inactive]:bg-brand-grey-200 hover:data-[state=inactive]:font-bold data-[state=inactive]:cursor-pointer"
                      }
                   }
                }

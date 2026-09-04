@@ -41,6 +41,7 @@ div.spinner-overlay {
    height: 100%;
    z-index: 1000;
    background: rgba(100,100,100,0.3);
+   text-align: left;
    .spinner {
       position: relative;
       box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);;
@@ -56,6 +57,11 @@ div.spinner {
    display: inline-block;
    font-weight: bold;
    color: var(--uvalib-text);
+   h3 {
+      font-size: 1.15em;
+      font-weight: bold;
+      margin-bottom: 10px 0;
+   }
 }
 div.spinner.embed {
    box-shadow: none;
