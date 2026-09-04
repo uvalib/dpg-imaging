@@ -64,7 +64,6 @@ export default defineConfig({
                   content: "bg-white",
                   footer: "justify-end sm:px-4 p-4",
                   body: "border-0"
-                  // body: () => 'text-base font-bold' // this syntax removes all default styles
                }
             },
             navigationMenu: {
@@ -77,7 +76,8 @@ export default defineConfig({
                   linkLeadingIcon: "!text-white",
                   childLinkIcon: "!text-white",
                   childLinkLabel: "hover:bg-brand-blue-alt  px-2 py-1 rounded-lg text-white",
-                  linkTrailingIcon: "!text-white"
+                  linkTrailingIcon: "!text-white",
+                  viewport: "ring-black bg-brand-blue"
                },
             },
             radioGroup: {
@@ -104,12 +104,30 @@ export default defineConfig({
                   base: '!bg-white !text-black  !border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-blue-alt-100'
                },
             },
+            select: {
+               slots: {
+                  base: "focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100",
+                  viewport: "bg-white text-black",
+                  item: [ // the items style is an ARRY and teh second elemsnt defaults to transition animattion. just override stuff at idx 0
+                     'data-highlighted:not-data-disabled:before:bg-brand-blue-alt-300',
+                  ],
+               },
+               compoundVariants: [
+                  {
+                     color: 'primary',
+                     variant: 'outline',
+                     class: 'bg-white text-black ring-brand-grey-100 hover:bg-white hover:outline-2', 
+                  },
+               ]
+            },
             selectMenu: {
                slots: {
-                  base: "!bg-white !text-black !ring-brand-grey-100  focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100", // ring is the border color
+                  base: "!bg-white !text-black !ring-brand-grey-100  focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100",
                   content: "ring-brand-grey-100",
                   viewport: "bg-white text-black",
-                  item: "text-black",
+                  item: [
+                     'data-highlighted:not-data-disabled:before:bg-brand-blue-alt-300',
+                  ],
                   focusScope: 'bg-white',
                   empty: 'text-black'
                },
