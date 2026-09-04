@@ -11,8 +11,6 @@
 <style scoped lang="scss">
 .notfound {
    padding: 25px;
-   h2 {
-      color: var(--uvalib-brand-orange);
-   }
+   text-align: center;
 }
 </style>

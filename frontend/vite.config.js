@@ -32,7 +32,7 @@ export default defineConfig({
                      class: "text-white focus:outline-offset-2 focus:outline-1 focus:outline-dashed",
                   },
                   {
-                     color: "nettral",
+                     color: "neutral",
                      variant: "ghost",
                      class: "text-white hover:bg-gray-200 focus:outline-offset-2 focus:outline-1 focus:outline-dashed",
                   },
