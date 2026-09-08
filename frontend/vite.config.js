@@ -24,7 +24,7 @@ export default defineConfig({
                   {
                      color: "secondary",
                      variant: "solid",
-                     class: "border border-brand-grey-100 hover:bg-gray-200 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100",
+                     class: "border bg-brand-grey-200 text-black border-brand-grey-100 hover:bg-gray-200 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100",
                   },
                   {
                      color: "error",
@@ -40,9 +40,7 @@ export default defineConfig({
             },
             dropdownMenu: {
                slots: {
-                  label: "bg-brand-grey-100 rounded-t-sm font-bold",
-                  viewport: "bg-white text-black",
-                  item: "hover:bg-brand-blue-alt-400 rounded-sm"
+                  item: "hover:bg-brand-blue-alt-300 rounded-md"
                }
             },
             header: {
@@ -59,36 +57,53 @@ export default defineConfig({
                rounded: 'rounded-sm',
                slots: {
                   header: "bg-brand-teal-200 flex items-center gap-0 p-2.5 sm:px-2.5 min-h-0",
-                  title: 'font-semibold text-black',
+                  content: "outline-brand-grey outline-1",
                   close: 'absolute top-1.5 end-1.5 rounded-full text-black hover:bg-brand-teal-100',
-                  content: "bg-white",
                   footer: "justify-end sm:px-4 p-4",
-                  body: "border-0"
+                  body: "border-0",
+                  overlay: "!bg-brand-grey/70" // the /70 sets opacity
                }
             },
             navigationMenu: {
-               defaultVariants: {
-                  color: 'neutral',
-               },
                slots: {
-                  link: "before:rounded-none gap-1 focus-visible:before:outline-dashed focus-visible:before:outline-brand-blue-alt-200 focus-visible:before:outline-1",
-                  linkLabel: "text-white hover:bg-brand-blue-alt px-2 py-1 rounded-lg",
+                  link: "rounded-lg focus-visible:before:outline-dashed focus-visible:before:outline-brand-blue-alt-200 focus-visible:before:outline-1 hover:bg-brand-blue-alt",
+                  linkLabel: "text-white",
                   linkLeadingIcon: "!text-white",
-                  childLinkIcon: "!text-white",
-                  childLinkLabel: "hover:bg-brand-blue-alt  px-2 py-1 rounded-lg text-white",
                   linkTrailingIcon: "!text-white",
-                  viewport: "ring-black bg-brand-blue"
+                  childLink: "rounded-lg focus-visible:before:outline-dashed focus-visible:before:outline-brand-blue-alt focus-visible:before:outline-1 hover:bg-brand-blue-alt-300",
                },
+               variants: {
+                  active: {
+                     true: {
+                        childLink: 'before:bg-white hover:bg-brand-blue-alt-300 rounded-lg',
+                     }
+                  }
+               },
+               compoundVariants: [
+                  {
+                     disabled: false,
+                     variant: 'pill',
+                     highlight: true,
+                     orientation: 'horizontal',
+                     class: {
+                        link: 'data-[state=open]:before:bg-brand-blue-alt-A'
+                     }
+                  },
+                  {
+                     highlightColor: 'primary',
+                     highlight: true,
+                     level: true,
+                     active: true,
+                     class: {
+                        link: 'after:bg-white'
+                     }
+                  },
+               ]
             },
             radioGroup: {
                slots: {
-                  fieldset: 'flex gap-6',
-                  legend: 'mb-1 block font-medium text-default',
-                  item: 'flex items-start gap-2',
-                  container: 'flex items-center',
-                  base: 'rounded-full ring ring-inset ring-accented overflow-hidden focus-visible:outline-none',
-                  indicator:  'flex items-center justify-center size-full after:bg-default after:rounded-full ',
-                  label: 'text-black',
+                  fieldset: 'gap-6.5',
+                  item: 'gap-2',
                },
                variants: {
                   color: {
@@ -100,8 +115,7 @@ export default defineConfig({
             },
             input: {
                slots: {
-                  root: '!bg-white !text-black',
-                  base: '!bg-white !text-black  !border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-blue-alt-100'
+                  base: '!border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-blue-alt-100'
                },
             },
             listbox: {
@@ -114,7 +128,6 @@ export default defineConfig({
             select: {
                slots: {
                   base: "focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100",
-                  viewport: "bg-white text-black",
                   item: [ // the items style is an ARRY and teh second elemsnt defaults to transition animattion. just override stuff at idx 0
                      'data-highlighted:not-data-disabled:before:bg-brand-blue-alt-300',
                   ],
@@ -123,20 +136,17 @@ export default defineConfig({
                   {
                      color: 'primary',
                      variant: 'outline',
-                     class: 'bg-white text-black ring-brand-grey-100 hover:bg-white hover:outline-2', 
+                     class: 'ring-brand-grey-100 hover:bg-white hover:outline-2', 
                   },
                ]
             },
             selectMenu: {
                slots: {
-                  base: "!bg-white !text-black !ring-brand-grey-100  focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100",
-                  content: "ring-brand-grey-100",
-                  viewport: "bg-white text-black",
+                  base: "!ring-brand-grey-100  focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100", 
                   item: [
                      'data-highlighted:not-data-disabled:before:bg-brand-blue-alt-300',
                   ],
-                  focusScope: 'bg-white',
-                  empty: 'text-black'
+                 
                },
             },
             tabs: {

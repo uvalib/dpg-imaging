@@ -2,7 +2,6 @@
    <UButton @click="show" :label="props.label" color="secondary"/>
    <UModal v-model:open="isOpen" :modal="true" :dismissible="false" title="Assign Project">
       <template #body>
-         <!-- <Listbox v-model="assignee" :options="staff" filter optionLabel="name" optionValue="value" /> -->
          <UListbox  v-model="assignee" :items="staff" virtualize filter />
          <p class="error">{{error}}</p>
       </template>

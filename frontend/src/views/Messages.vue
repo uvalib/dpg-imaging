@@ -16,6 +16,7 @@
                         icon="i-lucide-ellipsis-vertical"
                         color="secondary"
                         aria-label="Actions"
+                        class="rounded-full"
                      />
                   </UDropdownMenu>
                </template>

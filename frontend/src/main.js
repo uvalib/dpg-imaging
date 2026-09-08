@@ -40,8 +40,10 @@ import ConfirmDialog from 'primevue/confirmdialog'
 app.component("DPGButton", Button)
 app.component("ConfirmDialog", ConfirmDialog)
 
-// NuxtUI
+// NuxtUI defaukted to LIGHT mode
 import ui from '@nuxt/ui/vue-plugin'
+import { useColorMode } from '@vueuse/core'
+useColorMode().value = 'light'
 app.use(ui)
 
 // Per some suggestions on vue / pinia git hub issue reports, create and add pinia support LAST

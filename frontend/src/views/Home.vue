@@ -116,10 +116,9 @@ import { useSystemStore } from "@/stores/system"
 import { useProjectStore } from "@/stores/project"
 import { useUserStore } from "@/stores/user"
 import { useRoute, useRouter } from 'vue-router'
-import { onBeforeMount, ref } from 'vue'
-import { useConfirm } from "primevue/useconfirm"
+import { onBeforeMount } from 'vue'
+import { useConfirm } from "../composables/useConfirm"
 
-const confirm = useConfirm()
 const searchStore = useSearchStore()
 const systemStore = useSystemStore()
 const userStore = useUserStore()
@@ -191,25 +190,14 @@ const isOverdue = ((projIdx) => {
    return now > due
 })
 
-const deleteProjectClicked = ((p) => {
-   let note = `<p><b>Important</b>: any images associated with this project will be left<br/>in the processing directory for unit ${p.unitID} </p>`
-   confirm.require({
-      message: `Delete this project? This cannot be reversed. ${note}`,
-      header: 'Confirm Delete',
-      icon: 'pi pi-exclamation-triangle',
-      rejectProps: {
-         label: 'Cancel',
-         severity: 'secondary'
-      },
-      acceptProps: {
-         label: 'Delete',
-         severity: 'danger'
-      },
-      accept: async () => {
-          await projectStore.deleteProject(p.id)
-          window.location.reload()
-      }
-   })
+const deleteProjectClicked = (async (p) => {
+   let note = `<span style='font-weight:bold'>Important</span>: any images associated with this project will be left<br/>in the processing directory for unit ${p.unitID}`
+   let msg = `Delete project ${p.id}? This cannot be reversed.<br/>${note}`
+   const resp = await useConfirm("Confirm Delete", msg, "Delete")
+   if (resp) {
+      await projectStore.deleteProject( p.id )
+      window.location.reload() 
+   } 
 })
 </script>
 

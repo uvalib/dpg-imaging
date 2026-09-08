@@ -187,15 +187,12 @@ const doSearch = ( async () => {
 }
 
 .search {
-   border: 1px solid var(--uvalib-grey-light);
-   border-radius: 0.3rem;
-
    h3 {
       text-align: center;
       padding: 5px;
       margin: 0;
       background: var(--uvalib-blue-alt-light);
-      border-bottom: 1px solid  var(--uvalib-blue-alt);
+      border: 1px solid var(--uvalib-grey-light);
       font-size: 1em;
       font-weight: normal;
       border-radius: 4px 4px 0 0;
@@ -208,6 +205,8 @@ const doSearch = ( async () => {
       display: flex;
       flex-direction: column;
       row-gap: 15px;
+      border-left: 1px solid var(--uvalib-grey-light);
+      border-right: 1px solid var(--uvalib-grey-light);
       div.row {
          display: flex;
          flex-direction: column;
@@ -215,6 +214,8 @@ const doSearch = ( async () => {
       }
    }
    .buttons {
+      border: 1px solid var(--uvalib-grey-light);
+      border-top: 0;
       border-radius: 4px;
       background: white;
       padding: 0 15px 15px 15px;
