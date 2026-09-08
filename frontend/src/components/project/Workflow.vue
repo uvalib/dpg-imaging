@@ -5,8 +5,10 @@
          <dl v-else>
             <dt>Name:</dt>
             <dd>{{detail.workflow.name}}</dd>
-            <dt>Step:</dt>
-            <dd>{{detail.currentStep.description}}</dd>
+            <template v-if="detail.currentStep">
+               <dt>Step:</dt>
+               <dd>{{detail.currentStep.description}}</dd>
+            </template>
             <dt>Owner:</dt>
             <dd>
                <span v-if="hasOwner">{{detail.owner.firstName}} {{detail.owner.lastName}}</span>
@@ -116,7 +118,10 @@ const isManuscript = computed(() => {
    return detail.value.workflow.name == "Manuscript"
 })
 const currStepName = computed(()=>{
-   return detail.value.currentStep.name
+   if ( detail.value.currentStep ) {
+      return detail.value.currentStep.name
+   }
+   return "Unknown"
 })
 const isFinalizing = computed(()=>{
    return currStepName.value == 'Finalize'
@@ -135,7 +140,7 @@ const isFinishEnabled = computed(()=>{
 })
 const workingDir = computed(()=>{
    let unitDir =  unitDirectory(detail.value.unitID)
-   if (detail.value.currentStep.name == "Process" || detail.value.currentStep.name == "Scan") {
+   if (detail.value.currentStep && (detail.value.currentStep.name == "Process" || detail.value.currentStep.name == "Scan")) {
       return `${systemStore.scanDir}/${unitDir}`
    }
    return `${systemStore.qaDir}/${unitDir}`
@@ -206,7 +211,7 @@ const deleteProjectClicked = (async () => {
    let msg = `Delete project ${detail.value.id}? This cannot be reversed.<br/>${note}`
    const resp = await useConfirm("Confirm Delete", msg, "Delete")
    if (resp) {
-      await projectStore.deleteProject( p.id )
+      await projectStore.deleteProject( detail.value.id )
       window.location.reload() 
    } 
 })
