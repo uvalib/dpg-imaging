@@ -36,6 +36,11 @@ export default defineConfig({
                      variant: "ghost",
                      class: "text-white hover:bg-gray-200 focus:outline-offset-2 focus:outline-1 focus:outline-dashed",
                   },
+                  {
+                     color: "neutral",
+                     variant: "outline",
+                     class: "hover:bg-brand-blue-alt-300 focus:outline-offset-2 focus:outline-1 focus:outline-dashed disabled:bg-brand-grey-200 disabled:text-brand-grey-100",
+                  },
                ],
             },
             dropdownMenu: {

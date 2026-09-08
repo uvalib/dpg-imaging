@@ -28,12 +28,10 @@
          <template v-if="route.path == '/'" #bottom>
             <div class="toolbar">
                <URadioGroup orientation="horizontal" size="lg" color="info" v-model="searchStore.filter" value-key="id" :items="filters" @update:modelValue="filterChanged"/>
-               <div class="page-ctl" v-if="!searchStore.working && searchStore.projects.length>0">
-                  <DPGPagination :currPage="searchStore.currPage" :pageSize="searchStore.pageSize" :totalPages="searchStore.totalPages"
-                     @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
-                     @jump="pageJumpClicked"
-                  />
-               </div>
+               <UPagination  v-if="!searchStore.working && searchStore.projects.length>0"
+                  v-model:page="searchStore.currPage" :items-per-page="searchStore.pageSize" 
+                  :total="searchStore.totalPages * searchStore.pageSize" @update:page="pageChanged"
+               />
             </div>
          </template> 
       </UHeader>
@@ -119,23 +117,9 @@ const filterChanged = ( async () => {
    searchStore.lastSearchURL = route.fullPath
    searchStore.getProjects()
 })
-const nextClicked = (() => {
-   searchStore.setCurrentPage(searchStore.currPage+1 )
-})
 
-const priorClicked = (() => {
-   searchStore.setCurrentPage(searchStore.currPage-1 )
-})
-const firstClicked = (() => {
-   searchStore.setCurrentPage( 1 )
-})
-
-const lastClicked = (() => {
-   searchStore.setCurrentPage(searchStore.totalPages )
-})
-
-const pageJumpClicked = ((p) => {
-   searchStore.setCurrentPage( p )
+const pageChanged = ((val) => {
+   searchStore.setCurrentPage(val)
 })
 
 const signout = (() => {

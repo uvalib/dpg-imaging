@@ -1,9 +1,4 @@
 <template>
-   <ConfirmDialog position="top">
-      <template #message="slotProps">
-         <div style="text-align: left;" v-html="slotProps.message.message"/>
-      </template>
-   </ConfirmDialog>
    <div class="home">
       <WaitSpinner v-if="searchStore.working" :overlay="true" message="Loading projects..." />
       <div class="scroll-body" id="scroll-body">
