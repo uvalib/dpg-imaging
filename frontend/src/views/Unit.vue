@@ -12,7 +12,6 @@
       </ConfirmDialog>
 
       <div class="metadata" v-if="projectStore.hasDetail">
-         <KeyboardShortcutHelp />
          <h2>
             <ProblemsDisplay class="topleft" />
             <span class="title"><router-link :to="`/projects/${projectStore.detail.id}`">{{truncateTitle(title)}}</router-link></span>
@@ -25,7 +24,8 @@
             <div class="small" >{{unitStore.masterFiles.length}} Images</div>
          </h3>
          <div class="back">
-            <DPGButton icon="pi pi-angle-double-left" text label="Back to project" size="small" severity="secondary" @click="backClicked"/>
+            <UButton icon="i-lucide-arrow-left" label="Back to project" @click="backClicked" size="sm" color="secondary"/>
+            <KeyboardShortcutHelp />
          </div>
       </div>
       <div class="master-files" ref="masterfiles">
@@ -173,6 +173,8 @@ onBeforeUnmount( async () => {
 <style lang="scss" scoped>
 .unit {
    padding: 0;
+   text-align: center;
+
    input[type=checkbox] {
       width: 20px;
       height: 20px;
@@ -225,7 +227,11 @@ onBeforeUnmount( async () => {
          }
       }
       .back {
+         padding: 0 15px;
          text-align: left;
+         display: flex;
+         flex-flow: row nowrap;
+         justify-content: space-between;
       }
    }
 }

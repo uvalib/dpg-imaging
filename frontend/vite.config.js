@@ -106,7 +106,7 @@ export default defineConfig({
                      level: true,
                      active: true,
                      class: {
-                        link: 'after:bg-white'
+                        link: 'after:bg-brand-blue'
                      }
                   },
                ]
