@@ -131,7 +131,6 @@ import {useSystemStore} from "@/stores/system"
 import {useUserStore} from "@/stores/user"
 import { ref, computed, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
-import Panel from 'primevue/panel'
 import { useFocus } from '@vueuse/core'
 
 const projectStore = useProjectStore()

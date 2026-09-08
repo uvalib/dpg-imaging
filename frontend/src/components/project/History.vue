@@ -1,71 +1,73 @@
 <template>
-   <Panel header="History" class="panel" toggleable>
-      <div class="timing">
-         <span>
-            <label>Date started:</label>
-            <span v-if="projectStore.detail.startedAt">{{formatDate(projectStore.detail.startedAt)}}</span>
-            <span v-else class="na">N/A</span>
-         </span>
-         <span>
-            <label>Total work time:</label>
-            <span v-if="projectStore.detail.startedAt">{{totalWorkTime}}</span>
-            <span v-else class="na">N/A</span>
-         </span>
-      </div>
-      <div class="history-wrap">
-         <table class="history"><tbody>
-            <tr>
-               <th>Date</th><th>Step</th><th>Activity</th><th>Owner</th>
-            </tr>
-            <template v-for="a in projectStore.detail.assignments" :key="`a${a.id}`">
-               <template v-if="a.step.name != 'Unknown'">
-                  <template v-if="a.finishedAt">
-                     <!-- status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing, :working] -->
-                     <tr :class="{success: a.status != 3, reject: a.status==3}">
-                        <td>{{formatDate(a.finishedAt)}}</td>
+   <UAccordion :items="[{label: 'History', value: 'history'}]" defaultValue="history" class="panel">
+      <template #body="{ }">
+         <div class="timing">
+            <span>
+               <label>Date started:</label>
+               <span v-if="projectStore.detail.startedAt">{{formatDate(projectStore.detail.startedAt)}}</span>
+               <span v-else class="na">N/A</span>
+            </span>
+            <span>
+               <label>Total work time:</label>
+               <span v-if="projectStore.detail.startedAt">{{totalWorkTime}}</span>
+               <span v-else class="na">N/A</span>
+            </span>
+         </div>
+         <div class="history-wrap">
+            <table class="history"><tbody>
+               <tr>
+                  <th>Date</th><th>Step</th><th>Activity</th><th>Owner</th>
+               </tr>
+               <template v-for="a in projectStore.detail.assignments" :key="`a${a.id}`">
+                  <template v-if="a.step.name != 'Unknown'">
+                     <template v-if="a.finishedAt">
+                        <!-- status: [:pending, :started, :finished, :rejected, :error, :reassigned, :finalizing, :working] -->
+                        <tr :class="{success: a.status != 3, reject: a.status==3}">
+                           <td>{{formatDate(a.finishedAt)}}</td>
+                           <td>{{a.step.name}}</td>
+                           <td>
+                              <span>
+                                 <template v-if="a.status==3">Rejected</template>
+                                 <template v-else>Finished</template>
+                                 <template v-if="a.status != 5"> <!-- not reassigned -->
+                                    <br/>{{a.durationMinutes}} mins
+                                 </template>
+                              </span>
+                           </td>
+                           <td>{{ system.getStaffMemberName(a.staffMemberID) }}</td>
+                        </tr>
+                     </template>
+                     <template v-if="a.startedAt">
+                        <tr :class="{error: a.status == 4, finalize: a.status == 6, working: a.status == 7}">
+                           <td>{{formatDate(a.startedAt)}}</td>
+                           <td>{{a.step.name}}</td>
+                           <td v-if="a.status == 4">Error</td>
+                           <td v-else-if="a.status == 6">Finalizing...</td>
+                           <td v-else-if="a.status == 7">Working...</td>
+                           <td v-else>Started</td>
+                           <td>{{ system.getStaffMemberName(a.staffMemberID) }}</td>
+                        </tr>
+                     </template>
+                     <tr v-else :class="{reassign: a.status == 5}">
+                        <td>{{formatDate(a.assignedAt)}}</td>
                         <td>{{a.step.name}}</td>
-                        <td>
-                           <span>
-                              <template v-if="a.status==3">Rejected</template>
-                              <template v-else>Finished</template>
-                              <template v-if="a.status != 5"> <!-- not reassigned -->
-                                 <br/>{{a.durationMinutes}} mins
-                              </template>
-                           </span>
-                        </td>
+                        <td v-if="a.status == 5">Reassigned</td>
+                        <td v-else>Assigned</td>
                         <td>{{ system.getStaffMemberName(a.staffMemberID) }}</td>
                      </tr>
-                  </template>
-                  <template v-if="a.startedAt">
-                     <tr :class="{error: a.status == 4, finalize: a.status == 6, working: a.status == 7}">
-                        <td>{{formatDate(a.startedAt)}}</td>
-                        <td>{{a.step.name}}</td>
-                        <td v-if="a.status == 4">Error</td>
-                        <td v-else-if="a.status == 6">Finalizing...</td>
-                        <td v-else-if="a.status == 7">Working...</td>
-                        <td v-else>Started</td>
-                        <td>{{ system.getStaffMemberName(a.staffMemberID) }}</td>
-                     </tr>
-                  </template>
-                  <tr v-else :class="{reassign: a.status == 5}">
-                     <td>{{formatDate(a.assignedAt)}}</td>
-                     <td>{{a.step.name}}</td>
-                     <td v-if="a.status == 5">Reassigned</td>
-                     <td v-else>Assigned</td>
-                     <td>{{ system.getStaffMemberName(a.staffMemberID) }}</td>
-                  </tr>
 
+                  </template>
                </template>
-            </template>
-            <tr class="create">
-               <td>{{formatDate(projectStore.detail.addedAt)}}</td>
-               <td>Project #{{projectStore.detail.id}}</td>
-               <td>Created</td>
-               <td></td>
-            </tr>
-         </tbody></table>
-      </div>
-   </Panel>
+               <tr class="create">
+                  <td>{{formatDate(projectStore.detail.addedAt)}}</td>
+                  <td>Project #{{projectStore.detail.id}}</td>
+                  <td>Created</td>
+                  <td></td>
+               </tr>
+            </tbody></table>
+         </div>
+      </template>
+   </UAccordion>
 </template>
 
 <script setup>
@@ -73,7 +75,6 @@ import { useDateFormat } from '@vueuse/core'
 import { useProjectStore } from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import { computed } from 'vue'
-import Panel from 'primevue/panel'
 
 const projectStore = useProjectStore()
 const system = useSystemStore()
@@ -99,6 +100,7 @@ const formatDate = ( (d) => {
 <style scoped lang="scss">
 .panel {
    text-align: left;
+
    .timing {
       display: flex;
       flex-flow: row nowrap;

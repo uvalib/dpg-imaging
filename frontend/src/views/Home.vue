@@ -316,6 +316,7 @@ const deleteProjectClicked = (async (p) => {
          }
          .special-instructions{
             margin: 0 30px;
+            font-size: 0.95em;
             label {
                display: block;
                font-weight: bold !important;

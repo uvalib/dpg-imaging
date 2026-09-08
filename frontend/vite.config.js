@@ -14,7 +14,7 @@ export default defineConfig({
             accordion: {
                slots: {
                   trigger: "rounded-none bg-brand-grey-200 p-2 border-1 border-brand-grey-100 flex justify-between text-lg font-semibold",
-                  body: "rounded-b-md border-1 border-brand-grey-100 border-t-0 p-4"
+                  body: "rounded-none border-1 border-brand-grey-100 border-t-0 p-4"
                }
             },
             button: {
@@ -70,8 +70,8 @@ export default defineConfig({
                   header: "bg-brand-teal-200 flex items-center gap-0 p-2.5 sm:px-2.5 min-h-0",
                   content: "outline-brand-grey outline-1",
                   close: 'absolute top-1.5 end-1.5 rounded-full text-black hover:bg-brand-teal-100',
-                  footer: "justify-end sm:px-4 p-4",
-                  body: "border-0",
+                  footer: "justify-end sm:px-4 p-4 pt-0",
+                  body: "border-0 !p-4",
                   overlay: "!bg-brand-grey/70" // the /70 sets opacity
                }
             },
@@ -128,6 +128,11 @@ export default defineConfig({
                slots: {
                   base: '!border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-blue-alt-100'
                },
+            },
+            inputNumber: {
+               slots: {
+                  base: '!border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-blue-alt-100'
+               }
             },
             listbox: {
                slots: {

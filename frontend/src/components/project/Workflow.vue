@@ -1,90 +1,82 @@
 <template>
-   <ConfirmDialog position="top">
-      <template #message="slotProps">
-         <div style="text-align: left;" v-html="slotProps.message.message"/>
-      </template>
-   </ConfirmDialog>
-   <Panel v-if="isFinished" header="Workflow" class="panel">
-      <div class="finished">This project was completed {{ projectFinishedAt }}<br/>Workflow: {{ detail.workflow.name }}</div>
-   </Panel>
-   <Panel v-else header="Workflow" class="panel">
-      <dl>
-         <dt>Name:</dt>
-         <dd>{{detail.workflow.name}}</dd>
-         <dt>Step:</dt>
-         <dd>{{detail.currentStep.description}}</dd>
-         <dt>Owner:</dt>
-         <dd>
-            <span v-if="hasOwner">{{detail.owner.firstName}} {{detail.owner.lastName}}</span>
-            <span v-else class="na">Unassigned</span>
-         </dd>
-         <dt>Assigned:</dt>
-         <dd>
-            <span v-if="hasOwner">{{assignedAt}}</span>
-            <span v-else class="na">N/A</span>
-         </dd>
-         <dt>Started:</dt>
-         <dd>
-            <span v-if="hasOwner && startedAt">{{startedAt}}</span>
-            <span v-else class="na">N/A</span>
-         </dd>
-         <dt>Directory:</dt>
-         <dd>{{workingDir}}</dd>
-      </dl>
-      <div class="workflow-btns time" v-if="timeEntry">
-         <div v-if="validateComponents" class="validate">
-            <div>Validating component settings...</div>
-            <ProgressSpinner style="width: 40px; height: 40px" strokeWidth="5" />
-         </div>
-         <div v-else class="time-form" >
-            <template v-if="isManuscript && detail.currentStep.name == 'Create Metadata'">
-               <div  class="finish-info">
+   <UAccordion :items="[{label: 'Workflow', value: 'workflow'}]" defaultValue="workflow" class="panel">
+      <template #body="{ }">
+         <div  v-if="isFinished" class="finished">This project was completed {{ projectFinishedAt }}<br/>Workflow: {{ detail.workflow.name }}</div>
+         <dl v-else>
+            <dt>Name:</dt>
+            <dd>{{detail.workflow.name}}</dd>
+            <dt>Step:</dt>
+            <dd>{{detail.currentStep.description}}</dd>
+            <dt>Owner:</dt>
+            <dd>
+               <span v-if="hasOwner">{{detail.owner.firstName}} {{detail.owner.lastName}}</span>
+               <span v-else class="na">Unassigned</span>
+            </dd>
+            <dt>Assigned:</dt>
+            <dd>
+               <span v-if="hasOwner">{{assignedAt}}</span>
+               <span v-else class="na">N/A</span>
+            </dd>
+            <dt>Started:</dt>
+            <dd>
+               <span v-if="hasOwner && startedAt">{{startedAt}}</span>
+               <span v-else class="na">N/A</span>
+            </dd>
+            <dt>Directory:</dt>
+            <dd>{{workingDir}}</dd>
+         </dl>
+         <template v-if="timeEntry">
+            <div v-if="validateComponents" class="validate">
+               <WaitSpinner :overlay="false" message="Validating component settings..." />   
+            </div>
+            <div v-else class="workflow-btns time">
+               <div v-if="isManuscript && detail.currentStep.name == 'Create Metadata'" class="finish-info">
                   <label>Does this unit have components?</label>
-                  <Select v-model="hasComponents" :options="['Yes', 'No']" placeholder="Yes or no?" @update:modelValue="componentChanged" />
+                  <USelect v-model="hasComponents" :items="['Yes', 'No']" placeholder="Yes or no?" @update:modelValue="componentChanged" />
                </div>
-            </template>
-            <div class="finish-info right">
-               <label for="time">Approximately how many minutes did you spend on this assignment?</label>
-               <div class="time-controls">
-                  <InputNumber v-model="stepMinutes" inputId="time" :min="1" :max="500" />
-                  <DPGButton @click="cancelFinish" severity="secondary" label="Cancel"/>
-                  <DPGButton @click="timeEntered" label="OK" :disabled="isManuscript && hasComponents == null && detail.currentStep.name == 'Create Metadata'"/>
+               <div class="finish-info right">
+                  <label for="time">Approximately how many minutes did you spend on this assignment?</label>
+                  <div class="time-controls">
+                     <UInputNumber v-model="stepMinutes" id="time" :min="1" :max="500" />
+                     <UButton @click="cancelFinish" color="secondary" label="Cancel"/>
+                     <UButton @click="timeEntered" label="OK" :disabled="isManuscript && hasComponents == null && detail.currentStep.name == 'Create Metadata'"/>
+                  </div>
                </div>
             </div>
+         </template>
+         <div class="finalizing" v-else-if="isFinalizeRunning" >
+            <WaitSpinner :overlay="false" message="Finalization in progress..." />
          </div>
-      </div>
-      <div class="finalizing" v-else-if="isFinalizeRunning" >
-         <WaitSpinner :overlay="false" message="Finalization in progress..." />
-      </div>
-      <div class="workflow-btns" v-else-if="isFinished == false">
-         <DPGButton @click="deleteProjectClicked" class="delete" severity="danger" v-if="isSupervisor || isAdmin" label="Delete Project"/>
-         <DPGButton @click="viewerClicked" severity="secondary" v-if="isScanning == false && (isOwner(userStore.computeID) || isSupervisor || isAdmin)" label="Open QA Viewer"/>
-         <DPGButton v-if="hasOwner && (isAdmin || isSupervisor)"
-            @click="clearClicked()" severity="secondary" label="Clear Assignment"/>
-         <template v-if="isOwner(userStore.computeID)">
-            <template v-if="isWorking == false">
-               <AssignModal v-if="(isOwner(userStore.computeID) || isSupervisor || isAdmin)" :projectID="detail.id" label="Reassign"/>
-               <DPGButton v-if="inProgress == false" @click="startStep" label="Start"/>
-               <DPGButton v-if="canReject" class="p-button-danger" @click="rejectStepClicked" label="Reject"/>
-               <DPGButton v-if="inProgress == true" :disabled="!isFinishEnabled" @click="finishClicked">
-                  <template v-if="isFinalizing &&  hasError == true">Retry Finalize</template>
-                  <template v-else>Finish</template>
-               </DPGButton>
+         <div class="workflow-btns" v-else-if="isFinished == false">
+            <UButton @click="deleteProjectClicked" class="delete" color="error" v-if="isSupervisor || isAdmin" label="Delete Project"/>
+            <UButton @click="viewerClicked" color="secondary" v-if="isScanning == false && (isOwner(userStore.computeID) || isSupervisor || isAdmin)" label="Open QA Viewer"/>
+            <UButton v-if="hasOwner && (isAdmin || isSupervisor)"
+               @click="clearClicked()" color="secondary" label="Clear Assignment"/>
+            <template v-if="isOwner(userStore.computeID)">
+               <template v-if="isWorking == false">
+                  <AssignModal v-if="(isOwner(userStore.computeID) || isSupervisor || isAdmin)" :projectID="detail.id" label="Reassign"/>
+                  <UButton v-if="inProgress == false" @click="startStep" label="Start"/>
+                  <UButton v-if="canReject" class="p-button-danger" @click="rejectStepClicked" label="Reject"/>
+                  <UButton v-if="inProgress == true" :disabled="!isFinishEnabled" @click="finishClicked">
+                     <template v-if="isFinalizing &&  hasError == true">Retry Finalize</template>
+                     <template v-else>Finish</template>
+                  </UButton>
+               </template>
             </template>
-         </template>
-         <template v-else>
-            <DPGButton v-if="isWorking == false && (hasOwner == false || isAdmin ||isSupervisor)"
-               @click="claimClicked()"  severity="secondary" label="Claim"/>
-            <AssignModal v-if="(isAdmin || isSupervisor)" :projectID="detail.id" />
-         </template>
-      </div>
-      <div class="workflow-message" v-if="isOwner(userStore.computeID) && workflowNote">
-         {{workflowNote}}
-      </div>
-      <NoteModal id="problem-modal" :manual="true" :trigger="showRejectNote" :noteType="2"
-         @closed="rejectCanceled" @submitted="rejectSubmitted"
-         instructions="Rejection requires the addition of a problem note that details the reason why it occurred" />
-   </Panel>
+            <template v-else>
+               <UButton v-if="isWorking == false && (hasOwner == false || isAdmin ||isSupervisor)"
+                  @click="claimClicked()" color="secondary" label="Claim"/>
+               <AssignModal v-if="(isAdmin || isSupervisor)" :projectID="detail.id" />
+            </template>
+         </div>
+         <div class="workflow-message" v-if="isOwner(userStore.computeID) && workflowNote">
+            {{workflowNote}}
+         </div>
+         <NoteModal id="problem-modal" :manual="true" :trigger="showRejectNote" :noteType="2"
+            @closed="rejectCanceled" @submitted="rejectSubmitted"
+            instructions="Rejection requires the addition of a problem note that details the reason why it occurred" />
+      </template>
+   </UAccordion>
 </template>
 
 <script setup>
@@ -97,14 +89,9 @@ import { useUserStore } from "@/stores/user"
 import { ref, computed, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
-import Select from 'primevue/select'
-import Panel from 'primevue/panel'
-import InputNumber from 'primevue/inputnumber'
-import ProgressSpinner from 'primevue/progressspinner'
 import { useFocus } from '@vueuse/core'
-import { useConfirm } from "primevue/useconfirm"
+import { useConfirm } from "@/composables/useConfirm"
 
-const confirm = useConfirm()
 const router = useRouter()
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
@@ -214,24 +201,14 @@ const componentChanged = ( async ()=> {
    }
 })
 
-const deleteProjectClicked = (() => {
-   let note = `<p><b>Important</b>: any images associated with this project will be left<br/>in the processing directory for unit ${detail.value.unitID} </p>`
-   confirm.require({
-      message: `Delete this project? This cannot be reversed. ${note}`,
-      header: 'Confirm Delete',
-      icon: 'pi pi-exclamation-triangle',
-      rejectProps: {
-         label: 'Cancel',
-         severity: 'secondary'
-      },
-      acceptProps: {
-         label: 'Delete',
-         severity: 'danger'
-      },
-      accept: async () => {
-          await projectStore.deleteProject(detail.value.id)
-      }
-   })
+const deleteProjectClicked = (async () => {
+   let note = `<span style='font-weight:bold'>Important</span>: any images associated with this project will be left<br/>in the processing directory for unit ${detail.value.unitID}`
+   let msg = `Delete project ${detail.value.id}? This cannot be reversed.<br/>${note}`
+   const resp = await useConfirm("Confirm Delete", msg, "Delete")
+   if (resp) {
+      await projectStore.deleteProject( p.id )
+      window.location.reload() 
+   } 
 })
 
 const clearClicked = (() => {
@@ -337,51 +314,46 @@ function unitDirectory(unitID) {
          margin-right: auto;
       }
    }
+   .validate {
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 15px;
+   }
    .workflow-btns.time {
       text-align: left;
-      .validate {
-         border-top: 1px solid #e2e8f0;
+      width: 100%;
+      margin-bottom: 10px;
+      font-size: 0.9em;
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: flex-end;
+      gap: 10px;
+
+      .finish-info {
+         flex-basis: 100%;
          display: flex;
          flex-direction: column;
-         align-items: center;
-         gap: 1rem;
-         font-size: 1.25rem;
-         width: 100%;
-         padding-top: 15px;
-      }
-      .time-form {
-         width: 100%;
-         margin-bottom: 10px;
-         font-size: 0.9em;
-         display: flex;
-         flex-flow: row nowrap;
          justify-content: flex-end;
-         gap: 10px;
-
-         .finish-info {
-            flex-basis: 100%;
+         label {
+            display: block;
+            font-weight: bold;
+            margin: 10px 0;
+         }
+         .time-controls {
             display: flex;
-            flex-direction: column;
+            flex-flow: row nowrap;
             justify-content: flex-end;
-            label {
-               display: block;
-               font-weight: bold;
-               margin: 10px 0;
-            }
-            .time-controls {
-               display: flex;
-               flex-flow: row nowrap;
-               justify-content: flex-end;
-               gap: 10px;
-               input {
-                  width: 100px;
-                  border-color: var(--uvalib-grey-light);
-               }
+            gap: 10px;
+            input {
+               width: 100px;
+               border-color: var(--uvalib-grey-light);
             }
          }
-         .finish-info.right {
-            align-items: flex-end;
-         }
+      }
+      .finish-info.right {
+         align-items: flex-end;
       }
    }
    div.finished {

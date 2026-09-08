@@ -1,43 +1,43 @@
 <template>
-   <DPGButton v-if="!manual"  label="Add Note" size="small" @click="showClicked" ref="notetrigger" />
-   <Dialog v-model:visible="isOpen" :modal="true" header="Create Note" style="width:650px" @show="show" @afterHide="hidden">
-      <div class="note-modal-content">
-         <div class="instruct" v-if="instructions">{{instructions}}</div>
-         <div class="row">
-            <label>Note Type {{trigger}}</label>
-            <select v-model="noteTypeID" :id="`${props.id}-type`" ref="typesel">
-               <option :value="0">Comment</option>
-               <option :value="1">Suggestion</option>
-               <option :value="2">Problem</option>
-               <option :value="3">Item Condition</option>
-            </select>
+   <UModal v-model:open="isOpen" :modal="true" :dismissible="false" title="Create Note">
+      <UButton v-if="!manual" label="Add Note" @click="showClicked" />
+      <template #body>
+         <div class="note-modal-content">
+            <div class="instruct" v-if="instructions">{{instructions}}</div>
+            <div class="row">
+               <label>Note Type</label>
+               <select v-model="noteTypeID" :id="`${props.id}-type`" ref="notetype">
+                  <option :value="0">Comment</option>
+                  <option :value="1">Suggestion</option>
+                  <option :value="2">Problem</option>
+                  <option :value="3">Item Condition</option>
+               </select>
+            </div>
+            <div class="row pad" v-if="noteTypeID==2">
+               <label>Problem (select all that apply)</label>
+               <label class="cb" v-for="p in systemStore.problemTypes" :key="p.label">
+                  <input type="checkbox" :value="p.id" v-model="problemIDs" />
+                  {{p.name}}
+               </label>
+            </div>
+            <div class="row pad">
+               <label for="note-text">Note Text</label>
+               <textarea rows="5" v-model="note"></textarea>
+            </div>
          </div>
-         <div class="row pad" v-if="noteTypeID==2">
-            <label>Problem (select all that apply)</label>
-            <label class="cb" v-for="p in systemStore.problemTypes" :key="p.label">
-               <input type="checkbox" :value="p.id" v-model="problemIDs" />
-               {{p.name}}
-            </label>
-         </div>
-         <div class="row pad">
-            <label for="note-text">Note Text</label>
-            <textarea rows="5" v-model="note"></textarea>
-         </div>
-      </div>
-      <p class="error" v-if="error">{{error}}</p>
-      <template #footer>
-         <DPGButton @click="hide" severity="secondary" label="Cancel"/>
-         <DPGButton autofocus @click="createClicked" label="Create"/>
+         <p class="error" v-if="error">{{error}}</p>
       </template>
-   </Dialog>
+      <template #footer>
+         <UButton @click="hide" color="secondary" label="Cancel"/>
+         <UButton autofocus @click="createClicked" label="Create"/>
+      </template>
+   </UModal>
 </template>
 
 <script setup>
 import { useSystemStore } from '@/stores/system'
 import { useProjectStore } from '@/stores/project'
-import { ref, watch } from 'vue'
-import Dialog from 'primevue/dialog'
-import { useFocus } from '@vueuse/core'
+import { ref, watch, nextTick } from 'vue'
 
 const systemStore = useSystemStore()
 const projectStore = useProjectStore()
@@ -72,10 +72,7 @@ const noteTypeID = ref(props.noteType) //[:comment, :suggestion, :problem, :item
 const note = ref("")
 const problemIDs = ref([])
 const error = ref("")
-const notetrigger = ref()
-const { focused: triggerFocus } = useFocus(notetrigger)
-const typesel = ref()
-const { focused: selFocus } = useFocus(typesel)
+const notetype = ref()
 
 watch(() => props.trigger, (newtrigger) => {
    if (props.manual && newtrigger) {
@@ -103,21 +100,13 @@ const hide = (() => {
    isOpen.value = false
 })
 
-const hidden = (() => {
-   triggerFocus.value = true
-   emit('closed')
-})
-
-const show = (() => {
-   setTimeout( ()=> { selFocus.value = true }, 250 )
-})
-
 const showClicked = (() => {
    isOpen.value = true
    noteTypeID.value = 0
    note.value = ""
    problemIDs.value = []
    error.value = ""
+   nextTick( () => notetype.value.focus() )
 })
 </script>
 

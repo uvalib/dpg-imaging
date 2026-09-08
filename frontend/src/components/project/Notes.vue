@@ -1,30 +1,32 @@
 <template>
-   <Panel header="Notes" class="panel" toggleable>
-      <div v-if="!detail.notes" class="none">
-         There are no notes associated with this project
-      </div>
-      <div v-else class="notes">
-         <div class="note-card" v-for="n in detail.notes" :key="`n${n.id}`" :class="noteTypeString(n.type).toLowerCase()">
-            <div class="note-info">
-               <div>
-                  <p class="note-date">{{formatDate(n.createdAt)}}</p>
-                  <p class="note-by">{{ system.getStaffMemberName(n.staffMemberID) }}</p>
+   <UAccordion :items="[{label: 'Notes', value: 'notes'}]" defaultValue="notes" class="panel">
+      <template #body="{ }">
+         <div v-if="!detail.notes" class="none">
+            There are no notes associated with this project
+         </div>
+         <div v-else class="notes">
+            <div class="note-card" v-for="n in detail.notes" :key="`n${n.id}`" :class="noteTypeString(n.type).toLowerCase()">
+               <div class="note-info">
+                  <div>
+                     <p class="note-date">{{formatDate(n.createdAt)}}</p>
+                     <p class="note-by">{{ system.getStaffMemberName(n.staffMemberID) }}</p>
+                  </div>
+                  <div class="right">
+                     <p class="note-type">{{noteTypeString(n.type)}}</p>
+                     <p v-if="n.stepID > 0" class="note-step"><b>Step: </b>{{n.step.name}}</p>
+                  </div>
                </div>
-               <div class="right">
-                  <p class="note-type">{{noteTypeString(n.type)}}</p>
-                  <p v-if="n.stepID > 0" class="note-step"><b>Step: </b>{{n.step.name}}</p>
+               <div class="note-text">
+                  <div class="problems" v-if="n.problems && n.problems.length > 0">{{problemsString(n.problems)}}</div>
+                  <div v-html="n.text"></div>
                </div>
-            </div>
-            <div class="note-text">
-               <div class="problems" v-if="n.problems && n.problems.length > 0">{{problemsString(n.problems)}}</div>
-               <div v-html="n.text"></div>
             </div>
          </div>
-      </div>
-      <template #footer>
-         <NoteModal v-if="!detail.finishedAt" id="note-modal" />
+         <div class="buttons">
+            <NoteModal v-if="!detail.finishedAt" id="note-modal" />
+         </div>
       </template>
-   </Panel>
+   </UAccordion>
 </template>
 
 <script setup>
@@ -33,7 +35,6 @@ import {useProjectStore} from "@/stores/project"
 import NoteModal from '@/components/project/NoteModal.vue'
 import { storeToRefs } from 'pinia'
 import { useDateFormat } from '@vueuse/core'
-import Panel from 'primevue/panel'
 
 const projectStore = useProjectStore()
 const system = useSystemStore()
@@ -59,6 +60,15 @@ const formatDate =((d) => {
 <style scoped lang="scss">
 .panel {
    text-align: left;
+
+   .buttons {
+      margin-top: 15px;
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: flex-end;
+      gap: 10px;
+   }
+
    .none {
       font-size: 1.15em;
       text-align: center;
