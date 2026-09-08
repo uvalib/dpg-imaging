@@ -226,7 +226,7 @@ const deleteProjectClicked = (async (p) => {
       flex-flow: row nowrap;
       justify-content: flex-start;
       align-items: flex-start;
-      padding: 25px 25px 0 25px;
+      padding: 20px 20px 0 20px;
    }
    .projects {
       list-style: none;
@@ -254,7 +254,7 @@ const deleteProjectClicked = (async (p) => {
          box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 4px 1px;
          background: white;
          padding-bottom: 110px;
-         border-radius: 4px;
+         border-radius: 0.3rem;
 
          .top {
             border-bottom: 1px solid var(--uvalib-grey);
@@ -311,7 +311,6 @@ const deleteProjectClicked = (async (p) => {
                   background: var(--uvalib-brand-orange);
                   color: white;
                   border: 0;
-                  border-radius: 5px;
                }
             }
          }
@@ -332,11 +331,10 @@ const deleteProjectClicked = (async (p) => {
             flex-flow: row nowrap;
             justify-content: flex-start;
             align-items: flex-start;
-            dl.right {
-               margin-left: 50px;
-            }
+            font-size: 0.95em;
+   
             dl {
-               margin-left: 25px;
+               margin: 0 auto;
                display: inline-grid;
                grid-template-columns: max-content 2fr;
                grid-column-gap: 5px;
@@ -345,7 +343,6 @@ const deleteProjectClicked = (async (p) => {
                   text-align: right;
                }
                dd {
-                  margin: 0 0 10px 0;
                   word-break: break-word;
                   -webkit-hyphens: auto;
                   -moz-hyphens: auto;

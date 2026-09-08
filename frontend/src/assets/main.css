@@ -113,18 +113,6 @@ input[type=checkbox] {
       text-align: center;
    }
 
-
-/* 
-
-  a {
-      color: var(--uvalib-blue-alt-dark);
-      font-weight: 500;
-      text-decoration: none;
-      &:hover {
-        text-decoration: underline;
-      }
-  }
-
    dl {
       margin: 10px 30px 0 30px;
       display: inline-grid;
@@ -150,7 +138,21 @@ input[type=checkbox] {
             color: #ddd;
          }
       }
-   }*/
+   }
+
+
+/* 
+
+  a {
+      color: var(--uvalib-blue-alt-dark);
+      font-weight: 500;
+      text-decoration: none;
+      &:hover {
+        text-decoration: underline;
+      }
+  }
+
+   */
 
    /* .sticky-bar {
       position: fixed;

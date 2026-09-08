@@ -11,6 +11,12 @@ export default defineConfig({
       vue(),
       ui({
          ui: {
+            accordion: {
+               slots: {
+                  trigger: "rounded-none bg-brand-grey-200 p-2 border-1 border-brand-grey-100 flex justify-between text-lg font-semibold",
+                  body: "rounded-b-md border-1 border-brand-grey-100 border-t-0 p-4"
+               }
+            },
             button: {
                default: {
                   class: "cursor-pointer"

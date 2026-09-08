@@ -1,126 +1,128 @@
 <template>
-   <Panel header="Item Information" class="panel" toggleable>
-      <dl v-if="!editing">
-         <template v-if="detail.workflow.name == 'Manuscript'">
-            <dt>Container Type:</dt>
+   <UAccordion :items="[{label: 'Item Information', value: 'info'}]" defaultValue="info" class="panel">
+      <template #body="{ }">
+         <dl v-if="!editing">
+            <template v-if="detail.workflow.name == 'Manuscript'">
+               <dt>Container Type:</dt>
+               <dd>
+                  <span v-if="detail.containerType && detail.containerType.id > 0">{{detail.containerType.name}}</span>
+                  <span v-else class="na">EMPTY</span>
+               </dd>
+            </template>
+            <dt>Category:</dt>
+            <dd>{{detail.category.name}}
+            </dd>
+            <dt>Call Number:</dt>
             <dd>
-               <span v-if="detail.containerType && detail.containerType.id > 0">{{detail.containerType.name}}</span>
+               <span v-if="detail.callNumber">{{detail.callNumber}}</span>
                <span v-else class="na">EMPTY</span>
             </dd>
-         </template>
-         <dt>Category:</dt>
-         <dd>{{detail.category.name}}
-         </dd>
-         <dt>Call Number:</dt>
-         <dd>
-            <span v-if="detail.callNumber">{{detail.callNumber}}</span>
-            <span v-else class="na">EMPTY</span>
-         </dd>
-         <dt>Special Instructions:</dt>
-         <dd>
-            <span v-if="detail.specialInstructions">{{detail.specialInstructions}}</span>
-            <span v-else class="na">EMPTY</span>
-         </dd>
-         <dt>Condition:</dt>
-         <dd>{{conditionText(detail.itemCondition)}}</dd>
-         <dt>Condition Notes:</dt>
-         <dd>
-            <span v-if="detail.conditionNote">{{detail.conditionNote}}</span>
-            <span v-else class="na">EMPTY</span>
-         </dd>
-         <dt>OCR Hint:</dt>
-         <dd>
-            <span v-if="detail.ocrHintID > 0">{{ systemStore.getOCRHint(detail.ocrHintID ) }}</span>
-            <span v-else class="na">EMPTY</span>
-         </dd>
-         <dt>OCR Language Hint:</dt>
-         <dd>
-            <span v-if="detail.ocrLanguage">{{ systemStore.getOCRLanguageHint(detail.ocrLanguage) }}</span>
-            <span v-else class="na">EMPTY</span>
-         </dd>
-         <dt>OCR Master Files:</dt>
-         <dd>
-            <span v-if="detail.ocrMasterFiles" class="yes-no">Yes</span>
-            <span v-else class="yes-no">No</span>
-         </dd>
-      </dl>
-      <table class="edit" v-else>
-         <tbody>
-            <tr v-if="detail.workflow.name == 'Manuscript'">
-               <td class="label"><label for="container">Container Type:</label></td>
-               <td class="data">
-                  <select id="container" v-model="containerTypeID">
-                     <option :value="0" disabled>Select a container type</option>
-                     <option v-for="c in systemStore.containerTypes" :key="`container-${c.id}`" :value="c.id">{{c.name}}</option>
-                  </select>
-               </td>
-            </tr>
-            <tr class="row">
-               <td class="label"><label for="category">Category:</label></td>
-               <td class="data">
-                  <select id="category" v-model="categoryID" ref="categorysel">
-                     <option :value="0" disabled>Select a category</option>
-                     <option v-for="c in systemStore.categories" :key="`cat${c.id}`" :value="c.id">{{c.name}}</option>
-                  </select>
-               </td>
-            </tr>
-            <tr class="row">
-               <td class="label"><label for="call-numbber">Call Number:</label></td>
-               <td class="data">{{detail.callNumber}}</td>
-            </tr>
-            <tr class="row">
-               <td class="label"><label for="instructions">Special Instructions:</label></td>
-               <td class="data">
-                  <span v-if="detail.specialInstructions">{{detail.specialInstructions}}</span>
-                  <span v-else class="na">EMPTY</span>
-               </td>
-            </tr>
-            <tr class="row">
-               <td class="label"><label for="condition">Condition:</label></td>
-               <td class="data">
-                  <select id="condition" v-model="condition">
-                     <option :value="0">Good</option>
-                     <option :value="1">Bad</option>
-                  </select>
-               </td>
-            </tr>
-            <tr class="row">
-               <td class="label"><label for="notes">Condition Notes:</label></td>
-               <td class="data"><textarea id="notes" v-model="note"></textarea></td>
-            </tr>
-            <tr class="row">
-               <td class="label"><label for="ocr-hint">OCR Hint:</label></td>
-               <td class="data">
-                  <select id="ocr-hint" v-model="ocrHintID" @change="hintChanged">
-                     <option :value="0" disabled>Select an OCR hint</option>
-                     <option v-for="h in systemStore.ocrHints" :key="`ocr${h.id}`" :value="h.id">{{h.name}}</option>
-                  </select>
-               </td>
+            <dt>Special Instructions:</dt>
+            <dd>
+               <span v-if="detail.specialInstructions">{{detail.specialInstructions}}</span>
+               <span v-else class="na">EMPTY</span>
+            </dd>
+            <dt>Condition:</dt>
+            <dd>{{conditionText(detail.itemCondition)}}</dd>
+            <dt>Condition Notes:</dt>
+            <dd>
+               <span v-if="detail.conditionNote">{{detail.conditionNote}}</span>
+               <span v-else class="na">EMPTY</span>
+            </dd>
+            <dt>OCR Hint:</dt>
+            <dd>
+               <span v-if="detail.ocrHintID > 0">{{ systemStore.getOCRHint(detail.ocrHintID ) }}</span>
+               <span v-else class="na">EMPTY</span>
+            </dd>
+            <dt>OCR Language Hint:</dt>
+            <dd>
+               <span v-if="detail.ocrLanguage">{{ systemStore.getOCRLanguageHint(detail.ocrLanguage) }}</span>
+               <span v-else class="na">EMPTY</span>
+            </dd>
+            <dt>OCR Master Files:</dt>
+            <dd>
+               <span v-if="detail.ocrMasterFiles" class="yes-no">Yes</span>
+               <span v-else class="yes-no">No</span>
+            </dd>
+         </dl>
+         <table class="edit" v-else>
+            <tbody>
+               <tr v-if="detail.workflow.name == 'Manuscript'">
+                  <td class="label"><label for="container">Container Type:</label></td>
+                  <td class="data">
+                     <select id="container" v-model="containerTypeID">
+                        <option :value="0" disabled>Select a container type</option>
+                        <option v-for="c in systemStore.containerTypes" :key="`container-${c.id}`" :value="c.id">{{c.name}}</option>
+                     </select>
+                  </td>
+               </tr>
+               <tr class="row">
+                  <td class="label"><label for="category">Category:</label></td>
+                  <td class="data">
+                     <select id="category" v-model="categoryID" ref="categorysel">
+                        <option :value="0" disabled>Select a category</option>
+                        <option v-for="c in systemStore.categories" :key="`cat${c.id}`" :value="c.id">{{c.name}}</option>
+                     </select>
+                  </td>
+               </tr>
+               <tr class="row">
+                  <td class="label"><label for="call-numbber">Call Number:</label></td>
+                  <td class="data">{{detail.callNumber}}</td>
+               </tr>
+               <tr class="row">
+                  <td class="label"><label for="instructions">Special Instructions:</label></td>
+                  <td class="data">
+                     <span v-if="detail.specialInstructions">{{detail.specialInstructions}}</span>
+                     <span v-else class="na">EMPTY</span>
+                  </td>
+               </tr>
+               <tr class="row">
+                  <td class="label"><label for="condition">Condition:</label></td>
+                  <td class="data">
+                     <select id="condition" v-model="condition">
+                        <option :value="0">Good</option>
+                        <option :value="1">Bad</option>
+                     </select>
+                  </td>
+               </tr>
+               <tr class="row">
+                  <td class="label"><label for="notes">Condition Notes:</label></td>
+                  <td class="data"><textarea id="notes" v-model="note"></textarea></td>
+               </tr>
+               <tr class="row">
+                  <td class="label"><label for="ocr-hint">OCR Hint:</label></td>
+                  <td class="data">
+                     <select id="ocr-hint" v-model="ocrHintID" @change="hintChanged">
+                        <option :value="0" disabled>Select an OCR hint</option>
+                        <option v-for="h in systemStore.ocrHints" :key="`ocr${h.id}`" :value="h.id">{{h.name}}</option>
+                     </select>
+                  </td>
 
-            </tr>
-            <tr class="row">
-               <td class="label"><label :class="{disabled: !ocrCandidate}" for="ocr-language">OCR Language Hint:</label></td>
-               <td class="data">
-                  <select id="ocr-language" v-model="ocrLangage" :class="{disabled: !ocrCandidate}" :disabled="!ocrCandidate">
-                     <option value="" disabled>Select an OCR language hint</option>
-                     <option v-for="h in systemStore.ocrLanguageHints" :key="`lang${h.code}`" :value="h.code">{{h.language}}</option>
-                  </select>
-               </td>
-            </tr>
-            <tr class="row">
-               <td class="label"><label for="do-ocr" :class="{disabled: !ocrCandidate}">OCR Master Files:</label></td>
-               <td class="data"><input type="checkbox" :class="{disabled: !ocrCandidate}" id="do-ocr" v-model="ocrMasterFiles" :disabled="!ocrCandidate"></td>
-            </tr>
-         </tbody>
-      </table>
-      <div class="buttons" v-if="canEdit">
-         <DPGButton v-if="!editing" @click="editClicked" severity="secondary" label="Edit"/>
-         <template v-else>
-            <DPGButton @click="cancelClicked" severity="secondary" label="Cancel"/>
-            <DPGButton @click="saveClicked" label="Save"/>
-         </template>
-      </div>
-   </Panel>
+               </tr>
+               <tr class="row">
+                  <td class="label"><label :class="{disabled: !ocrCandidate}" for="ocr-language">OCR Language Hint:</label></td>
+                  <td class="data">
+                     <select id="ocr-language" v-model="ocrLangage" :class="{disabled: !ocrCandidate}" :disabled="!ocrCandidate">
+                        <option value="" disabled>Select an OCR language hint</option>
+                        <option v-for="h in systemStore.ocrLanguageHints" :key="`lang${h.code}`" :value="h.code">{{h.language}}</option>
+                     </select>
+                  </td>
+               </tr>
+               <tr class="row">
+                  <td class="label"><label for="do-ocr" :class="{disabled: !ocrCandidate}">OCR Master Files:</label></td>
+                  <td class="data"><input type="checkbox" :class="{disabled: !ocrCandidate}" id="do-ocr" v-model="ocrMasterFiles" :disabled="!ocrCandidate"></td>
+               </tr>
+            </tbody>
+         </table>
+         <div class="buttons" v-if="canEdit">
+            <UButton v-if="!editing" @click="editClicked" color="secondary" label="Edit"/>
+            <template v-else>
+               <UButton @click="cancelClicked" color="secondary" label="Cancel"/>
+               <UButton @click="saveClicked" label="Save"/>
+            </template>
+         </div>
+      </template>
+   </UAccordion>
 </template>
 
 <script setup>
@@ -212,9 +214,12 @@ async function saveClicked() {
 <style scoped lang="scss">
 .panel {
    text-align: left;
+   
+   dl {
+      font-size: 1em !important;
+   }
 
    .edit {
-      font-size: 0.9em;
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 5px;
@@ -243,12 +248,10 @@ async function saveClicked() {
       }
    }
    .buttons {
-      padding: 0;
-      margin: 0;
-      text-align: right;
-      button {
-         margin-left: 10px;
-      }
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: flex-end;
+      gap: 10px;
    }
 }
 </style>
