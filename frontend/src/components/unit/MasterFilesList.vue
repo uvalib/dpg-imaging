@@ -1,5 +1,16 @@
 <template>
-   <DataTable :value="unitStore.masterFiles" ref="mfTable" id="mf-table" dataKey="fileName"
+   <div id="mf-header" :class="stickyHeader">
+      <ViewMode />
+      <UPagination  v-if="unitStore.masterFiles.length>0"
+         v-model:page="unitStore.currPage" :items-per-page="unitStore.pageSize" 
+         :total="unitStore.totalFiles" @update:page="pageChanged"
+      />
+   </div>
+   <UTable :data="masterFilesPage"
+      :columns="columns" v-model:column-visibility="columnVisibility"
+   >
+   </UTable>
+   <!-- <DataTable :value="unitStore.masterFiles" ref="mfTable" id="mf-table" dataKey="fileName"
          stripedRows size="small" paginatorPosition="top"
          :lazy="false" :rows="unitStore.pageSize" :first="unitStore.currStartIndex" :rowsPerPageOptions="[20,50,75]" paginator
          paginatorTemplate="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink RowsPerPageDropdown"
@@ -81,7 +92,7 @@
       <Column header="Resolution" field="resolution" class="nowrap"/>
       <Column header="Color Profile" field="colorProfile" class="nowrap"/>
       <Column rowReorder headerStyle="width: 3rem" :reorderableColumn="false" />
-   </DataTable>
+   </DataTable> -->
 </template>
 
 <script setup>
@@ -94,29 +105,92 @@ import { useUnitStore } from "@/stores/unit"
 import ViewMode from '@/components/ViewMode.vue'
 import UnitActions from '@/components/unit/UnitActions.vue'
 import { useRoute, useRouter } from 'vue-router'
-import { usePinnable } from '@/composables/pin'
 import TitlePicker from "@/components/TitlePicker.vue"
-
-usePinnable("mf-table")
+import { computed } from 'vue'
 
 const route = useRoute()
 const router = useRouter()
 const projectStore = useProjectStore()
 const unitStore = useUnitStore()
 
-const imageClicked = (() => {
-   unitStore.lastURL = route.fullPath
+// use tailwind sticky class to make toolbar stick beneath the header
+const stickyHeader = computed(() => {
+   let classes = "toolbar sticky z-50"
+   let hdr = document.querySelector('header')
+   classes += ` top-[${hdr.clientHeight}px]`
+   return classes
 })
 
-const pageChanged = ((event) => {
+// Pagination is wierd here; the store holds all file references, but maybe not all data
+// the table just shows a subset of the total list. This computed function uses curr page num
+// and page size to get an array of masterfiles for the current page
+const masterFilesPage = computed(() => {
+   let out = []
+   unitStore.masterFiles.forEach( (mf,idx) => {
+      if (idx >= unitStore.currStartIndex && out.length <= unitStore.pageSize) {
+         out.push(mf)  
+      }
+   })  
+   return out
+})
+
+// The page info is already in the store; just set it in the URL and request metadata
+const pageChanged = (()=> {
    unitStore.deselectAll()
-   unitStore.pageSize = event.rows
-   unitStore.currPage = event.page
    let query = Object.assign({}, route.query)
-   query.pagesize = event.rows
-   query.page = event.page
+   query.pagesize = unitStore.pageSize
+   query.page = unitStore.currPage
    router.push({query})
    unitStore.getMetadataPage()
+})
+
+const columns = [
+   {
+      accessorKey: 'fileName',
+      header: "File Name"
+   },
+   {
+      accessorKey: 'title',
+      header: "Title"
+   },
+   {
+      accessorKey: 'description',
+      header: "Caption"
+   },
+   {
+      accessorKey: 'box',
+      header: "Box"
+   },
+   {
+      accessorKey: 'folder',
+      header: "Folder"
+   },
+   {
+      accessorKey: 'fileSize',
+      header: "Size"
+   },
+   {
+      header: "Resolution",
+      cell: ({ row }) => `${row.original.width} x ${row.original.height}`
+   },
+   {
+      accessorKey: 'colorProfile',
+      header: "Color Profile"
+   },
+]
+
+const columnVisibility = computed(() => {
+   if (projectStore.isManuscript == false) {
+      return {
+         box: false, 
+         folder: false
+      }
+   }
+   return {}
+})
+
+const imageClicked = (() => {
+   unitStore.lastURL = route.fullPath
 })
 
 const onRowReorder = ( (event) => {
@@ -150,6 +224,16 @@ const onCellEditComplete = ( (event) => {
    img {
       border:1px solid var(--uvalib-grey);
    }
+}
+#mf-header {
+   padding: 15px;
+   background: white;
+   border-top: 1px solid var(--uvalib-grey-light);
+   border-bottom: 1px solid var(--uvalib-grey-light);
+   display: flex;
+   flex-flow: row wrap;
+   justify-content: flex-start;
+   gap: 10px;
 }
 .editable {
    cursor: pointer;

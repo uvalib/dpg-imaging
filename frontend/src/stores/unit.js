@@ -25,7 +25,7 @@ export const useUnitStore = defineStore('unit', {
          type: "",
       },
       lastURL: "",
-      currPage: 0,
+      currPage: 1,
       pageSize: 20,
       containerType: null
    }),
@@ -37,7 +37,7 @@ export const useUnitStore = defineStore('unit', {
          return state.masterFiles.length
       },
       currStartIndex: state => {
-         return state.currPage * state.pageSize
+         return (state.currPage-1) * state.pageSize
       }
    },
    actions: {
@@ -216,10 +216,9 @@ export const useUnitStore = defineStore('unit', {
       },
 
       async getMetadataPage() {
-         console.log("GET PAGEINDEX "+this.currPage+" sz "+this.pageSize)
          if (this.unitID == "") return
 
-         let startIdx = this.currPage * this.pageSize
+         let startIdx = (this.currPage-1) * this.pageSize
          let endIdx = startIdx+this.pageSize-1
          if (endIdx >= this.masterFiles.length-1) {
             endIdx = this.masterFiles.length-1
@@ -237,7 +236,7 @@ export const useUnitStore = defineStore('unit', {
 
          const system = useSystemStore()
          this.working = true
-         let mdURL = `/api/units/${ this.unitID}/masterfiles/metadata?page=${this.currPage+1}&pagesize=${this.pageSize}`
+         let mdURL = `/api/units/${ this.unitID}/masterfiles/metadata?page=${this.currPage}&pagesize=${this.pageSize}`
          return axios.get(mdURL).then(response => {
             this.working = false
             response.data.forEach( md => {

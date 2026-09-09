@@ -40,7 +40,7 @@ import ProblemsDisplay from '@/components/ProblemsDisplay.vue'
 import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUnitStore} from "@/stores/unit"
-import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MasterFilesList from '@/components/unit/MasterFilesList.vue'
 import MasterFilesGrid from '@/components/unit/MasterFilesGrid.vue'
@@ -152,7 +152,7 @@ onMounted( async () => {
    if ( route.query.pagesize ) {
       unitStore.pageSize = parseInt(route.query.pagesize, 10)
    }
-   unitStore.currPage = 0
+   unitStore.currPage = 1
    if ( route.query.page ) {
       unitStore.currPage = parseInt(route.query.page, 10)
    }

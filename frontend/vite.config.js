@@ -165,6 +165,11 @@ export default defineConfig({
                  
                },
             },
+            table: {
+               slots: {
+                  td: "text-start"
+               }
+            },
             tabs: {
                variants: {
                   variant: {
