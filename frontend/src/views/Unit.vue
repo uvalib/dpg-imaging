@@ -1,7 +1,7 @@
 <template>
    <div class="unit">
       <WaitSpinner  v-if="unitStore.working" :overlay="true" message="Working..." />
-      <ConfirmDialog group="delete">
+      <ConfirmDialog group="delete">  <!-- FIXME -->
          <template #message>
             <div style="display:flex; flex-direction: column; gap: 10px; align-items: flex-start;">
                <div>Delete the selected images? All data will be lost.</div>

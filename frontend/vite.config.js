@@ -37,6 +37,11 @@ export default defineConfig({
                      variant: "solid",
                      class: "text-white focus:outline-offset-2 focus:outline-1 focus:outline-dashed",
                   },
+                  // {
+                  //    color: "success",
+                  //    variant: "solid",
+                  //    class: "border text-black border-brand-g-100 hover:bg-gray-200 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100",
+                  // },
                   {
                      color: "neutral",
                      variant: "ghost",
@@ -124,15 +129,28 @@ export default defineConfig({
                   }
                }
             },
+            fieldGroup: {
+               base: 'w-full',
+            },
             input: {
                slots: {
                   base: '!border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-blue-alt-100'
                },
+               variants: {
+                  fieldGroup: {
+                     horizontal: {
+                        base: '!rounded-e-none'
+                     },
+                  }
+               }
             },
             inputNumber: {
                slots: {
                   base: '!border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-blue-alt-100'
                }
+            },
+            link: {
+               base: 'cursor-pointer !text-brand-blue-alt-A rounded-md hover:bg-brand-blue-alt-400 py-1 px-2 focus:outline-offset-1 focus:outline-dashed focus:outline-brand-grey-100',
             },
             listbox: {
                slots: {
@@ -143,6 +161,7 @@ export default defineConfig({
             },
             select: {
                slots: {
+                  content: 'min-w-fit',
                   base: "focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100",
                   item: [ // the items style is an ARRY and teh second elemsnt defaults to transition animattion. just override stuff at idx 0
                      'data-highlighted:not-data-disabled:before:bg-brand-blue-alt-300',

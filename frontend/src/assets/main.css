@@ -50,6 +50,10 @@
   --color-brand-grey-A: #4F4F4F;
   --color-brand-grey-B: #2B2B2B;  
 
+  --color-brand-green-lightest: #89cc74;
+  --color-brand-green: #62bb46;
+  --color-brand-green-dark: #4e9737;
+
   --color-brand-teal-200: #C8F2F4; 
   --color-brand-teal-100: #5BD7DE;  
   --color-brand-teal: #25CAD3;
@@ -67,8 +71,8 @@
 
   --ui-primary: var( --color-brand-blue-100 );
   --ui-secondary: var( --uvalib-grey-lightest);
-  --ui-success: var(--ui-color-success-500);
-  --ui-error: var( --uvalib-red-emergency);
+  --ui-success: var(--color-brand-green-dark);
+  --ui-error: var( --color-brand-red-B);
 
   --ui-text-dimmed: var(--color-brand-grey);
   --ui-text-muted: var(--color-brand-grey-A);

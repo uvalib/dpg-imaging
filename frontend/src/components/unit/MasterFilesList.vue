@@ -1,14 +1,30 @@
 <template>
    <div id="mf-header" :class="stickyHeader">
       <ViewMode />
-      <UPagination  v-if="unitStore.masterFiles.length>0"
+      <UPagination  v-if="unitStore.masterFiles.length>0" 
          v-model:page="unitStore.currPage" :items-per-page="unitStore.pageSize" 
          :total="unitStore.totalFiles" @update:page="pageChanged"
       />
    </div>
-   <UTable :data="masterFilesPage"
-      :columns="columns" v-model:column-visibility="columnVisibility"
-   >
+   <UTable :data="masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility">
+      <template #image-cell="{ row }">
+         <RouterLink  @click="imageClicked" :to="`/projects/${projectStore.detail.id}/unit/images/${row.index+1}`">
+            <img :src="row.original.thumbURL"/>   
+         </RouterLink>
+      </template>
+      <template #title-cell="{ row }">
+         <template v-if="editInfo.field=='title' && row.original.fileName == editInfo.fileName">
+            <TitlePicker v-model="editInfo.value" @cancel="cancelEdit" @submit="submitEdit"/>
+         </template>
+         <ULink v-else @click="startEdit('title', row)">{{ row.original.title}}</ULink>
+      </template>
+      <template #description-cell="{ row }">
+         <template v-if="editInfo.field=='description' && row.original.fileName == editInfo.fileName">
+            <UInput v-model="editInfo.value" class="w-full"
+               @keydown.enter="submitEdit" @keydown.esc="cancelEdit" @keydown.tab="cancelEdit" />
+         </template>
+         <ULink v-else @click="startEdit('description', row)">{{ row.original.description}}</ULink>
+      </template>
    </UTable>
    <!-- <DataTable :value="unitStore.masterFiles" ref="mfTable" id="mf-table" dataKey="fileName"
          stripedRows size="small" paginatorPosition="top"
@@ -106,7 +122,7 @@ import ViewMode from '@/components/ViewMode.vue'
 import UnitActions from '@/components/unit/UnitActions.vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import TitlePicker from "@/components/TitlePicker.vue"
-import { computed, h,  } from 'vue'
+import { computed, h, ref  } from 'vue'
 import UCheckboxCell from './UCheckboxCell.vue'
 
 // NOTES: 
@@ -121,40 +137,7 @@ const router = useRouter()
 const projectStore = useProjectStore()
 const unitStore = useUnitStore()
 
-// use tailwind sticky class to make toolbar stick beneath the header
-const stickyHeader = computed(() => {
-   let hdr = document.querySelector('header')
-   let top = `top-[${hdr.clientHeight}px]`
-   let obj = {
-      sticky: true,
-      'z-50': true,
-   }
-   obj[top] = true 
-   return obj
-})
-
-// Pagination is wierd here; the store holds all file references, but maybe not all data
-// the table just shows a subset of the total list. This computed function uses curr page num
-// and page size to get an array of masterfiles for the current page
-const masterFilesPage = computed(() => {
-   let out = []
-   unitStore.masterFiles.forEach( (mf,idx) => {
-      if (idx >= unitStore.currStartIndex && out.length <= unitStore.pageSize) {
-         out.push(mf)  
-      }
-   })  
-   return out
-})
-
-// The pageNum info is already in the store; just set it in the URL and request metadata
-const pageChanged = (()=> {
-   unitStore.deselectAll()
-   let query = Object.assign({}, route.query)
-   query.pagesize = unitStore.pageSize
-   query.page = unitStore.currPage
-   router.push({query})
-   unitStore.getMetadataPage()
-})
+const editInfo = ref({fileName: "", field: "", orig: "", value: ""})
 
 const columns = [
    {
@@ -167,11 +150,6 @@ const columns = [
    },
    {
       id: 'image',
-      cell: ({ row }) => 
-         h(RouterLink, {
-            to: `/projects/${projectStore.detail.id}/unit/images/${row.index+1}` },
-            () => h('img', {src: row.original.thumbURL}) // render the image in the default slot of the router; avoids performance warnings
-      )
    },
    {
       id: 'tag',
@@ -223,29 +201,62 @@ const columnVisibility = computed(() => {
    return {}
 })
 
+// use tailwind sticky class to make toolbar stick beneath the header
+const stickyHeader = computed(() => {
+   let hdr = document.querySelector('header')
+   let top = `top-[${hdr.clientHeight}px]`
+   let obj = {
+      sticky: true,
+      'z-50': true,
+   }
+   obj[top] = true 
+   return obj
+})
+
+// Pagination is wierd here; the store holds all file references, but maybe not all data
+// the table just shows a subset of the total list. This computed function uses curr page num
+// and page size to get an array of masterfiles for the current page
+const masterFilesPage = computed(() => {
+   let out = []
+   unitStore.masterFiles.forEach( (mf,idx) => {
+      if (idx >= unitStore.currStartIndex && out.length <= unitStore.pageSize) {
+         out.push(mf)  
+      }
+   })  
+   return out
+})
+
+const cancelEdit = (() => {
+   editInfo.value = {fileName: "", field: "", orig: "", value: ""}
+})
+const startEdit = ((field,row) => {
+   editInfo.value = {fileName: row.original.fileName, field: field,  rowIndex: row.index, orig: row.original.title, value: row.original.title}
+})
+const submitEdit = (() => {
+   console.log(editInfo.value.value)
+   if ( editInfo.value.orig != editInfo.value.value) {
+      unitStore.updateMasterFileMetadata( editInfo.value.fileName, editInfo.value.field, editInfo.value.value)
+   }
+   editInfo.value = {fileName: "", field: "", orig: "", value: ""}
+})
+
+// The pageNum info is already in the store; just set it in the URL and request metadata
+const pageChanged = (()=> {
+   unitStore.deselectAll()
+   let query = Object.assign({}, route.query)
+   query.pagesize = unitStore.pageSize
+   query.page = unitStore.currPage
+   router.push({query})
+   unitStore.getMetadataPage()
+})
+
 const imageClicked = (() => {
+   console.log("SET LAST LINK TO "+route.fullPath)
    unitStore.lastURL = route.fullPath
 })
 
 const onRowReorder = ( (event) => {
    unitStore.masterFiles = event.value
-})
-
-const masterFileCheckboxClicked = ((img) => {
-   const idx = unitStore.masterFiles.findIndex( mf => mf.fileName == img.fileName)
-   unitStore.masterFileSelected(idx)
-})
-
-const imageViewerURL = ((img) => {
-   const idx = unitStore.masterFiles.findIndex( mf => mf.fileName == img.fileName)
-   return `/projects/${projectStore.detail.id}/unit/images/${idx+1}`
-})
-
-const onCellEditComplete = ( (event) => {
-   let { data, newValue, field } = event
-   if ( data[field] != newValue) {
-      unitStore.updateMasterFileMetadata( data.fileName, field, newValue)
-   }
 })
 </script>
 
