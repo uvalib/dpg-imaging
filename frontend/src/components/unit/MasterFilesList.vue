@@ -174,6 +174,12 @@ const columns = [
       )
    },
    {
+      id: 'tag',
+      header: "Tag",
+      cell: ({ row }) => 
+         h(TagPicker, { masterFile: row.original })
+   },
+   {
       accessorKey: 'fileName',
       header: "File Name"
    },

@@ -1,7 +1,8 @@
 <template>
    <UPopover>
-      <UButton color="secondary" class="hint-trigger" label="Keyboard Shortcuts" icon="i-lucide-help-circle" />
+      <UButton color="secondary" label="Keyboard Shortcuts" icon="i-lucide-help-circle" />
       <template #content>
+         <div class="tips">
          <table >
             <tbody>
                <tr><td class="act">Select All:</td><td>ctrl+a</td></tr>
@@ -15,6 +16,7 @@
                <tr><td class="act">Cancel Edit:</td><td>esc</td></tr>
             </tbody>
          </table>
+         </div>
          </template>
    </UPopover>
 </template>
@@ -31,8 +33,11 @@ const isManuscript = computed(() => {
 </script>
 
 <style lang="scss" scoped>
+.tips {
+   padding: 10px 20px;
+}
 table {
-   font-size: 0.75em;
+   font-size: 0.8em;
    text-align: left;
    td.act {
       text-align: right;
