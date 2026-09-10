@@ -104,9 +104,17 @@ import { useProjectStore } from "@/stores/project"
 import { useUnitStore } from "@/stores/unit"
 import ViewMode from '@/components/ViewMode.vue'
 import UnitActions from '@/components/unit/UnitActions.vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import TitlePicker from "@/components/TitlePicker.vue"
-import { computed } from 'vue'
+import { computed, h,  } from 'vue'
+import UCheckboxCell from './UCheckboxCell.vue'
+
+// NOTES: 
+//   h is short for hyperscript: javascript which produces html dynamically and injects them into the DOM.
+//   Because of the way nuxt-ui components are handled (injected at build time in templates and setup),
+//   using UCheckbox (or any nuxt component) in a column def cell reder will fill. The component cannot be resolved.
+//   To fix, create a dummy wrapper around the component and directly include it instead (like UCheckboxCell above).
+//   Then it use it in the cell render logic and it will be resolved.
 
 const route = useRoute()
 const router = useRouter()
@@ -115,10 +123,14 @@ const unitStore = useUnitStore()
 
 // use tailwind sticky class to make toolbar stick beneath the header
 const stickyHeader = computed(() => {
-   let classes = "toolbar sticky z-50"
    let hdr = document.querySelector('header')
-   classes += ` top-[${hdr.clientHeight}px]`
-   return classes
+   let top = `top-[${hdr.clientHeight}px]`
+   let obj = {
+      sticky: true,
+      'z-50': true,
+   }
+   obj[top] = true 
+   return obj
 })
 
 // Pagination is wierd here; the store holds all file references, but maybe not all data
@@ -134,7 +146,7 @@ const masterFilesPage = computed(() => {
    return out
 })
 
-// The page info is already in the store; just set it in the URL and request metadata
+// The pageNum info is already in the store; just set it in the URL and request metadata
 const pageChanged = (()=> {
    unitStore.deselectAll()
    let query = Object.assign({}, route.query)
@@ -145,6 +157,22 @@ const pageChanged = (()=> {
 })
 
 const columns = [
+   {
+      id: 'select',
+      cell: ({ row }) => 
+         h(UCheckboxCell, {
+            modelValue: unitStore.masterFiles[row.index].selected,
+            'onUpdate:modelValue': () => unitStore.masterFileSelected(row.index)
+         })
+   },
+   {
+      id: 'image',
+      cell: ({ row }) => 
+         h(RouterLink, {
+            to: `/projects/${projectStore.detail.id}/unit/images/${row.index+1}` },
+            () => h('img', {src: row.original.thumbURL}) // render the image in the default slot of the router; avoids performance warnings
+      )
+   },
    {
       accessorKey: 'fileName',
       header: "File Name"
