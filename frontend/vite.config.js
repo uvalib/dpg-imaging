@@ -44,6 +44,11 @@ export default defineConfig({
                   },
                ],
             },
+            checkbox: {
+               slots: {
+                  label: "pl-2"
+               }
+            },
             dropdownMenu: {
                slots: {
                   item: "hover:bg-brand-blue-alt-300 rounded-md"

@@ -1,57 +1,35 @@
 <template>
-   <DPGButton @click="renameClicked" severity="secondary" label="Rename All" />
-   <ConfirmDialog  position="top">
-      <template #message>
+   <UModal v-model:open="open" :modal="true" :dismissible="false" :close="false" title="Confirm Rename">
+      <UButton @click="open=true" size="sm" color="secondary" label="Rename All" />
+      <template #body>
          <div style="display:flex; flex-direction: column; gap: 10px; align-items: flex-start;">
             <div>All files will be renamed to match the following format:</div>
-            <code>{{paddedUnit()}}_0001.tif - {{paddedUnit()}}_nnnn.tif</code>
+            <code>{{paddedUnit}}_0001.tif - {{paddedUnit}}_nnnn.tif</code>
          </div>
       </template>
-   </ConfirmDialog>
+      <template #footer="{ close }">
+         <UButton label="Cancel" size="sm" color="secondary" @click="close" />
+         <UButton label="Rename" size="sm" @click="unitStore.renameAll()" />
+      </template>
+   </UModal>
 </template>
 
 <script setup>
-import { useConfirm } from "primevue/useconfirm"
-import {useUnitStore} from "@/stores/unit"
-import { onBeforeMount, onBeforeUnmount } from 'vue'
+import { useUnitStore } from "@/stores/unit"
+import { ref, computed } from 'vue'
+import { onKeyStroke } from '@vueuse/core'
 
-const confirm = useConfirm()
+const open = ref(false)
 const unitStore = useUnitStore()
 
-onBeforeMount( async () => {
-   // setup keyboard litener for shortcuts
-   window.addEventListener('keydown', keyboardHandler)
-})
-
-onBeforeUnmount( async () => {
-   window.removeEventListener('keydown', keyboardHandler)
-})
-
-function keyboardHandler(event) {
-   if ( !event.ctrlKey ) return
-   if (event.key == 'r') {
-      renameClicked()
+onKeyStroke('r', (e) => {
+   if ( e.ctrlKey ) {
+      open.value = true
    }
-}
+})
 
-function renameClicked() {
-   confirm.require({
-      header: 'Confirm Rename',
-      rejectProps: {
-         label: 'Cancel',
-         severity: 'secondary'
-      },
-      acceptProps: {
-         label: 'Rename'
-      },
-      accept: () => {
-         unitStore.renameAll()
-      }
-   })
-}
-
-function paddedUnit() {
+const paddedUnit = computed(() => {
    let unitStr = ""+unitStore.unitID
    return unitStr.padStart(9,'0')
-}
+})
 </script>

@@ -1,91 +1,102 @@
 <template>
-   <DPGButton  severity="secondary" @click="showClicked">
-      Set Page Numbers
-   </DPGButton>
-   <Dialog v-model:visible="unitStore.edit.pageNumber" :modal="true" header="Set Page Numbers">
-      <div class="panel">
-         <div class="row">
-            <span class="entry pad-right">
-               <label>Start Image:</label>
-               <Select v-model="unitStore.rangeStartIdx" @change="startChanged" filter placeholder="Select start page"
-                  :options="masterFiles" optionLabel="label" optionValue="value" />
-            </span>
-            <span class="entry  pad-right">
-               <label>End Image:</label>
-               <Select v-model="unitStore.rangeEndIdx" @change="endChanged" filter placeholder="Select end page"
-                  :options="masterFiles" optionLabel="label" optionValue="value"/>
-            </span>
-            <DPGButton @click="selectAllClicked" severity="secondary" label="Select All"/>
+   <UModal v-model:open="open" :modal="true" :dismissible="false" :close="false" title="Set Page Numbers">
+      <UButton @click="showClicked()" size="sm" color="secondary" label="Set Page Numbers" />
+      <template #body>
+         <div class="panel">
+            <div class="row">
+               <span class="entry">
+                  <label>Start Image:</label>
+                  <USelect v-model="startIdx" @change="startChanged" placeholder="Select start page" :items="masterFiles" />
+               </span>
+               <span class="entry">
+                  <label>End Image:</label>
+                  <USelect v-model="endIdx" @change="endChanged" filter placeholder="Select end page" :items="masterFiles"/>
+               </span>
+               <UButton @click="selectAllClicked" size="sm" color="secondary" label="Select All"/>
+            </div>
+            <div class="row">
+               <span class="entry">
+                  <label>Starting page number:</label>
+                  <UInput id="start-page-num" v-model="startPage"  @keyup.enter="okPagesClicked"/>
+               </span>
+               <UCheckbox v-model="unnumberVerso" size="lg" label="Unnumbered Verso" />
+            </div>   
+            <p class="error" v-if="error">{{ error }}</p>
          </div>
-         <div class="row">
-            <span class="entry  pad-right">
-               <label>Starting Page:</label>
-               <input id="start-page-num" type="text" v-model="startPage"  @keyup.enter="okPagesClicked"/>
-            </span>
-            <label class="verso"><input v-model="unnumberVerso" type="checkbox"/>Unnumbered Verso</label>
-         </div>
-      </div>
-      <template #footer>
-         <DPGButton @click="cancelEditClicked" severity="secondary" label="Cancel"/>
-         <DPGButton @click="okPagesClicked" label="OK"/>
       </template>
-   </Dialog>
+      <template #footer="{ close }">
+         <UButton label="Cancel" size="sm" color="secondary" @click="close" />
+         <UButton label="OK" size="sm" @click="okPagesClicked" />
+      </template>
+   </UModal>
 </template>
 
 <script setup>
-import {useUnitStore} from "@/stores/unit"
-import {useSystemStore} from "@/stores/system"
-import Dialog from 'primevue/dialog'
-import Select from 'primevue/select'
+import { useUnitStore } from "@/stores/unit"
 import { ref, computed } from 'vue'
+import { onKeyStroke } from '@vueuse/core'
 
 const unitStore = useUnitStore()
-const systemStore = useSystemStore()
 
 const startPage = ref("1")
 const unnumberVerso = ref(false)
+const open = ref(false)
+const startIdx = ref()
+const endIdx = ref()
+const error = ref("")
+
+onKeyStroke('p', (e) => {
+   if ( e.ctrlKey ) {
+      showClicked()
+   }
+})
 
 const masterFiles = computed( () => {
    let list = []
    unitStore.masterFiles.forEach( (mf,idx) => {
       list.push({ value: idx, label: mf.fileName })
    })
+   console.log(list)
    return list
 })
 
 const showClicked = (() => {
-   unitStore.edit.pageNumber = true
+   open.value = true
    startPage.value = "1"
    unnumberVerso.value = false
+   if (unitStore.rangeStartIdx > -1 ) {
+      startIdx.value = unitStore.rangeStartIdx
+   }
+   if (unitStore.rangeEndIdx > -1 ) {
+      endIdx.value = unitStore.rangeEndIdx
+   }
 })
 
 const startChanged = (() => {
-   unitStore.startFileSelected( unitStore.rangeStartIdx )
+   error.value = ""
+   unitStore.startFileSelected( startIdx.value )
 })
 const endChanged = (() => {
+   error.value = ""
    unitStore.endFileSelected( unitStore.rangeEndIdx )
 })
 
-const cancelEditClicked = (() => {
-   unitStore.edit.pageNumber = false
-})
-
 const okPagesClicked = (() => {
-   systemStore.error = ""
+   error.value = ""
    if ( unitStore.rangeStartIdx == -1 || unitStore.rangeEndIdx == -1) {
-      systemStore.setError( "Start and end image must be selected" )
+      error.value = "Start and end image must be selected"
       return
    }
    if (startPage.value == "") {
-      systemStore.setError( "Start page is required" )
+      error.value =  "Start page is required" 
       return
    }
    if (unnumberVerso.value && (unitStore.rangeEndIdx-unitStore.rangeStartIdx)%2 == 0) {
-      systemStore.setError( "An even number of pages is required for unnumbered verso")
+      error.value =  "An even number of pages is required for unnumbered verso"
       return
    }
    unitStore.updatePageNumbers(startPage.value, !unnumberVerso.value)
-   unitStore.edit.pageNumber = false
+   open.value = false
 })
 
 const selectAllClicked = (() => {
@@ -95,38 +106,25 @@ const selectAllClicked = (() => {
 
 <style lang="scss" scoped>
 .panel {
-   background: white;
    display: flex;
    flex-direction: column;
    gap: 20px;
+   .error {
+      margin: 0;
+      padding: 0;
+      color: var(--uvalib-red-emergency);
+   }
 
    .row {
       display: flex;
       flex-flow: row nowrap;
-      justify-content: space-between;
+      justify-content: flex-start;
       align-items: flex-end;
-      gap: 10px;
+      gap: 15px;
       text-align: left;
-      label {
-         display: block;
-         margin-bottom: 5px;
-      }
-      .verso {
-         cursor: pointer;
+      .entry {
          display: flex;
-         flex-flow: row nowrap;
-         justify-content: space-evenly;
-         align-items: center;
-         label {
-            vertical-align: middle;
-            display: inline-block;
-         }
-         input {
-            width: 20px;
-            height:  20px;
-            margin-right: 10px;
-            vertical-align: middle;
-         }
+         flex-direction: column;
       }
    }
 }

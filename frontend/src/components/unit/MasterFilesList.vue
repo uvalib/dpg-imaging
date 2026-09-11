@@ -1,10 +1,13 @@
 <template>
    <div class="list-view sticky z-50" :style="{top: headerHeight}">
-      <ViewMode />
-      <UPagination  v-if="unitStore.masterFiles.length>0" 
-         v-model:page="unitStore.currPage" :items-per-page="unitStore.pageSize" 
-         :total="unitStore.totalFiles" @update:page="pageChanged"
-      />
+      <div class="control-group">
+         <ViewMode />
+         <UPagination  v-if="unitStore.masterFiles.length>0" 
+            v-model:page="unitStore.currPage" :items-per-page="unitStore.pageSize" 
+            :total="unitStore.totalFiles" @update:page="pageChanged"
+         />
+      </div>
+      <UnitActions />
    </div>
    <UTable :data="masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility" :ui="{tbody: 'mf-tbody'}">
       <template #image-cell="{ row }">
@@ -71,96 +74,10 @@
          <UIcon name="i-lucide-arrow-down-up" class="size-6 cursor-grab text-brand-grey"/>
       </template>
    </UTable>
-   <!-- <DataTable :value="unitStore.masterFiles" ref="mfTable" id="mf-table" dataKey="fileName"
-         stripedRows size="small" paginatorPosition="top"
-         :lazy="false" :rows="unitStore.pageSize" :first="unitStore.currStartIndex" :rowsPerPageOptions="[20,50,75]" paginator
-         paginatorTemplate="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink RowsPerPageDropdown"
-         currentPageReportTemplate="{currentPage} of {totalPages}"  @page="pageChanged"
-         editMode="cell" @cell-edit-complete="onCellEditComplete" @rowReorder="onRowReorder"
-   >
-      <template #paginatorstart>
-         <ViewMode />
-      </template>
-      <template #paginatorend>
-         <UnitActions />
-      </template>
-      <Column headerStyle="width: 3rem">
-         <template #body="slotProps">
-            <input type="checkbox" style="width: 20px;height: 20px" v-model="slotProps.data.selected" @click="masterFileCheckboxClicked(slotProps.data)"/>
-         </template>
-      </Column>
-      <Column headerStyle="width: 70px">
-         <template #body="slotProps">
-            <div class="centered">
-               <router-link :to="imageViewerURL(slotProps.data)" @click="imageClicked"><img :src="slotProps.data.thumbURL"/></router-link>
-            </div>
-         </template>
-      </Column>
-      <Column header="Tag" headerStyle="width: 60px">
-         <template #body="slotProps">
-            <TagPicker :masterFile="slotProps.data" />
-         </template>
-      </Column>
-      <Column header="File Name" field="fileName">
-         <template #body="slotProps">
-            <div class="filename">
-               <span>{{ slotProps.data.fileName }}</span>
-               <i v-if="slotProps.data.error" class="image-err pi pi-exclamation-circle" v-tooltip.bottom="{ value: slotProps.data.error, autoHide: false }"></i>
-            </div>
-         </template>
-      </Column>
-      <Column header="Title" field="title">
-         <template #body="slotProps"><span class="editable">{{ slotProps.data.title }}</span></template>
-         <template #editor="{ data, field }">
-            <TitlePicker v-model="data[field]"/>
-         </template>
-      </Column>
-      <Column header="Caption" field="description">
-         <template #body="slotProps"><span class="editable">{{ slotProps.data.description }}</span></template>
-         <template #editor="{ data, field }">
-            <InputText v-model="data[field]" fluid />
-         </template>
-      </Column>
-      <template v-if="projectStore.isManuscript">
-         <Column :header="projectStore.detail.containerType.name" field="box" class="nowrap">
-            <template #body="slotProps">
-               <span  v-if="slotProps.data.box" class="editable">{{ slotProps.data.box }}</span>
-               <span  v-else class="editable undefined">Undefined</span>
-            </template>
-            <template #editor="{ data, field }">
-               <InputText v-model="data[field]" fluid />
-            </template>
-         </Column>
-         <Column v-if="projectStore.detail.containerType.hasFolders" header="Folder" field="folder" class="nowrap">
-            <template #body="slotProps">
-               <span  v-if="slotProps.data.folder" class="editable">{{ slotProps.data.folder }}</span>
-               <span  v-else class="editable undefined">Undefined</span>
-            </template>
-            <template #editor="{ data, field }">
-               <InputText v-model="data[field]" fluid />
-            </template>
-         </Column>
-      </template>
-      <Column header="Component" field="component" class="nowrap">
-         <template #body="slotProps">
-            <span v-if="slotProps.data.componentID">{{slotProps.data.componentID}}</span>
-            <span v-else class="undefined">N/A</span>
-         </template>
-      </Column>
-      <Column header="Size" class="nowrap">
-         <template #body="slotProps">{{slotProps.data.width}} x {{slotProps.data.height}}</template>
-      </Column>
-      <Column header="Resolution" field="resolution" class="nowrap"/>
-      <Column header="Color Profile" field="colorProfile" class="nowrap"/>
-      <Column rowReorder headerStyle="width: 3rem" :reorderableColumn="false" />
-   </DataTable> -->
 </template>
 
 <script setup>
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
 import TagPicker from '@/components/TagPicker.vue'
-import InputText from 'primevue/inputtext'
 import { useProjectStore } from "@/stores/project"
 import { useUnitStore } from "@/stores/unit"
 import ViewMode from '@/components/ViewMode.vue'
@@ -327,8 +244,15 @@ const imageClicked = (() => {
    border-bottom: 1px solid var(--uvalib-grey-light);
    display: flex;
    flex-flow: row wrap;
-   justify-content: flex-start;
-   gap: 10px;
+   justify-content: space-between;
+   align-items: center;
+   .control-group {
+      display: flex;
+      flex-flow: row wrap;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 10px;   
+   }
 }
 .filename {
    display: flex;
