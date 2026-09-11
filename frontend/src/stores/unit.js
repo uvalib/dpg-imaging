@@ -6,6 +6,11 @@ export const useUnitStore = defineStore('unit', {
    state: () => ({
       working: false,
       unitID: "",
+
+      // this flsg is set any time the masterfile metadata changes. The tables watch this and update thir models to match
+      // the tables also watch for page changes as they update the data too.
+      masterFilesUpdated: false, 
+
       masterFiles: [],
       viewMode: "list",
       rangeStartIdx: -1,
@@ -44,6 +49,8 @@ export const useUnitStore = defineStore('unit', {
       moveImage( fromIndex, toIndex ) {
          let img = this.masterFiles.splice(fromIndex, 1)[0]
          this.masterFiles.splice(toIndex, 0, img)
+         this.masterFilesUpdated = true
+         setTimeout( ()=> this.masterFilesUpdated = false, 250)
       },
       selectPage() {
          this.rangeStartIdx = this.currStartIndex
@@ -242,6 +249,8 @@ export const useUnitStore = defineStore('unit', {
             response.data.forEach( md => {
                this.setImageMetadata( md )
             })
+            this.masterFilesUpdated = true
+            setTimeout( ()=> this.masterFilesUpdated = false, 250)
          }).catch( e => {
             system.setError(e)
             this.working = false

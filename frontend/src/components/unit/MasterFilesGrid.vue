@@ -91,10 +91,7 @@ import { ref, nextTick } from 'vue'
 import ViewMode from '@/components/ViewMode.vue'
 import UnitActions from '@/components/unit/UnitActions.vue'
 import { useRoute, useRouter } from 'vue-router'
-import { usePinnable } from '@/composables/pin'
 import TitlePicker from '../TitlePicker.vue'
-
-usePinnable("mf-grid")
 
 const route = useRoute()
 const router = useRouter()

@@ -1,12 +1,12 @@
 <template>
-   <div id="mf-header" :class="stickyHeader">
+   <div class="list-view sticky z-50" :style="{top: headerHeight}">
       <ViewMode />
       <UPagination  v-if="unitStore.masterFiles.length>0" 
          v-model:page="unitStore.currPage" :items-per-page="unitStore.pageSize" 
          :total="unitStore.totalFiles" @update:page="pageChanged"
       />
    </div>
-   <UTable :data="masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility">
+   <UTable :data="masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility" :ui="{tbody: 'mf-tbody'}">
       <template #image-cell="{ row }">
          <RouterLink  @click="imageClicked" :to="`/projects/${projectStore.detail.id}/unit/images/${row.index+1}`">
             <img :src="row.original.thumbURL"/>   
@@ -125,8 +125,9 @@ import ViewMode from '@/components/ViewMode.vue'
 import UnitActions from '@/components/unit/UnitActions.vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import TitlePicker from "@/components/TitlePicker.vue"
-import { computed, h, ref  } from 'vue'
+import { computed, h, ref, watch  } from 'vue'
 import UCheckboxCell from './UCheckboxCell.vue'
+import { useSortable } from '@vueuse/integrations/useSortable'
 
 // NOTES: 
 //   h is short for hyperscript: javascript which produces html dynamically and injects them into the DOM.
@@ -141,6 +142,35 @@ const projectStore = useProjectStore()
 const unitStore = useUnitStore()
 
 const editInfo = ref({fileName: "", field: "", orig: "", value: ""})
+const masterFilesPage = ref([])
+
+watch(() => unitStore.masterFilesUpdated, (updated) => {
+   if ( updated == true) {
+      updateMasterFilesPage()
+   }
+})
+watch(() => [unitStore.currPage, unitStore.pageSize], () => {
+   updateMasterFilesPage()
+})
+
+const updateMasterFilesPage = (() => {
+   // Pagination is wierd here; the store holds all file references, but maybe not all metadata.
+   // The table just shows a subset of the total list. This function uses curr page num
+   // and page size to get an array of masterfiles for the current page.
+   masterFilesPage.value = []
+   unitStore.masterFiles.forEach( (mf,idx) => {
+      if (idx >= unitStore.currStartIndex && masterFilesPage.value.length <= unitStore.pageSize) {
+         masterFilesPage.value.push(mf)  
+      }
+   })  
+})
+
+useSortable('.mf-tbody', masterFilesPage.value, {
+  animation: 150,
+  onEnd: (evt) => {
+    unitStore.moveImage(evt.oldIndex, evt.newIndex)
+  }
+})
 
 const columns = [
    {
@@ -207,36 +237,18 @@ const columnVisibility = computed(() => {
    return {}
 })
 
-// use tailwind sticky class to make toolbar stick beneath the header
-const stickyHeader = computed(() => {
+// you cannot custruct tailwind class values dynamically, so you  cant do `top-${hdr.clientHeight}`. 
+// Instead use this to bind an inline style 'top' param to stick the controls below the header
+const headerHeight = computed(() => {
    let hdr = document.querySelector('header')
-   let top = `top-[${hdr.clientHeight}px]`
-   let obj = {
-      sticky: true,
-      'z-50': true,
-   }
-   obj[top] = true 
-   return obj
-})
-
-// Pagination is wierd here; the store holds all file references, but maybe not all data
-// the table just shows a subset of the total list. This computed function uses curr page num
-// and page size to get an array of masterfiles for the current page
-const masterFilesPage = computed(() => {
-   let out = []
-   unitStore.masterFiles.forEach( (mf,idx) => {
-      if (idx >= unitStore.currStartIndex && out.length <= unitStore.pageSize) {
-         out.push(mf)  
-      }
-   })  
-   return out
+   return `${hdr.clientHeight}px`
 })
 
 const cancelEdit = (() => {
    editInfo.value = {fileName: "", field: "", orig: "", value: ""}
 })
 const startEdit = ((field,row) => {
-   editInfo.value = {fileName: row.original.fileName, field: field,  rowIndex: row.index, orig: row.original.title, value: row.original.title}
+   editInfo.value = {fileName: row.original.fileName, field: field,  rowIndex: row.index, orig: row.original[field], value: row.original[field]}
 })
 const submitEdit = (() => {
    console.log(editInfo.value.value)
@@ -257,26 +269,12 @@ const pageChanged = (()=> {
 })
 
 const imageClicked = (() => {
-   console.log("SET LAST LINK TO "+route.fullPath)
    unitStore.lastURL = route.fullPath
-})
-
-const onRowReorder = ( (event) => {
-   unitStore.masterFiles = event.value
 })
 </script>
 
 <style lang="scss" scoped>
-.centered {
-   display: flex;
-   flex-flow: row nowrap;
-   justify-content: center;
-   padding: 5px 5px 2px 5px;
-   img {
-      border:1px solid var(--uvalib-grey);
-   }
-}
-#mf-header {
+.list-view {
    padding: 15px;
    background: white;
    border-top: 1px solid var(--uvalib-grey-light);
@@ -285,13 +283,6 @@ const onRowReorder = ( (event) => {
    flex-flow: row wrap;
    justify-content: flex-start;
    gap: 10px;
-}
-.editable {
-   cursor: pointer;
-   &:hover {
-      text-decoration: underline;
-      color: var(--uvalib-blue-alt) !important;
-   }
 }
 .filename {
    display: flex;
