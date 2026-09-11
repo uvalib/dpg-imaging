@@ -87,6 +87,7 @@ import TitlePicker from "@/components/TitlePicker.vue"
 import { computed, h, ref, watch  } from 'vue'
 import UCheckboxCell from './UCheckboxCell.vue'
 import { useSortable } from '@vueuse/integrations/useSortable'
+import { onKeyStroke } from '@vueuse/core'
 
 // NOTES: 
 //   h is short for hyperscript: javascript which produces html dynamically and injects them into the DOM.
@@ -129,6 +130,19 @@ useSortable('.mf-tbody', masterFilesPage.value, {
   onEnd: (evt) => {
     unitStore.moveImage(evt.oldIndex, evt.newIndex)
   }
+})
+
+onKeyStroke(['>','.'], () => {
+   if (unitStore.currPage < unitStore.totalPages && editInfo.value.field == "") {
+      unitStore.currPage++
+      pageChanged()
+   }
+})
+onKeyStroke(['<',','], () => {
+   if (unitStore.currPage > 1 && editInfo.value.field == "") {
+      unitStore.currPage--
+      pageChanged()
+   }
 })
 
 const columns = [

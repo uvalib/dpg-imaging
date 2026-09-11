@@ -40,6 +40,9 @@ export const useUnitStore = defineStore('unit', {
       totalFiles: state => {
          return state.masterFiles.length
       },
+      totalPages: state => {
+         return Math.ceil(state.masterFiles.length / state.pageSize)
+      },
       currStartIndex: state => {
          return (state.currPage-1) * state.pageSize
       }
