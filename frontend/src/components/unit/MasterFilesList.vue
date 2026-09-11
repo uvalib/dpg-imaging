@@ -12,21 +12,63 @@
             <img :src="row.original.thumbURL"/>   
          </RouterLink>
       </template>
+
       <template #title-cell="{ row }">
          <template v-if="editInfo.field=='title' && row.original.fileName == editInfo.fileName">
             <TitlePicker v-model="editInfo.value" @cancel="cancelEdit" @submit="submitEdit"/>
          </template>
-         <ULink v-else @click="startEdit('title', row)">{{ row.original.title}}</ULink>
+         <ULink v-else @click="startEdit('title', row)">
+            <span v-if="row.original.title">{{  row.original.title }}</span>
+            <span v-else class="undefined">Undefined</span>
+         </ULink>
       </template>
+
       <template #description-cell="{ row }">
          <template v-if="editInfo.field=='description' && row.original.fileName == editInfo.fileName">
-            <UInput v-model="editInfo.value" class="w-full"
+            <UInput v-model="editInfo.value" class="w-full" autofocus
                @keydown.enter="submitEdit" @keydown.esc="cancelEdit" @keydown.tab="cancelEdit" />
          </template>
-         <ULink v-else @click="startEdit('description', row)">{{ row.original.description}}</ULink>
+         <ULink v-else @click="startEdit('description', row)">
+            <span v-if="row.original.description">{{  row.original.description }}</span>
+            <span v-else class="undefined">Undefined</span>
+         </ULink>
       </template>
+
+      <template #box-cell="{ row }">
+         <template v-if="editInfo.field=='box' && row.original.fileName == editInfo.fileName">
+            <UInput v-model="editInfo.value" class="w-full" autofocus 
+               @keydown.enter="submitEdit" @keydown.esc="cancelEdit" @keydown.tab="cancelEdit" />
+         </template>
+         <ULink v-else @click="startEdit('box', row)">
+            <span v-if="row.original.box">{{  row.original.box }}</span>
+            <span v-else class="undefined">Undefined</span>
+         </ULink>
+      </template>
+
+      <template #folder-cell="{ row }">
+         <template v-if="editInfo.field=='folder' && row.original.fileName == editInfo.fileName">
+            <UInput v-model="editInfo.value" class="w-full" autofocus
+               @keydown.enter="submitEdit" @keydown.esc="cancelEdit" @keydown.tab="cancelEdit" />
+         </template>
+         <ULink v-else @click="startEdit('folder', row)">
+            <span v-if="row.original.folder">{{  row.original.folder }}</span>
+            <span v-else class="undefined">Undefined</span>
+         </ULink>
+      </template>
+
+      <template #component-cell="{ row }">
+          <template v-if="editInfo.field=='component' && row.original.fileName == editInfo.fileName">
+            <UInput v-model="editInfo.value" class="w-full" autofocus
+               @keydown.enter="submitEdit" @keydown.esc="cancelEdit" @keydown.tab="cancelEdit" />
+         </template>
+         <ULink v-else @click="startEdit('component', row)"> 
+            <span v-if="row.original.component">{{  row.original.component }}</span>
+            <span v-else class="undefined">Undefined</span>
+         </ULink>
+      </template>
+
       <template #reorder-cell="{ }">
-         <UButton icon="i-lucide-arrow-down-up" color="netural" variant="ghost" class="cursor-grab hover:bg-white"/>
+         <UIcon name="i-lucide-arrow-down-up" class="size-6 cursor-grab text-brand-grey"/>
       </template>
    </UTable>
    <!-- <DataTable :value="unitStore.masterFiles" ref="mfTable" id="mf-table" dataKey="fileName"
@@ -211,6 +253,10 @@ const columns = [
       header: "Folder"
    },
    {
+      accessorKey: 'component',
+      header: "Component",
+   },
+   {
       accessorKey: 'fileSize',
       header: "Size"
    },
@@ -297,7 +343,7 @@ const imageClicked = (() => {
 }
 .undefined {
    font-style: italic;
-   color: var(--uvalib-grey-light);
+   color: var(--uvalib-grey);
 }
 .nowrap {
    white-space: nowrap;

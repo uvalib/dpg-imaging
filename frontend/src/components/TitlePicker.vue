@@ -1,11 +1,12 @@
 <template>
    <UFieldGroup>
       <template v-if="showTitleVocab">
-         <USelect :items="system.titleVocab" class="w-full" placeholder="Pick a title" v-model="model" @update:model-value="emit('submit')" @keydown.tab="emit('cancel')"/>
+         <USelect :items="system.titleVocab" class="w-full" placeholder="Pick a title" autofocus
+            v-model="model" @update:model-value="emit('submit')" @keydown.tab="emit('cancel')"/>
          <UButton icon="i-lucide-undo" size="xs" color="secondary" @click="toggleVocabClicked" />
       </template>
       <template v-else>
-         <UInput v-model="model"  class="w-full"
+         <UInput v-model="model"  class="w-full" autofocus
             @keydown.enter="emit('submit')" @keydown.esc="emit('cancel')" @keydown.tab="emit('cancel')" />
          <UButton icon="i-lucide-search" size="xs" color="secondary" @click="toggleVocabClicked" />
       </template>
