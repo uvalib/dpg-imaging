@@ -48,6 +48,11 @@ onKeyStroke('d', (e) => {
       handleDelete()
    }
 })
+onKeyStroke('a', (e) => {
+   if ( e.ctrlKey ) {
+      unitStore.selectAll()
+   }
+})
 
 const title = computed(() => {
    let t = projectStore.detail.title

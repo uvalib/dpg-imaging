@@ -1,41 +1,39 @@
 <template>
-   <DPGButton  severity="secondary" @click="showClicked">
-      Set {{ props.title}}
-   </DPGButton>
-   <Dialog v-model:visible="showDialog" :modal="true" :header="`Batch Update ${props.title}`">
-      <div class="panel">
-         <div class="row">
-            <span class="entry">
-               <label>Start Image:</label>
-               <Select v-model="unitStore.rangeStartIdx" @change="startChanged" filter placeholder="Select start page"
-                  :options="masterFiles" optionLabel="label" optionValue="value" />
-            </span>
-            <span class="entry">
-               <label>End Image:</label>
-               <Select v-model="unitStore.rangeEndIdx" @change="endChanged" filter placeholder="Select end page"
-                  :options="masterFiles" optionLabel="label" optionValue="value"/>
-            </span>
-            <DPGButton @click="selectAllClicked" severity="secondary" label="Select All"/>
+   <UModal v-model:open="open" :modal="true" :dismissible="false" :close="false" :title="`Batch Update ${props.title}`">
+      <UButton @click="showClicked()" size="sm" color="secondary" :label="`Set ${props.title}`" />
+      <template #body>
+         <div class="panel">
+            <div class="row">
+               <span class="entry">
+                  <label>Start Image:</label>
+                  <USelect v-model="startIdx" @change="startChanged" placeholder="Select start page" :items="masterFiles" />
+               </span>
+               <span class="entry">
+                  <label>End Image:</label>
+                  <USelect v-model="endIdx" @change="endChanged" filter placeholder="Select end page" :items="masterFiles"/>
+               </span>
+               <UButton @click="selectAllClicked" size="sm" color="secondary" label="Select All"/>
+            </div>
+            <div class="row">
+               <span class="entry">
+                  <label>{{ props.title }}:</label>
+                  <UInput id="update-value" v-model="newValue" class="w-full" @keyup.enter="okClicked"/>
+               </span>
+            </div>   
+            <p class="error" v-if="error">{{ error }}</p>
          </div>
-         <div class="row ">
-            <span class="entry full">
-               <label>{{props.title}}:</label>
-               <input id="update-value" type="text" v-model="newValue"  @keyup.enter="okClicked"/>
-            </span>
-         </div>
-      </div>
-      <template #footer>
-         <DPGButton @click="cancelEditClicked" severity="secondary" label="Cancel"/>
-         <DPGButton @click="okClicked" label="OK"/>
       </template>
-   </Dialog>
+      <template #footer="{ close }">
+         <UButton label="Cancel" size="sm" color="secondary" @click="close" />
+         <UButton label="OK" size="sm" @click="okClicked" />
+      </template>
+   </UModal>
 </template>
 
 <script setup>
 import {useUnitStore} from "@/stores/unit"
 import { ref, computed } from 'vue'
-import Dialog from 'primevue/dialog'
-import Select from 'primevue/select'
+import { onKeyStroke } from '@vueuse/core'
 
 const props = defineProps({
    title: {
@@ -51,7 +49,26 @@ const props = defineProps({
 const unitStore = useUnitStore()
 
 const newValue = ref("")
-const showDialog = ref(false)
+const startIdx = ref()
+const endIdx = ref()
+const error = ref("")
+const open = ref(false)
+
+onKeyStroke('b', (e) => {
+   if ( e.ctrlKey && props.field=="box" ) {
+      showClicked()
+   }
+})
+onKeyStroke('f', (e) => {
+   if ( e.ctrlKey && props.field=="folder" ) {
+      showClicked()
+   }
+})
+onKeyStroke('t', (e) => {
+   if ( e.ctrlKey && props.field=="title" ) {
+      showClicked()
+   }
+})
 
 const masterFiles = computed( () => {
    let list = []
@@ -62,24 +79,33 @@ const masterFiles = computed( () => {
 })
 
 const showClicked = (() => {
-   showDialog.value = true
+   open.value = true
    newValue.value = ""
+   if (unitStore.rangeStartIdx > -1 ) {
+      startIdx.value = unitStore.rangeStartIdx
+   }
+   if (unitStore.rangeEndIdx > -1 ) {
+      endIdx.value = unitStore.rangeEndIdx
+   }
 })
 
 const startChanged = (() => {
+   error.value = ""
    unitStore.startFileSelected( unitStore.rangeStartIdx )
 })
 const endChanged = (() => {
+   error.value = ""
    unitStore.endFileSelected( unitStore.rangeEndIdx )
 })
 
 const okClicked = ( () => {
+   error.value = ""
+   if ( unitStore.rangeStartIdx == -1 || unitStore.rangeEndIdx == -1) {
+      error.value = "Start and end image must be selected"
+      return
+   }
    unitStore.batchUpdate( props.field, newValue.value )
-   showDialog.value = false
-})
-
-const cancelEditClicked = (() => {
-   showDialog.value = false
+   open.value = false
 })
 
 const selectAllClicked = (() => {
@@ -89,25 +115,25 @@ const selectAllClicked = (() => {
 
 <style lang="scss" scoped>
 .panel {
-   background: white;
    display: flex;
    flex-direction: column;
    gap: 20px;
+   .error {
+      margin: 0;
+      padding: 0;
+      color: var(--uvalib-red-emergency);
+   }
 
    .row {
       display: flex;
       flex-flow: row nowrap;
-      justify-content: space-between;
-      align-items: flex-end;
       justify-content: flex-start;
-      gap: 10px;
+      align-items: flex-end;
+      gap: 15px;
       text-align: left;
-
-      label {
-         display: block;
-         margin-bottom: 5px;
-      }
-      .entry.full {
+      .entry {
+         display: flex;
+         flex-direction: column;
          width: 100%;
       }
    }

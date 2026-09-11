@@ -3,13 +3,13 @@
       <JulianBondSequenceDialog   v-if="projectStore.isJulianBond"/>
       <RenameFilesDialog />
       <PageNumDialog />
-      <!-- <BatchUpdateDialog title="Title" field="title" />
+      <BatchUpdateDialog title="Title" field="title" />
       <BatchUpdateDialog title="Caption" field="description" />
       <template v-if="projectStore.isManuscript">
          <BatchUpdateDialog :title="projectStore.detail.containerType.name" field="box" />
          <BatchUpdateDialog v-if="projectStore.detail.containerType.hasFolders" title="Folder" field="folder" />
       </template>
-      <ComponentDialog /> -->
+      <!-- <ComponentDialog /> -->
    </span>
 </template>
 

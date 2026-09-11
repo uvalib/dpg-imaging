@@ -16,7 +16,6 @@ export const useUnitStore = defineStore('unit', {
       rangeStartIdx: -1,
       rangeEndIdx: -1,
       edit: {
-         pageNumber: false,
          component: false,
          metadata: false,
       },
