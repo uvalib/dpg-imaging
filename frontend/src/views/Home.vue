@@ -1,104 +1,100 @@
 <template>
    <div class="home">
       <WaitSpinner v-if="searchStore.working" :overlay="true" message="Loading projects..." />
-      <div class="scroll-body" id="scroll-body">
-         <div class="project-board" id="project-board">
-            <div class="search-col">
-               <SearchPanel />
+      <div class="project-board">
+         <SearchPanel />
+         <template v-if="searchStore.working == false">
+            <div class="none" v-if="!searchStore.working && searchStore.projects.length == 0">
+               No projects match your search criteria
             </div>
-            <template v-if="searchStore.working == false">
-               <div class="none" v-if="!searchStore.working && searchStore.projects.length == 0">
-                  No projects match your search criteria
-               </div>
-               <ul v-else class="projects">
-                  <li class="card" v-for="(p,idx) in searchStore.projects" :key="`p${p.id}`" :class="{finished: p.finishedAt}">
-                     <div class="top">
-                        <div class="due">
-                           <span>
-                              <label>Date Due:</label><span>{{searchStore.dueDate(idx)}}</span>
-                           </span>
-                           <span class="status-section">
-                              <span class="status-msg overdue" v-if="isOverdue(idx) && !p.finishedAt">OVERDUE</span>
-                              <i v-if="searchStore.hasError(idx) && !p.finishedAt" class="error-icon pi pi-exclamation-circle"></i>
-                           </span>
-                           <span v-if="p.finishedAt">
-                              <label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span>
-                              <div class="time" v-if="p.totalDuration">
-                                 <label>Duration:</label>
-                                 <span>{{ p.totalDuration }} mins</span>
-                              </div>
-                           </span>
-                        </div>
-                        <router-link :to="`/projects/${p.id}`">
-                           <div class="title">
-                              <div class="project-id">
-                                 <span>
-                                    <label>Project:</label><span>{{p.id}}</span>
-                                 </span>
-                                 <span v-if="p.imageCount > 0">
-                                    <label>Images:</label><span>{{p.imageCount}}</span>
-                                 </span>
-                              </div>
-                              <div>{{p.title}}</div>
+            <ul v-else class="projects">
+               <li class="card" v-for="(p,idx) in searchStore.projects" :key="`p${p.id}`" :class="{finished: p.finishedAt}">
+                  <div class="top">
+                     <div class="due">
+                        <span>
+                           <label>Date Due:</label><span>{{searchStore.dueDate(idx)}}</span>
+                        </span>
+                        <span class="status-section">
+                           <span class="status-msg overdue" v-if="isOverdue(idx) && !p.finishedAt">OVERDUE</span>
+                           <i v-if="searchStore.hasError(idx) && !p.finishedAt" class="error-icon pi pi-exclamation-circle"></i>
+                        </span>
+                        <span v-if="p.finishedAt">
+                           <label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span>
+                           <div class="time" v-if="p.totalDuration">
+                              <label>Duration:</label>
+                              <span>{{ p.totalDuration }} mins</span>
                            </div>
-                        </router-link>
+                        </span>
                      </div>
-                     <div class="data">
-                        <dl>
-                           <dt>Customer:</dt>
-                           <dd>{{ systemStore.getCustomerName(p.customerID) }} </dd>
-                           <template v-if="p.agencyID > 0">
-                              <dt>Agency:</dt>
-                              <dd>{{ systemStore.getAgency(p.agencyID)}}</dd>
-                           </template>
-                           <dt>Call Number:</dt>
-                           <dd>
-                              <span v-if="p.callNumber">{{p.callNumber}}</span>
-                              <span v-else class="na">N/A</span>
-                           </dd>
-                           <dt>Intended Use:</dt>
-                           <dd>{{ p.intendedUse }}</dd>
-                        </dl>
-                        <dl class="right">
-                           <dt>Order:</dt>
-                           <dd><a target="_blank" :href="`${systemStore.adminURL}/orders/${p.orderID}`">{{p.orderID}}</a></dd>
-                           <dt>Unit:</dt>
-                           <dd><a target="_blank" :href="`${systemStore.adminURL}/units/${p.unitID}`">{{p.unitID}}</a></dd>
-                           <dt>Workflow:</dt>
-                           <dd>{{p.workflow.name}}</dd>
-                           <dt>Category:</dt>
-                           <dd>{{p.category.name}}</dd>
-                        </dl>
-                     </div>
-                     <div class="special-instructions" v-if="p.specialInstructions">
-                        <label>Special Instructions:</label>
-                        <p>{{p.specialInstructions}}</p>
-                     </div>
-                     <div class="status" v-if="!p.finishedAt || p.finishedAt == ''">
-                        <div class="progress-panel">
-                           <span :class="{error: searchStore.hasError(idx)}">{{searchStore.statusText(p.id)}}</span>
-                           <div class="progress-bar" v-if="p.currentStep">
-                              <div class="percentage" :style="{width: searchStore.percentComplete(p.id) }"></div>
+                     <router-link :to="`/projects/${p.id}`">
+                        <div class="title">
+                           <div class="project-id">
+                              <span>
+                                 <label>Project:</label><span>{{p.id}}</span>
+                              </span>
+                              <span v-if="p.imageCount > 0">
+                                 <label>Images:</label><span>{{p.imageCount}}</span>
+                              </span>
                            </div>
+                           <div>{{p.title}}</div>
                         </div>
-                        <div class="owner-panel">
-                           <span class="assignment">
-                              <i class="user pi pi-user"></i>
-                              <span v-if="!p.owner" class="unassigned">Unassigned</span>
-                              <span v-else class="assigned">{{ownerInfo(p)}}</span>
-                           </span>
-                           <span class="owner-buttons">
-                              <UButton @click="deleteProjectClicked(p)" class="delete" color="error" v-if="userStore.isSupervisor || userStore.isAdmin" label="Delete"/>
-                              <UButton v-if="canClaim(p)" @click="claimClicked(p.id)" color="secondary" label="Claim"/>
-                              <AssignModal  v-if="canAssign" :projectID="p.id" @assigned="searchStore.getProjects()" />
-                              <UButton  color="secondary" @click="viewClicked(p.id)" label="View"/>
-                           </span>
+                     </router-link>
+                  </div>
+                  <div class="data">
+                     <dl>
+                        <dt>Customer:</dt>
+                        <dd>{{ systemStore.getCustomerName(p.customerID) }} </dd>
+                        <template v-if="p.agencyID > 0">
+                           <dt>Agency:</dt>
+                           <dd>{{ systemStore.getAgency(p.agencyID)}}</dd>
+                        </template>
+                        <dt>Call Number:</dt>
+                        <dd>
+                           <span v-if="p.callNumber">{{p.callNumber}}</span>
+                           <span v-else class="na">N/A</span>
+                        </dd>
+                        <dt>Intended Use:</dt>
+                        <dd>{{ p.intendedUse }}</dd>
+                     </dl>
+                     <dl class="right">
+                        <dt>Order:</dt>
+                        <dd><a target="_blank" :href="`${systemStore.adminURL}/orders/${p.orderID}`">{{p.orderID}}</a></dd>
+                        <dt>Unit:</dt>
+                        <dd><a target="_blank" :href="`${systemStore.adminURL}/units/${p.unitID}`">{{p.unitID}}</a></dd>
+                        <dt>Workflow:</dt>
+                        <dd>{{p.workflow.name}}</dd>
+                        <dt>Category:</dt>
+                        <dd>{{p.category.name}}</dd>
+                     </dl>
+                  </div>
+                  <div class="special-instructions" v-if="p.specialInstructions">
+                     <label>Special Instructions:</label>
+                     <p>{{p.specialInstructions}}</p>
+                  </div>
+                  <div class="status" v-if="!p.finishedAt || p.finishedAt == ''">
+                     <div class="progress-panel">
+                        <span :class="{error: searchStore.hasError(idx)}">{{searchStore.statusText(p.id)}}</span>
+                        <div class="progress-bar" v-if="p.currentStep">
+                           <div class="percentage" :style="{width: searchStore.percentComplete(p.id) }"></div>
                         </div>
                      </div>
-                  </li>
-               </ul>
-            </template>
-         </div>
+                     <div class="owner-panel">
+                        <span class="assignment">
+                           <i class="user pi pi-user"></i>
+                           <span v-if="!p.owner" class="unassigned">Unassigned</span>
+                           <span v-else class="assigned">{{ownerInfo(p)}}</span>
+                        </span>
+                        <span class="owner-buttons">
+                           <UButton @click="deleteProjectClicked(p)" class="delete" color="error" v-if="userStore.isSupervisor || userStore.isAdmin" label="Delete"/>
+                           <UButton v-if="canClaim(p)" @click="claimClicked(p.id)" color="secondary" label="Claim"/>
+                           <AssignModal  v-if="canAssign" :projectID="p.id" @assigned="searchStore.getProjects()" />
+                           <UButton  color="secondary" @click="viewClicked(p.id)" label="View"/>
+                        </span>
+                     </div>
+                  </div>
+               </li>
+            </ul>
+         </template>
       </div>
    </div>
 </template>
@@ -200,10 +196,6 @@ const deleteProjectClicked = (async (p) => {
 .home {
    position: relative;
    padding: 0;
-   .search-col {
-      width: 20%;
-      min-width: 275px;
-   }
    h2 {
       color: var(--uvalib-brand-orange);
       margin-bottom: 20px;
@@ -215,10 +207,6 @@ const deleteProjectClicked = (async (p) => {
       flex-grow: 1;
    }
 
-   .scroll-body {
-      display: block;
-      position: relative;
-   }
    .project-board {
       display: flex;
       flex-flow: row nowrap;

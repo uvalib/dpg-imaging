@@ -1,5 +1,5 @@
 <template>
-   <div class="search" id="search-panel">
+   <div class="search sticky top-40">
       <h3>Search</h3>
       <div class="form">
          <div class="row">
@@ -48,8 +48,8 @@
          </div>
       </div>
       <div class="buttons">
-         <UButton color="secondary" @click="resetSearch" label="Reset Search"/>
-         <UButton color="secondary" @click="doSearch" label="Search"/>
+         <UButton color="secondary" size="sm" @click="resetSearch" label="Reset Search"/>
+         <UButton color="secondary" size="sm" @click="doSearch" label="Search"/>
       </div>
    </div>
 </template>
@@ -182,11 +182,10 @@ const doSearch = ( async () => {
 </script>
 
 <style scoped lang="scss">
-.search.pinned {
-   position: fixed;
-}
-
 .search {
+   width: 20%;
+   min-width: 275px;
+
    h3 {
       text-align: center;
       padding: 5px;
@@ -204,7 +203,7 @@ const doSearch = ( async () => {
       padding: 15px;
       display: flex;
       flex-direction: column;
-      row-gap: 15px;
+      row-gap: 10px;
       border-left: 1px solid var(--uvalib-grey-light);
       border-right: 1px solid var(--uvalib-grey-light);
       div.row {

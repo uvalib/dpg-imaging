@@ -25,6 +25,9 @@
          </template>
          <ULink v-else @click="startEdit('description', row)">{{ row.original.description}}</ULink>
       </template>
+      <template #reorder-cell="{ }">
+         <UButton icon="i-lucide-arrow-down-up" color="netural" variant="ghost" class="cursor-grab hover:bg-white"/>
+      </template>
    </UTable>
    <!-- <DataTable :value="unitStore.masterFiles" ref="mfTable" id="mf-table" dataKey="fileName"
          stripedRows size="small" paginatorPosition="top"
@@ -189,6 +192,9 @@ const columns = [
       accessorKey: 'colorProfile',
       header: "Color Profile"
    },
+   {
+      accessorKey: "reorder", header: ""
+   }
 ]
 
 const columnVisibility = computed(() => {

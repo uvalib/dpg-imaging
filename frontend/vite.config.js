@@ -37,16 +37,6 @@ export default defineConfig({
                      variant: "solid",
                      class: "text-white focus:outline-offset-2 focus:outline-1 focus:outline-dashed",
                   },
-                  // {
-                  //    color: "success",
-                  //    variant: "solid",
-                  //    class: "border text-black border-brand-g-100 hover:bg-gray-200 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100",
-                  // },
-                  {
-                     color: "neutral",
-                     variant: "ghost",
-                     class: "text-white hover:bg-gray-200 focus:outline-offset-2 focus:outline-1 focus:outline-dashed",
-                  },
                   {
                      color: "neutral",
                      variant: "outline",
