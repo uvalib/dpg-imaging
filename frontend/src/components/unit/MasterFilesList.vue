@@ -60,12 +60,12 @@
       </template>
 
       <template #component-cell="{ row }">
-          <template v-if="editInfo.field=='component' && row.original.fileName == editInfo.fileName">
+          <template v-if="editInfo.field=='componentID' && row.original.fileName == editInfo.fileName">
             <UInput v-model="editInfo.value" class="w-full" autofocus
                @keydown.enter="submitEdit" @keydown.esc="cancelEdit" @keydown.tab="cancelEdit" />
          </template>
-         <ULink v-else @click="startEdit('component', row)"> 
-            <span v-if="row.original.component">{{  row.original.component }}</span>
+         <ULink v-else @click="startEdit('componentID', row)"> 
+            <span v-if="row.original.componentID">{{  row.original.componentID }}</span>
             <span v-else class="undefined">Undefined</span>
          </ULink>
       </template>

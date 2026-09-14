@@ -1,55 +1,55 @@
 <template>
-   <DPGButton  severity="secondary" @click="showClicked">
-      Add Sequence
-   </DPGButton>
-   <Dialog v-model:visible="showDialog" :modal="true" header="Add Sequence Number">
-      <div class="panel">
-         <div class="info">This will append ", PJB ####" to the title of the selected images.<br/>If requested, it will replace any PJB info already present.</div>
-         <div class="info">
-            <b>IMPORTANT</b>: sequence can only be added to images that have already been loaded.
-            You can accomplish this by paging through all images in the unit before requesting the seqence.
+   <UModal v-model:open="open" :modal="true" :dismissible="false" :close="false" title="Add Sequence Number">
+      <UButton @click="showClicked()" size="sm" color="secondary" label="Add Sequence" />
+      <template #body>
+         <div class="panel">
+            <div class="info">
+               <div class="info">This will append ", PJB ####" to the title of the selected images.<br/>If requested, it will replace any PJB info already present.</div>
+               <div class="info">
+                  <em>IMPORTANT</em>: sequence can only be added to images that have already been loaded.
+                  You can accomplish this by paging through all images in the unit before requesting the seqence.
+               </div>
+            </div>
+            <div class="row">
+               <span class="entry">
+                  <label>Start Image:</label>
+                  <USelect v-model="startIdx" @change="startChanged" placeholder="Select start page" :items="masterFiles" />
+               </span>
+               <span class="entry">
+                  <label>End Image:</label>
+                  <USelect v-model="endIdx" @change="endChanged" filter placeholder="Select end page" :items="masterFiles"/>
+               </span>
+               <UButton @click="selectAllClicked" size="sm" color="secondary" label="Select All"/>
+            </div>
+            <div class="row">
+               <span class="entry">
+                  <label>Starting page number:</label>
+                  <UInput id="start-page-num" v-model="startSequence"  @keyup.enter="okClicked"/>
+               </span>
+               <UCheckbox v-model="overwrite" size="lg" label="Overwrite existing sequence?" />
+            </div>   
+            <p class="error" v-if="error">{{ error }}</p>
          </div>
-         <div class="row">
-            <span class="entry pad-right">
-               <label>Start Image:</label>
-               <Select v-model="unitStore.rangeStartIdx" @change="startChanged" filter placeholder="Select start page"
-                  :options="masterFiles" optionLabel="label" optionValue="value" />
-            </span>
-            <span class="entry  pad-right">
-               <label>End Image:</label>
-               <Select v-model="unitStore.rangeEndIdx" @change="endChanged" filter placeholder="Select end page"
-                  :options="masterFiles" optionLabel="label" optionValue="value"/>
-            </span>
-            <DPGButton @click="selectAllClicked" severity="secondary" label="Select All"/>
-         </div>
-         <div class="row">
-            <span class="entry  pad-right">
-               <label>Starting Sequence Number:</label>
-               <input id="start-page-num" type="text" v-model="startSequence"  @keyup.enter="okClicked"/>
-            </span>
-            <label class="overwrite"><input v-model="overwrite" type="checkbox"/>Overwrite existing sequence?</label>
-         </div>
-      </div>
-      <template #footer>
-         <DPGButton @click="cancelEditClicked" severity="secondary" label="Cancel"/>
-         <DPGButton @click="okClicked" label="OK"/>
       </template>
-   </Dialog>
+      <template #footer="{ close }">
+         <UButton label="Cancel" color="secondary" @click="close" />
+         <UButton label="OK" @click="okClicked" />
+      </template>
+   </UModal>
 </template>
 
 <script setup>
 import { useUnitStore } from "@/stores/unit"
-import { useSystemStore } from "@/stores/system"
-import Dialog from 'primevue/dialog'
-import Select from 'primevue/select'
 import { ref, computed } from 'vue'
 
 const unitStore = useUnitStore()
-const systemStore = useSystemStore()
 
-const showDialog = ref(false)
+const open = ref(false)
 const startSequence = ref(1)
 const overwrite = ref(false)
+const startIdx = ref()
+const endIdx = ref()
+const error = ref("")
 
 const masterFiles = computed( () => {
    let list = []
@@ -61,33 +61,38 @@ const masterFiles = computed( () => {
 
 const showClicked = (() => {
    startSequence.value = 1
-   showDialog.value = true
+   error.value = ""
+   if (unitStore.rangeStartIdx > -1 ) {
+      startIdx.value = unitStore.rangeStartIdx
+   }
+   if (unitStore.rangeEndIdx > -1 ) {
+      endIdx.value = unitStore.rangeEndIdx
+   }
+   open.value = true
 })
 
 const startChanged = (() => {
-   unitStore.startFileSelected( unitStore.rangeStartIdx )
+   error.value = ""
+   unitStore.startFileSelected( startIdx.value )
 })
 const endChanged = (() => {
-   unitStore.endFileSelected( unitStore.rangeEndIdx )
-})
-
-const cancelEditClicked = (() => {
-   showDialog.value = false
+   error.value = ""
+   unitStore.endFileSelected( endIdx.value )
 })
 
 const okClicked = ( async () => {
-   systemStore.error = ""
-   if ( unitStore.rangeStartIdx == -1 || unitStore.rangeEndIdx == -1) {
-      systemStore.setError( "Start and end image must be selected" )
+   error.value = ""
+   if ( startIdx.value == -1 || endIdx.value == -1) {
+      error.value = "Start and end image must be selected"
       return
    }
    if (startSequence.value == "") {
-      systemStore.setError( "Start sequence is required" )
+      error.value =  "Start sequence is required"
       return
    }
 
    await unitStore.updateJulianBondSequence(startSequence.value, overwrite.value)
-   showDialog.value = false
+   open.value = false
 })
 
 const selectAllClicked = (() => {
@@ -101,6 +106,15 @@ const selectAllClicked = (() => {
    display: flex;
    flex-direction: column;
    gap: 20px;
+   padding: 10px;
+   em {
+      font-weight: bold;
+   }
+   .error {
+      margin: 0;
+      padding: 0;
+      color: var(--uvalib-red-emergency);
+   }
 
    .info {
       text-align: left;
@@ -111,30 +125,11 @@ const selectAllClicked = (() => {
    .row {
       display: flex;
       flex-flow: row nowrap;
-      justify-content: space-between;
+      justify-content: flex-start;
       align-items: flex-end;
       gap: 10px;
-      text-align: left;
-      label {
-         display: block;
-         margin-bottom: 5px;
-      }
-      .overwrite {
-         cursor: pointer;
-         display: flex;
-         flex-flow: row nowrap;
-         justify-content: space-evenly;
-         align-items: center;
-         label {
-            vertical-align: middle;
-            display: inline-block;
-         }
-         input {
-            width: 20px;
-            height:  20px;
-            margin-right: 10px;
-            vertical-align: middle;
-         }
+      :deep(label) {
+         white-space: nowrap !important;
       }
    }
 }

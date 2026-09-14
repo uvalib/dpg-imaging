@@ -24,8 +24,8 @@
          </div>
       </template>
       <template #footer="{ close }">
-         <UButton label="Cancel" size="sm" color="secondary" @click="close" />
-         <UButton label="OK" size="sm" @click="okClicked" />
+         <UButton label="Cancel" color="secondary" @click="close" />
+         <UButton label="OK" @click="okClicked" />
       </template>
    </UModal>
 </template>
@@ -91,16 +91,16 @@ const showClicked = (() => {
 
 const startChanged = (() => {
    error.value = ""
-   unitStore.startFileSelected( unitStore.rangeStartIdx )
+   unitStore.startFileSelected( startIdx.value )
 })
 const endChanged = (() => {
    error.value = ""
-   unitStore.endFileSelected( unitStore.rangeEndIdx )
+   unitStore.endFileSelected( endIdx.value )
 })
 
 const okClicked = ( () => {
    error.value = ""
-   if ( unitStore.rangeStartIdx == -1 || unitStore.rangeEndIdx == -1) {
+   if ( startIdx.value == -1 || endIdx.value == -1) {
       error.value = "Start and end image must be selected"
       return
    }
@@ -118,6 +118,8 @@ const selectAllClicked = (() => {
    display: flex;
    flex-direction: column;
    gap: 20px;
+   padding: 10px;
+
    .error {
       margin: 0;
       padding: 0;

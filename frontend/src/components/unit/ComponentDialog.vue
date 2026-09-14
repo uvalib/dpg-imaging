@@ -1,81 +1,87 @@
 <template>
-   <DPGButton  severity="secondary" @click="showClicked">
-      Link Component
-   </DPGButton>
-   <Dialog v-model:visible="unitStore.edit.component" :modal="true" header="Link Component">
-      <div class="panel confirm" v-if="unitStore.component.valid">
-         <table>
-            <tbody>
-               <tr>
-                  <td class="label">Title:</td>
-                  <td class="data">{{formatData(unitStore.component.title)}}</td>
-               </tr>
-               <tr>
-                  <td class="label">Label:</td>
-                  <td class="data">{{formatData(unitStore.component.label)}}</td>
-               </tr>
-               <tr>
-                  <td class="label">Description:</td>
-                  <td class="data">{{formatData(unitStore.component.description)}}</td>
-               </tr>
-               <tr>
-                  <td class="label">Date:</td>
-                  <td class="data">{{formatData(unitStore.component.date)}}</td>
-               </tr>
-               <tr>
-                  <td class="label">Type:</td>
-                  <td class="data">{{formatData(unitStore.component.type)}}</td>
-               </tr>
-            </tbody>
-         </table>
-         <p class="confirm">Link this component to selected images?</p>
-      </div>
-      <div class="panel" v-else>
-         <div class="row">
-            <span class="entr">
-               <label>Start Image:</label>
-               <Select v-model="unitStore.rangeStartIdx" @change="startChanged" filter placeholder="Select start page"
-                  :options="masterFiles" optionLabel="label" optionValue="value" ref="pickstart" />
-            </span>
-            <span class="entry">
-               <label>End Image:</label>
-               <Select v-model="unitStore.rangeEndIdx" @change="endChanged" filter placeholder="Select end page"
-                  :options="masterFiles" optionLabel="label" optionValue="value"/>
-            </span>
-            <DPGButton @click="selectAllClicked" severity="secondary" label="Select All"/>
+   <UModal v-model:open="open" :modal="true" :dismissible="false" :close="false" title="Link Component">
+      <UButton @click="showClicked()" size="sm" color="secondary" label="Link Component" />
+      <template #body>
+         <div class="panel confirm" v-if="unitStore.component.valid">
+            <table>
+               <tbody>
+                  <tr>
+                     <td class="label">Title:</td>
+                     <td class="data">{{formatData(unitStore.component.title)}}</td>
+                  </tr>
+                  <tr>
+                     <td class="label">Label:</td>
+                     <td class="data">{{formatData(unitStore.component.label)}}</td>
+                  </tr>
+                  <tr>
+                     <td class="label">Description:</td>
+                     <td class="data">{{formatData(unitStore.component.description)}}</td>
+                  </tr>
+                  <tr>
+                     <td class="label">Date:</td>
+                     <td class="data">{{formatData(unitStore.component.date)}}</td>
+                  </tr>
+                  <tr>
+                     <td class="label">Type:</td>
+                     <td class="data">{{formatData(unitStore.component.type)}}</td>
+                  </tr>
+               </tbody>
+            </table>
+            <p class="confirm">Link this component to selected images?</p>
          </div>
-         <div class="row">
-            <span class="entry full">
-               <label>Component ID:</label>
-               <input id="component-id" type="text" v-model="componentID"  @keyup.enter="okClicked"/>
-            </span>
+         <div v-else class="panel">
+            <div class="row">
+               <span class="entry">
+                  <label>Start Image:</label>
+                  <USelect v-model="startIdx" @change="startChanged" placeholder="Select start page" :items="masterFiles" />
+               </span>
+               <span class="entry">
+                  <label>End Image:</label>
+                  <USelect v-model="endIdx" @change="endChanged" filter placeholder="Select end page" :items="masterFiles"/>
+               </span>
+               <UButton @click="selectAllClicked" size="sm" color="secondary" label="Select All"/>
+            </div>
+            <div class="row">
+               <span class="entry">
+                  <label>Component ID:</label>
+                  <UInput id="component-id" v-model="componentID"  @keyup.enter="okClicked"/>
+               </span>
+            </div>   
+            <p class="error" v-if="error">{{ error }}</p>
          </div>
-      </div>
-      <template #footer>
+      </template>
+      <template #footer="{ close }">
          <template  v-if="unitStore.component.valid">
-            <DPGButton severity="secondary" @click="noLinkClicked" label="No"/>
-            <DPGButton @click="linkConfirmed" label="Yes"/>
+            <UButton @click="noLinkClicked" color="secondary" label="No"/>
+            <UButton @click="linkConfirmed"  label="Yes" />
          </template>
          <template v-else>
-            <DPGButton @click="unlinkClicked" severity="danger" class="left">Unlink</DPGButton>
-            <DPGButton @click="cancelEditClicked" severity="secondary">Cancel</DPGButton>
-            <DPGButton @click="okClicked" :loading="lookingUp">OK</DPGButton>
+            <UButton label="Unlink" color="error" class="left" @click="unlinkClicked" />
+            <UButton label="Cancel" color="secondary" @click="close" />
+            <UButton label="OK" @click="okClicked"  :loading="lookingUp" :disabled="lookingUp" />
          </template>
       </template>
-   </Dialog>
+   </UModal>
 </template>
 
 <script setup>
 import { useUnitStore } from "@/stores/unit"
-import { useSystemStore } from "@/stores/system"
 import { ref, computed } from 'vue'
-import Dialog from 'primevue/dialog'
-import Select from 'primevue/select'
+import { onKeyStroke } from '@vueuse/core'
 
 const unitStore = useUnitStore()
-const systemStore = useSystemStore()
 const componentID = ref("")
 const lookingUp = ref(false)
+const open = ref(false)
+const startIdx = ref()
+const endIdx = ref()
+const error = ref("")
+
+onKeyStroke('k', (e) => {
+   if ( e.ctrlKey ) {
+      showClicked()
+   }
+})
 
 const masterFiles = computed( () => {
    let list = []
@@ -86,15 +92,23 @@ const masterFiles = computed( () => {
 })
 
 const showClicked = (() => {
-   unitStore.edit.component = true
    componentID.value = ""
+   if (unitStore.rangeStartIdx > -1 ) {
+      startIdx.value = unitStore.rangeStartIdx
+   }
+   if (unitStore.rangeEndIdx > -1 ) {
+      endIdx.value = unitStore.rangeEndIdx
+   }
+   open.value = true
 })
 
 const startChanged = (() => {
-   unitStore.startFileSelected( unitStore.rangeStartIdx )
+   error.value = ""
+   unitStore.startFileSelected( startIdx.value )
 })
 const endChanged = (() => {
-   unitStore.endFileSelected( unitStore.rangeEndIdx )
+   error.value = ""
+   unitStore.endFileSelected( endIdx.value )
 })
 
 const formatData = (( value ) => {
@@ -103,13 +117,14 @@ const formatData = (( value ) => {
 })
 
 const okClicked = (async () => {
+   error.value = ""
    unitStore.clearComponent()
-   if ( unitStore.rangeStartIdx == -1 || unitStore.rangeEndIdx == -1) {
-      systemStore.setError("Start and end image must be selected")
+   if ( startIdx.value == -1 || endIdx.value == -1) {
+      error.value = "Start and end image must be selected"
       return
    }
    if (componentID.value == "") {
-      systemStore.setError("Component ID is required")
+      error.value = "Component ID is required"
       return
    }
    lookingUp.value = true
@@ -119,15 +134,11 @@ const okClicked = (async () => {
 
 const noLinkClicked = (() => {
    unitStore.clearComponent()
-   nextTick( () => {
-      let ele = document.getElementById("component-id")
-      ele.focus()
-   })
 })
 
 const cancelEditClicked = (()=> {
    unitStore.clearComponent()
-   unitStore.edit.component = false
+   open.value = false
 })
 
 const unlinkClicked= (() => {
@@ -156,6 +167,13 @@ const selectAllClicked = (() => {
    display: flex;
    flex-direction: column;
    gap: 20px;
+   padding: 10px;
+   
+   .error {
+      margin: 0;
+      padding: 0;
+      color: var(--uvalib-red-emergency);
+   }
 
    td.data {
       text-align: left;

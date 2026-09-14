@@ -9,7 +9,7 @@
          <BatchUpdateDialog :title="projectStore.detail.containerType.name" field="box" />
          <BatchUpdateDialog v-if="projectStore.detail.containerType.hasFolders" title="Folder" field="folder" />
       </template>
-      <!-- <ComponentDialog /> -->
+      <ComponentDialog />
    </span>
 </template>
 

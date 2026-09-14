@@ -1,6 +1,6 @@
 <template>
    <UPopover>
-      <UButton color="secondary" label="Keyboard Shortcuts" icon="i-lucide-help-circle" />
+      <UButton color="secondary" label="Keyboard Shortcuts" icon="i-lucide-help-circle" size="sm" />
       <template #content>
          <div class="tips">
          <table >
