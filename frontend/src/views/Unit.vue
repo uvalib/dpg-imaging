@@ -33,9 +33,9 @@ import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MasterFilesList from '@/components/unit/MasterFilesList.vue'
 import MasterFilesGrid from '@/components/unit/MasterFilesGrid.vue'
-import KeyboardShortcutHelp from '@/components/KeyboardShortcutHelp.vue'
+import KeyboardShortcutHelp from '@/components/unit/KeyboardShortcutHelp.vue'
 import { onKeyStroke } from '@vueuse/core'
-import { useConfirm } from "../composables/useConfirm"
+import { useConfirm } from "@/composables/useConfirm"
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()

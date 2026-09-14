@@ -7,9 +7,10 @@ export const useUnitStore = defineStore('unit', {
       working: false,
       unitID: "",
 
-      // this flsg is set any time the masterfile metadata changes. The tables watch this and update thir models to match
-      // the tables also watch for page changes as they update the data too.
-      masterFilesUpdated: false, 
+      // maintain a separate display list of master files with metadata
+      // this is needed by the sorting / display components which require a model
+      // not a computed val (the sort changes the data)
+      masterFilesPage: [],
 
       masterFiles: [],
       viewMode: "list",
@@ -49,10 +50,12 @@ export const useUnitStore = defineStore('unit', {
    },
    actions: {
       moveImage( fromIndex, toIndex ) {
-         let img = this.masterFiles.splice(fromIndex, 1)[0]
-         this.masterFiles.splice(toIndex, 0, img)
-         this.masterFilesUpdated = true
-         setTimeout( ()=> this.masterFilesUpdated = false, 250)
+         // This is called from the table / grid showing a single page of images.
+         // this data is held in the masterFilesPage data and the index is tied to that
+         // (it is always 0 - pageSize). Need to convert those indexs to the full list
+         let img = this.masterFiles.splice(this.currStartIndex+fromIndex, 1)[0]
+         this.masterFiles.splice(this.currStartIndex+toIndex, 0, img)
+         this.updateMasterFilesPage() // TODO.. maybe just swap
       },
       selectPage() {
          this.rangeStartIdx = this.currStartIndex
@@ -179,7 +182,6 @@ export const useUnitStore = defineStore('unit', {
          })
       },
 
-      // NOTES: this is only used from the image view
       async getMasterFileMetadata( masterFileIndex ) {
          let mf = this.masterFiles[masterFileIndex]
          if (!mf) return
@@ -191,10 +193,24 @@ export const useUnitStore = defineStore('unit', {
          return axios.get(mdURL).then(response => {
             this.setImageMetadata(response.data)
             this.working = false
+            console.log("METADATA PAGE LOADED")
          }).catch( e => {
             system.setError(e)
             this.working = false
          })
+      },
+
+      updateMasterFilesPage() {
+         console.log("UPDATE PAGE METADATA")
+         // Pagination is wierd here; the store holds all file references, but maybe not all metadata.
+         // The table just shows a subset of the total list. This function uses curr page num
+         // and page size to get an array of masterfiles for the current page.
+         this.masterFilesPage = []
+         this.masterFiles.forEach( (mf,idx) => {
+            if (idx >= this.currStartIndex && this.masterFilesPage.length < this.pageSize) {
+               this.masterFilesPage.push(mf)  
+            }
+         })  
       },
 
       setImageMetadata( md ) {
@@ -240,6 +256,7 @@ export const useUnitStore = defineStore('unit', {
             }
          }
          if (needsData == false ) {
+            this.updateMasterFilesPage()
             return
          }
 
@@ -251,8 +268,7 @@ export const useUnitStore = defineStore('unit', {
             response.data.forEach( md => {
                this.setImageMetadata( md )
             })
-            this.masterFilesUpdated = true
-            setTimeout( ()=> this.masterFilesUpdated = false, 250)
+            this.updateMasterFilesPage()
          }).catch( e => {
             system.setError(e)
             this.working = false

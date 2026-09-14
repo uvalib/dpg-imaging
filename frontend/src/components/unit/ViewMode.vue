@@ -19,12 +19,8 @@ const views = ref([
 
 const viewModeChanged = (() => {
    unitStore.deselectAll()
-   unitStore.pageSize = 20
-   unitStore.currPage = 1
    let query = Object.assign({},route.query)
    query.view = unitStore.viewMode
-   delete query.page
-   delete query.pagesize
    router.push({query})
 })
 </script>

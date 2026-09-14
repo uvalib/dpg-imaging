@@ -9,7 +9,7 @@
       </div>
       <UnitActions />
    </div>
-   <UTable :data="masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility" :ui="{tbody: 'mf-tbody'}">
+   <UTable :data="unitStore.masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility" :ui="{tbody: 'mf-tbody'}">
       <template #select-cell="{ row }">
          <UCheckbox :modelValue="unitStore.masterFiles[row.index].selected" size="xl" @update:modelValue="unitStore.masterFileSelected(row.index)"/>
       </template>
@@ -83,16 +83,16 @@
 import TagPicker from '@/components/TagPicker.vue'
 import { useProjectStore } from "@/stores/project"
 import { useUnitStore } from "@/stores/unit"
-import ViewMode from '@/components/ViewMode.vue'
+import ViewMode from './ViewMode.vue'
 import UnitActions from '@/components/unit/UnitActions.vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import TitlePicker from "@/components/TitlePicker.vue"
-import { computed, h, ref, watch  } from 'vue'
+import { computed, h, ref  } from 'vue'
 import { useSortable } from '@vueuse/integrations/useSortable'
 import { onKeyStroke } from '@vueuse/core'
 
 // NOTES: 
-//   h is short for hyperscript: javascript which produces html dynamically and injects them into the DOM.
+//   The h above is short for hyperscript: javascript which produces html dynamically and injects them into the DOM.
 //   Because of the way nuxt-ui components are handled (injected at build time in templates and setup),
 //   using UCheckbox (or any nuxt component) in a column def cell reder will fill. The component cannot be resolved.
 //   To fix, create a dummy wrapper around the component and directly include it instead (like UCheckboxCell above).
@@ -104,34 +104,12 @@ const projectStore = useProjectStore()
 const unitStore = useUnitStore()
 
 const editInfo = ref({fileName: "", field: "", orig: "", value: ""})
-const masterFilesPage = ref([])
 
-watch(() => unitStore.masterFilesUpdated, (updated) => {
-   if ( updated == true) {
-      updateMasterFilesPage()
+useSortable('.mf-tbody', unitStore.masterFilesPage, {
+   animation: 150,
+   onEnd: (evt) => {
+      unitStore.moveImage(evt.oldIndex, evt.newIndex)
    }
-})
-watch(() => [unitStore.currPage, unitStore.pageSize], () => {
-   updateMasterFilesPage()
-})
-
-const updateMasterFilesPage = (() => {
-   // Pagination is wierd here; the store holds all file references, but maybe not all metadata.
-   // The table just shows a subset of the total list. This function uses curr page num
-   // and page size to get an array of masterfiles for the current page.
-   masterFilesPage.value = []
-   unitStore.masterFiles.forEach( (mf,idx) => {
-      if (idx >= unitStore.currStartIndex && masterFilesPage.value.length <= unitStore.pageSize) {
-         masterFilesPage.value.push(mf)  
-      }
-   })  
-})
-
-useSortable('.mf-tbody', masterFilesPage.value, {
-  animation: 150,
-  onEnd: (evt) => {
-    unitStore.moveImage(evt.oldIndex, evt.newIndex)
-  }
 })
 
 onKeyStroke(['>','.'], () => {
