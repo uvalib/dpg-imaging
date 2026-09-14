@@ -8,8 +8,8 @@
          </div>
       </template>
       <template #footer="{ close }">
-         <UButton label="Cancel" size="sm" color="secondary" @click="close" />
-         <UButton label="Rename" size="sm" @click="unitStore.renameAll()" />
+         <UButton label="Cancel" color="secondary" @click="close" />
+         <UButton label="Rename" @click="unitStore.renameAll()" />
       </template>
    </UModal>
 </template>

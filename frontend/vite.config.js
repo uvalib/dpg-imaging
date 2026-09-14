@@ -65,7 +65,7 @@ export default defineConfig({
             header: {
                slots: {
                   root: "!bg-brand-blue h-auto", // h-auto needed to make header height include bottom slot
-                  container: "!px-5 !py-5 !max-w-full",
+                  container: "!pl-2 !pr-5 !py-2 !max-w-full",
                   right: "text-white",
                   body: "bg-brand-blue",
                   header:  "!bg-brand-blue",

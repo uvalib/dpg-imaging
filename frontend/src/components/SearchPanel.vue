@@ -1,5 +1,5 @@
 <template>
-   <div class="search sticky top-40">
+   <div class="search sticky z-50" :style="{top: headerHeight}">
       <h3>Search</h3>
       <div class="form">
          <div class="row">
@@ -64,6 +64,13 @@ const route = useRoute()
 const router = useRouter()
 const searchStore = useSearchStore()
 const systemStore = useSystemStore()
+
+// you cannot custruct tailwind class values dynamically, so you  cant do `top-${hdr.clientHeight}`. 
+// Instead use this to bind an inline style 'top' param to stick the controls below the header
+const headerHeight = computed(() => {
+   let hdr = document.querySelector('header')
+   return `${hdr.clientHeight}px`
+})
 
 const staffMembers = computed( () => {
    let out = [ {label: "Any", id: 0} ]

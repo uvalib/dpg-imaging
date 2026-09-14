@@ -9,7 +9,10 @@
       </div>
       <UnitActions />
    </div>
-   <div class="gallery">
+   <div v-if="unitStore.masterFiles.length == 0" class="none">
+      No imges found
+   </div>
+   <div v-else class="gallery">
       <UCard v-for="(image,idx) in unitStore.masterFilesPage" :key="image.fileName" :id="image.fileName">
          <template #header>
             <div class="card-title">
@@ -146,6 +149,12 @@ const submitEdit = (() => {
 }
 .undefined {
    font-style: italic;
+}
+
+.none {
+   text-align: center;
+   padding: 25px;
+   font-size: 1.2em;
 }
 
 div.gallery {

@@ -9,7 +9,9 @@
       </div>
       <UnitActions />
    </div>
-   <UTable :data="unitStore.masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility" :ui="{tbody: 'mf-tbody'}">
+   <UTable  :data="unitStore.masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility" 
+      :ui="{tbody: 'mf-tbody'}" empty="No images found"
+   >
       <template #select-cell="{ row }">
          <UCheckbox :modelValue="unitStore.masterFiles[row.index].selected" size="xl" @update:modelValue="unitStore.masterFileSelected(row.index)"/>
       </template>
