@@ -1,6 +1,6 @@
 <template>
    <UApp :toaster="toaster">
-      <UHeader mode="slideover">
+      <UHeader mode="slideover" id="uva-header">
          <template #title>
             <div class="library-link">
                <a target="_blank" href="https://library.virginia.edu">
@@ -26,7 +26,7 @@
          <!-- This adds a section below the left/default/right. 
               The theme needs to be update to make header root h-auto to -include it in the uverall height -->
          <template v-if="route.path == '/'" #bottom>
-            <div class="toolbar">
+            <div class="project-toolbar">
                <URadioGroup orientation="horizontal" size="lg" color="info" v-model="searchStore.filter" value-key="id" :items="filters" @update:modelValue="filterChanged"/>
                <UPagination  v-if="!searchStore.working && searchStore.projects.length>0"
                   v-model:page="searchStore.currPage" :items-per-page="searchStore.pageSize" 
@@ -153,7 +153,7 @@ div.site-link {
    font-size: 1.3em;
 }
 
-.toolbar {
+.project-toolbar {
    padding: 5px 10px;
    background: var(--uvalib-grey-lightest);
    display: flex;

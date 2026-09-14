@@ -45,21 +45,21 @@
          </div>
          <div class="acts">
             <span class="back">
-               <DPGButton icon="pi pi-angle-double-left" rounded text label="Back to unit" @click="backClicked" size="small" severity="secondary"/>
+               <UButton icon="i-lucide-arrow-left" label="Back to unit" @click="backClicked" size="sm" color="secondary"/>
             </span>
             <span class="paging group">
-               <DPGButton icon="pi pi-arrow-left" rounded text @click="prevImage" severity="secondary" :disabled="prevDisabled"/>
+               <UButton icon="i-lucide-arrow-left" @click="prevImage" size="sm" color="secondary" :disabled="prevDisabled"/>
                <span class="page">{{page}} of {{unitStore.pageInfoURLs.length}}</span>
-               <DPGButton icon="pi pi-arrow-right" rounded text @click="nextImage" severity="secondary" :disabled="nextDisabled"/>
+               <UButton icon="i-lucide-arrow-right" @click="nextImage" size="sm" color="secondary" :disabled="nextDisabled"/>
             </span>
             <span class="zoom group">
-               <DPGButton id="rotate-left" icon="pi pi-undo" rounded text @click="rotateImage('left')" severity="secondary" />
-               <DPGButton id="rotate-right" class="rotated" icon="pi pi-undo" rounded text @click="rotateImage('right')" severity="secondary" />
-               <DPGButton id="zoom-in" icon="pi pi-search-plus" text rounded severity="secondary" />
+               <UButton id="rotate-left" icon="i-lucide-rotate-ccw" @click="rotateImage('left')" color="secondary"/>
+               <UButton id="rotate-left" icon="i-lucide-rotate-cw" @click="rotateImage('right')" color="secondary"/>
+               <UButton id="zoom-in" icon="i-lucide-zoom-in" color="secondary"/>
                <span class="page">{{Math.round(zoom*100)}} %</span>
-               <DPGButton id="zoom-out" icon="pi pi-search-minus" rounded text severity="secondary" />
-               <DPGButton id="actual-size" label="1:1" rounded text severity="secondary" @click="viewActualSize"/>
-               <DPGButton id="home" icon="pi pi-home" rounded text severity="secondary" />
+               <UButton id="zoom-out" icon="i-lucide-zoom-out" color="secondary"/>
+               <UButton id="actual-size" label="1:1" color="secondary" @click="viewActualSize"/>
+               <UButton id="home" icon="i-lucide-home" color="secondary" />
             </span>
          </div>
       </div>
@@ -71,14 +71,13 @@
 import OpenSeadragon from "openseadragon"
 import TagPicker from '../components/TagPicker.vue'
 import {useProjectStore} from "@/stores/project"
-import {useSystemStore} from "@/stores/system"
 import {useUnitStore} from "@/stores/unit"
 import { computed, ref, onBeforeMount, onUnmounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import TitlePicker from "../components/TitlePicker.vue"
+import { onKeyStroke } from '@vueuse/core'
 
 const projectStore = useProjectStore()
-const systemStore = useSystemStore()
 const unitStore = useUnitStore()
 const route = useRoute()
 const router = useRouter()
@@ -179,18 +178,34 @@ const focusViewer = (() => {
    })
 })
 
-const keyboardHandler = ((event) => {
-   if ( editField.value != "" ) {
-      return
+onKeyStroke(['>','.'], () => {
+   if (nextDisabled.value == false && editField.value == "") {
+      nextImage()
+      viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(zoom.value))
+      setTimeout( () => {
+         viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(zoom.value))
+      }, 255) // 255 is just longer that the .25 sec animation timer
    }
+})
 
-   if ( event.key == '1') {
-      event.stopPropagation()
+onKeyStroke(['<',','], () => {
+   if (prevDisabled.value == false && editField.value == "") {
+      prevImage()
+      viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(zoom.value))
+      setTimeout( () => {
+         viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(zoom.value))
+      }, 255) // 255 is just longer that the .25 sec animation timer
+   }
+})
+
+onKeyStroke('1', () => {
+   if ( editField.value == "" ) {
       viewActualSize()
    }
+})
 
-   if ( event.key == 'z') {
-      event.stopPropagation()
+onKeyStroke('z', () => {
+   if ( editField.value == "" ) {
       let ele = document.getElementById("iiif-viewer")
       fullScreen.value = !fullScreen.value
       let origZoom = zoom.value
@@ -211,31 +226,10 @@ const keyboardHandler = ((event) => {
          }
       }, 50)
    }
-   if ( event.key == ',' || event.key == '<') {
-      event.stopPropagation()
-      if (prevDisabled.value == false ) {
-         prevImage()
-         setTimeout( () => {
-            viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(zoom.value))
-         }, 255)
-      }
-   } else {
-      if ( event.key == '.' || event.key == '>') {
-         event.stopPropagation()
-         if (nextDisabled.value == false ) {
-            nextImage()
-            viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(zoom.value))
-            setTimeout( () => {
-               viewer.viewport.zoomTo(viewer.viewport.imageToViewportZoom(zoom.value))
-            }, 255) // 255 is just longer that the .25 sec animation timer
-         }
-      }
-   }
 })
 
-onBeforeMount( async () => {
-   window.addEventListener('keydown', keyboardHandler)
 
+onBeforeMount( async () => {
    page.value = parseInt(route.params.page, 10)
    let currPageIndex = page.value-1
 
@@ -284,7 +278,6 @@ onBeforeMount( async () => {
    })
 })
 onUnmounted( async () => {
-   window.removeEventListener('keydown', keyboardHandler)
    if (viewer) {
       viewer.destroy()
    }
@@ -321,7 +314,7 @@ onUnmounted( async () => {
          }
       }
       .acts {
-         padding: 5px;
+         padding: 5px 10px;
          border-top: 1px solid var(--uvalib-grey-light);
          display: flex;
          flex-flow: row nowrap;
@@ -340,20 +333,8 @@ onUnmounted( async () => {
             align-items: center;
             justify-content: flex-start;
          }
-         .group.zoom {
-            width: 25%;
-            gap: 2px;
-            justify-content: flex-end;
-            button {
-               display: inherit !important;
-            }
-            .page {
-               margin: 0 5px;
-               white-space: nowrap;
-            }
-            .rotated {
-               transform: scaleX(-1);
-            }
+         .zoom {
+            gap: 5px;
          }
       }
 
