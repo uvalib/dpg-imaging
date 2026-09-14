@@ -10,6 +10,9 @@
       <UnitActions />
    </div>
    <UTable :data="masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility" :ui="{tbody: 'mf-tbody'}">
+      <template #select-cell="{ row }">
+         <UCheckbox :modelValue="unitStore.masterFiles[row.index].selected" size="xl" @update:modelValue="unitStore.masterFileSelected(row.index)"/>
+      </template>
       <template #image-cell="{ row }">
          <RouterLink  @click="imageClicked" :to="`/projects/${projectStore.detail.id}/unit/images/${row.index+1}`">
             <img :src="row.original.thumbURL"/>   
@@ -85,7 +88,6 @@ import UnitActions from '@/components/unit/UnitActions.vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import TitlePicker from "@/components/TitlePicker.vue"
 import { computed, h, ref, watch  } from 'vue'
-import UCheckboxCell from './UCheckboxCell.vue'
 import { useSortable } from '@vueuse/integrations/useSortable'
 import { onKeyStroke } from '@vueuse/core'
 
@@ -148,11 +150,6 @@ onKeyStroke(['<',','], () => {
 const columns = [
    {
       id: 'select',
-      cell: ({ row }) => 
-         h(UCheckboxCell, {
-            modelValue: unitStore.masterFiles[row.index].selected,
-            'onUpdate:modelValue': () => unitStore.masterFileSelected(row.index)
-         })
    },
    {
       id: 'image',

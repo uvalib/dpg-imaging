@@ -107,6 +107,12 @@ input[type=checkbox] {
   -moz-osx-font-smoothing: grayscale;
   font-size: 16px;
 
+  a {
+   &:focus {
+      outline-offset: 3px;
+      outline-color: var( --uvalib-brand-blue-lightest );
+   }
+  }
 
    h2 {
       color: var(--uvalib-brand-blue);

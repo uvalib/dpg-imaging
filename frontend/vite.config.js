@@ -46,7 +46,15 @@ export default defineConfig({
             },
             checkbox: {
                slots: {
-                  label: "pl-2"
+                  label: "pl-2",
+                  base: "hover:bg-brand-blue-alt-300 !cursor-pointer"
+               },
+               variants: {
+                  color: {
+                     primary: {
+                        base: "focus:outline-offset-3 focus:outline-bg-brand-blue-alt-300"
+                     }
+                  }
                }
             },
             dropdownMenu: {
