@@ -4,7 +4,7 @@
       <div v-if="reportStore.reports.loading" class="wait-wrap">
          <WaitSpinner/>
       </div>
-      <div class="report">
+      <div v-else class="report">
          <table class="rate-stats">
             <tbody>
                <tr>

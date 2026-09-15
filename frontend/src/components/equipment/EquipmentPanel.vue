@@ -1,5 +1,5 @@
 <template>
-   <DataTable :value="props.equipment" ref="equipmentTable" dataKey="id"
+   <!-- <DataTable :value="props.equipment" ref="equipmentTable" dataKey="id"
       stripedRows showGridlines responsiveLayout="scroll" class="p-datatable-sm"
       :lazy="false" :paginator="false" :rows="props.equipment.length"
       v-model:editingRows="editingRows" editMode="row"
@@ -39,15 +39,11 @@
             </div>
          </template>
       </Column>
-   </DataTable>
+   </DataTable> -->
 </template>
 
 <script setup>
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
 import { useEquipmentStore } from '@/stores/equipment'
-import Checkbox from 'primevue/checkbox'
-import InputText from 'primevue/inputtext'
 import { ref } from 'vue'
 import { useConfirm } from "primevue/useconfirm"
 

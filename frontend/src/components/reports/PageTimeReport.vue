@@ -4,8 +4,8 @@
       <div v-if="reportStore.reports.loading" class="wait-wrap">
          <WaitSpinner message="Loading Page Completion Time report..."/>
       </div>
-      <div class="report">
-         <Chart type="bar" :data="reportStore.reports.pageTimes" :options="options"/>
+      <div v-else class="report">
+         <BarChart :data="reportStore.reports.pageTimes" :options="options" />
          <table class="raw-data">
             <tbody>
                <tr>
@@ -33,7 +33,7 @@
 import { ref } from 'vue'
 import { useReportStore } from '@/stores/reporting'
 import WaitSpinner from '@/components/WaitSpinner.vue'
-import Chart from 'primevue/chart'
+import BarChart from './BarChart.vue'
 
 const options = ref({
    title: {

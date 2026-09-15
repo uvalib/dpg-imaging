@@ -7,13 +7,13 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@internationalized/date": "^3.12.4",
     "@nuxt/ui": "^4.11.0",
     "@primeuix/themes": "^2.0.3",
     "@vueuse/core": "^14.4.0",
     "@vueuse/integrations": "^14.4.0",
     "axios": "^1.20.0",
     "chart.js": "^4.5.1",
-    "dayjs": "^1.11.23",
     "jwt-decode": "^4.0.0",
     "openseadragon": "^6.1.0",
     "pinia": "^4.0.3",
@@ -22,6 +22,7 @@
     "sortablejs": "^1.15.7",
     "tailwindcss": "^4.3.3",
     "vue": "^3.5.42",
+    "vue-chartjs": "^5.3.4",
     "vue-router": "^5.3.1",
     "vue3-cookies": "^1.0.6"
   },
