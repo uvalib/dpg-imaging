@@ -21,28 +21,36 @@ export default defineConfig({
                default: {
                   class: "cursor-pointer"
                },
+               slots: {
+                  base: "disabled:opacity-20"
+               },
                compoundVariants: [
                   {
                      color: "primary",
                      variant: "solid",
-                     class: "text-white focus:outline-offset-2 focus:outline-1 focus:outline-dashed",
+                     class: "text-white focus:outline-offset-2",
                   },
                   {
                      color: "secondary",
                      variant: "solid",
-                     class: "border bg-brand-grey-200 text-black border-brand-grey-100 hover:bg-gray-200 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100",
+                     class: "border text-black border-brand-grey-100 hover:bg-gray-200 focus:outline-offset-2 focus:outline-brand-grey-100",
                   },
                   {
                      color: "error",
                      variant: "solid",
-                     class: "text-white focus:outline-offset-2 focus:outline-1 focus:outline-dashed",
+                     class: "text-white focus:outline-offset-2",
                   },
                   {
                      color: "neutral",
                      variant: "outline",
-                     class: "hover:bg-brand-blue-alt-300 focus:outline-offset-2 focus:outline-1 focus:outline-dashed disabled:bg-brand-grey-200 disabled:text-brand-grey-100",
+                     class: "hover:bg-brand-blue-alt-300 focus:outline-offset-2 disabled:bg-brand-grey-200 disabled:text-brand-grey-100",
                   },
                ],
+            },
+            card: {
+               slots: {
+                  body: 'h-full'
+               }
             },
             checkbox: {
                slots: {
@@ -137,7 +145,7 @@ export default defineConfig({
             },
             input: {
                slots: {
-                  base: '!border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-blue-alt-100'
+                  base: '!border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-brand-blue-alt-100'
                },
                variants: {
                   fieldGroup: {
@@ -149,11 +157,11 @@ export default defineConfig({
             },
             inputNumber: {
                slots: {
-                  base: '!border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-dashed focus:outline-brand-blue-alt-100'
+                  base: '!border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-brand-blue-alt-100'
                }
             },
             link: {
-               base: 'cursor-pointer !text-brand-blue-alt-A rounded-md hover:bg-brand-blue-alt-400 py-1 px-2 focus:outline-offset-1 focus:outline-dashed focus:outline-brand-grey-100',
+               base: 'cursor-pointer !text-brand-blue-alt-A rounded-md hover:bg-brand-blue-alt-400 py-1 px-2 focus:outline-offset-1 focus:outline-brand-grey-100',
             },
             listbox: {
                slots: {
@@ -165,7 +173,7 @@ export default defineConfig({
             select: {
                slots: {
                   content: 'min-w-fit',
-                  base: "focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100",
+                  base: "focus:outline-offset-2 focus:outline-brand-grey-100",
                   item: [ // the items style is an ARRY and teh second elemsnt defaults to transition animattion. just override stuff at idx 0
                      'data-highlighted:not-data-disabled:before:bg-brand-blue-alt-300',
                   ],
@@ -180,7 +188,7 @@ export default defineConfig({
             },
             selectMenu: {
                slots: {
-                  base: "!ring-brand-grey-100  focus:outline-offset-2 focus:outline-dashed focus:outline-brand-grey-100", 
+                  base: "!ring-brand-grey-100  focus:outline-offset-2 focus:outline-brand-grey-100", 
                   item: [
                      'data-highlighted:not-data-disabled:before:bg-brand-blue-alt-300',
                   ],
@@ -189,7 +197,9 @@ export default defineConfig({
             },
             table: {
                slots: {
-                  td: "text-start"
+                  tbody: '[&>tr]:data-[selectable=true]:hover:bg-brand-blue-alt-300/30',
+                  td: "text-start",
+                  tr: "data-[selected=true]:bg-brand-blue-alt-300/60 data-[selected=true]:hover:bg-brand-blue-alt-300/70!"
                }
             },
             tabs: {

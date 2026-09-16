@@ -13,6 +13,10 @@ export const useEquipmentStore = defineStore('equipment', {
       }
 	}),
 	getters: {
+      selectedWorkstation: state => {
+         if ( state.pendingEquipment.workstationID == 0) return null 
+         return  state.workstations.find( w => w.id == state.pendingEquipment.workstationID )
+      },
       scanners: state => {
          return state.equipment.filter( e => e.type == "Scanner")
       },
@@ -36,11 +40,14 @@ export const useEquipmentStore = defineStore('equipment', {
             system.setError(e)
          })
       },
-      workstationSelected( wsID ) {
+      selectWorkstation( wsID ) {
          this.pendingEquipment.workstationID = wsID
          this.pendingEquipment.changed = false
          let ws = this.workstations.find( ws => ws.id == wsID )
          this.pendingEquipment.equipment = ws.equipment.slice()
+      },
+      deselectWorkstation() {
+         this.pendingEquipment = { workstationID: 0, changed: false, equipment: [] }
       },
       async addWorkstation( newName ) {
          var req = {name: newName}
@@ -83,6 +90,7 @@ export const useEquipmentStore = defineStore('equipment', {
          })
       },
       retireWorkstation( wsID ) {
+         this.deselectWorkstation()
          axios.post( `/api/workstation/${wsID}/update?status=2` ).then(() => {
             let wsIdx = this.workstations.findIndex(ws => ws.id == wsID)
             this.workstations.splice(wsIdx, 1)

@@ -1,4 +1,26 @@
 <template>
+   <UTable :data="props.equipment" :columns="cols" class="h-full pb-8" virtualize
+   >
+      <template #select-cell="{ row }">
+         {{ row.original.id }}
+         <!-- <UCheckbox :value="slotProps.data" v-model="equipmentStore.pendingEquipment.equipment" :disabled="isItemDisabled(row.original.id)" @click="equipmentClicked"/>     -->
+      </template>
+      <template #workstation-cell="{ row }">
+         <span class="workstation">{{workstation(row.original.id)}}</span>
+      </template>
+      <template #acts-cell="{ row }">
+         <div class="row-acts">
+               <template v-if="editingRows.length == 1 && editingRows[0].id == row.original.id">
+                  <UButton label="Cancel" size="sm" color="secondary" @click="cancelEdit"/>
+                  <UButton label="Save" size="sm" color="secondary" @click="saveChanges" :disabled="workstation(row.original.id) != 'N/A'"/>
+               </template>
+               <template v-else>
+                  <UButton label="Edit" size="sm" color="secondary" @click="editEquipment(row.original)" :disabled="editingRows.length > 0"/>
+                  <UButton label="Retire" size="sm" color="error" @click="retireEquipment(row.original.id)" :disabled="editingRows.length > 0 || workstation(row.original.id) != 'N/A'"/>
+               </template>
+            </div>   
+      </template>
+   </UTable>
    <!-- <DataTable :value="props.equipment" ref="equipmentTable" dataKey="id"
       stripedRows showGridlines responsiveLayout="scroll" class="p-datatable-sm"
       :lazy="false" :paginator="false" :rows="props.equipment.length"
@@ -19,32 +41,12 @@
          <template #editor>
             <InputText v-model="newSerial" />
          </template>
-      </Column>
-      <Column field="" header="Workstation" class="e-wide">
-         <template #body="slotProps">
-            <span class="workstation">{{workstation(slotProps.data.id)}}</span>
-         </template>
-      </Column>
-      <Column header="Actions">
-         <template #body="slotProps">
-            <div class="row-acts">
-               <template v-if="editingRows.length == 1 && editingRows[0].id == slotProps.data.id">
-                  <DPGButton label="Cancel"  severity="secondary" @click="cancelEdit"/>
-                  <DPGButton label="Save"  severity="secondary" @click="saveChanges" :disabled="workstation(slotProps.data.id) != 'N/A'"/>
-               </template>
-               <template v-else>
-                  <DPGButton label="Edit"  severity="secondary" @click="editEquipment(slotProps.data)" :disabled="editingRows.length > 0"/>
-                  <DPGButton label="Retire"  severity="secondary" @click="retireEquipment(slotProps.data.id)" :disabled="editingRows.length > 0 || workstation(slotProps.data.id) != 'N/A'"/>
-               </template>
-            </div>
-         </template>
-      </Column>
-   </DataTable> -->
+      </Column> -->
 </template>
 
 <script setup>
 import { useEquipmentStore } from '@/stores/equipment'
-import { ref } from 'vue'
+import { ref,computed } from 'vue'
 import { useConfirm } from "primevue/useconfirm"
 
 const confirm = useConfirm()
@@ -60,6 +62,20 @@ const equipmentStore = useEquipmentStore()
 const editingRows = ref([])
 const newName = ref("")
 const newSerial = ref("")
+
+const cols = [
+   {accessorKey: "select", header: "S"}, 
+   {accessorKey: "name", header: "Name"},  
+   {accessorKey: "serialNumber", header: "Serial Number"},
+   {accessorKey: "workstation", header: "Workstation"}, 
+   {accessorKey: "acts", header: "Actions"}  
+]
+const colVisibility = computed(() => {
+   if (equipmentStore.pendingEquipment.workstationID == 0) {
+      return {select: false}
+   }
+   return {}
+})
 
 function retireEquipment( equipID ) {
    let tgtE = equipmentStore.equipment.find( e => e.id == equipID)
@@ -108,7 +124,7 @@ function isItemDisabled(equipID) {
    return true
 }
 
-function workstation( equipID ) {
+const workstation = (( equipID ) => {
    let wsName = ""
    equipmentStore.workstations.some( ws => {
       let equip = ws.equipment.find( e => e.id == equipID)
@@ -121,12 +137,14 @@ function workstation( equipID ) {
       wsName = "N/A"
    }
    return wsName
-}
+})
 
 </script>
 
 <style lang="scss" scoped>
-.e-wide {
-   width: 30%;
+.row-acts {
+   display: flex;
+   flex-flow: row nowrap;
+   gap: 5px;
 }
 </style>
