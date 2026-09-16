@@ -6,59 +6,63 @@
          <AddEquipmentDialog />
       </div>
    </h2>
-   <div class="equipment">
-      <div class="columns">
-         <UCard title="Workstations" class="grow max-h-150 scroll-smooth" :ui="{header: 'bg-brand-grey-200 pl-3! pt-2 pb-2'}">
-            <UTable :data="equipmentStore.workstations" :columns="wsCols" v-model:row-selection="wsRowSelection"
-               :rowSelectionOptions="{enableMultiRowSelection: false}" @select="workstationSelected" 
-               v-model:column-visibility="hideCheckbox" class="h-full pb-8" virtualize
-            >
-               <template #select-cell="{ row }">
-                  <UCheckbox :modelValue="row.getIsSelected()"/>
-               </template>
-               <template #status-cell="{ row }">
-                  <span :class="statusClass(row.original.status)"></span>
-               </template>
-               <template #actions-cell="{ row }">
-                  <div  class="row-acts">
-                     <UButton size="sm" v-if="row.original.status==0" label="Deactivate"  color="secondary" @click="deactivateWorkstation(row.original.id)"/>
-                     <UButton size="sm" v-else label="Activate" color="secondary" @click="activateWorkstation(row.original.id)"/>
-                     <UButton size="sm" label="Retire"  color="error" @click="retireWorkstation(row.original.id)" :disabled="row.original.projectCount > 0"/>
-                  </div>
-               </template>
-            </UTable>
-         </UCard>
-         <UCard :title="setupHeader" class="grow max-h-150 scroll-smooth" :ui="{header: 'bg-brand-grey-200 pl-3! pt-2 pb-2'}">
-            <UTable :data="equipmentStore.pendingEquipment.equipment" :columns="equipCols" class="h-full">
-               <template #body-bottom>
-                  <div v-if="equipmentStore.selectedWorkstation" class="row-acts pt-3">
-                     <UButton label="Clear Setup" color="secondary" @click="clearSetup" :disabled="clearAllDisabled"/>
-                     <UButton label="Save Setup Changes" color="secondary" @click="saveSetup"
-                        :disabled="!(equipmentStore.pendingEquipment.changed==true && equipmentStore.pendingEquipment.equipment.length > 0)"/>
-                  </div>
-               </template>
-            </UTable>
-         </UCard>
-      </div>
-      <div class="columns">
-         <UCard title="Equipment" class="grow" :ui="{header: 'bg-brand-grey-200 pl-3! pt-2 pb-2'}">
-            <UTabs :items="tabs" variant="link"  >
-               <template #bodies>
-                  <EquipmentPanel :equipment="equipmentStore.cameraBodies" />
-               </template>
-               <template #lenses>
-                  <EquipmentPanel :equipment="equipmentStore.lenses" />
-               </template>
-               <template #backs>
-                  <EquipmentPanel :equipment="equipmentStore.digitalBacks" />
-               </template>
-               <template #scanners>
-                  <EquipmentPanel :equipment="equipmentStore.scanners" />
-               </template>
-            </UTabs>
-         </UCard>
-      </div>
-   </div> 
+   <div class="column">
+      <UCard title="Workstations" class="grow max-h-150 scroll-smooth" :ui="{header: 'bg-brand-grey-200 pl-3! pt-2 pb-2'}">
+         <UTable :data="equipmentStore.workstations" :columns="wsCols" v-model:row-selection="wsRowSelection"
+            :rowSelectionOptions="{enableMultiRowSelection: false}" @select="workstationSelected" 
+            v-model:column-visibility="hideCheckbox" class="h-full pb-8" virtualize
+         >
+            <template #select-cell="{ row }">
+               <UCheckbox :modelValue="row.getIsSelected()"/>
+            </template>
+            <template #status-cell="{ row }">
+               <span :class="statusClass(row.original.status)"></span>
+            </template>
+            <template #actions-cell="{ row }">
+               <div  class="row-acts">
+                  <UButton size="sm" v-if="row.original.status==0" label="Deactivate"  color="secondary" @click="deactivateWorkstation(row.original.id)"/>
+                  <UButton size="sm" v-else label="Activate" color="secondary" @click="activateWorkstation(row.original.id)"/>
+                  <UButton size="sm" label="Retire"  color="error" @click="retireWorkstation(row.original.id)" :disabled="row.original.projectCount > 0"/>
+               </div>
+            </template>
+         </UTable>
+      </UCard>
+      <UCard :title="setupHeader" class="grow max-h-150 scroll-smooth" :ui="{header: 'bg-brand-grey-200 pl-3! pt-2 pb-2'}">
+         <UTable :data="equipmentStore.pending.equipment" :columns="equipCols" class="h-full">
+            <template #body-bottom>
+               <div v-if="equipmentStore.selectedWorkstation" class="row-acts pt-3">
+                  <UButton label="Clear Setup" color="secondary" @click="clearSetup" :disabled="clearAllDisabled"/>
+                  <UButton label="Save Setup Changes" color="secondary" @click="saveSetup"
+                     :disabled="!(equipmentStore.pending.changed==true && equipmentStore.pending.equipment.length > 0)"/>
+               </div>
+            </template>
+         </UTable>
+      </UCard>
+   </div>
+   <div class="column">
+      <UCard class="grow" :ui="{header: 'bg-brand-grey-200 pl-3! pt-2 pb-2'}">
+         <template #header>
+            <div class="ws-hdr">
+               <span>Equipment</span>
+               <span v-if="equipmentStore.selectedWorkstation"><b>Workstation</b>: {{ equipmentStore.selectedWorkstation.name }}</span>
+            </div>
+         </template>
+         <UTabs :items="tabs" variant="link"  >
+            <template #bodies>
+               <EquipmentPanel :equipment="equipmentStore.cameraBodies" />
+            </template>
+            <template #lenses>
+               <EquipmentPanel :equipment="equipmentStore.lenses" />
+            </template>
+            <template #backs>
+               <EquipmentPanel :equipment="equipmentStore.digitalBacks" />
+            </template>
+            <template #scanners>
+               <EquipmentPanel :equipment="equipmentStore.scanners" />
+            </template>
+         </UTabs>
+      </UCard>
+   </div>
 </template>
 
 <script setup>
@@ -175,40 +179,45 @@ h2 {
       gap: 5px;
    }
 }
-
-.equipment {
-   .columns {
-      padding: 20px;
-      display: flex;
-      flex-flow: row wrap;
-      justify-content: flex-start;
-      gap: 20px;
-
-      h3 {
-         text-align: center;
-         color: var(--uvalib-text);
-         font-weight: 500;
-         font-size: 1em;
-      }
-
-      span.ws-status {
-         width: 20px;
-         height: 20px;
-         display: inline-block;
-         border-radius: 20px;
-         background: var(--uvalib-green);
-      }
-
-      span.ws-status.inactive {
-         background: var(--uvalib-grey-light);
-      }
+.ws-hdr {
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: space-between;
+   b {
+      font-weight: bold;
    }
-   .row-acts {
-      display: flex;
-      flex-flow: row nowrap;
-      justify-content: flex-start;
-      gap: 5px;
+}
+.column {
+   padding: 40px 40px 0 40px;
+   display: flex;
+   flex-flow: row wrap;
+   justify-content: flex-start;
+   gap: 20px;
+
+   h3 {
+      text-align: center;
+      color: var(--uvalib-text);
+      font-weight: 500;
+      font-size: 1em;
    }
+
+   span.ws-status {
+      width: 20px;
+      height: 20px;
+      display: inline-block;
+      border-radius: 20px;
+      background: var(--uvalib-green);
+   }
+
+   span.ws-status.inactive {
+      background: var(--uvalib-grey-light);
+   }
+}
+.row-acts {
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   gap: 5px;
 }
 
 </style>

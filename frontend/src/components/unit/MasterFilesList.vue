@@ -205,7 +205,6 @@ const startEdit = ((field,row) => {
    editInfo.value = {fileName: row.original.fileName, field: field,  rowIndex: row.index, orig: row.original[field], value: row.original[field]}
 })
 const submitEdit = (() => {
-   console.log(editInfo.value.value)
    if ( editInfo.value.orig != editInfo.value.value) {
       unitStore.updateMasterFileMetadata( editInfo.value.fileName, editInfo.value.field, editInfo.value.value)
    }

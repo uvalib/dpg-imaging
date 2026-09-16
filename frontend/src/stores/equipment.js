@@ -6,7 +6,7 @@ export const useEquipmentStore = defineStore('equipment', {
 	state: () => ({
       workstations: [],
       equipment: [],
-      pendingEquipment: {
+      pending: {
          workstationID: 0,
          changed: false,
          equipment: []
@@ -14,8 +14,8 @@ export const useEquipmentStore = defineStore('equipment', {
 	}),
 	getters: {
       selectedWorkstation: state => {
-         if ( state.pendingEquipment.workstationID == 0) return null 
-         return  state.workstations.find( w => w.id == state.pendingEquipment.workstationID )
+         if ( state.pending.workstationID == 0) return null 
+         return  state.workstations.find( w => w.id == state.pending.workstationID )
       },
       scanners: state => {
          return state.equipment.filter( e => e.type == "Scanner")
@@ -41,13 +41,23 @@ export const useEquipmentStore = defineStore('equipment', {
          })
       },
       selectWorkstation( wsID ) {
-         this.pendingEquipment.workstationID = wsID
-         this.pendingEquipment.changed = false
+         this.pending.workstationID = wsID
+         this.pending.changed = false
          let ws = this.workstations.find( ws => ws.id == wsID )
-         this.pendingEquipment.equipment = ws.equipment.slice()
+         this.pending.equipment = ws.equipment.slice()
       },
       deselectWorkstation() {
-         this.pendingEquipment = { workstationID: 0, changed: false, equipment: [] }
+         this.pending = { workstationID: 0, changed: false, equipment: [] }
+      },
+      togglePendingEquipment( equipID ) {
+         const idx = this.pending.equipment.findIndex( e => e.id == equipID)
+         if ( idx > -1) {
+            this.pending.equipment.splice(idx, 1)
+         } else {
+            const tgtE = this.equipment.find(e => e.id == equipID)
+            this.pending.equipment.push( { ...tgtE } )
+         }
+         this.pending.changed = true
       },
       async addWorkstation( newName ) {
          var req = {name: newName}
@@ -137,16 +147,16 @@ export const useEquipmentStore = defineStore('equipment', {
          })
       },
       clearSetup() {
-         this.pendingEquipment.changed = true
-         this.pendingEquipment.equipment = []
+         this.pending.changed = true
+         this.pending.equipment = []
       },
       async saveSetup() {
-         var req = {setup: this.pendingEquipment.equipment}
-         return axios.post( `/api/workstation/${this.pendingEquipment.workstationID}/setup`, req ).then((response) => {
-            let wsIdx = this.workstations.findIndex( ws => ws.id == this.pendingEquipment.workstationID)
+         var req = {setup: this.pending.equipment}
+         return axios.post( `/api/workstation/${this.pending.workstationID}/setup`, req ).then((response) => {
+            let wsIdx = this.workstations.findIndex( ws => ws.id == this.pending.workstationID)
             this.workstations[wsIdx] = response.data.workstation
             this.equipment = response.data.equipment
-            this.pendingEquipment.changed = false
+            this.pending.changed = false
          }).catch( e => {
             console.log(e)
             const system = useSystemStore()

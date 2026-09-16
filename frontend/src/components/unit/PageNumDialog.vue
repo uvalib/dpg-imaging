@@ -56,7 +56,6 @@ const masterFiles = computed( () => {
    unitStore.masterFiles.forEach( (mf,idx) => {
       list.push({ value: idx, label: mf.fileName })
    })
-   console.log(list)
    return list
 })
 
