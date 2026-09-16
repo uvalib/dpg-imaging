@@ -1,6 +1,6 @@
 <template>
    <UApp :toaster="toaster">
-      <UHeader mode="slideover" id="uva-header">
+      <UHeader mode="slideover" id="uva-header" title="UVA Library">
          <template #title>
             <div class="library-link">
                <a target="_blank" href="https://library.virginia.edu">
@@ -95,7 +95,7 @@ const menuItems = computed(() => {
    if ( messageStore.unreadMessageCount(userStore.ID) > 0 ) {
       msgLabel += ` (${messageStore.unreadMessageCount(userStore.ID)})`
    }
-   let userMenu = { label: userStore.signedInUser, icon: "i-lucide-user-round", 
+   let userMenu = { label: userStore.signedInUser, icon: "i-lucide-user", 
       children: [
          {label: msgLabel, icon: 'i-lucide-mail', to: "/messages"},
          {label: "Sign out", icon: 'i-lucide-log-out',  onSelect: () => signout()} 
@@ -127,10 +127,6 @@ const signout = (() => {
    router.push("/signedout")
 })
 
-const homeClicked = (() => {
-   router.push("/")
-})
-
 onMounted( async () => {
    systemStore.getVersion()
    await systemStore.getConfig()
@@ -151,6 +147,11 @@ div.library-link {
    
 div.site-link {
    font-size: 1.3em;
+   border-radius: 0.3rem;
+   padding: 2px 6px;
+   &:hover {
+      background: var(--uvalib-blue-alt);
+   }
 }
 
 .project-toolbar {

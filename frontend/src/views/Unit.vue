@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import ProblemsDisplay from '@/components/ProblemsDisplay.vue'
+import ProblemsDisplay from '@/components/unit/ProblemsDisplay.vue'
 import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUnitStore} from "@/stores/unit"

@@ -72,12 +72,13 @@ export default defineConfig({
             },
             header: {
                slots: {
-                  root: "!bg-brand-blue h-auto", // h-auto needed to make header height include bottom slot
-                  container: "!pl-2 !pr-5 !py-2 !max-w-full",
+                  root: "!bg-brand-blue h-auto",   // h-auto needed to make header height include bottom slot
+                  container: "p-2! max-w-full!",   // by default it wanst to make narrow content, force full width 
                   right: "text-white",
                   body: "bg-brand-blue",
                   header:  "!bg-brand-blue",
                   content: "bg-brand-blue",
+                  title: "hover:bg-brand-blue-alt"
                }
             },
             modal: {

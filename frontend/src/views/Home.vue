@@ -16,7 +16,8 @@
                         </span>
                         <span class="status-section">
                            <span class="status-msg overdue" v-if="isOverdue(idx) && !p.finishedAt">OVERDUE</span>
-                           <i v-if="searchStore.hasError(idx) && !p.finishedAt" class="error-icon pi pi-exclamation-circle"></i>
+                           <UIcon v-if="searchStore.hasError(idx) && !p.finishedAt" name="i-lucide-circle-alert" 
+                              class="size-8 bg-brand-red-B text-white rounded-full" /> 
                         </span>
                         <span v-if="p.finishedAt">
                            <label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span>
@@ -80,7 +81,7 @@
                      </div>
                      <div class="owner-panel">
                         <span class="assignment">
-                           <i class="user pi pi-user"></i>
+                           <UIcon name="i-lucide-user" class="user"/> 
                            <span v-if="!p.owner" class="unassigned">Unassigned</span>
                            <span v-else class="assigned">{{ownerInfo(p)}}</span>
                         </span>
@@ -231,7 +232,7 @@ const deleteProjectClicked = (async (p) => {
       }
       .card {
          flex: 0 1 calc(25% - 1em);
-         border: 1px solid var(--uvalib-grey-light);
+         border: 1px solid var(--uvalib-grey);
          padding: 0;
          margin: 0px 10px 20px 10px;
          position: relative;
@@ -242,7 +243,6 @@ const deleteProjectClicked = (async (p) => {
          box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 4px 1px;
          background: white;
          padding-bottom: 110px;
-         border-radius: 0.3rem;
 
          .top {
             border-bottom: 1px solid var(--uvalib-grey);
@@ -277,13 +277,6 @@ const deleteProjectClicked = (async (p) => {
                   flex-flow: row nowrap;
                   align-items: center;
                   gap: 10px;
-               }
-               .error-icon {
-                  font-size: 1.5em;
-                  background: var(--uvalib-red-emergency);;
-                  color: white;
-                  padding: 2px 2px 1px 2px;
-                  border-radius: 50%;
                }
                label {
                   font-weight: bold;
@@ -387,9 +380,10 @@ const deleteProjectClicked = (async (p) => {
                justify-content: space-between;
 
                .assignment {
-                  .user {
-                     margin-right: 10px;
-                  }
+                  display: flex;
+                  flex-flow: row nowrap;
+                  gap: 10px;
+                  align-items: center;
                   .unassigned {
                      font-weight: 100;
                      color: #999;
