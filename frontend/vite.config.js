@@ -22,7 +22,7 @@ export default defineConfig({
                   class: "cursor-pointer"
                },
                slots: {
-                  base: "disabled:opacity-20"
+                  base: "disabled:opacity-40"
                },
                compoundVariants: [
                   {
@@ -43,7 +43,7 @@ export default defineConfig({
                   {
                      color: "neutral",
                      variant: "outline",
-                     class: "hover:bg-brand-blue-alt-300 focus:outline-offset-2 disabled:bg-brand-grey-200 disabled:text-brand-grey-100",
+                     class: "hover:bg-brand-blue-alt-300 focus:outline-offset-2 disabled:bg-brand-grey-200 disabled:text-brand-grey",
                   },
                ],
             },

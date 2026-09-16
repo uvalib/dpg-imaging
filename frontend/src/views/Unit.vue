@@ -10,7 +10,7 @@
             <div>{{callNumber}}</div>
             <div>Unit {{unitStore.unitID}}</div>
             <div class="small" >{{workingDir}}</div>
-            <div class="small" >{{unitStore.masterFiles.length}} Images</div>
+            <div>{{unitStore.masterFiles.length}} Images</div>
          </h3>
          <div class="back">
             <UButton icon="i-lucide-arrow-left" label="Back to project" @click="backClicked" size="sm" color="secondary"/>

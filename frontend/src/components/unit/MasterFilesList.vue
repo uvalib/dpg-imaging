@@ -2,10 +2,11 @@
    <div class="list-view sticky z-50" :style="{top: headerHeight}">
       <div class="control-group">
          <ViewMode />
-         <UPagination  v-if="unitStore.masterFiles.length>0" 
+         <UPagination  v-if="unitStore.totalFiles > unitStore.pageSize" 
             v-model:page="unitStore.currPage" :items-per-page="unitStore.pageSize" 
             :total="unitStore.totalFiles" @update:page="pageChanged"
          />
+         <USelect v-model="unitStore.pageSize" :items="['20','50','75']" @change="pageChanged()" />
       </div>
       <UnitActions />
    </div>
