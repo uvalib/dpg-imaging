@@ -157,6 +157,7 @@ div.site-link {
 .project-toolbar {
    padding: 5px 10px;
    background: var(--uvalib-grey-lightest);
+   border-bottom: 1px solid var(--uvalib-grey);
    display: flex;
    flex-flow: row;
    justify-content: space-between;

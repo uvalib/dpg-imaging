@@ -217,7 +217,7 @@ const deleteProjectClicked = (async () => {
 })
 
 const clearClicked = (() => {
-   projectStore.assignProject({projectID: detail.value.id, ownerID: 0} )
+   projectStore.assignProject( detail.value.id, 0 )
 })
 
 const rejectStepClicked = (() => {
@@ -226,7 +226,7 @@ const rejectStepClicked = (() => {
 })
 
 function claimClicked() {
-   projectStore.assignProject({projectID: detail.value.id, ownerID: userStore.ID} )
+   projectStore.assignProject( detail.value.id, userStore.ID )
 }
 
 function finishClicked() {

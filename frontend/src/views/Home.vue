@@ -81,7 +81,7 @@
                      </div>
                      <div class="owner-panel">
                         <span class="assignment">
-                           <UIcon name="i-lucide-user" class="user"/> 
+                           <UIcon name="i-lucide-user"/> 
                            <span v-if="!p.owner" class="unassigned">Unassigned</span>
                            <span v-else class="assigned">{{ownerInfo(p)}}</span>
                         </span>
@@ -160,7 +160,7 @@ const canClaim = ((p) => {
 })
 
 const claimClicked = ( async (projID) => {
-   await projectStore.assignProject( {projectID: projID, ownerID: userStore.ID} )
+   await projectStore.assignProject( projID, userStore.ID )
    searchStore.getProjects()
 })
 
@@ -363,8 +363,8 @@ const deleteProjectClicked = (async (p) => {
                }
 
                .progress-bar {
-                  border: 1px solid var(--uvalib-grey-light);
-                  background: white;
+                  border: 1px solid var(--uvalib-grey);
+                  background: var(--uvalib-grey-lightest);
                   height: 20px;
                   margin-left: 15px;
                   flex-grow: 1;
@@ -382,11 +382,11 @@ const deleteProjectClicked = (async (p) => {
                .assignment {
                   display: flex;
                   flex-flow: row nowrap;
-                  gap: 10px;
+                  gap: 5px;
                   align-items: center;
                   .unassigned {
                      font-weight: 100;
-                     color: #999;
+                     color: var(--uvalib-grey);
                   }
                }
             }

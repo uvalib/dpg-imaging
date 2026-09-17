@@ -253,7 +253,7 @@ export const useProjectStore = defineStore('project', {
             this.working = false
          })
       },
-      async assignProject({projectID, ownerID}) {
+      async assignProject( projectID, ownerID ) {
          this.working = true
          const system = useSystemStore()
          return axios.post(`/api/projects/${projectID}/assign/${ownerID}`).then(response => {

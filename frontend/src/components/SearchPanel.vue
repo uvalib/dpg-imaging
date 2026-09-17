@@ -69,7 +69,7 @@ const systemStore = useSystemStore()
 // Instead use this to bind an inline style 'top' param to stick the controls below the header
 const headerHeight = computed(() => {
    let hdr = document.querySelector('header')
-   return `${hdr.clientHeight}px`
+   return `${hdr.clientHeight+4}px`
 })
 
 const staffMembers = computed( () => {
@@ -198,10 +198,9 @@ const doSearch = ( async () => {
       padding: 5px;
       margin: 0;
       background: var(--uvalib-blue-alt-light);
-      border: 1px solid var(--uvalib-grey-light);
+      border: 1px solid var(--uvalib-grey);
       font-size: 1em;
       font-weight: normal;
-      border-radius: 4px 4px 0 0;
    }
    .form {
       font-size: 0.9em;
@@ -211,8 +210,8 @@ const doSearch = ( async () => {
       display: flex;
       flex-direction: column;
       row-gap: 10px;
-      border-left: 1px solid var(--uvalib-grey-light);
-      border-right: 1px solid var(--uvalib-grey-light);
+      border-left: 1px solid var(--uvalib-grey);
+      border-right: 1px solid var(--uvalib-grey);
       div.row {
          display: flex;
          flex-direction: column;
@@ -220,9 +219,8 @@ const doSearch = ( async () => {
       }
    }
    .buttons {
-      border: 1px solid var(--uvalib-grey-light);
+      border: 1px solid var(--uvalib-grey);
       border-top: 0;
-      border-radius: 4px;
       background: white;
       padding: 0 15px 15px 15px;
       display: flex;
