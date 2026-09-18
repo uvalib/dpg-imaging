@@ -155,7 +155,7 @@ const columns = [
    },
    {
       accessorKey: 'box',
-      header: "Box"
+      header: projectStore.detail.containerType.name
    },
    {
       accessorKey: 'folder',
