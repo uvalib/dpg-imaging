@@ -1,11 +1,9 @@
 <template>
    <UApp :toaster="toaster">
-      <UHeader mode="slideover" id="uva-header" title="UVA Library">
+      <UHeader mode="slideover" id="uva-header" title="UVA Library" to="https://library.virginia.edu">
          <template #title>
             <div class="library-link">
-               <a target="_blank" href="https://library.virginia.edu">
-                  <UvaLibraryLogo />
-               </a>
+               <UvaLibraryLogo />
             </div>
          </template>
 
@@ -28,7 +26,7 @@
          <template v-if="route.path == '/'" #bottom>
             <div class="project-toolbar">
                <URadioGroup orientation="horizontal" size="lg" color="info" v-model="searchStore.filter" value-key="id" :items="filters" @update:modelValue="filterChanged"/>
-               <UPagination  v-if="!searchStore.working && searchStore.projects.length>0"
+               <UPagination  v-if="!searchStore.working && searchStore.projects.length>0" color="neutral" variant="ghost"
                   v-model:page="searchStore.currPage" :items-per-page="searchStore.pageSize" 
                   :total="searchStore.totalPages * searchStore.pageSize" @update:page="pageChanged"
                />
@@ -134,23 +132,26 @@ onMounted( async () => {
 </script>
 
 <style lang="scss">
-
-p.version {
-   margin: 0;
-   font-size: 0.5em;
-   text-align: right;
-   padding: 0;
-}
 div.library-link {
    width: 220px;
 }
    
 div.site-link {
    font-size: 1.3em;
-   border-radius: 0.3rem;
-   padding: 2px 6px;
-   &:hover {
-      background: var(--uvalib-blue-alt);
+   a {
+      color: white !important;
+      padding: 3px 6px;
+      border-radius: 0.3rem;
+      &:hover {
+         background: var(--uvalib-blue-alt);
+         text-decoration: none !important;
+      }
+   }
+   p.version {
+      margin: 0;
+      font-size: 0.5em;
+      text-align: right;
+      padding: 0;
    }
 }
 

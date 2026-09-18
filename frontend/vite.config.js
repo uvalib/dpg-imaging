@@ -60,7 +60,7 @@ export default defineConfig({
                variants: {
                   color: {
                      primary: {
-                        base: "focus:outline-offset-3 focus:outline-bg-brand-blue-alt-300"
+                        base: "focus:outline-offset-3"
                      }
                   }
                }
@@ -72,12 +72,9 @@ export default defineConfig({
             },
             header: {
                slots: {
-                  root: "!bg-brand-blue h-auto",   // h-auto needed to make header height include bottom slot
+                  root: "bg-brand-blue h-auto",    // h-auto needed to make header height include bottom slot
                   container: "p-2! max-w-full!",   // by default it wanst to make narrow content, force full width 
                   right: "text-white",
-                  body: "bg-brand-blue",
-                  header:  "!bg-brand-blue",
-                  content: "bg-brand-blue",
                   title: "hover:bg-brand-blue-alt"
                }
             },
@@ -94,11 +91,11 @@ export default defineConfig({
             },
             navigationMenu: {
                slots: {
-                  link: "rounded-lg focus-visible:before:outline-dashed focus-visible:before:outline-brand-blue-alt-200 focus-visible:before:outline-1 hover:bg-brand-blue-alt",
+                  link: "rounded-lg focus-visible:before:outline-brand-blue-alt-200 focus-visible:before:outline-1 hover:bg-brand-blue-alt",
                   linkLabel: "text-white",
                   linkLeadingIcon: "!text-white",
                   linkTrailingIcon: "!text-white",
-                  childLink: "rounded-lg focus-visible:before:outline-dashed focus-visible:before:outline-brand-blue-alt focus-visible:before:outline-1 hover:bg-brand-blue-alt-300",
+                  childLink: "rounded-lg focus-visible:before:outline-brand-blue-alt focus-visible:before:outline-1 hover:bg-brand-blue-alt-300",
                },
                variants: {
                   active: {
@@ -136,7 +133,7 @@ export default defineConfig({
                variants: {
                   color: {
                      info: {
-                        base: 'focus-visible:outline-none hover:bg-brand-blue-alt-300 focus:outline-offset-2 focus:outline-dotted focus:outline-brand-blue-alt-100',   
+                        base: 'focus-visible:outline-none hover:bg-brand-blue-alt-300 focus:outline-offset-2 focus:outline-brand-blue-alt-100',   
                      }
                   }
                }
@@ -146,7 +143,7 @@ export default defineConfig({
             },
             input: {
                slots: {
-                  base: '!border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-brand-blue-alt-100'
+                  base: '!border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-brand-grey-100'
                },
                variants: {
                   fieldGroup: {

@@ -2,7 +2,7 @@
    <div class="grid-view sticky z-50" :style="{top: headerHeight}">
       <div class="control-group">
          <ViewMode />
-         <UPagination  v-if="unitStore.totalFiles > unitStore.pageSize" 
+         <UPagination  v-if="unitStore.totalFiles > unitStore.pageSize" color="neutral" variant="ghost"
             v-model:page="unitStore.currPage" :items-per-page="unitStore.pageSize" 
             :total="unitStore.totalFiles" @update:page="pageChanged"
          />

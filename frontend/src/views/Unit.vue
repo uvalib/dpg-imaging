@@ -3,13 +3,12 @@
       <WaitSpinner  v-if="unitStore.working" :overlay="true" message="Working..." />
       <div class="metadata" v-if="projectStore.hasDetail">
          <h2>
-            <ProblemsDisplay class="topleft" />
-            <span class="title"><router-link :to="`/projects/${projectStore.detail.id}`">{{truncateTitle(title)}}</router-link></span>
+            <ProblemsDisplay class="topleft"  v-if="unitStore.problems.length > 0"/>
+            <router-link :to="`/projects/${projectStore.detail.id}`">{{truncateTitle(title)}}</router-link>
          </h2>
          <h3>
-            <div>{{callNumber}}</div>
-            <div>Unit {{unitStore.unitID}}</div>
-            <div class="small" >{{workingDir}}</div>
+            <div><label>Unit:</label><a target="_blank" :href="`${systemStore.adminURL}/units/${unitStore.unitID}`">{{unitStore.unitID}}</a></div>
+            <div><label>Directory:</label>{{workingDir}}</div>
             <div>{{unitStore.masterFiles.length}} Images</div>
          </h3>
          <div class="back">
@@ -135,6 +134,11 @@ onMounted( async () => {
    padding: 0;
    text-align: center;
 
+   label {
+      font-weight: bold;
+      margin-right: 5px;
+   }
+
    .metadata {
       margin-bottom: 15px;
       position: relative;
@@ -146,26 +150,6 @@ onMounted( async () => {
          position: absolute;
          top:0;
          left: 0px;
-      }
-      h2 {
-         .title {
-            display: block;
-            margin: 0 200px;
-            a {
-               color: inherit !important;
-               font-weight: inherit !important;
-               font-size: inherit !important;
-            }
-         }
-      }
-      h3 {
-          margin: 5px 0;
-          font-weight: normal;
-          .divider {
-            border-bottom: 1px solid var(--uvalib-grey-light);
-            margin: 10px auto 20px auto;
-            width: 50%;
-          }
       }
       .back {
          padding: 0 15px;

@@ -1,5 +1,5 @@
 <template>
-   <UPopover  v-if="unitStore.problems.length > 0">
+   <UPopover>
       <UButton color="error" size="lg" label="Issues Detected" icon="i-lucide-octagon-alert" class="absolute left-2 top-0"/>
       <template #content>
          <div class="list">

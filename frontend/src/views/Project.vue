@@ -98,6 +98,10 @@ const backClicked = (() => {
       margin-right: 5px;
    }
 
+   h2  {
+      margin-bottom: 0px !important;
+   }
+
    .project-head {
       color: var(--uvalib-text);
       padding-bottom: 15px;
@@ -106,13 +110,11 @@ const backClicked = (() => {
       margin-bottom: 10px;
       display: flex;
       flex-direction: column;
-      gap: 5px;
       h3  {
-         max-width: 90%;
          text-align: center;
          font-weight: 500;
          font-size: 1.25em;
-         // margin: 5px auto 10px auto;
+         margin: 5px 0;
       }
       h4 {
          font-size: 0.9em;

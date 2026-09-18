@@ -82,7 +82,7 @@
 }
 
 
-input[type=text],
+/* input[type=text],
 select,
 textarea {
    box-sizing: border-box;
@@ -97,7 +97,7 @@ textarea {
 }
 input[type=checkbox] {
    cursor: pointer;
-}
+} */
 
 #app {
   margin: 0;
@@ -107,12 +107,20 @@ input[type=checkbox] {
   -moz-osx-font-smoothing: grayscale;
   font-size: 16px;
 
-  a {
-   &:focus {
-      outline-offset: 3px;
-      outline-color: var( --uvalib-brand-blue-lightest );
+  main {
+      a {
+         color: var(--uvalib-blue-alt);
+         border-bottom: 1px dashed var(--uvalib-blue-alt);
+         &:hover {
+            border-bottom: 1px solid var(--uvalib-brand-blue-lighter);
+            color: var(--uvalib-brand-blue-lighter);
+         }
+         &:focus, &:focus-visible {
+            outline-offset: 3px;
+            outline-color: var( --uvalib-brand-blue-lightest );
+         }
+      }
    }
-  }
 
    h2 {
       color: var(--uvalib-brand-blue);
