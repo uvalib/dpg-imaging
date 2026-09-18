@@ -45,6 +45,11 @@ export default defineConfig({
                      variant: "outline",
                      class: "hover:bg-brand-blue-alt-300 focus:outline-offset-2 disabled:bg-brand-grey-200 disabled:text-brand-grey",
                   },
+                  {
+                     color: "neutral",
+                     variant: "ghost",
+                     class: "hover:bg-brand-blue-alt-300 focus:outline-offset-2 focus:outline-brand-grey-100 disabled:bg-brand-grey-200 disabled:text-brand-grey",
+                  },
                ],
             },
             card: {
