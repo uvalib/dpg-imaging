@@ -97,6 +97,8 @@ const okClicked = ( async () => {
 
 const selectAllClicked = (() => {
    unitStore.selectAll()
+   startIdx.value = unitStore.rangeStartIdx
+   endIdx.value = unitStore.rangeEndIdx
 })
 </script>
 

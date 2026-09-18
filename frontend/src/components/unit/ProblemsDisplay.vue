@@ -1,6 +1,6 @@
 <template>
    <UPopover>
-      <UButton color="error" size="lg" label="Issues Detected" icon="i-lucide-octagon-alert" class="absolute left-2 top-0"/>
+      <UButton color="error" size="sm" label="Issues Detected"/>
       <template #content>
          <div class="list">
             <ol start="1">

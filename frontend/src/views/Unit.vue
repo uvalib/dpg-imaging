@@ -3,7 +3,6 @@
       <WaitSpinner  v-if="unitStore.working" :overlay="true" message="Working..." />
       <div class="metadata" v-if="projectStore.hasDetail">
          <h2>
-            <ProblemsDisplay class="topleft"  v-if="unitStore.problems.length > 0"/>
             <router-link :to="`/projects/${projectStore.detail.id}`">{{truncateTitle(title)}}</router-link>
          </h2>
          <h3>
@@ -11,8 +10,9 @@
             <div><label>Directory:</label>{{workingDir}}</div>
             <div>{{unitStore.masterFiles.length}} Images</div>
          </h3>
-         <div class="back">
+         <div class="toolbar">
             <UButton icon="i-lucide-arrow-left" label="Back to project" @click="backClicked" size="sm" color="secondary"/>
+            <ProblemsDisplay    v-if="unitStore.problems.length > 0"/>
             <KeyboardShortcutHelp />
          </div>
       </div>
@@ -60,15 +60,6 @@ const title = computed(() => {
    }
    return t
 })
-
-const callNumber = computed(() => {
-   let t = projectStore.detail.callNumber
-   if ( t == "") {
-      t = "Unknown"
-   }
-   return t
-})
-
 const workingDir = computed(()=>{
    let unitDir =  paddedUnit(projectStore.detail.unitID)
    if (projectStore.detail.currentStep.name == "Process" || projectStore.detail.currentStep.name == "Scan") {
@@ -139,6 +130,12 @@ onMounted( async () => {
       margin-right: 5px;
    }
 
+   h2 {
+      a {
+         margin: 0 40px;
+      }
+   }
+
    .metadata {
       margin-bottom: 15px;
       position: relative;
@@ -151,7 +148,8 @@ onMounted( async () => {
          top:0;
          left: 0px;
       }
-      .back {
+      .toolbar {
+         margin-top: 15px;
          padding: 0 15px;
          text-align: left;
          display: flex;
