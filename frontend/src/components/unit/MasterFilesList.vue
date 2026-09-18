@@ -116,12 +116,18 @@ useSortable('.mf-tbody', unitStore.masterFilesPage, {
 })
 
 onKeyStroke(['>','.'], () => {
+   const overlay =  document.querySelector('div[data-slot="overlay"]')
+   if (overlay) return 
+
    if (unitStore.currPage < unitStore.totalPages && editInfo.value.field == "") {
       unitStore.currPage++
       pageChanged()
    }
 })
 onKeyStroke(['<',','], () => {
+   const overlay =  document.querySelector('div[data-slot="overlay"]')
+   if (overlay) return 
+   
    if (unitStore.currPage > 1 && editInfo.value.field == "") {
       unitStore.currPage--
       pageChanged()

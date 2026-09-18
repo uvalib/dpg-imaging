@@ -46,8 +46,8 @@
                      <TitlePicker v-model="editInfo.value" @cancel="cancelEdit" @submit="submitEdit"/>
                   </template>
                   <ULink v-else @click="startEdit(idx, 'description', image)">
-                     <span v-if="image.title">{{  image.description }}</span>
-                     <span v-else class="undefined">Undefined</span>
+                     <span v-if="image.description">{{  image.description }}</span>
+                     <span v-else>Undefined</span>
                   </ULink>
                </div> 
                <div v-if="projectStore.isManuscript" class="row">
@@ -69,11 +69,12 @@ import { useSortable } from '@vueuse/integrations/useSortable'
 import TagPicker from '@/components/TagPicker.vue'
 import { useProjectStore } from "@/stores/project"
 import { useUnitStore } from "@/stores/unit"
-import { ref, nextTick, computed } from 'vue'
+import { ref, computed } from 'vue'
 import ViewMode from './ViewMode.vue'
 import UnitActions from '@/components/unit/UnitActions.vue'
 import { useRoute, useRouter } from 'vue-router'
 import TitlePicker from '../TitlePicker.vue'
+import { onKeyStroke } from '@vueuse/core'
 
 const route = useRoute()
 const router = useRouter()
@@ -81,6 +82,25 @@ const projectStore = useProjectStore()
 const unitStore = useUnitStore()
 
 const editInfo = ref({fileName: "", field: "", orig: "", value: ""})
+
+onKeyStroke(['>','.'], () => {
+   const overlay =  document.querySelector('div[data-slot="overlay"]')
+   if (overlay) return 
+
+   if (unitStore.currPage < unitStore.totalPages && editInfo.value.field == "") {
+      unitStore.currPage++
+      pageChanged()
+   }
+})
+onKeyStroke(['<',','], () => {
+   const overlay =  document.querySelector('div[data-slot="overlay"]')
+   if (overlay) return 
+   
+   if (unitStore.currPage > 1 && editInfo.value.field == "") {
+      unitStore.currPage--
+      pageChanged()
+   }
+})
 
 // you cannot custruct tailwind class values dynamically, so you  cant do `top-${hdr.clientHeight}`. 
 // Instead use this to bind an inline style 'top' param to stick the controls below the header
