@@ -155,11 +155,16 @@ const columns = [
    },
    {
       accessorKey: 'box',
-      header: "Container ID"
+      header: () => {
+         if (projectStore.detail) {
+            return projectStore.detail.containerType.name
+         }
+         return "Container"
+      }
    },
    {
       accessorKey: 'folder',
-      header: "Folder ID"
+      header: "Folder"
    },
    {
       accessorKey: 'component',
