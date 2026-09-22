@@ -40,23 +40,21 @@
                <tr class="row">
                   <td class="label"><label for="workstation">Workstation:</label></td>
                   <td class="data">
-                     <select id="workstation" v-model="workstationID" ref="workstation">
-                        <option disabled :value="0">Choose a workstation</option>
-                        <option v-for="ws in systemStore.workstations" :key="`ws${ws.id}`" :value="ws.id">{{ws.name}}</option>
-                     </select>
+                     <USelect id="workstation" v-model="workstationID" :items="systemStore.workstations" 
+                        value-key="id" label-key="name" class="w-full" placeholder="Select a workstation"/>
                   </td>
                </tr>
                <tr class="row">
                   <td class="label"><label for="capture">Capture Resolution:</label></td>
-                  <td><input id="capture" type="text" v-model="captureResolution"></td>
+                  <td><UInput id="capture" v-model="captureResolution" class="w-full"/></td>
                </tr>
                <tr class="row">
                   <td class="label"><label for="resize">Resized Resolution:</label></td>
-                  <td class="data"><input id="resize" type="text" v-model="resizedResolution"></td>
+                  <td class="data"><UInput id="resize" v-model="resizedResolution" class="w-full"/></td>
                </tr>
                <tr class="row">
                   <td class="label"><label for="res-note">Resolution Note:</label></td>
-                  <td class="data"><textarea id="res-note" v-model="resolutionNote"></textarea></td>
+                  <td class="data"><UTextarea id="res-note" v-model="resolutionNote" class="w-full"/></td>
                </tr>
             </tbody>
          </table>
@@ -75,9 +73,8 @@
 import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUserStore} from "@/stores/user"
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useFocus } from '@vueuse/core'
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
@@ -86,9 +83,7 @@ const userStore = useUserStore()
 const { detail } = storeToRefs(projectStore)
 
 const editing = ref(false)
-const workstation = ref()
-const { focused: wsFocus } = useFocus(workstation)
-const workstationID = ref(0)
+const workstationID = ref(null)
 const captureResolution = ref("")
 const resizedResolution = ref("")
 const resolutionNote = ref("")
@@ -103,6 +98,7 @@ const canEdit = computed(() => {
 
 const editClicked = (() => {
    workstationID.value = detail.value.workstation.id
+   if (workstationID.value == 0) workstationID.value = null
    captureResolution.value = ""
    resizedResolution.value = ""
    if ( detail.value.captureResolution) {
@@ -113,7 +109,6 @@ const editClicked = (() => {
    }
    resolutionNote.value = detail.value.resolutionNote
    editing.value = true
-   nextTick( ()=> wsFocus.value = true )
 })
 
 const cancelClicked =(() => {
