@@ -75,12 +75,42 @@ export default defineConfig({
                   item: "hover:bg-brand-blue-alt-300 rounded-md"
                }
             },
+            fieldGroup: {
+               base: 'w-full',
+            },
             header: {
                slots: {
                   root: "bg-brand-blue h-auto",    // h-auto needed to make header height include bottom slot
                   container: "p-2! max-w-full!",   // by default it wanst to make narrow content, force full width 
                   right: "text-white",
                   title: "hover:bg-brand-blue-alt"
+               }
+            },
+            input: {
+               slots: {
+                  base: '!border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-brand-grey-100'
+               },
+               variants: {
+                  fieldGroup: {
+                     horizontal: {
+                        base: '!rounded-e-none'
+                     },
+                  }
+               }
+            },
+            inputNumber: {
+               slots: {
+                  base: '!border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-brand-blue-alt-100'
+               }
+            },
+            link: {
+               base: 'cursor-pointer !text-brand-blue-alt-A rounded-md hover:bg-brand-blue-alt-400 py-1 px-2 focus:outline-offset-1 focus:outline-brand-grey-100',
+            },
+            listbox: {
+               slots: {
+                  item: [ // the items style is an ARRY and teh second elemsnt defaults to transition animattion. just override stuff at idx 0
+                     'data-highlighted:not-data-disabled:before:bg-brand-blue-alt-300',
+                  ],
                }
             },
             modal: {
@@ -143,36 +173,6 @@ export default defineConfig({
                   }
                }
             },
-            fieldGroup: {
-               base: 'w-full',
-            },
-            input: {
-               slots: {
-                  base: '!border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-brand-grey-100'
-               },
-               variants: {
-                  fieldGroup: {
-                     horizontal: {
-                        base: '!rounded-e-none'
-                     },
-                  }
-               }
-            },
-            inputNumber: {
-               slots: {
-                  base: '!border-none !ring-brand-grey-100 focus:outline-offset-2 focus:outline-brand-blue-alt-100'
-               }
-            },
-            link: {
-               base: 'cursor-pointer !text-brand-blue-alt-A rounded-md hover:bg-brand-blue-alt-400 py-1 px-2 focus:outline-offset-1 focus:outline-brand-grey-100',
-            },
-            listbox: {
-               slots: {
-                  item: [ // the items style is an ARRY and teh second elemsnt defaults to transition animattion. just override stuff at idx 0
-                     'data-highlighted:not-data-disabled:before:bg-brand-blue-alt-300',
-                  ],
-               }
-            },
             select: {
                slots: {
                   content: 'min-w-fit',
@@ -213,6 +213,20 @@ export default defineConfig({
                      }
                   }
                }
+            },
+            textarea: {
+               slots: {
+               },
+               compoundVariants: [
+                  {
+                     color: 'primary',
+                     variant: [
+                        'outline',
+                        'subtle'
+                     ],
+                     class: 'ring-brand-grey-100 focus:outline-offset-2 focus:outline-brand-grey-100'
+                  }
+               ]
             },
             toast: {
                slots: {
