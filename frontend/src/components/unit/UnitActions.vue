@@ -8,8 +8,8 @@
       <template v-if="projectStore.isManuscript">
          <BatchUpdateDialog :title="projectStore.detail.containerType.name" field="box" />
          <BatchUpdateDialog v-if="projectStore.detail.containerType.hasFolders" title="Folder" field="folder" />
+         <ComponentDialog />
       </template>
-      <ComponentDialog />
    </span>
 </template>
 

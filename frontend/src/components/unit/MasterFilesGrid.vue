@@ -50,14 +50,16 @@
                      <span v-else>Undefined</span>
                   </ULink>
                </div> 
-               <div v-if="projectStore.isManuscript" class="row">
-                  <label>Location:</label>
-                  <div class="data pl-2">{{ image.location }}</div>
-               </div> 
-               <div class="row" v-if="image.componentID">
-                  <label>Component</label>
-                  <div class="data pl-2">{{ image.componentID }}</div>
-               </div> 
+               <template v-if="projectStore.isManuscript">
+                  <div class="row">
+                     <label>Location:</label>
+                     <div class="data pl-2">{{ image.location }}</div>
+                  </div> 
+                  <div class="row" v-if="image.componentID">
+                     <label>Component</label>
+                     <div class="data pl-2">{{ image.componentID }}</div>
+                  </div> 
+               </template>
             </div>
          </div>
       </UCard>
