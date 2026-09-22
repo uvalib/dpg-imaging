@@ -12,7 +12,7 @@
                      <label>Does this unit have components?</label>
                      <USelect v-model="hasComponents" :items="['Yes', 'No']" placeholder="Yes or no?" />
                   </div>
-                  <div class="row">
+                  <div class="row" v-if="project.detail.containerType.hasFolders">
                      <label>Does this unit use folders?</label>
                      <USelect v-model="hasFolders" :items="['Yes', 'No']" placeholder="Yes or no?" />
                   </div>
@@ -181,7 +181,6 @@ const show = ( () => {
       // with 0 time to indicate that time has already been recorded
       project.finishStep(0)
     } else {
-      isOpen.value = true
       stepMinutes.value = 1
       hasComponents.value = null
       hasFolders.value = null
@@ -189,6 +188,10 @@ const show = ( () => {
       problemIDs.value = []
       note.value = ""
       error.value = ""
+      if ( isManuscript.value && project.detail.containerType.hasFolders == false ) {
+         hasFolders.value = "No"   
+      }
+      isOpen.value = true
    }
 })
 </script>

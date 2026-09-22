@@ -201,6 +201,9 @@ const columnVisibility = computed(() => {
          component: false
       }
    }
+   if (projectStore.isManuscript && projectStore.detail.containerType.hasFolders == false) {
+      return { folder: false }
+   }
    return {}
 })
 
