@@ -1,35 +1,26 @@
 <template>
-   <UModal v-model:open="isOpen" :modal="true" :dismissible="false" title="Create Note">
-      <UButton v-if="!manual" label="Add Note" @click="showClicked" />
+   <UModal v-model:open="isOpen" :modal="true" :dismissible="false" :close="false" title="Create Note">
+      <UButton label="Add Note" @click="showClicked" />
       <template #body>
          <div class="note-modal-content">
-            <div class="instruct" v-if="instructions">{{instructions}}</div>
             <div class="row">
                <label>Note Type</label>
-               <select v-model="noteTypeID" :id="`${props.id}-type`" ref="notetype">
-                  <option :value="0">Comment</option>
-                  <option :value="1">Suggestion</option>
-                  <option :value="2">Problem</option>
-                  <option :value="3">Item Condition</option>
-               </select>
+               <USelect v-model="noteTypeID" :items="noteTypes" autofocus  class="w-full"/>
             </div>
-            <div class="row pad" v-if="noteTypeID==2">
+            <div class="row" v-if="noteTypeID==2">
                <label>Problem (select all that apply)</label>
-               <label class="cb" v-for="p in systemStore.problemTypes" :key="p.label">
-                  <input type="checkbox" :value="p.id" v-model="problemIDs" />
-                  {{p.name}}
-               </label>
+                <UCheckboxGroup v-model="problemIDs" :items="systemStore.problemTypes" value-key="id" />
             </div>
-            <div class="row pad">
+            <div class="row">
                <label for="note-text">Note Text</label>
-               <textarea rows="5" v-model="note"></textarea>
+               <UTextarea v-model="note" class="w-full"/>
             </div>
          </div>
          <p class="error" v-if="error">{{error}}</p>
       </template>
       <template #footer>
          <UButton @click="hide" color="secondary" label="Cancel"/>
-         <UButton autofocus @click="createClicked" label="Create"/>
+         <UButton @click="createClicked" label="Create"/>
       </template>
    </UModal>
 </template>
@@ -37,48 +28,23 @@
 <script setup>
 import { useSystemStore } from '@/stores/system'
 import { useProjectStore } from '@/stores/project'
-import { ref, watch, nextTick } from 'vue'
+import { ref } from 'vue'
 
 const systemStore = useSystemStore()
 const projectStore = useProjectStore()
 
-const emit = defineEmits( ['opened', 'closed', 'submitted' ] )
-
-const props = defineProps({
-   id: {
-      type: String,
-      required: true
-   },
-   trigger: {
-      type: Boolean,
-      default: false,
-   },
-   manual: {
-      type: Boolean,
-      default: false
-   },
-   noteType: {
-      type: Number,
-      default: 0
-   },
-   instructions: {
-      type: String,
-      default: ""
-   }
-})
+const noteTypes = [
+   {value: 0, label: "Comment"},
+   {value: 1, label: "Suggestion"},
+   {value: 2, label: "Problem"},
+   {value: 3, label: "Item Condition"},
+]
 
 const isOpen = ref(false)
-const noteTypeID = ref(props.noteType) //[:comment, :suggestion, :problem, :item_condition
+const noteTypeID = ref(0) 
 const note = ref("")
 const problemIDs = ref([])
 const error = ref("")
-const notetype = ref()
-
-watch(() => props.trigger, (newtrigger) => {
-   if (props.manual && newtrigger) {
-      isOpen.value = true
-   }
-})
 
 const createClicked = (() => {
    error.value = ""
@@ -93,7 +59,6 @@ const createClicked = (() => {
    let data = {noteTypeID: noteTypeID.value, note: note.value, problemIDs: problemIDs.value}
    projectStore.addNote(data)
    isOpen.value = false
-   emit('submitted')
 })
 
 const hide = (() => {
@@ -106,7 +71,6 @@ const showClicked = (() => {
    note.value = ""
    problemIDs.value = []
    error.value = ""
-   nextTick( () => notetype.value.focus() )
 })
 </script>
 
@@ -119,43 +83,17 @@ p.error {
    font-style: italic;
 }
 
-   div.note-modal-content {
-      padding: 10px 10px 0 10px;
-      text-align: left;
-      font-weight: normal;
-      .row.pad {
-         margin-top: 20px;
-      }
-      label {
-         display: block;
-         font-weight: bold;
-         margin-bottom: 5px;
-         font-size: 0.9em;
-      }
-      label.cb {
-         font-weight: normal;
-         input[type=checkbox] {
-            width: auto;
-            margin-left: 25px;
-            margin-right: 5px;
-         }
-      }
-      textarea, select  {
-         border-color: var(--uvalib-grey-light);
-         border-radius: 5px;
-         box-sizing: border-box;
-         width: 100%;
-      }
-      textarea {
-         padding: 5px;
-      }
+div.note-modal-content {
+   text-align: left;
+   font-weight: normal;
+   display: flex;
+   flex-direction: column;
+   gap: 15px;
+   label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+      font-size: 0.9em;
    }
-
-   div.instruct {
-      margin: 10px 0 20px;
-      padding: 15px;
-      border: 1px solid var(--uvalib-blue-alt);
-      background: var(--uvalib-blue-alt-light);
-   }
-
+}
 </style>

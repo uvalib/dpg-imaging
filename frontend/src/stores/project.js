@@ -178,10 +178,11 @@ export const useProjectStore = defineStore('project', {
             this.working = false
          })
       },
-      finishStep(durationMins) {
+      finishStep(durationMins, checkFolders = true) {
          this.working = true
          let isFinalize = (this.detail.assignments[0].step.name == "Finalize")
-         axios.post(`/api/projects/${this.detail.id}/finish`, {durationMins: durationMins} ).then(response => {
+         const req = {durationMins: durationMins, checkFolders: checkFolders}
+         axios.post(`/api/projects/${this.detail.id}/finish`, req).then(response => {
             this.detail.owner = response.data.owner
             this.detail.currentStep = response.data.currentStep
             this.detail.assignments = response.data.assignments

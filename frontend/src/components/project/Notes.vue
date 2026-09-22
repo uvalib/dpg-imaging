@@ -23,7 +23,7 @@
             </div>
          </div>
          <div class="buttons">
-            <NoteModal v-if="!detail.finishedAt" id="note-modal" />
+            <NoteModal v-if="!detail.finishedAt" />
          </div>
       </template>
    </UAccordion>

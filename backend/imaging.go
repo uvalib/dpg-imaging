@@ -108,7 +108,7 @@ func (svc *serviceContext) updateImageMetadata(c *gin.Context) {
 }
 
 func (svc *serviceContext) getUpdatedLocation(unitID, tgtFile, updateField, updateValue string) (string, error) {
-	log.Printf("INFO: update %s to [%s]: generate new location data for %s", updateField, updateValue, tgtFile)
+	log.Printf("INFO: %s field %s updated to %s; get updated location string", tgtFile, updateField, updateValue)
 	exifMD, err := getExifData(tgtFile)
 	if err != nil {
 		return "", fmt.Errorf("unable to get existing metadata for %s update: %s", tgtFile, err.Error())
@@ -485,7 +485,7 @@ func batchUpdateExifData(fileCommands []exifFileCommands, channel chan updatePro
 	log.Printf("INFO: batch of %d update commands has finished in %d ms", len(fileCommands), elapsed.Milliseconds())
 }
 
-func checkExifHeaders(files []string, checkLocation bool, channel chan updateProblem) {
+func checkExifHeaders(files []string, checkLocation bool, checkFolders bool, channel chan updateProblem) {
 	log.Printf("INFO: start batch of %d validate commands", len(files))
 	startTime := time.Now()
 	cmdArray := []string{"-json", "-iptc:headline", "-iptc:Sub-location"}
@@ -506,15 +506,17 @@ func checkExifHeaders(files []string, checkLocation bool, channel chan updatePro
 			}
 
 			if checkLocation {
-				log.Printf("INFO: files require location check; location is [%s]", exifMD.Location)
+				log.Printf("INFO: files require location check; location is [%s] and check folders is %t", exifMD.Location, checkFolders)
 				if exifMD.Location == nil {
 					log.Printf("WARNING: %s is missing a location", exifMD.SourceFile)
 					channel <- updateProblem{File: exifMD.SourceFile, Problem: "Missing location metadata", Type: "WARN"}
 				} else {
 					location := fmt.Sprintf("%v", exifMD.Location)
-					if strings.Contains(location, "UNK") || strings.Contains(location, ", Folder") == false {
-						log.Printf("WARNING: %s has incomplete location data [%s]", exifMD.SourceFile, location)
-						channel <- updateProblem{File: exifMD.SourceFile, Problem: "Incomplete location metadata", Type: "WARN"}
+					if strings.Contains(location, ", Folder") == false {
+						if checkFolders {
+							log.Printf("WARNING: %s has incomplete location data [%s]", exifMD.SourceFile, location)
+							channel <- updateProblem{File: exifMD.SourceFile, Problem: "Incomplete location metadata", Type: "WARN"}
+						}
 					}
 				}
 			}
@@ -590,6 +592,7 @@ func parseExifData(exifMD *exifData) masterFileMetadata {
 
 	locStr := fmt.Sprintf("%v", exifMD.Location)
 	if locStr != "<nil>" {
+		log.Printf("INFO: %s has location %s; parse into box and folder", mdRec.FileName, locStr)
 		// format: [container type] [container id], Folder [folder id]
 		bits := strings.Split(locStr, ", ")
 		containerBits := strings.Split(bits[0], " ")
@@ -611,6 +614,7 @@ func parseExifData(exifMD *exifData) masterFileMetadata {
 			}
 		}
 	}
+	log.Printf("INFO: %s has container id [%s] and folder id [%s]", mdRec.FileName, mdRec.Box, mdRec.Folder)
 
 	if exifMD.Resolution != nil {
 		valType := fmt.Sprintf("%T", exifMD.Resolution)
