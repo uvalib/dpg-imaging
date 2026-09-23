@@ -80,7 +80,7 @@ const formatDate =((d) => {
       display: flex;
       flex-direction: column;
       gap: 15px;
-      max-height: 450px;
+      max-height: 800px;
       overflow-y: scroll;
    }
    .note-card {

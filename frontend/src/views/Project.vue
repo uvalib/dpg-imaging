@@ -39,15 +39,16 @@
          </div>
       </div>
       <div  v-if="projectStore.hasDetail" class="project-main">
-         <Workflow />
-         <div class="panel-row">
+         <div class="project-column">
             <ItemInfo />
-            <Equipment v-if="projectStore.detail.workflow.name != 'Vendor'"/>
-         </div>
-         <div class="panel-row">
-            <Notes />
+            <Workflow />
             <History />
          </div>
+         <div class="project-column">
+            <Equipment v-if="projectStore.detail.workflow.name != 'Vendor'"/>
+            <Notes />
+         </div>
+         
       </div>
    </div>
 </template>
@@ -166,14 +167,15 @@ const backClicked = (() => {
    }
    .project-main {
       padding: 20px 40px;
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
       gap: 20px;
-      .panel-row {
-         display: grid;
-         grid-template-columns: repeat(2, 1fr);
-         gap: 20px;
-         align-items: start;
+      align-items: start;
+      
+      .project-column {
+         display: flex;
+         flex-direction: column;
+         gap: 20px;    
       }
    }
 }

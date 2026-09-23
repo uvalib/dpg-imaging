@@ -114,8 +114,6 @@ const formatDate = ( (d) => {
    }
    .history-wrap {
       padding: 10px;
-      max-height: 450px;
-      overflow-y: scroll;
    }
    .history {
       width: 100%;
