@@ -106,7 +106,6 @@ const formatDate = ( (d) => {
       flex-flow: row nowrap;
       justify-content: space-between;
       padding: 10px 10px 0 10px;
-      font-size: 0.8em;
       border: none;
       label {
          font-weight: bold;
@@ -115,9 +114,10 @@ const formatDate = ( (d) => {
    }
    .history-wrap {
       padding: 10px;
+      max-height: 450px;
+      overflow-y: scroll;
    }
    .history {
-      font-size: 0.8em;
       width: 100%;
       border-collapse: collapse;
       border: 1px solid var(--uvalib-grey-light);

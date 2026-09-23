@@ -67,6 +67,8 @@ const formatDate =((d) => {
       flex-flow: row nowrap;
       justify-content: flex-end;
       gap: 10px;
+      padding-top: 15px;
+      border-top: 1px solid var(--uvalib-grey-light);
    }
 
    .none {
@@ -78,18 +80,20 @@ const formatDate =((d) => {
       display: flex;
       flex-direction: column;
       gap: 15px;
+      max-height: 450px;
+      overflow-y: scroll;
    }
    .note-card {
       background-color: white;
       border: 1px solid var(--uvalib-grey-light);
       border-radius: 0;
       padding: 8px;
+      color: var(--uvalib-text-dark);
       .note-info {
          display: flex;
          flex-flow: row nowrap;
          justify-content: space-between;
-         font-size: 0.85em;
-         border-bottom: 1px solid var(--uvalib-grey-light);
+         border-bottom: 1px solid var(--uvalib-text-dark);
          padding-bottom: 5px;
          margin-bottom: 5px;
          p {
@@ -105,36 +109,27 @@ const formatDate =((d) => {
          margin-bottom: 5px;
       }
       .note-text {
-         font-size: 0.85em;
          padding: 10px 5px 5px 5px;
          :deep(p) {
             margin: 0 0 5px 0 !important;
          }
       }
    }
+    div.note-card.condition {
+      background-color: var(--uvalib-grey-lightest);
+      border: 1px solid var(--uvalib-grey);
+   }
     div.note-card.comment {
-      background-color: #ffe;
-      border: 1px solid #cc9;
-      color: #660;
-      .note-info {
-         border-color: #cc9;
-      }
+      background-color: var(--uvalib-yellow-light);
+      border: 1px solid var(--uvalib-yellow-dark);
    }
    div.note-card.problem {
-      background-color: #fee;
-      border: 1px solid #daa;
-       color: #700;
-      .note-info {
-         border-color: #daa;
-      }
+      background-color: var(--uvalib-red-lightest);
+      border: 1px solid var(--uvalib-red-darker);
    }
    div.note-card.suggestion {
-      background-color: #eef;
-      border: 1px solid #aad;
-      color: #007;
-      .note-info {
-         border-color: #aad;
-      }
+      background-color: var(--uvalib-blue-alt-light);
+      border: 1px solid var(--uvalib-blue-alt-dark);
    }
 }
 </style>

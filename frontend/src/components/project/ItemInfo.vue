@@ -133,7 +133,7 @@ const categoryID = ref(0)
 const containerTypeID = ref(0)
 const condition = ref(0)
 const note = ref("")
-const ocrHintID = ref(0)
+const ocrHintID = ref()
 const ocrLangage = ref("")
 const ocrMasterFiles = ref(false)
 const ocrCandidate = ref(true)
@@ -172,9 +172,11 @@ function editClicked() {
    condition.value = detail.value.itemCondition
    note.value = detail.value.conditionNote
    ocrHintID.value = detail.value.ocrHintID
-   ocrLangage.value = detail.value.ocrLanguage
-   if (ocrHintID.value != 1) {
-      ocrLangage.value = ""
+   if (  ocrHintID.value == 0) {
+      ocrHintID.value = null   
+      ocrLangage.value = null
+   } else {
+      ocrLangage.value = detail.value.ocrLanguage
    }
 }
 
@@ -238,6 +240,8 @@ async function saveClicked() {
       flex-flow: row nowrap;
       justify-content: flex-end;
       gap: 10px;
+      padding-top: 15px;
+      border-top: 1px solid var(--uvalib-grey-light);
    }
 }
 </style>

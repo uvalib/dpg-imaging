@@ -10,10 +10,7 @@
       </div>
       <UnitActions />
    </div>
-   <div v-if="unitStore.masterFiles.length == 0" class="none">
-      No imges found
-   </div>
-   <div v-else class="gallery">
+   <div class="gallery">
       <UCard v-for="(image,idx) in unitStore.masterFilesPage" :key="image.fileName" :id="image.fileName">
          <template #header>
             <div class="card-title">
@@ -47,7 +44,7 @@
                   </template>
                   <ULink v-else @click="startEdit(idx, 'description', image)">
                      <span v-if="image.description">{{  image.description }}</span>
-                     <span v-else>Undefined</span>
+                     <span v-else  class="undefined">Undefined</span>
                   </ULink>
                </div> 
                <template v-if="projectStore.isManuscript">
@@ -174,12 +171,6 @@ const submitEdit = (() => {
    font-style: italic;
 }
 
-.none {
-   text-align: center;
-   padding: 25px;
-   font-size: 1.2em;
-}
-
 div.gallery {
    padding: 15px;
    text-align: left;
@@ -223,90 +214,6 @@ div.gallery {
       }
    }
 }
-
-//    .card {
-//       position: relative;
-//       padding: 0;
-//       display: flex;
-//       flex-direction: column;
-//       align-items: center;
-//       gap: 5px;
-
-//       .card-title {
-//          display: flex;
-//          flex-flow: row nowrap;
-//          justify-content: space-between;
-//          align-items: center;
-//          gap: 20px;
-//          border-bottom: 1px solid var(--uvalib-grey-light);
-//          padding-bottom: 10px;
-//          margin-bottom: 10px;
-
-//          .file {
-//             display: flex;
-//             flex-flow: row nowrap;
-//             gap: 10px;
-//             align-items: center;
-//             i.image-err {
-//                font-size: 1.15em;
-//                color: var(--uvalib-red-emergency);
-//                cursor: pointer;
-//             }
-//          }
-
-//          .grip {
-//             font-size: 1.15em;
-//             color: #aaa;
-//             cursor: grab;
-//          }
-//       }
-
-//       .card-sel {
-//          padding: 0;
-//          display: flex;
-//          flex-flow: row nowrap;
-//          justify-content: flex-start;
-//          align-items: center;
-//          font-size: 0.8em;
-//          gap: 5px;
-
-//          input[type=checkbox] {
-//             width: 20px;
-//             height: 20px;
-//          }
-//       }
-
-//       .content {
-//          display: flex;
-//          flex-direction: column;
-//          gap: 10px;
-//       }
-
-//       .metadata {
-//          text-align: left;
-//          font-size: 0.9em;
-//          display: flex;
-//          flex-direction: column;
-//          gap: 10px;
-
-//          label {
-//             font-weight: bold;
-//          }
-
-//          div.data {
-//             margin: 5px 0 0 0;
-//             text-align: left;
-//          }
-//       }
-
-//       img {
-//          background-image: url('/src/assets/dots.gif');
-//          background-repeat: no-repeat;
-//          background-position: center center;
-//          background-color: #f5f5f5;
-//       }
-//    }
-// }
 
 div.gallery.medium {
    .card .metadata .data {

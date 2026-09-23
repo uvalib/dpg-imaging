@@ -136,6 +136,8 @@ const saveClicked = ( async () => {
       flex-flow: row nowrap;
       justify-content: flex-end;
       gap: 10px;
+      padding-top: 15px;
+      border-top: 1px solid var(--uvalib-grey-light);
    }
    .edit {
       width: 100%;

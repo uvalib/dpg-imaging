@@ -73,7 +73,6 @@ const hide =(() => {
       display: inline-grid;
       grid-template-columns: max-content 2fr;
       grid-column-gap: 10px;
-      font-size: 0.9em;
       text-align: left;
       box-sizing: border-box;
       width: 100%;
