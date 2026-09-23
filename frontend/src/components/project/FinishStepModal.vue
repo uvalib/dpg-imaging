@@ -32,7 +32,7 @@
                </template>
                <div class="row">
                   <label for="time">Approximately how many minutes did you spend on this assignment?</label>
-                  <UInputNumber v-model="stepMinutes" id="time" :min="1" :max="500" />
+                  <UInputNumber v-model="stepMinutes" id="time" :min="1" :max="500" @keyup.enter="okClicked()"/>
                </div>
             </template>
             <p class="error" v-if="error">{{error}}</p>

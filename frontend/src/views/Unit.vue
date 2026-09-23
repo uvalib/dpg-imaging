@@ -17,8 +17,13 @@
          </div>
       </div>
       <div class="master-files" ref="masterfiles">
-         <MasterFilesList  v-if="unitStore.viewMode == 'list'" />
-         <MasterFilesGrid  v-else />
+         <div v-if="unitStore.masterFiles.length == 0" class="no-images">
+            No images found
+         </div> 
+         <template v-else>
+            <MasterFilesList  v-if="unitStore.viewMode == 'list'" />
+            <MasterFilesGrid  v-else />
+         </template>
       </div>
    </div>
 </template>
@@ -124,6 +129,13 @@ onMounted( async () => {
 .unit {
    padding: 0;
    text-align: center;
+
+   .no-images {
+      border-top: 1px solid var(--uvalib-grey-light);
+      padding-top: 3%;
+      margin-top: 20px;
+      font-size: 1.25em;
+   }
 
    label {
       font-weight: bold;

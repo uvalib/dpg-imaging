@@ -10,11 +10,10 @@
       </div>
       <UnitActions />
    </div>
-   <UTable  :data="unitStore.masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility" 
-      :ui="{tbody: 'mf-tbody'}" empty="No images found"
-   >
+   <UTable :data="unitStore.masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility" :ui="{tbody: 'mf-tbody'}">
       <template #select-cell="{ row }">
-         <UCheckbox :modelValue="unitStore.masterFiles[row.index].selected" size="xl" @update:modelValue="unitStore.masterFileSelected(row.index)"/>
+         <UCheckbox :modelValue="unitStore.masterFiles[row.index].selected" size="xl" 
+            @update:modelValue="unitStore.masterFileSelected(row.index)"/>
       </template>
       <template #image-cell="{ row }">
          <RouterLink  @click="imageClicked" :to="`/projects/${projectStore.detail.id}/unit/images/${row.index+1}`">
