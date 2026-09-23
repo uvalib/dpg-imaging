@@ -128,13 +128,18 @@ func (svc *serviceContext) rejectProjectStep(c *gin.Context) {
 		return
 	}
 
-	// all errors go back to the scanner... the owner of the first step
+	// all errors go back to the user that FINISHED the scan step (it could have been reassigned)
 	failStepID := proj.CurrentStep.FailStepID
-	firstA := proj.Assignments[len(proj.Assignments)-1]
-	proj.OwnerID = &firstA.StaffMemberID
+	var tgtAssign *assignment
+	for _, assign := range proj.Assignments {
+		if assign.Step.StepType == 0 && assign.FinishedAt != nil {
+			tgtAssign = assign
+		}
+	}
+	proj.OwnerID = &tgtAssign.StaffMemberID
 	proj.CurrentStepID = &failStepID
 	svc.DB.Model(proj).Select("CurrentStepID", "OwnerID").Updates(proj)
-	newAssign := assignment{ProjectID: proj.ID, StepID: failStepID, StaffMemberID: firstA.StaffMemberID, AssignedAt: &now}
+	newAssign := assignment{ProjectID: proj.ID, StepID: failStepID, StaffMemberID: tgtAssign.StaffMemberID, AssignedAt: &now}
 	svc.DB.Create(&newAssign)
 
 	proj, _ = svc.getProjectInfo(projID)
