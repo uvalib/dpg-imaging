@@ -7,7 +7,7 @@
                <WaitSpinner :overlay="false" message="Validating component settings..." />   
             </div>
             <template v-else>
-               <template v-if="props.action=='finish' && isManuscript && (currStepName == 'Create Metadata' || currStepName == 'Finalize')">
+               <template v-if="props.action=='finish' && doManuscriptChecks">
                   <div class="row">
                      <label>Does this unit have components?</label>
                      <USelect v-model="hasComponents" :items="['Yes', 'No']" placeholder="Yes or no?" />
@@ -30,7 +30,10 @@
                      <UTextarea v-model="note"/>
                   </div>
                </template>
-               <div class="row">
+               <div  v-if="hasPriorDuration" class="row">
+                  Time spent has previously been set to {{ stepMinutes }} minutes
+               </div>
+               <div v-else class="row">
                   <label for="time">Approximately how many minutes did you spend on this assignment?</label>
                   <UInputNumber v-model="stepMinutes" id="time" :min="1" :max="500" @keyup.enter="okClicked()"/>
                </div>
@@ -65,6 +68,7 @@ const hasComponents = ref(null)
 const hasFolders = ref(null)
 const validateComponents = ref(false)
 const stepMinutes = ref(1)
+const hasPriorDuration = ref(false)
 const problemIDs = ref([])
 const note = ref("")
 const error = ref("")
@@ -102,6 +106,11 @@ const isOpenEnabled = computed(()=> {
    return true
 })
 
+const doManuscriptChecks = computed(() => {
+   if ( project.detail.workflow.name != "Manuscript") return false
+   return ( currStepName.value != 'Scan' && currStepName.value != 'Process')
+})
+
 const title = computed(()=>{
    if ( props.action == "reject") return `Reject ${currStepName.value}`
    return `Finish ${currStepName.value}`
@@ -112,10 +121,6 @@ const currStepName = computed(()=>{
       return project.detail.currentStep.name
    }
    return "Unknown"
-})
-
-const isManuscript = computed(() => {
-   return project.detail.workflow.name == "Manuscript"
 })
 
 const okClicked = ( async () => {
@@ -134,7 +139,7 @@ const okClicked = ( async () => {
       await project.addNote(data)
       await project.rejectStep( stepMinutes.value )
    } else {
-      if ( isManuscript.value && (currStepName.value == 'Create Metadata' || currStepName.value == 'Finalize') ) {
+      if ( doManuscriptChecks.value ) {
          if ( hasComponents.value == null ) {
             error.value = "A response to the components question is required."
             return
@@ -165,7 +170,12 @@ const okClicked = ( async () => {
          } 
       }
       // all ok, finish the step and close the modal
-      await project.finishStep( stepMinutes.value, checkFolders )
+      let minutes = stepMinutes.value
+      if ( hasPriorDuration.value) {
+         // if this is a failed step retry, set time = 0 to preserve the original time
+         minutes = 0
+      } 
+      await project.finishStep( minutes, checkFolders )
    }
 
    hide()
@@ -176,11 +186,21 @@ const hide = (() => {
 })
 
 const show = ( () => {
-    if ( props.action == "finish" && project.detail.assignments[0].durationMinutes > 0 ) {
-      // this is a retry of a step and time has already already added. finish the step
-      // with 0 time to indicate that time has already been recorded
-      project.finishStep(0)
-    } else {
+   hasPriorDuration.value = false
+   if ( props.action == "finish" && project.detail.assignments[0].durationMinutes > 0 ) {
+      if ( doManuscriptChecks.value) {
+         hasPriorDuration.value = true
+         stepMinutes.value = project.detail.assignments[0].durationMinutes
+         if ( doManuscriptChecks.value && project.detail.containerType.hasFolders == false ) {
+            hasFolders.value = "No"   
+         }
+      } else {
+         // this is a retry of a step and time has already already added. finish the step
+         // with 0 time to indicate that time has already been recorded
+         isOpen.value = false
+         project.finishStep(0)
+      }
+   } else {
       stepMinutes.value = 1
       hasComponents.value = null
       hasFolders.value = null
@@ -188,7 +208,7 @@ const show = ( () => {
       problemIDs.value = []
       note.value = ""
       error.value = ""
-      if ( isManuscript.value && project.detail.containerType.hasFolders == false ) {
+      if ( doManuscriptChecks.value && project.detail.containerType.hasFolders == false ) {
          hasFolders.value = "No"   
       }
       isOpen.value = true
