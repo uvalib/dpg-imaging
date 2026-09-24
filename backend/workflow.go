@@ -196,7 +196,17 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 	svc.DB.Model(&currA).Select("Status").Updates(currA)
 
 	// validate the directory, images names and metadata (if applicable)
-	validateErr := svc.validateFinishStep(proj, doneReq.CheckFolders)
+	checkFolders := false // non-manuscript workflows don't have folders
+	if proj.Workflow.Name == "Manuscript" {
+		checkFolders = doneReq.CheckFolders
+		tgtContainer, _ := svc.getProjectContainerType(proj)
+		if tgtContainer != nil && tgtContainer.HasFolders == false {
+			log.Printf("INFO: project %s uses container type %s which does not support folders; don't check them",
+				projID, tgtContainer.Name)
+			checkFolders = false
+		}
+	}
+	validateErr := svc.validateFinishStep(proj, checkFolders)
 	if validateErr != nil {
 		log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, validateErr.Error())
 		proj, _ = svc.getProjectInfo(projID)
@@ -491,8 +501,9 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string, checkFol
 			return fmt.Errorf("invalid filename %s", fullPath)
 		}
 
-		// At the create metadata and finailze step do a validation of file header contents
-		if proj.CurrentStep.Name == "Create Metadata" || proj.CurrentStep.Name == "Finalize" {
+		// From Create Metadata on, check to ensure required headers are present (title, box, folder)
+		// Note that this is a slow process
+		if proj.CurrentStep.Name != "Scan" && proj.CurrentStep.Name != "Process" {
 			qaFiles = append(qaFiles, fullPath)
 			if len(qaFiles) == svc.BatchSize {
 				log.Printf("INFO: check headers on batch of %d files", len(qaFiles))
@@ -501,7 +512,7 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string, checkFol
 				checkWG.Add(1)
 				go func() {
 					defer checkWG.Done()
-					checkExifHeaders(filesCopy, isManuscript, checkFolders, errChannel)
+					validateExifHeadersBatch(filesCopy, isManuscript, checkFolders, errChannel)
 				}()
 				qaFiles = make([]string, 0)
 			}
@@ -515,7 +526,7 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string, checkFol
 		checkWG.Add(1)
 		go func() {
 			defer checkWG.Done()
-			checkExifHeaders(qaFiles, isManuscript, checkFolders, errChannel)
+			validateExifHeadersBatch(qaFiles, isManuscript, checkFolders, errChannel)
 		}()
 	}
 
