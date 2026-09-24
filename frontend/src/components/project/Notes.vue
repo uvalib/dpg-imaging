@@ -13,7 +13,7 @@
                   </div>
                   <div class="right">
                      <p class="note-type">{{noteTypeString(n.type)}}</p>
-                     <p v-if="n.stepID > 0" class="note-step"><b>Step: </b>{{n.step.name}}</p>
+                     <p v-if="n.step.id > 0" class="note-step"><b>Step: </b>{{n.step.name}}</p>
                   </div>
                </div>
                <div class="note-text">
