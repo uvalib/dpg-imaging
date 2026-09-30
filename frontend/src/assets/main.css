@@ -1,0 +1,181 @@
+@import './base.css';
+@import './uva-colors.css';
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* GLOBAL FOCUS STYLE */
+/* *,
+::before,
+::after {
+  @apply outline-offset-2 outline-blue-300;
+}
+
+*:focus-visible,
+*:has(> a:focus-visible) {
+  outline-style: dotted;
+} */
+
+ /* 
+    values here: https://tailwindcss.com/docs/theme#default-theme-variable-reference
+    stuff like colors, fonts, fine sizing, spacing, radius
+    These create utility classes that can be used: <span class="font-sans">hey</span>
+    These utility classes can also be used in vite.cong.js to define global component styling
+ */
+@theme {
+  --font-sans: "franklin-gothic-urw", arial, sans-serif;
+
+  --color-brand-blue-300: #87B9D9;
+  --color-brand-blue-200: #3395D4;   
+  --color-brand-blue-100: #0370B7; 
+  --color-brand-blue: #232D4B;  
+
+  --color-brand-blue-alt-400: #E6F2F7;
+  --color-brand-blue-alt-300: #BFE7F7;
+  --color-brand-blue-alt-200: #91D8F2;
+  --color-brand-blue-alt-100: #55C4EC;
+  --color-brand-blue-alt: #007BAC;     
+  --color-brand-blue-alt-A: #005679;  
+  --color-brand-blue-alt-B: #141E3C; 
+
+  --color-brand-red-100: #FBCFDA;  
+  --color-brand-red: #EF3F6B;       
+  --color-brand-red-A: #DF1E43;     
+  --color-brand-red-B: #B30000; 
+  --color-brand-emergency: var( --uvalib-red-emergency );
+
+  --color-brand-grey-200: #F1F1F1;
+  --color-brand-grey-100: #DADADA;
+  --color-brand-grey-50: #ADADAD;
+  --color-brand-grey: #808080;
+  --color-brand-grey-A: #4F4F4F;
+  --color-brand-grey-B: #2B2B2B;  
+
+  --color-brand-green-lightest: #89cc74;
+  --color-brand-green: #62bb46;
+  --color-brand-green-dark: #4e9737;
+
+  --color-brand-teal-200: #C8F2F4; 
+  --color-brand-teal-100: #5BD7DE;  
+  --color-brand-teal: #25CAD3;
+
+  --color-black: var(--color-brand-grey-B);
+}
+
+:root {
+  --ui-border: var( --color-brand-grey-100 );
+  --ui-border-muted: var( --color-brand-grey-200 );
+  --ui-border-accented: var(--color-brand-grey-B);
+  --ui-border-inverted: var(--color-white);
+ 
+  --ui-radius: 0.25rem;
+
+  --ui-primary: var( --color-brand-blue-100 );
+  --ui-secondary: var( --uvalib-grey-lightest);
+  --ui-success: var(--color-brand-green-dark);
+  --ui-error: var( --color-brand-red-B);
+
+  --ui-text-dimmed: var(--color-brand-grey);
+  --ui-text-muted: var(--color-brand-grey-A);
+  --ui-text-toned: var(--color-brand-grey-A);
+  --ui-text: var(--color-black);
+  --ui-text-highlighted: var(--ui-color-neutral-900);
+}
+
+
+/* input[type=text],
+select,
+textarea {
+   box-sizing: border-box;
+   border-radius: 0.3rem;
+   border: 1px solid var(--uvalib-grey-light);
+   width: 100%;
+   padding: 4px 12px;
+   &:focus {
+      outline: 2px dashed var(--color-brand-grey-100 );
+      outline-offset: 3px;
+   }
+}
+input[type=checkbox] {
+   cursor: pointer;
+} */
+
+#app {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans), arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 16px;
+
+  main {
+      a {
+         color: var(--uvalib-blue-alt);
+         border-bottom: 1px dashed var(--uvalib-blue-alt);
+         &:hover {
+            border-bottom: 1px solid var(--uvalib-brand-blue-lighter);
+            color: var(--uvalib-brand-blue-lighter);
+         }
+         &:focus, &:focus-visible {
+            outline-offset: 3px;
+            outline-color: var( --uvalib-brand-blue-lightest );
+         }
+      }
+   }
+
+   h2 {
+      color: var(--uvalib-brand-blue);
+      margin: 10px 0;
+      position: relative;
+      font-size: 1.5em;
+      font-weight: bold;
+      text-align: center;
+   }
+
+   dl {
+      margin: 0 30px;
+      display: inline-grid;
+      grid-template-columns: max-content 2fr;
+      grid-column-gap: 10px;
+      text-align: left;
+      box-sizing: border-box;
+
+      dt {
+         font-weight: bold;
+         text-align: right;
+         white-space: nowrap;
+      }
+      dd {
+         margin: 0 0 10px 0;
+         word-break: break-word;
+         -webkit-hyphens: auto;
+         -moz-hyphens: auto;
+         hyphens: auto;
+         color: var(--uvalib-text);
+         .na {
+            color: #ddd;
+         }
+      }
+   }
+
+
+/* 
+
+  a {
+      color: var(--uvalib-blue-alt-dark);
+      font-weight: 500;
+      text-decoration: none;
+      &:hover {
+        text-decoration: underline;
+      }
+  }
+
+   */
+
+   /* .sticky-bar {
+      position: fixed;
+      z-index: 1000;
+      top: 0;
+      border-bottom: 1px solid var(--uvalib-grey-light);
+   }  */
+}
+

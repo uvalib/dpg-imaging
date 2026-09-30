@@ -278,7 +278,7 @@ func (svc *serviceContext) getMasterFilesMetadata(c *gin.Context) {
 		mdWG.Wait()
 		close(mdChannel)
 		elapsed := time.Since(startTime)
-		log.Printf("INFO: all hexif metadata requests have completed in %.3f sec", elapsed.Seconds())
+		log.Printf("INFO: all exif metadata requests have completed in %.3f sec", elapsed.Seconds())
 	}()
 
 	out := make([]masterFileMetadata, 0)

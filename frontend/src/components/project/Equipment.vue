@@ -1,82 +1,80 @@
 <template>
-   <Panel header="Equipment" class="panel" toggleable>
-      <dl v-if="!editing">
-         <dt>Workstation:</dt>
-         <dd>
-            <span v-if="detail.workstation.id > 0">{{detail.workstation.name}}</span>
-            <span v-else class="na">EMPTY</span>
-         </dd>
-         <template v-if="detail.workstation.id > 0">
-            <dt>Setup:</dt>
+   <UAccordion :items="[{label: 'Equipment', value: 'equip'}]" defaultValue="equip" class="panel">
+      <template #body="{ }">
+         <dl v-if="!editing">
+            <dt>Workstation:</dt>
             <dd>
-               <table>
-                  <tr v-for="e in detail.equipment" :key="e.serialNumber">
-                     <td>{{e.type}}</td>
-                     <td>{{e.name}}</td>
-                     <td>{{e.serialNumber}}</td>
-                  </tr>
-               </table>
+               <span v-if="detail.workstation.id > 0">{{detail.workstation.name}}</span>
+               <span v-else class="na">EMPTY</span>
             </dd>
-         </template>
-         <dt>Capture resolution:</dt>
-         <dd>
-            <span v-if="detail.captureResolution">{{detail.captureResolution}}</span>
-            <span v-else class="na">EMPTY</span>
-         </dd>
-         <dt>Resized resolution:</dt>
-         <dd>
-            <span v-if="detail.resizedResolution">{{detail.resizedResolution}}</span>
-            <span v-else class="na">EMPTY</span>
-         </dd>
-         <dt>Resolution note:</dt>
-         <dd>
-            <span v-if="detail.resolutionNote">{{detail.resolutionNote}}</span>
-            <span v-else class="na">EMPTY</span>
-         </dd>
-      </dl>
-      <table class="edit" v-else>
-         <tbody>
-            <tr class="row">
-               <td class="label"><label for="workstation">Workstation:</label></td>
-               <td class="data">
-                  <select id="workstation" v-model="workstationID" ref="workstation">
-                     <option disabled :value="0">Choose a workstation</option>
-                     <option v-for="ws in systemStore.workstations" :key="`ws${ws.id}`" :value="ws.id">{{ws.name}}</option>
-                  </select>
-               </td>
-            </tr>
-            <tr class="row">
-               <td class="label"><label for="capture">Capture Resolution:</label></td>
-               <td><input id="capture" type="text" v-model="captureResolution"></td>
-            </tr>
-            <tr class="row">
-               <td class="label"><label for="resize">Resized Resolution:</label></td>
-               <td class="data"><input id="resize" type="text" v-model="resizedResolution"></td>
-            </tr>
-            <tr class="row">
-               <td class="label"><label for="res-note">Resolution Note:</label></td>
-               <td class="data"><textarea id="res-note" v-model="resolutionNote"></textarea></td>
-            </tr>
-         </tbody>
-      </table>
-      <div class="buttons" v-if="canEdit">
-         <DPGButton v-if="!editing" @click="editClicked" severity="secondary" label="Edit"/>
-         <template v-else>
-            <DPGButton @click="cancelClicked" label="Cancel" severity="secondary"/>
-            <DPGButton @click="saveClicked" label="Save"/>
-         </template>
-      </div>
-   </Panel>
+            <template v-if="detail.workstation.id > 0">
+               <dt>Setup:</dt>
+               <dd>
+                  <table>
+                     <tr v-for="e in detail.equipment" :key="e.serialNumber">
+                        <td>{{e.type}}</td>
+                        <td>{{e.name}}</td>
+                        <td>{{e.serialNumber}}</td>
+                     </tr>
+                  </table>
+               </dd>
+            </template>
+            <dt>Capture resolution:</dt>
+            <dd>
+               <span v-if="detail.captureResolution">{{detail.captureResolution}}</span>
+               <span v-else class="na">EMPTY</span>
+            </dd>
+            <dt>Resized resolution:</dt>
+            <dd>
+               <span v-if="detail.resizedResolution">{{detail.resizedResolution}}</span>
+               <span v-else class="na">EMPTY</span>
+            </dd>
+            <dt>Resolution note:</dt>
+            <dd>
+               <span v-if="detail.resolutionNote">{{detail.resolutionNote}}</span>
+               <span v-else class="na">EMPTY</span>
+            </dd>
+         </dl>
+         <table class="edit" v-else>
+            <tbody>
+               <tr class="row">
+                  <td class="label"><label for="workstation">Workstation:</label></td>
+                  <td class="data">
+                     <USelect id="workstation" v-model="workstationID" :items="systemStore.workstations" 
+                        value-key="id" label-key="name" class="w-full" placeholder="Select a workstation"/>
+                  </td>
+               </tr>
+               <tr class="row">
+                  <td class="label"><label for="capture">Capture Resolution:</label></td>
+                  <td><UInput id="capture" v-model="captureResolution" class="w-full"/></td>
+               </tr>
+               <tr class="row">
+                  <td class="label"><label for="resize">Resized Resolution:</label></td>
+                  <td class="data"><UInput id="resize" v-model="resizedResolution" class="w-full"/></td>
+               </tr>
+               <tr class="row">
+                  <td class="label"><label for="res-note">Resolution Note:</label></td>
+                  <td class="data"><UTextarea id="res-note" v-model="resolutionNote" class="w-full"/></td>
+               </tr>
+            </tbody>
+         </table>
+         <div class="buttons" v-if="canEdit">
+            <UButton v-if="!editing" @click="editClicked" color="secondary" label="Edit"/>
+            <template v-else>
+               <UButton @click="cancelClicked" label="Cancel" color="secondary"/>
+               <UButton @click="saveClicked" label="Save"/>
+            </template>
+         </div>
+      </template>
+   </UAccordion>
 </template>
 
 <script setup>
 import {useProjectStore} from "@/stores/project"
 import {useSystemStore} from "@/stores/system"
 import {useUserStore} from "@/stores/user"
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import Panel from 'primevue/panel'
-import { useFocus } from '@vueuse/core'
 
 const projectStore = useProjectStore()
 const systemStore = useSystemStore()
@@ -85,9 +83,7 @@ const userStore = useUserStore()
 const { detail } = storeToRefs(projectStore)
 
 const editing = ref(false)
-const workstation = ref()
-const { focused: wsFocus } = useFocus(workstation)
-const workstationID = ref(0)
+const workstationID = ref(null)
 const captureResolution = ref("")
 const resizedResolution = ref("")
 const resolutionNote = ref("")
@@ -102,6 +98,7 @@ const canEdit = computed(() => {
 
 const editClicked = (() => {
    workstationID.value = detail.value.workstation.id
+   if (workstationID.value == 0) workstationID.value = null
    captureResolution.value = ""
    resizedResolution.value = ""
    if ( detail.value.captureResolution) {
@@ -112,7 +109,6 @@ const editClicked = (() => {
    }
    resolutionNote.value = detail.value.resolutionNote
    editing.value = true
-   nextTick( ()=> wsFocus.value = true )
 })
 
 const cancelClicked =(() => {
@@ -136,12 +132,12 @@ const saveClicked = ( async () => {
    text-align: left;
 
    .buttons {
-      padding: 0;
-      margin: 0;
-      text-align: right;
-      button {
-         margin-left: 10px;
-      }
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: flex-end;
+      gap: 10px;
+      padding-top: 15px;
+      border-top: 1px solid var(--uvalib-grey-light);
    }
    .edit {
       width: 100%;
@@ -165,6 +161,9 @@ const saveClicked = ( async () => {
       }
    }
 
+   dl {
+      font-size: 1em !important;
+   }
    dd {
       table {
          width: 100%;

@@ -1,7 +1,7 @@
 <template>
-   <div class="tag-picker">
-      <span tabindex="0" @click="showMenu" @keydown.enter="showMenu" class="tag current" :class="[masterFile.status, props.display]"></span>
-      <Popover ref="picker" :dismissable="true">
+   <UPopover v-model:open="open" :dismissable="true">
+      <UButton color="secondary" @click="open=true" size="md" class="tag current" :class="[masterFile.status, props.display]"/>
+      <template #content>
          <ul>
             <li @click.stop.prevent="selectTag('rescan')">
                <span class="tag rescan"></span>
@@ -32,17 +32,16 @@
                <span class="label">Remove Tag</span>
             </li>
          </ul>
-      </Popover>
-   </div>
+      </template>
+   </UPopover>
 </template>
 
 <script setup>
-import Popover from 'primevue/popover'
 import {useUnitStore} from "@/stores/unit"
 import { ref } from 'vue'
 
 const unitStore = useUnitStore()
-const picker = ref()
+const open = ref(false)
 
 const props = defineProps({
    masterFile: {
@@ -55,15 +54,9 @@ const props = defineProps({
    },
 })
 
-function showMenu(event) {
-   picker.value.toggle(event)
-}
-function hideMenu() {
-   picker.value.toggle()
-}
 async function selectTag( tag ) {
    await unitStore.updateMasterFileMetadata( props.masterFile.fileName, "tag", tag )
-   hideMenu()
+   open.value = false
 }
 </script>
 

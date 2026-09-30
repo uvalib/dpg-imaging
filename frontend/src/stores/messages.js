@@ -76,7 +76,6 @@ export const useMessageStore = defineStore('message', {
          const system = useSystemStore()
          this.userID = userID
          axios.get(`/api/user/${userID}/messages`).then(response => {
-            console.log(response.data)
             this.inbox = response.data.inbox
             this.sent = response.data.sent
             this.targetMessageID = -1

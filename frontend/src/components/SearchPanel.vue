@@ -1,67 +1,55 @@
 <template>
-   <div class="search" id="search-panel">
+   <div class="search sticky z-50" :style="{top: headerHeight}">
       <h3>Search</h3>
       <div class="form">
          <div class="row">
             <label for="workflow">Workflow</label>
-            <Select inputId="workflow" v-model="searchStore.search.workflow" :options="workflows"
-               optionLabel="name" optionValue="id" @change="doSearch()" />
+            <USelect id="workflow" v-model="searchStore.search.workflow" :items="workflows" value-key="id" @change="doSearch()"/>
          </div>
 
          <div class="row">
             <label for="step">Step</label>
-            <Select inputId="step" v-model="searchStore.search.step" :options="steps"
-               optionLabel="name" optionValue="id" @change="doSearch()" />
-            </div>
+            <USelect id="step" v-model="searchStore.search.step" :items="steps" value-key="id" @change="doSearch()"/>
+         </div>
 
          <div class="row">
             <label for="assigned">Assigned To</label>
-            <Select inputId="assigned" v-model="searchStore.search.assignedTo" :options="staffMembers"
-               optionLabel="name" optionValue="id"
-               filter autoFilterFocus resetFilterOnHide filterMatchMode="startsWith"
-               @change="doSearch()" />
-            </div>
+            <USelectMenu id="assigned" v-model="searchStore.search.assignedTo" :items="staffMembers" value-key="id"  @change="doSearch()"/>
+         </div>
 
          <div class="row">
             <label for="order">Order</label>
-            <input id="order" v-model="searchStore.search.orderID" @keyup.enter="doSearch()">
+            <UInput type="text"  id="order"  v-model="searchStore.search.orderID" @keyup.enter="doSearch()" />
          </div>
 
          <div class="row">
             <label for="unit">Unit</label>
-            <input id="unit" v-model="searchStore.search.unitID" @keyup.enter="doSearch()">
+            <UInput type="text" id="unit" v-model="searchStore.search.unitID" @keyup.enter="doSearch()" />
          </div>
 
          <div class="row">
             <label for="call">Call Number</label>
-            <input id="call" v-model="searchStore.search.callNumber" @keyup.enter="doSearch()">
+            <UInput type="text" id="call" v-model="searchStore.search.callNumber" @keyup.enter="doSearch()" />
          </div>
 
          <div class="row">
             <label for="customer">Customer</label>
-            <Select inputId="assigned" v-model="searchStore.search.customer" :options="customers"
-               optionLabel="name" optionValue="id"  :virtualScrollerOptions="{ itemSize: 32 }"
-               filter autoFilterFocus resetFilterOnHide filterMatchMode="startsWith"
-               @change="doSearch()" />
+            <USelectMenu id="customer" v-model="searchStore.search.customer" :items="customers" value-key="id"  @change="doSearch()" virtualize/>
          </div>
 
          <div class="row">
             <label for="agency">Agency</label>
-            <Select inputId="agency" v-model="searchStore.search.agency" :options="agencies"
-               optionLabel="name" optionValue="id"
-               filter autoFilterFocus resetFilterOnHide  filterMatchMode="startsWith"
-               @change="doSearch()" />
-            </div>
+            <USelectMenu id="agency" v-model="searchStore.search.agency" :items="agencies" value-key="id"  @change="doSearch()" virtualize/>
+         </div>
 
          <div class="row">
             <label for="workstation">Workstation</label>
-            <Select inputId="workstation" v-model="searchStore.search.workstation" :options="workstations"
-               optionLabel="name" optionValue="id" @change="doSearch()" />
+            <USelect id="workstation" v-model="searchStore.search.workstation" :items="workstations" value-key="id" @change="doSearch()"/>
          </div>
       </div>
       <div class="buttons">
-         <DPGButton severity="secondary" @click="resetSearch" label="Reset Search"/>
-         <DPGButton severity="secondary" @click="doSearch" label="Search"/>
+         <UButton color="secondary" size="sm" @click="resetSearch" label="Reset Search"/>
+         <UButton color="secondary" size="sm" @click="doSearch" label="Search"/>
       </div>
    </div>
 </template>
@@ -70,7 +58,6 @@
 import { useSearchStore } from '@/stores/search'
 import { useSystemStore } from '@/stores/system'
 import { useRoute, useRouter } from 'vue-router'
-import Select from 'primevue/select'
 import { computed } from 'vue'
 
 const route = useRoute()
@@ -78,47 +65,54 @@ const router = useRouter()
 const searchStore = useSearchStore()
 const systemStore = useSystemStore()
 
+// you cannot custruct tailwind class values dynamically, so you  cant do `top-${hdr.clientHeight}`. 
+// Instead use this to bind an inline style 'top' param to stick the controls below the header
+const headerHeight = computed(() => {
+   let hdr = document.querySelector('header')
+   return `${hdr.clientHeight+4}px`
+})
+
 const staffMembers = computed( () => {
-   let out = [ {name: "Any", id: 0} ]
+   let out = [ {label: "Any", id: 0} ]
    systemStore.activeStaff.forEach( sm => {
-      out.push( { name: `${sm.lastName}, ${sm.firstName}`, id: sm.id})
+      out.push( { label: `${sm.lastName}, ${sm.firstName}`, id: sm.id})
    })
    return out
 })
 const customers = computed( () => {
-   let out = [ {name: "Any", id: 0} ]
+   let out = [ {label: "Any", id: 0} ]
    systemStore.customers.forEach( sm => {
-      out.push( { name: `${sm.lastName}, ${sm.firstName}`, id: sm.id})
+      out.push( { label: `${sm.lastName}, ${sm.firstName}`, id: sm.id})
    })
    return out
 })
 const workflows = computed( () => {
-   let out = [ {name: "Any", id: 0} ]
+   let out = [ {label: "Any", id: 0} ]
    systemStore.workflows.forEach( sm => {
       if (sm.isActive ) {
-         out.push( { name: sm.name, id: sm.id})
+         out.push( { label: sm.name, id: sm.id})
       }
    })
    return out
 })
 const steps = computed( ()=> {
-   let out = [ {name: "Any", id: "any"} ]
+   let out = [ {label: "Any", id: "any"} ]
    systemStore.steps.forEach( sm => {
-      out.push( { name: sm, id: sm})
+      out.push( { label: sm, id: sm})
    })
    return out
 })
 const agencies = computed( () => {
-   let out = [ {name: "Any", id: 0} ]
+   let out = [ {label: "Any", id: 0} ]
    systemStore.agencies.forEach( sm => {
-      out.push( { name: sm.name, id: sm.id})
+      out.push( { label: sm.name, id: sm.id})
    })
    return out
 })
 const workstations = computed( () => {
-   let out = [ {name: "Any", id: 0} ]
+   let out = [ {label: "Any", id: 0} ]
    systemStore.workstations.forEach( sm => {
-      out.push( { name: sm.name, id: sm.id})
+      out.push( { label: sm.name, id: sm.id})
    })
    return out
 })
@@ -195,32 +189,29 @@ const doSearch = ( async () => {
 </script>
 
 <style scoped lang="scss">
-.search.pinned {
-   position: fixed;
-}
-
 .search {
-   border: 1px solid var(--uvalib-grey);
-   border-radius: 4px;
+   width: 20%;
+   min-width: 275px;
 
    h3 {
       text-align: center;
       padding: 5px;
       margin: 0;
       background: var(--uvalib-blue-alt-light);
-      border-bottom: 1px solid var(--uvalib-grey);
+      border: 1px solid var(--uvalib-grey);
       font-size: 1em;
       font-weight: normal;
-      border-radius: 4px 4px 0 0;
    }
    .form {
+      font-size: 0.9em;
       background: white;
-      min-height: 300px;
       text-align: left;
       padding: 15px;
       display: flex;
       flex-direction: column;
-      row-gap: 15px;
+      row-gap: 10px;
+      border-left: 1px solid var(--uvalib-grey);
+      border-right: 1px solid var(--uvalib-grey);
       div.row {
          display: flex;
          flex-direction: column;
@@ -228,9 +219,10 @@ const doSearch = ( async () => {
       }
    }
    .buttons {
-      border-radius: 4px;
+      border: 1px solid var(--uvalib-grey);
+      border-top: 0;
       background: white;
-      padding: 15px;
+      padding: 0 15px 15px 15px;
       display: flex;
       flex-flow: row nowrap;
       justify-content: flex-end;

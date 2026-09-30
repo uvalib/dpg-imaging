@@ -1,12 +1,8 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
-import dayjs from 'dayjs'
 
 export const useReportStore = defineStore('report', {
 	state: () => ({
-		workflowID: 1,
-		startDate: null,
-		endDate: null,
 		productivity: {
 			loading: false,
 			labels: [],
@@ -40,13 +36,6 @@ export const useReportStore = defineStore('report', {
 	getters: {
 	},
 	actions: {
-		init() {
-			var oldDate = new Date()
-			oldDate.setMonth(oldDate.getMonth() - 3)
-			this.startDate  = oldDate
-			this.endDate = new Date()
-		},
-
 		clearStats() {
 			this.productivity.loading = false
 			this.productivity.datasets = []
@@ -64,8 +53,8 @@ export const useReportStore = defineStore('report', {
 			this.reports.rates.data = []
 		},
 
-		getProductivityReport( workflowID, start, end ) {
-			let url = `/api/reports/productivity?workflow=${workflowID}&start=${dayjs(start).format("YYYY-MM-DD")}&end=${dayjs(end).format("YYYY-MM-DD")}`
+		getProductivityReport( workflowID, startStr, endStr ) {
+			let url = `/api/reports/productivity?workflow=${workflowID}&start=${startStr}&end=${endStr}`
 			this.productivity.loading = true
 			axios.get(url).then(response => {
 				this.productivity.labels = response.data.types
@@ -79,8 +68,8 @@ export const useReportStore = defineStore('report', {
 				this.productivity.loading = false
          })
 		},
-		getProblemsReport( workflowID, start, end ) {
-			let url = `/api/reports/problems?workflow=${workflowID}&start=${dayjs(start).format("YYYY-MM-DD")}&end=${dayjs(end).format("YYYY-MM-DD")}`
+		getProblemsReport( workflowID, startStr, endStr ) {
+			let url = `/api/reports/problems?workflow=${workflowID}&start=${startStr}&end=${endStr}`
 			this.problems.loading = true
 			this.problems.error = ""
 			axios.get(url).then(response => {
@@ -95,8 +84,8 @@ export const useReportStore = defineStore('report', {
 				this.problems.loading = false
          })
 		},
-		getRateReports( workflowID, start, end ) {
-			let url = `/api/reports/rates?workflow=${workflowID}&start=${dayjs(start).format("YYYY-MM-DD")}&end=${dayjs(end).format("YYYY-MM-DD")}`
+		getRateReports( workflowID, startStr, endStr ) {
+			let url = `/api/reports/rates?workflow=${workflowID}&start=${startStr}&end=${endStr}`
 			this.reports.loading = true
 			this.reports.error = ""
 			axios.get(url).then(response => {

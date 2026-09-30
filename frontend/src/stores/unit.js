@@ -6,12 +6,17 @@ export const useUnitStore = defineStore('unit', {
    state: () => ({
       working: false,
       unitID: "",
+
+      // maintain a separate display list of master files with metadata
+      // this is needed by the sorting / display components which require a model
+      // not a computed val (the sort changes the data)
+      masterFilesPage: [],
+
       masterFiles: [],
       viewMode: "list",
       rangeStartIdx: -1,
       rangeEndIdx: -1,
       edit: {
-         pageNumber: false,
          component: false,
          metadata: false,
       },
@@ -25,7 +30,7 @@ export const useUnitStore = defineStore('unit', {
          type: "",
       },
       lastURL: "",
-      currPage: 0,
+      currPage: 1,
       pageSize: 20,
       containerType: null
    }),
@@ -36,14 +41,21 @@ export const useUnitStore = defineStore('unit', {
       totalFiles: state => {
          return state.masterFiles.length
       },
+      totalPages: state => {
+         return Math.ceil(state.masterFiles.length / state.pageSize)
+      },
       currStartIndex: state => {
-         return state.currPage * state.pageSize
+         return (state.currPage-1) * state.pageSize
       }
    },
    actions: {
       moveImage( fromIndex, toIndex ) {
-         let img = this.masterFiles.splice(fromIndex, 1)[0]
-         this.masterFiles.splice(toIndex, 0, img)
+         // This is called from the table / grid showing a single page of images.
+         // this data is held in the masterFilesPage data and the index is tied to that
+         // (it is always 0 - pageSize). Need to convert those indexs to the full list
+         let img = this.masterFiles.splice(this.currStartIndex+fromIndex, 1)[0]
+         this.masterFiles.splice(this.currStartIndex+toIndex, 0, img)
+         this.updateMasterFilesPage() // TODO.. maybe just swap
       },
       selectPage() {
          this.rangeStartIdx = this.currStartIndex
@@ -170,7 +182,6 @@ export const useUnitStore = defineStore('unit', {
          })
       },
 
-      // NOTES: this is only used from the image view
       async getMasterFileMetadata( masterFileIndex ) {
          let mf = this.masterFiles[masterFileIndex]
          if (!mf) return
@@ -182,10 +193,24 @@ export const useUnitStore = defineStore('unit', {
          return axios.get(mdURL).then(response => {
             this.setImageMetadata(response.data)
             this.working = false
+            console.log("METADATA PAGE LOADED")
          }).catch( e => {
             system.setError(e)
             this.working = false
          })
+      },
+
+      updateMasterFilesPage() {
+         console.log("UPDATE PAGE METADATA")
+         // Pagination is wierd here; the store holds all file references, but maybe not all metadata.
+         // The table just shows a subset of the total list. This function uses curr page num
+         // and page size to get an array of masterfiles for the current page.
+         this.masterFilesPage = []
+         this.masterFiles.forEach( (mf,idx) => {
+            if (idx >= this.currStartIndex && this.masterFilesPage.length < this.pageSize) {
+               this.masterFilesPage.push(mf)  
+            }
+         })  
       },
 
       setImageMetadata( md ) {
@@ -216,10 +241,9 @@ export const useUnitStore = defineStore('unit', {
       },
 
       async getMetadataPage() {
-         console.log("GET PAGEINDEX "+this.currPage+" sz "+this.pageSize)
          if (this.unitID == "") return
 
-         let startIdx = this.currPage * this.pageSize
+         let startIdx = (this.currPage-1) * this.pageSize
          let endIdx = startIdx+this.pageSize-1
          if (endIdx >= this.masterFiles.length-1) {
             endIdx = this.masterFiles.length-1
@@ -232,17 +256,19 @@ export const useUnitStore = defineStore('unit', {
             }
          }
          if (needsData == false ) {
+            this.updateMasterFilesPage()
             return
          }
 
          const system = useSystemStore()
          this.working = true
-         let mdURL = `/api/units/${ this.unitID}/masterfiles/metadata?page=${this.currPage+1}&pagesize=${this.pageSize}`
+         let mdURL = `/api/units/${ this.unitID}/masterfiles/metadata?page=${this.currPage}&pagesize=${this.pageSize}`
          return axios.get(mdURL).then(response => {
             this.working = false
             response.data.forEach( md => {
                this.setImageMetadata( md )
             })
+            this.updateMasterFilesPage()
          }).catch( e => {
             system.setError(e)
             this.working = false

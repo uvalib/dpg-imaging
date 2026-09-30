@@ -4,8 +4,8 @@
        <div  v-if="reportStore.productivity.loading" class="wait-wrap">
          <WaitSpinner message="Loading Productivity report..."/>
       </div>
-      <div  class="report">
-         <Chart type="bar" :data="reportStore.productivity" :options="options" />
+      <div v-else class="report">
+         <BarChart :data="reportStore.productivity" :options="options" />
          <div class="total">
             <label>Total Completed Projects:</label><span class="total">{{reportStore.productivity.totalCompleted}}</span>
          </div>
@@ -18,7 +18,7 @@
 import { ref } from 'vue'
 import {useReportStore} from '@/stores/reporting'
 import WaitSpinner from '@/components/WaitSpinner.vue'
-import Chart from 'primevue/chart'
+import BarChart from './BarChart.vue'
 
 const options = ref({
    title: {

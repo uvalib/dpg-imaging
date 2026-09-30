@@ -12,7 +12,9 @@
             <p>You have successfully signed out of your account.</p>
          </div>
       </template>
-      <div class="buttons"><DPGButton @click="signinClick" label="Sign in with NetBadge"/></div>
+      <div class="buttons">
+         <UButton label="Sign in with NetBadge" @click="signinClick" />
+      </div>
    </div>
 </template>
 
@@ -25,9 +27,7 @@ function signinClick() {
 <style scoped lang="scss">
 .signedout {
    padding: 25px;
-   h2 {
-      color: var(--uvalib-brand-orange);
-   }
+   text-align: center;
    .message {
       margin-top: 40px;
       font-size: 1.15em;

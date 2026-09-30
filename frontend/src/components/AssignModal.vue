@@ -1,22 +1,20 @@
 <template>
-   <DPGButton @click="show" :label="props.label" severity="secondary"/>
-   <Dialog v-model:visible="isOpen" :modal="true" header="Assign Project" :closable="false">
-      <Listbox v-model="assignee" :options="staff" filter optionLabel="name" optionValue="value" />
-      <p class="error">{{error}}</p>
-      <template #footer>
-         <DPGButton @click="hide" label="Cancel" severity="secondary"/>
-         <span class="spacer"></span>
-         <DPGButton @click="assignClicked" label="Assign"/>
+   <UModal v-model:open="isOpen" :modal="true" :dismissible="false" title="Assign Project">
+      <UButton @click="show" :label="props.label" color="secondary"/>
+      <template #body>
+         <UListbox  v-model="assignee" :items="staff" virtualize filter/>
       </template>
-   </Dialog>
+      <template #footer>
+         <UButton @click="hide" label="Cancel" color="secondary"/>
+         <UButton @click="assignClicked" label="Assign" :disabled="assignee == null"/>
+      </template>
+   </UModal>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import {useSystemStore} from '@/stores/system'
 import {useProjectStore} from '@/stores/project'
-import Dialog from 'primevue/dialog'
-import Listbox from 'primevue/listbox'
 
 const emit = defineEmits( ['assigned' ])
 
@@ -36,23 +34,20 @@ const props = defineProps({
 
 const isOpen = ref(false)
 const assignee = ref()
-const error = ref("")
 
 const staff = computed( () => {
    let out = []
    systemStore.activeStaff.forEach( s => {
-      out.push({name: `${s.lastName}, ${s.firstName}`, value: s})
+      out.push({label: `${s.lastName}, ${s.firstName}`, value: s})
    })
    return out
 })
 
 const assignClicked = ( async () => {
-   error.value = ""
-   if ( !assignee.value ) {
-      error.value = "Please select a user"
-      return
-   }
-   await projectStore.assignProject( {projectID: props.projectID, ownerID: assignee.value.id} )
+   // the listbox selection assigns an object to assignee with fields label and value. 
+   // label is the user name value is the user data. Syntax to get it looks weird (double value)
+   const staff = assignee.value.value
+   await projectStore.assignProject( props.projectID, staff.id )
    hide()
    emit('assigned')
 })
@@ -63,7 +58,6 @@ const hide = (() => {
 
 const show = (() => {
    isOpen.value = true
-   error.value = ""
    assignee.value = null
 })
 </script>

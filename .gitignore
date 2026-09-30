@@ -21,3 +21,5 @@ brun.sh
 buildtag.*
 package/scripts/build.ksh
 package/scripts/shell.ksh
+auto-imports.d.ts
+components.d.ts

@@ -94,20 +94,23 @@ export const useProjectStore = defineStore('project', {
          const system = useSystemStore()
          this.working = true
          await axios.get(`/api/projects/${projectID}`).then(response => {
-            this.detail = response.data
-            this.detail.containerType = system.getContainerType(this.detail.containerTypeID)
-            delete this.detail.containerTypeID
-            this.detail.owner = system.getStaffMember(this.detail.ownerID)
-            delete this.detail.ownerID
+            this.setProjectData(response.data)
             this.working = false
             if (!this.detail.finishedAt ) {
                axios.put(`/api/projects/${projectID}/images/count`)
             }
          }).catch( e => {
-
             system.setError( e )
             this.working = false
          })
+      },
+      setProjectData( data ) {
+         const system = useSystemStore()
+         this.detail = data
+         this.detail.containerType = system.getContainerType(this.detail.containerTypeID)
+         delete this.detail.containerTypeID
+         this.detail.owner = system.getStaffMember(this.detail.ownerID)
+         delete this.detail.ownerID
       },
       cancelStatusPolling() {
          if (this.statusCheckIntervalID > -1) {
@@ -178,14 +181,12 @@ export const useProjectStore = defineStore('project', {
             this.working = false
          })
       },
-      finishStep(durationMins) {
+      finishStep(durationMins, checkFolders = true) {
          this.working = true
          let isFinalize = (this.detail.assignments[0].step.name == "Finalize")
-         axios.post(`/api/projects/${this.detail.id}/finish`, {durationMins: durationMins} ).then(response => {
-            this.detail.owner = response.data.owner
-            this.detail.currentStep = response.data.currentStep
-            this.detail.assignments = response.data.assignments
-            this.detail.notes = response.data.notes
+         const req = {durationMins: durationMins, checkFolders: checkFolders}
+         axios.post(`/api/projects/${this.detail.id}/finish`, req).then(response => {
+            this.setProjectData( response.data )
             this.working = false
             if ( isFinalize ) {
                this.pollProjectStatus()
@@ -232,10 +233,7 @@ export const useProjectStore = defineStore('project', {
       rejectStep(durationMins) {
          this.working = true
          axios.post(`/api/projects/${this.detail.id}/reject`, {durationMins: durationMins} ).then(response => {
-            this.detail.owner = response.data.owner
-            this.detail.currentStep = response.data.currentStep
-            this.detail.assignments = response.data.assignments
-            this.detail.notes = response.data.notes
+            this.setProjectData( response.data )
             this.working = false
          }).catch( e => {
             const system = useSystemStore()
@@ -253,7 +251,7 @@ export const useProjectStore = defineStore('project', {
             this.working = false
          })
       },
-      async assignProject({projectID, ownerID}) {
+      async assignProject( projectID, ownerID ) {
          this.working = true
          const system = useSystemStore()
          return axios.post(`/api/projects/${projectID}/assign/${ownerID}`).then(response => {

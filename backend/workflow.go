@@ -128,13 +128,18 @@ func (svc *serviceContext) rejectProjectStep(c *gin.Context) {
 		return
 	}
 
-	// all errors go back to the scanner... the owner of the first step
+	// all errors go back to the user that FINISHED the scan step (it could have been reassigned)
 	failStepID := proj.CurrentStep.FailStepID
-	firstA := proj.Assignments[len(proj.Assignments)-1]
-	proj.OwnerID = &firstA.StaffMemberID
+	var tgtAssign *assignment
+	for _, assign := range proj.Assignments {
+		if assign.Step.StepType == 0 && assign.FinishedAt != nil {
+			tgtAssign = assign
+		}
+	}
+	proj.OwnerID = &tgtAssign.StaffMemberID
 	proj.CurrentStepID = &failStepID
 	svc.DB.Model(proj).Select("CurrentStepID", "OwnerID").Updates(proj)
-	newAssign := assignment{ProjectID: proj.ID, StepID: failStepID, StaffMemberID: firstA.StaffMemberID, AssignedAt: &now}
+	newAssign := assignment{ProjectID: proj.ID, StepID: failStepID, StaffMemberID: tgtAssign.StaffMemberID, AssignedAt: &now}
 	svc.DB.Create(&newAssign)
 
 	proj, _ = svc.getProjectInfo(projID)
@@ -146,6 +151,7 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 	claims := getJWTClaims(c)
 	var doneReq struct {
 		DurationMins uint `json:"durationMins"`
+		CheckFolders bool `json:"checkFolders"`
 	}
 
 	qpErr := c.ShouldBindJSON(&doneReq)
@@ -190,7 +196,17 @@ func (svc *serviceContext) finishProjectStep(c *gin.Context) {
 	svc.DB.Model(&currA).Select("Status").Updates(currA)
 
 	// validate the directory, images names and metadata (if applicable)
-	validateErr := svc.validateFinishStep(proj)
+	checkFolders := false // non-manuscript workflows don't have folders
+	if proj.Workflow.Name == "Manuscript" {
+		checkFolders = doneReq.CheckFolders
+		tgtContainer, _ := svc.getProjectContainerType(proj)
+		if tgtContainer != nil && tgtContainer.HasFolders == false {
+			log.Printf("INFO: project %s uses container type %s which does not support folders; don't check them",
+				projID, tgtContainer.Name)
+			checkFolders = false
+		}
+	}
+	validateErr := svc.validateFinishStep(proj, checkFolders)
 	if validateErr != nil {
 		log.Printf("ERROR: unable to finish project %s step %s: %s", projID, proj.CurrentStep.Name, validateErr.Error())
 		proj, _ = svc.getProjectInfo(projID)
@@ -306,7 +322,7 @@ func (svc *serviceContext) nextStep(proj *project, nextStepID uint, ownerID *uin
 	return nil
 }
 
-func (svc *serviceContext) validateFinishStep(proj *project) error {
+func (svc *serviceContext) validateFinishStep(proj *project, checkFolders bool) error {
 	log.Printf("INFO: validate project [%d] step [%s] finish", proj.ID, proj.CurrentStep.Name)
 
 	isManuscript := proj.Workflow.Name == "Manuscript"
@@ -360,9 +376,23 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 		}
 	}
 
-	err := svc.validateDirectory(proj, tgtDir)
-	if err != nil {
-		return err
+	log.Printf("INFO: validate project %d directory %s", proj.ID, tgtDir)
+	if !exists(tgtDir) {
+		svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Directory %s does not exist</p>", tgtDir))
+		return fmt.Errorf("%s does not exist", tgtDir)
+	}
+
+	if proj.CurrentStep.Name == "Scan" || proj.CurrentStep.Name == "Process" || proj.CurrentStep.StepType == 2 {
+		log.Printf("INFO: scan, process and error steps have no further validations")
+	} else {
+		err := svc.validateDirectoryContent(proj, tgtDir)
+		if err != nil {
+			return err
+		}
+		err = svc.validateImages(proj, tgtDir, checkFolders)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Files get moved in two places; after Process and Finalization. Handle the case of a retried finalize when files have already been moved
@@ -388,32 +418,6 @@ func (svc *serviceContext) validateFinishStep(proj *project) error {
 	}
 
 	log.Printf("INFO: project %d step %s successfully finished", proj.ID, proj.CurrentStep.Name)
-	return nil
-}
-
-func (svc *serviceContext) validateDirectory(proj *project, tgtDir string) error {
-	log.Printf("INFO: validate project %d directory %s", proj.ID, tgtDir)
-
-	if !exists(tgtDir) {
-		svc.failStep(proj, "Filesystem", fmt.Sprintf("<p>Directory %s does not exist</p>", tgtDir))
-		return fmt.Errorf("%s does not exist", tgtDir)
-	}
-
-	// Scan and Process and Error steps have no checks other than directory existance
-	if proj.CurrentStep.Name == "Scan" || proj.CurrentStep.Name == "Process" || proj.CurrentStep.StepType == 2 {
-		log.Printf("INFO: scan, process and error steps have no validations")
-		return nil
-	}
-
-	err := svc.validateDirectoryContent(proj, tgtDir)
-	if err != nil {
-		return err
-	}
-	err = svc.validateImages(proj, tgtDir)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -453,7 +457,7 @@ func (svc *serviceContext) validateDirectoryContent(proj *project, tgtDir string
 	return nil
 }
 
-func (svc *serviceContext) validateImages(proj *project, tgtDir string) error {
+func (svc *serviceContext) validateImages(proj *project, tgtDir string, checkFolders bool) error {
 	log.Printf("INFO: validate images info in %s", tgtDir)
 	highest := -1
 	cnt := 0
@@ -497,7 +501,9 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string) error {
 			return fmt.Errorf("invalid filename %s", fullPath)
 		}
 
-		if proj.CurrentStep.Name == "Create Metadata" || proj.CurrentStep.Name == "Finalize" {
+		// From Create Metadata on, check to ensure required headers are present (title, box, folder)
+		// Note that this is a slow process
+		if proj.CurrentStep.Name != "Scan" && proj.CurrentStep.Name != "Process" {
 			qaFiles = append(qaFiles, fullPath)
 			if len(qaFiles) == svc.BatchSize {
 				log.Printf("INFO: check headers on batch of %d files", len(qaFiles))
@@ -506,7 +512,7 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string) error {
 				checkWG.Add(1)
 				go func() {
 					defer checkWG.Done()
-					checkExifHeaders(filesCopy, isManuscript, errChannel)
+					validateExifHeadersBatch(filesCopy, isManuscript, checkFolders, errChannel)
 				}()
 				qaFiles = make([]string, 0)
 			}
@@ -520,7 +526,7 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string) error {
 		checkWG.Add(1)
 		go func() {
 			defer checkWG.Done()
-			checkExifHeaders(qaFiles, isManuscript, errChannel)
+			validateExifHeadersBatch(qaFiles, isManuscript, checkFolders, errChannel)
 		}()
 	}
 
@@ -551,10 +557,17 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string) error {
 			svc.failStep(proj, "Metadata", "<p>Unable to extract metadata from images.</p>")
 			return fmt.Errorf("unable to extract metadata from images")
 		}
-		if problem.Type == "ERROR" {
+
+		if proj.CurrentStep.Name == "Finalize" {
+			// On the finalize step, any metdata issue is a failure
 			errorMsg += fmt.Sprintf("<li>%s - %s</li>", path.Base(problem.File), problem.Problem)
 		} else {
-			warnMsg += fmt.Sprintf("<li>%s - %s</li>", path.Base(problem.File), problem.Problem)
+			// in all other steps, some metadata errors are warnings and should not cause the step to fail
+			if problem.Type == "ERROR" {
+				errorMsg += fmt.Sprintf("<li>%s - %s</li>", path.Base(problem.File), problem.Problem)
+			} else {
+				warnMsg += fmt.Sprintf("<li>%s - %s</li>", path.Base(problem.File), problem.Problem)
+			}
 		}
 	}
 

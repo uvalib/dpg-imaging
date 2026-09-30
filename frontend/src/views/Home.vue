@@ -1,145 +1,106 @@
 <template>
-   <ConfirmDialog position="top">
-      <template #message="slotProps">
-         <div style="text-align: left;" v-html="slotProps.message.message"/>
-      </template>
-   </ConfirmDialog>
    <div class="home">
       <WaitSpinner v-if="searchStore.working" :overlay="true" message="Loading projects..." />
-      <div class="toolbar pin-target" id="pin-target">
-         <div class="filter">
-            <label for="me">
-               <input id="me" type="radio" value="me" name="filter" v-model="activeFilter" @change="filterChanged">
-               <span>Assigned to me <span class="count">({{searchStore.totals.me}})</span></span>
-            </label>
-            <label for="active">
-               <input id="active" type="radio" value="active" name="filter" v-model="activeFilter" @change="filterChanged">
-               <span>Active <span class="count">({{searchStore.totals.active}})</span></span>
-            </label>
-            <label for="errors">
-               <input id="errors" type="radio" value="errors" name="filter" v-model="activeFilter" @change="filterChanged">
-               <span>Problems <span class="count">({{searchStore.totals.errors}})</span></span>
-            </label>
-            <label for="unassigned">
-               <input id="unassigned" type="radio" value="unassigned" name="filter" v-model="activeFilter" @change="filterChanged">
-               <span>Unassigned <span class="count">({{searchStore.totals.unassigned}})</span></span>
-            </label>
-            <label for="finished">
-               <input id="finished" type="radio" value="finished" name="filter" v-model="activeFilter" @change="filterChanged">
-               <span>Finished <span class="count">({{searchStore.totals.finished}})</span></span>
-            </label>
-         </div>
-         <div class="page-ctl" v-if="!searchStore.working && searchStore.projects.length>0">
-            <DPGPagination :currPage="searchStore.currPage" :pageSize="searchStore.pageSize" :totalPages="searchStore.totalPages"
-               @next="nextClicked" @prior="priorClicked" @first="firstClicked" @last="lastClicked"
-               @jump="pageJumpClicked"
-            />
-         </div>
-      </div>
-      <div class="scroll-body" id="scroll-body">
-         <div class="project-board" id="project-board">
-            <div class="search-col">
-               <SearchPanel />
+      <div class="project-board">
+         <SearchPanel />
+         <template v-if="searchStore.working == false">
+            <div class="none" v-if="!searchStore.working && searchStore.projects.length == 0">
+               No projects match your search criteria
             </div>
-            <template v-if="searchStore.working == false">
-               <div class="none" v-if="!searchStore.working && searchStore.projects.length == 0">
-                  No projects match your search criteria
-               </div>
-               <ul v-else class="projects">
-                  <li class="card" v-for="(p,idx) in searchStore.projects" :key="`p${p.id}`" :class="{finished: p.finishedAt}">
-                     <div class="top">
-                        <div class="due">
-                           <span>
-                              <label>Date Due:</label><span>{{searchStore.dueDate(idx)}}</span>
-                           </span>
-                           <span class="status-section">
-                              <span class="status-msg overdue" v-if="isOverdue(idx) && !p.finishedAt">OVERDUE</span>
-                              <i v-if="searchStore.hasError(idx) && !p.finishedAt" class="error-icon pi pi-exclamation-circle"></i>
-                           </span>
-                           <span v-if="p.finishedAt">
-                              <label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span>
-                              <div class="time" v-if="p.totalDuration">
-                                 <label>Duration:</label>
-                                 <span>{{ p.totalDuration }} mins</span>
-                              </div>
-                           </span>
-                        </div>
-                        <router-link :to="`/projects/${p.id}`">
-                           <div class="title">
-                              <div class="project-id">
-                                 <span>
-                                    <label>Project:</label><span>{{p.id}}</span>
-                                 </span>
-                                 <span v-if="p.imageCount > 0">
-                                    <label>Images:</label><span>{{p.imageCount}}</span>
-                                 </span>
-                              </div>
-                              <div>{{p.title}}</div>
+            <ul v-else class="projects">
+               <li class="card" v-for="(p,idx) in searchStore.projects" :key="`p${p.id}`" :class="{finished: p.finishedAt}">
+                  <div class="top">
+                     <div class="due">
+                        <span>
+                           <label>Date Due:</label><span>{{searchStore.dueDate(idx)}}</span>
+                        </span>
+                        <span class="status-section">
+                           <span class="status-msg overdue" v-if="isOverdue(idx) && !p.finishedAt">OVERDUE</span>
+                           <UIcon v-if="searchStore.hasError(idx) && !p.finishedAt" name="i-lucide-circle-alert" 
+                              class="size-8 bg-brand-red-B text-white rounded-full" /> 
+                        </span>
+                        <span v-if="p.finishedAt">
+                           <label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span>
+                           <div class="time" v-if="p.totalDuration">
+                              <label>Duration:</label>
+                              <span>{{ p.totalDuration }} mins</span>
                            </div>
-                        </router-link>
+                        </span>
                      </div>
-                     <div class="data">
-                        <dl>
-                           <dt>Customer:</dt>
-                           <dd>{{ systemStore.getCustomerName(p.customerID) }} </dd>
-                           <template v-if="p.agencyID > 0">
-                              <dt>Agency:</dt>
-                              <dd>{{ systemStore.getAgency(p.agencyID)}}</dd>
-                           </template>
-                           <dt>Call Number:</dt>
-                           <dd>
-                              <span v-if="p.callNumber">{{p.callNumber}}</span>
-                              <span v-else class="na">N/A</span>
-                           </dd>
-                           <dt>Intended Use:</dt>
-                           <dd>{{ p.intendedUse }}</dd>
-                        </dl>
-                        <dl class="right">
-                           <dt>Order:</dt>
-                           <dd><a target="_blank" :href="`${systemStore.adminURL}/orders/${p.orderID}`">{{p.orderID}}</a></dd>
-                           <dt>Unit:</dt>
-                           <dd><a target="_blank" :href="`${systemStore.adminURL}/units/${p.unitID}`">{{p.unitID}}</a></dd>
-                           <dt>Workflow:</dt>
-                           <dd>{{p.workflow.name}}</dd>
-                           <dt>Category:</dt>
-                           <dd>{{p.category.name}}</dd>
-                        </dl>
-                     </div>
-                     <div class="special-instructions" v-if="p.specialInstructions">
-                        <label>Special Instructions:</label>
-                        <p>{{p.specialInstructions}}</p>
-                     </div>
-                     <div class="status" v-if="!p.finishedAt || p.finishedAt == ''">
-                        <div class="progress-panel">
-                           <span :class="{error: searchStore.hasError(idx)}">{{searchStore.statusText(p.id)}}</span>
-                           <div class="progress-bar" v-if="p.currentStep">
-                              <div class="percentage" :style="{width: searchStore.percentComplete(p.id) }"></div>
+                     <router-link :to="`/projects/${p.id}`">
+                        <div class="title">
+                           <div class="project-id">
+                              <span>
+                                 <label>Project:</label><span>{{p.id}}</span>
+                              </span>
+                              <span v-if="p.imageCount > 0">
+                                 <label>Images:</label><span>{{p.imageCount}}</span>
+                              </span>
                            </div>
+                           <div>{{p.title}}</div>
                         </div>
-                        <div class="owner-panel">
-                           <span class="assignment">
-                              <i class="user pi pi-user"></i>
-                              <span v-if="!p.owner" class="unassigned">Unassigned</span>
-                              <span v-else class="assigned">{{ownerInfo(p)}}</span>
-                           </span>
-                           <span class="owner-buttons">
-                              <DPGButton @click="deleteProjectClicked(p)" class="delete" severity="danger" v-if="userStore.isSupervisor || userStore.isAdmin" label="Delete"/>
-                              <DPGButton v-if="canClaim(p)" @click="claimClicked(p.id)" severity="secondary" label="Claim"/>
-                              <AssignModal  v-if="canAssign" :projectID="p.id" @assigned="searchStore.getProjects()" />
-                              <DPGButton  severity="secondary" @click="viewClicked(p.id)" label="View"/>
-                           </span>
+                     </router-link>
+                  </div>
+                  <div class="data">
+                     <dl>
+                        <dt>Customer:</dt>
+                        <dd>{{ systemStore.getCustomerName(p.customerID) }} </dd>
+                        <template v-if="p.agencyID > 0">
+                           <dt>Agency:</dt>
+                           <dd>{{ systemStore.getAgency(p.agencyID)}}</dd>
+                        </template>
+                        <dt>Call Number:</dt>
+                        <dd>
+                           <span v-if="p.callNumber">{{p.callNumber}}</span>
+                           <span v-else class="na">N/A</span>
+                        </dd>
+                        <dt>Intended Use:</dt>
+                        <dd>{{ p.intendedUse }}</dd>
+                     </dl>
+                     <dl class="right">
+                        <dt>Order:</dt>
+                        <dd><a target="_blank" :href="`${systemStore.adminURL}/orders/${p.orderID}`">{{p.orderID}}</a></dd>
+                        <dt>Unit:</dt>
+                        <dd><a target="_blank" :href="`${systemStore.adminURL}/units/${p.unitID}`">{{p.unitID}}</a></dd>
+                        <dt>Workflow:</dt>
+                        <dd>{{p.workflow.name}}</dd>
+                        <dt>Category:</dt>
+                        <dd>{{p.category.name}}</dd>
+                     </dl>
+                  </div>
+                  <div class="special-instructions" v-if="p.specialInstructions">
+                     <label>Special Instructions:</label>
+                     <p>{{p.specialInstructions}}</p>
+                  </div>
+                  <div class="status" v-if="!p.finishedAt || p.finishedAt == ''">
+                     <div class="progress-panel">
+                        <span :class="{error: searchStore.hasError(idx)}">{{searchStore.statusText(p.id)}}</span>
+                        <div class="progress-bar" v-if="p.currentStep">
+                           <div class="percentage" :style="{width: searchStore.percentComplete(p.id) }"></div>
                         </div>
                      </div>
-                  </li>
-               </ul>
-            </template>
-         </div>
+                     <div class="owner-panel">
+                        <span class="assignment">
+                           <UIcon name="i-lucide-user"/> 
+                           <span v-if="!p.owner" class="unassigned">Unassigned</span>
+                           <span v-else class="assigned">{{ownerInfo(p)}}</span>
+                        </span>
+                        <span class="owner-buttons">
+                           <UButton @click="deleteProjectClicked(p)" class="delete" color="error" v-if="userStore.isSupervisor || userStore.isAdmin" label="Delete"/>
+                           <UButton v-if="canClaim(p)" @click="claimClicked(p.id)" color="secondary" label="Claim"/>
+                           <AssignModal  v-if="canAssign" :projectID="p.id" @assigned="searchStore.getProjects()" />
+                           <UButton  color="secondary" @click="viewClicked(p.id)" label="View"/>
+                        </span>
+                     </div>
+                  </div>
+               </li>
+            </ul>
+         </template>
       </div>
    </div>
 </template>
 
 <script setup>
-import DPGPagination from "../components/DPGPagination.vue"
 import AssignModal from "@/components/AssignModal.vue"
 import SearchPanel from "@/components/SearchPanel.vue"
 import { useSearchStore } from "@/stores/search"
@@ -147,34 +108,15 @@ import { useSystemStore } from "@/stores/system"
 import { useProjectStore } from "@/stores/project"
 import { useUserStore } from "@/stores/user"
 import { useRoute, useRouter } from 'vue-router'
-import { onBeforeMount, ref } from 'vue'
-import { usePinnable } from '@/composables/pin'
-import { useConfirm } from "primevue/useconfirm"
+import { onBeforeMount } from 'vue'
+import { useConfirm } from "../composables/useConfirm"
 
-usePinnable("pin-target", "scroll-body", ( (isPinned, toolbarBottom) => {
-   let p = document.getElementById("search-panel")
-   if ( p ) {
-      if ( isPinned ) {
-         const board = document.getElementById("project-board")
-         const pad = parseInt(window.getComputedStyle(board, null).getPropertyValue('padding-top'),10)
-         p.style.top = `${toolbarBottom+pad}px`
-         p.style.width = `${p.getBoundingClientRect().width}px`
-         p.classList.add("pinned")
-      } else {
-         p.classList.remove("pinned")
-      }
-   }
-}))
-
-const confirm = useConfirm()
 const searchStore = useSearchStore()
 const systemStore = useSystemStore()
 const userStore = useUserStore()
 const projectStore = useProjectStore()
 const route = useRoute()
 const router = useRouter()
-
-const activeFilter = ref("active")
 
 onBeforeMount( () => {
    if ( route.query.workflow) {
@@ -205,19 +147,8 @@ onBeforeMount( () => {
       searchStore.search.workstation = parseInt(route.query.workstation,10)
    }
    if ( route.query.filter) {
-      activeFilter.value = route.query.filter
       searchStore.filter = route.query.filter
    }
-
-   searchStore.getProjects()
-})
-
-const filterChanged = ( async () => {
-   let query = Object.assign({}, route.query)
-   query.filter = activeFilter.value
-   searchStore.changeFilter(activeFilter.value)
-   await router.push({query})
-   searchStore.lastSearchURL = route.fullPath
 
    searchStore.getProjects()
 })
@@ -229,7 +160,7 @@ const canClaim = ((p) => {
 })
 
 const claimClicked = ( async (projID) => {
-   await projectStore.assignProject( {projectID: projID, ownerID: userStore.ID} )
+   await projectStore.assignProject( projID, userStore.ID )
    searchStore.getProjects()
 })
 
@@ -239,25 +170,6 @@ const viewClicked = ((projID) => {
 
 const canAssign = (() => {
    return (userStore.isAdmin || userStore.isSupervisor)
-})
-
-const nextClicked = (() => {
-   searchStore.setCurrentPage(searchStore.currPage+1 )
-})
-
-const priorClicked = (() => {
-   searchStore.setCurrentPage(searchStore.currPage-1 )
-})
-const firstClicked = (() => {
-   searchStore.setCurrentPage( 1 )
-})
-
-const lastClicked = (() => {
-   searchStore.setCurrentPage(searchStore.totalPages )
-})
-
-const pageJumpClicked = ((p) => {
-   searchStore.setCurrentPage( p )
 })
 
 const ownerInfo = ((p) => {
@@ -270,25 +182,14 @@ const isOverdue = ((projIdx) => {
    return now > due
 })
 
-const deleteProjectClicked = ((p) => {
-   let note = `<p><b>Important</b>: any images associated with this project will be left<br/>in the processing directory for unit ${p.unitID} </p>`
-   confirm.require({
-      message: `Delete this project? This cannot be reversed. ${note}`,
-      header: 'Confirm Delete',
-      icon: 'pi pi-exclamation-triangle',
-      rejectProps: {
-         label: 'Cancel',
-         severity: 'secondary'
-      },
-      acceptProps: {
-         label: 'Delete',
-         severity: 'danger'
-      },
-      accept: async () => {
-          await projectStore.deleteProject(p.id)
-          window.location.reload()
-      }
-   })
+const deleteProjectClicked = (async (p) => {
+   let note = `<span style='font-weight:bold'>Important</span>: any images associated with this project will be left<br/>in the processing directory for unit ${p.unitID}`
+   let msg = `Delete project ${p.id}? This cannot be reversed.<br/>${note}`
+   const resp = await useConfirm("Confirm Delete", msg, "Delete")
+   if (resp) {
+      await projectStore.deleteProject( p.id )
+      window.location.reload() 
+   } 
 })
 </script>
 
@@ -296,10 +197,6 @@ const deleteProjectClicked = ((p) => {
 .home {
    position: relative;
    padding: 0;
-   .search-col {
-      width: 20%;
-      min-width: 275px;
-   }
    h2 {
       color: var(--uvalib-brand-orange);
       margin-bottom: 20px;
@@ -310,63 +207,7 @@ const deleteProjectClicked = ((p) => {
       margin-top: 50px;
       flex-grow: 1;
    }
-   .toolbar {
-      padding: 5px 10px;
-      text-align: right;
-      background: var(--uvalib-grey-lightest);
-      border-top: 1px solid var(--uvalib-grey);
-      border-bottom: 1px solid var(--uvalib-grey);
-      display: flex;
-      flex-flow: row;
-      justify-content: flex-start;
-      align-items: center;
 
-      .filter {
-         display: flex;
-         flex-flow: row nowrap;
-         justify-content: flex-start;
-         align-items: baseline;
-
-         label {
-            display: flex;
-            flex-flow: row nowrap;
-            align-items: center;
-            margin: 0;
-            padding: 0;
-            margin-right: 25px;
-            cursor: pointer;
-            span {
-               display: inline-block;
-               position: relative;
-               top: 2px;
-            }
-            .count {
-               display: inline-block;
-               top: 0;
-               color: var(--uvalib-grey);
-            }
-            &:hover {
-               text-decoration: underline;
-            }
-         }
-         input {
-            cursor: pointer;
-            margin-right: 8px;
-            display: inline-block;
-            width: 15px;
-            height: 15px;
-         }
-      }
-
-      .page-ctl {
-         margin-left: auto;
-         display: inline-block;
-      }
-   }
-   .scroll-body {
-      display: block;
-      position: relative;
-   }
    .project-board {
       display: flex;
       flex-flow: row nowrap;
@@ -374,7 +215,7 @@ const deleteProjectClicked = ((p) => {
       flex-flow: row nowrap;
       justify-content: flex-start;
       align-items: flex-start;
-      padding: 25px 25px 0 25px;
+      padding: 20px 20px 0 20px;
    }
    .projects {
       list-style: none;
@@ -391,7 +232,7 @@ const deleteProjectClicked = ((p) => {
       }
       .card {
          flex: 0 1 calc(25% - 1em);
-         border: 1px solid var(--uvalib-grey-light);
+         border: 1px solid var(--uvalib-grey);
          padding: 0;
          margin: 0px 10px 20px 10px;
          position: relative;
@@ -402,7 +243,6 @@ const deleteProjectClicked = ((p) => {
          box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 4px 1px;
          background: white;
          padding-bottom: 110px;
-         border-radius: 4px;
 
          .top {
             border-bottom: 1px solid var(--uvalib-grey);
@@ -438,13 +278,6 @@ const deleteProjectClicked = ((p) => {
                   align-items: center;
                   gap: 10px;
                }
-               .error-icon {
-                  font-size: 1.5em;
-                  background: var(--uvalib-red-emergency);;
-                  color: white;
-                  padding: 2px 2px 1px 2px;
-                  border-radius: 50%;
-               }
                label {
                   font-weight: bold;
                   margin-right: 5px;
@@ -459,12 +292,12 @@ const deleteProjectClicked = ((p) => {
                   background: var(--uvalib-brand-orange);
                   color: white;
                   border: 0;
-                  border-radius: 5px;
                }
             }
          }
          .special-instructions{
             margin: 0 30px;
+            font-size: 0.95em;
             label {
                display: block;
                font-weight: bold !important;
@@ -480,11 +313,10 @@ const deleteProjectClicked = ((p) => {
             flex-flow: row nowrap;
             justify-content: flex-start;
             align-items: flex-start;
-            dl.right {
-               margin-left: 50px;
-            }
+            font-size: 0.95em;
+   
             dl {
-               margin-left: 25px;
+               margin: 0 auto;
                display: inline-grid;
                grid-template-columns: max-content 2fr;
                grid-column-gap: 5px;
@@ -493,7 +325,6 @@ const deleteProjectClicked = ((p) => {
                   text-align: right;
                }
                dd {
-                  margin: 0 0 10px 0;
                   word-break: break-word;
                   -webkit-hyphens: auto;
                   -moz-hyphens: auto;
@@ -532,8 +363,8 @@ const deleteProjectClicked = ((p) => {
                }
 
                .progress-bar {
-                  border: 1px solid var(--uvalib-grey-light);
-                  background: white;
+                  border: 1px solid var(--uvalib-grey);
+                  background: var(--uvalib-grey-lightest);
                   height: 20px;
                   margin-left: 15px;
                   flex-grow: 1;
@@ -549,12 +380,13 @@ const deleteProjectClicked = ((p) => {
                justify-content: space-between;
 
                .assignment {
-                  .user {
-                     margin-right: 10px;
-                  }
+                  display: flex;
+                  flex-flow: row nowrap;
+                  gap: 5px;
+                  align-items: center;
                   .unassigned {
                      font-weight: 100;
-                     color: #999;
+                     color: var(--uvalib-grey);
                   }
                }
             }

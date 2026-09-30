@@ -32,18 +32,23 @@
          </div>
 
          <div class="back">
-            <DPGButton icon="pi pi-angle-double-left" text label="Back to projects" @click="backClicked" size="small" severity="secondary"/>
+            <UButton icon="i-lucide-arrow-left" label="Back to projects" @click="backClicked" size="sm" color="secondary"/>
             <span v-if="projectStore.working == false" class="due">
                <label>Due:</label><span>{{projectStore.dueDate}}</span>
             </span>
          </div>
       </div>
       <div  v-if="projectStore.hasDetail" class="project-main">
-         <ItemInfo />
-         <Equipment v-if="projectStore.detail.workflow.name != 'Vendor'"/>
-         <Workflow />
-         <Notes />
-         <History />
+         <div class="project-column">
+            <ItemInfo />
+            <Workflow />
+            <History />
+         </div>
+         <div class="project-column">
+            <Equipment v-if="projectStore.detail.workflow.name != 'Vendor'"/>
+            <Notes />
+         </div>
+         
       </div>
    </div>
 </template>
@@ -93,19 +98,13 @@ const backClicked = (() => {
    position: relative;
    padding: 0;
 
-   .due {
-         color: var(--uvalib-text);
-         font-size: 16px;
-         font-weight: 500;
-         background: var(--uvalib-blue-alt-light);
-         border: 1px solid var(--uvalib-blue-alt);
-         padding: 5px 15px;
-         margin-left: auto;
-      }
-
    label {
       font-weight: bold;
       margin-right: 5px;
+   }
+
+   h2  {
+      margin-bottom: 0px !important;
    }
 
    .project-head {
@@ -114,12 +113,13 @@ const backClicked = (() => {
       border-bottom: 1px solid var(--uvalib-grey-light);
       position: relative;
       margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
       h3  {
-         max-width: 90%;
          text-align: center;
          font-weight: 500;
          font-size: 1.25em;
-         margin: 5px auto 10px auto;
+         margin: 5px 0;
       }
       h4 {
          font-size: 0.9em;
@@ -145,7 +145,6 @@ const backClicked = (() => {
          display: flex;
          flex-flow: row nowrap;
          justify-content: center;
-         padding: 5px 0 5px 0;
          label {
             margin-left: 15px;
          }
@@ -156,14 +155,28 @@ const backClicked = (() => {
          justify-content: space-between;
          align-items: center;
          padding: 0 10px;
+         .due {
+            color: var(--uvalib-text);
+            font-size: 16px;
+            font-weight: 500;
+            background: var(--uvalib-blue-alt-light);
+            border: 1px solid var(--uvalib-blue-alt);
+            padding: 2px 8px;
+         }
       }
    }
    .project-main {
       padding: 20px 40px;
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 25px;
+      gap: 20px;
       align-items: start;
+      
+      .project-column {
+         display: flex;
+         flex-direction: column;
+         gap: 20px;    
+      }
    }
 }
 </style>

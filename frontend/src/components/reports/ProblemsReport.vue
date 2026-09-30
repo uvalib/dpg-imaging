@@ -4,8 +4,8 @@
       <div  v-if="reportStore.problems.loading" class="wait-wrap">
          <WaitSpinner message="Loading Problems report..."/>
       </div>
-      <div class="report">
-         <Chart type="bar" :data="reportStore.problems" :options="options"/>
+      <div v-else class="report">
+         <BarChart :data="reportStore.problems" :options="options" />
          <p class="error" v-if="reportStore.problems.error">{{reportStore.problems.error}}</p>
       </div>
    </div>
@@ -15,7 +15,7 @@
 import { ref } from 'vue'
 import {useReportStore} from '@/stores/reporting'
 import WaitSpinner from '@/components/WaitSpinner.vue'
-import Chart from 'primevue/chart'
+import BarChart from './BarChart.vue'
 
 const options = ref({
       responsive: true,

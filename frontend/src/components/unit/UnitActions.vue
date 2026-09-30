@@ -8,8 +8,8 @@
       <template v-if="projectStore.isManuscript">
          <BatchUpdateDialog :title="projectStore.detail.containerType.name" field="box" />
          <BatchUpdateDialog v-if="projectStore.detail.containerType.hasFolders" title="Folder" field="folder" />
+         <ComponentDialog />
       </template>
-      <ComponentDialog />
    </span>
 </template>
 
@@ -29,6 +29,8 @@ const projectStore = useProjectStore()
 .actions {
    display: flex;
    flex-flow: row wrap;
+   justify-content: flex-end;
+   align-items: center;
    gap: 10px;
 }
 </style>

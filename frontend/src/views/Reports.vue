@@ -4,21 +4,28 @@
       <span class="cfg">
          <span class="field">
             <label for="workflow-pick">Workflow:</label>
-            <select id="workflow-pick" v-model="reportStore.workflowID">
-               <option v-for="w in system.activeWorkflows" :value="w.id" :key="`wf${w.id}`">{{w.name}}</option>
-            </select>
+            <USelect id="workflow-pick" v-model="workflowID" :items="system.activeWorkflows" valueKey="id" labelKey="name" />
          </span>
-
          <span class="field">
             <label for="start">From:</label>
-            <DatePicker id="start" v-model="reportStore.startDate" showIcon :showOnFocus="false" dateFormat="yy-mm-dd"/>
+             <UPopover v-model:open="startOpen">
+               <UButton color="secondary" trailing-icon="i-lucide-calendar" :label="startDate.toString()"/>
+               <template #content>
+                  <UCalendar v-model="startDate" class="p-2" @update:modelValue="startOpen = false"/>
+               </template>
+            </UPopover>
          </span>
          <span class="field">
             <label for="end">To:</label>
-            <DatePicker id="end" v-model="reportStore.endDate" showIcon :showOnFocus="false" dateFormat="yy-mm-dd"/>
+            <UPopover v-model:open="endOpen">
+               <UButton color="secondary" trailing-icon="i-lucide-calendar" :label="endDate.toString()"/>
+               <template #content>
+                  <UCalendar v-model="endDate" class="p-2"  @update:modelValue="endOpen = false"/>
+               </template>
+            </UPopover>
          </span>
       </span>
-      <DPGButton label="Generate Reports" @click="loadStats" size="small"/>
+      <UButton label="Generate Reports" @click="loadStats()"/>
    </div>
    <div class="reports">
       <div class="column">
@@ -34,10 +41,10 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, shallowRef, ref } from 'vue'
 import {useReportStore} from '@/stores/reporting'
 import {useSystemStore} from '@/stores/system'
-import DatePicker from 'primevue/datepicker'
+import { today, getLocalTimeZone } from '@internationalized/date'
 import PageTimeReport from '@/components/reports/PageTimeReport.vue'
 import ProductivityReport from '@/components/reports/ProductivityReport.vue'
 import ProblemsReport from '@/components/reports/ProblemsReport.vue'
@@ -47,16 +54,27 @@ import RatesReport from '@/components/reports/RatesReport.vue'
 const reportStore = useReportStore()
 const system = useSystemStore()
 
+const startOpen = ref(false)
+const startDate = shallowRef( today( getLocalTimeZone() ).subtract({months: 3}) )
+const endOpen = ref(false)
+const endDate = shallowRef( today( getLocalTimeZone() ) )
+const workflowID = ref(1)
+
 onMounted( () => {
-   reportStore.init()
    loadStats()
+})
+
+const startPicked = (() => {
+  startOpen.value = false
 })
 
 const loadStats = (() => {
    reportStore.clearStats()
-   reportStore.getProductivityReport(reportStore.workflowID, reportStore.startDate, reportStore.endDate)
-   reportStore.getProblemsReport(reportStore.workflowID, reportStore.startDate, reportStore.endDate)
-   reportStore.getRateReports(reportStore.workflowID, reportStore.startDate, reportStore.endDate)
+   const start = startDate.value.toString()
+   const end = endDate.value.toString()
+   reportStore.getProductivityReport(workflowID.value, start, end)
+   reportStore.getProblemsReport(workflowID.value, start, end)
+   reportStore.getRateReports(workflowID.value, start, end)
 
 })
 
