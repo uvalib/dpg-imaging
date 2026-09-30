@@ -557,10 +557,17 @@ func (svc *serviceContext) validateImages(proj *project, tgtDir string, checkFol
 			svc.failStep(proj, "Metadata", "<p>Unable to extract metadata from images.</p>")
 			return fmt.Errorf("unable to extract metadata from images")
 		}
-		if problem.Type == "ERROR" {
+
+		if proj.CurrentStep.Name == "Finalize" {
+			// On the finalize step, any metdata issue is a failure
 			errorMsg += fmt.Sprintf("<li>%s - %s</li>", path.Base(problem.File), problem.Problem)
 		} else {
-			warnMsg += fmt.Sprintf("<li>%s - %s</li>", path.Base(problem.File), problem.Problem)
+			// in all other steps, some metadata errors are warnings and should not cause the step to fail
+			if problem.Type == "ERROR" {
+				errorMsg += fmt.Sprintf("<li>%s - %s</li>", path.Base(problem.File), problem.Problem)
+			} else {
+				warnMsg += fmt.Sprintf("<li>%s - %s</li>", path.Base(problem.File), problem.Problem)
+			}
 		}
 	}
 
