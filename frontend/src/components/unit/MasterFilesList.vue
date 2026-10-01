@@ -16,7 +16,7 @@
             @update:modelValue="unitStore.masterFileSelected(row.index)"/>
       </template>
       <template #image-cell="{ row }">
-         <RouterLink  @click="imageClicked" :to="`/projects/${projectStore.detail.id}/unit/images/${row.index+1}`">
+         <RouterLink  @click="imageClicked" :to="imageViewerURL(row.original.fileName)">
             <img :src="row.original.thumbURL"/>   
          </RouterLink>
       </template>
@@ -177,11 +177,12 @@ const columns = [
    },
    {
       accessorKey: 'fileSize',
-      header: "Size"
+      header: "Size",
+      cell: ({ row }) => `${row.original.width} x ${row.original.height}`
    },
    {
-      header: "Resolution",
-      cell: ({ row }) => `${row.original.width} x ${row.original.height}`
+      accessorKey: 'resolution',
+      header: "Resolution"
    },
    {
       accessorKey: 'colorProfile',
@@ -211,6 +212,11 @@ const columnVisibility = computed(() => {
 const headerHeight = computed(() => {
    let hdr = document.querySelector('header')
    return `${hdr.clientHeight}px`
+})
+
+const imageViewerURL = ((imageFilename) => {
+   const idx = unitStore.masterFiles.findIndex( mf => mf.fileName == imageFilename)
+   return `/projects/${projectStore.detail.id}/unit/images/${idx+1}`
 })
 
 const cancelEdit = (() => {
