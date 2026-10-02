@@ -93,11 +93,13 @@ const masterFiles = computed( () => {
 
 const showClicked = (() => {
    componentID.value = ""
+   startIdx.value = null
+   endIdx.value = null
    if (unitStore.rangeStartIdx > -1 ) {
-      startIdx.value = unitStore.rangeStartIdx
+      startIdx.value = unitStore.currStartIndex + unitStore.rangeStartIdx
    }
    if (unitStore.rangeEndIdx > -1 ) {
-      endIdx.value = unitStore.rangeEndIdx
+      endIdx.value = unitStore.currStartIndex + unitStore.rangeEndIdx
    }
    open.value = true
 })
