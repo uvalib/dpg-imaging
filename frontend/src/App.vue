@@ -89,6 +89,7 @@ const menuItems = computed(() => {
       menu.push( {label: "Equipment", icon: 'i-lucide-settings', to: "/equipment"} ) 
       menu.push( {label: "Reports", icon: 'i-lucide-chart-line', to: "/reports"} ) 
    }
+   menu.push( {label: "TrackSys", icon: 'i-lucide-database', to: `${systemStore.adminURL}`} )
    let msgLabel = "Messages"
    if ( messageStore.unreadMessageCount(userStore.ID) > 0 ) {
       msgLabel += ` (${messageStore.unreadMessageCount(userStore.ID)})`
