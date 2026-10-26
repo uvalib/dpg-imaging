@@ -124,6 +124,7 @@ export const useUnitStore = defineStore('unit', {
          this.component.type = ""
       },
       clearUnitDetails() {
+         console.log("CLEAR UNIT DETAIL")
          this.masterFilesPage = []
          this.masterFiles = []
          this.rangeStartIdx = -1
@@ -188,6 +189,7 @@ export const useUnitStore = defineStore('unit', {
          if (!mf) return
          if (mf.resolution) return
 
+         console.log("GET METADATA PAGE")
          const system = useSystemStore()
          this.working = true
          let mdURL = `/api/units/${ this.unitID}/masterfiles/metadata?file=${mf.path}`
