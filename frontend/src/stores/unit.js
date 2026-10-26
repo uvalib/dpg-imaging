@@ -124,11 +124,12 @@ export const useUnitStore = defineStore('unit', {
          this.component.type = ""
       },
       clearUnitDetails() {
-         this.masterFiles.splice(0, this.masterFiles.length)
+         this.masterFilesPage = []
+         this.masterFiles = []
          this.rangeStartIdx = -1
          this.rangeEndIdx = -1
          this.editMode = ""
-         this.problems.splice(0, this.problems.length)
+         this.problems = []
          this.viewMode = "list"
       },
 

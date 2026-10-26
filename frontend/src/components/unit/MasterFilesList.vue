@@ -10,7 +10,7 @@
       </div>
       <UnitActions />
    </div>
-   <UTable :data="unitStore.masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility" :ui="{tbody: 'mf-tbody'}">
+   <UTable v-if="unitStore.working == false" :data="unitStore.masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility" :ui="{tbody: 'mf-tbody'}">
       <template #select-cell="{ row }">
          <UCheckbox :modelValue="unitStore.masterFiles[row.index].selected" size="xl" 
             @update:modelValue="unitStore.masterFileSelected(row.index)"/>
@@ -20,7 +20,9 @@
             <img :src="row.original.thumbURL"/>   
          </RouterLink>
       </template>
-
+      <template #tag-cell="{ row }">
+         <TagPicker :masterFile="row.original" />
+      </template>
       <template #title-cell="{ row }">
          <template v-if="editInfo.field=='title' && row.original.fileName == editInfo.fileName">
             <TitlePicker v-model="editInfo.value" @cancel="cancelEdit" @submit="submitEdit"/>
@@ -89,16 +91,9 @@ import ViewMode from './ViewMode.vue'
 import UnitActions from '@/components/unit/UnitActions.vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import TitlePicker from "@/components/TitlePicker.vue"
-import { computed, h, ref  } from 'vue'
+import { computed, ref  } from 'vue'
 import { useSortable } from '@vueuse/integrations/useSortable'
 import { onKeyStroke } from '@vueuse/core'
-
-// NOTES: 
-//   The h above is short for hyperscript: javascript which produces html dynamically and injects them into the DOM.
-//   Because of the way nuxt-ui components are handled (injected at build time in templates and setup),
-//   using UCheckbox (or any nuxt component) in a column def cell reder will fill. The component cannot be resolved.
-//   To fix, create a dummy wrapper around the component and directly include it instead (like UCheckboxCell above).
-//   Then it use it in the cell render logic and it will be resolved.
 
 const route = useRoute()
 const router = useRouter()
@@ -143,8 +138,6 @@ const columns = [
    {
       id: 'tag',
       header: "Tag",
-      cell: ({ row }) => 
-         h(TagPicker, { masterFile: row.original })
    },
    {
       accessorKey: 'fileName',
