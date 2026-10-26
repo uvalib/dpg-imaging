@@ -64,6 +64,8 @@ const showClicked = (() => {
    startPage.value = "1"
    unnumberVerso.value = false
    error.value = ""
+   startIdx.value = null 
+   endIdx.value = null
    if (unitStore.rangeStartIdx > -1 ) {
       startIdx.value = unitStore.rangeStartIdx
    }

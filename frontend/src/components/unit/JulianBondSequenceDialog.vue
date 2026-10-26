@@ -65,10 +65,10 @@ const showClicked = (() => {
    startIdx.value = null
    endIdx.value = null
    if (unitStore.rangeStartIdx > -1 ) {
-      startIdx.value = unitStore.currStartIndex + unitStore.rangeStartIdx
+      startIdx.value = unitStore.rangeStartIdx
    }
    if (unitStore.rangeEndIdx > -1 ) {
-      endIdx.value = unitStore.currStartIndex + unitStore.rangeEndIdx
+      endIdx.value = unitStore.rangeEndIdx
    }
    open.value = true
 })

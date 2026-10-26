@@ -12,8 +12,8 @@
    </div>
    <UTable :data="unitStore.masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility" :ui="{tbody: 'mf-tbody'}">
       <template #select-cell="{ row }">
-         <UCheckbox :modelValue="unitStore.masterFiles[row.index].selected" size="xl" 
-            @update:modelValue="unitStore.masterFileSelected(row.index)"/>
+         <UCheckbox :modelValue="unitStore.masterFiles[currentStoreIndex(row)].selected" size="xl" 
+            @update:modelValue="unitStore.masterFileSelected(currentStoreIndex(row))"/>
       </template>
       <template #image-cell="{ row }">
          <RouterLink  @click="imageClicked" :to="imageViewerURL(row.original.fileName)">
@@ -223,6 +223,10 @@ const submitEdit = (() => {
       unitStore.updateMasterFileMetadata( editInfo.value.fileName, editInfo.value.field, editInfo.value.value)
    }
    editInfo.value = {fileName: "", field: "", orig: "", value: ""}
+})
+
+const currentStoreIndex = ( (row) => {
+   return (unitStore.currPage-1)*unitStore.pageSize+row.index
 })
 
 // The pageNum info is already in the store; just set it in the URL and request metadata
