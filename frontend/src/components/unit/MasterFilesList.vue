@@ -10,7 +10,7 @@
       </div>
       <UnitActions />
    </div>
-   <UTable v-if="unitStore.working == false" :data="unitStore.masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility" :ui="{tbody: 'mf-tbody'}">
+   <UTable :data="unitStore.masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility" :ui="{tbody: 'mf-tbody'}">
       <template #select-cell="{ row }">
          <UCheckbox :modelValue="unitStore.masterFiles[row.index].selected" size="xl" 
             @update:modelValue="unitStore.masterFileSelected(row.index)"/>

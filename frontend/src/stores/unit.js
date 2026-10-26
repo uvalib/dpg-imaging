@@ -189,14 +189,12 @@ export const useUnitStore = defineStore('unit', {
          if (!mf) return
          if (mf.resolution) return
 
-         console.log("GET METADATA PAGE")
          const system = useSystemStore()
          this.working = true
          let mdURL = `/api/units/${ this.unitID}/masterfiles/metadata?file=${mf.path}`
          return axios.get(mdURL).then(response => {
             this.setImageMetadata(response.data)
             this.working = false
-            console.log("METADATA PAGE LOADED")
          }).catch( e => {
             system.setError(e)
             this.working = false
@@ -204,7 +202,6 @@ export const useUnitStore = defineStore('unit', {
       },
 
       updateMasterFilesPage() {
-         console.log("UPDATE PAGE METADATA")
          // Pagination is wierd here; the store holds all file references, but maybe not all metadata.
          // The table just shows a subset of the total list. This function uses curr page num
          // and page size to get an array of masterfiles for the current page.
@@ -258,6 +255,7 @@ export const useUnitStore = defineStore('unit', {
                break
             }
          }
+
          if (needsData == false ) {
             this.updateMasterFilesPage()
             return
@@ -265,6 +263,7 @@ export const useUnitStore = defineStore('unit', {
 
          const system = useSystemStore()
          this.working = true
+         this.masterFilesPage = []
          let mdURL = `/api/units/${ this.unitID}/masterfiles/metadata?page=${this.currPage}&pagesize=${this.pageSize}`
          return axios.get(mdURL).then(response => {
             this.working = false
