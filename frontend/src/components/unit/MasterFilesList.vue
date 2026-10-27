@@ -16,7 +16,7 @@
             @update:modelValue="unitStore.masterFileSelected(currentStoreIndex(row))"/>
       </template>
       <template #image-cell="{ row }">
-         <RouterLink  @click="imageClicked" :to="imageViewerURL(row.original.fileName)" class="flex flex-col py-1 items-center">
+         <RouterLink  @click="imageClicked" :to="imageViewerURL(row.original.fileName)" class="w-8! h-auto! flex flex-col py-1 items-center">
             <img :src="row.original.thumbURL" class="w-[30px]! h-auto! border-2 border-brand-grey rounded-xs"/>   
          </RouterLink>
       </template>
