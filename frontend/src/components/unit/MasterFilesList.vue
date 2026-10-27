@@ -16,8 +16,8 @@
             @update:modelValue="unitStore.masterFileSelected(currentStoreIndex(row))"/>
       </template>
       <template #image-cell="{ row }">
-         <RouterLink  @click="imageClicked" :to="imageViewerURL(row.original.fileName)">
-            <img :src="row.original.thumbURL"/>   
+         <RouterLink  @click="imageClicked" :to="imageViewerURL(row.original.fileName)" class="flex flex-col py-1 items-center">
+            <img :src="row.original.thumbURL" class="w-[30px]! h-auto! border-2 border-brand-grey rounded-xs"/>   
          </RouterLink>
       </template>
       <template #tag-cell="{ row }">
@@ -78,7 +78,7 @@
       </template>
 
       <template #reorder-cell="{ }">
-         <UIcon name="i-lucide-arrow-down-up" class="size-6 cursor-grab text-brand-grey"/>
+         <UIcon name="i-lucide-arrow-down-up" class="handle size-6 cursor-grab text-brand-grey"/>
       </template>
    </UTable>
 </template>
@@ -104,6 +104,7 @@ const editInfo = ref({fileName: "", field: "", orig: "", value: ""})
 
 useSortable('.mf-tbody', unitStore.masterFilesPage, {
    animation: 150,
+   handle: '.handle',
    onEnd: (evt) => {
       unitStore.moveImage(evt.oldIndex, evt.newIndex)
    }
@@ -134,6 +135,12 @@ const columns = [
    },
    {
       id: 'image',
+      meta: {
+         class: {
+            th: "w-[65px]!",
+            td: "w-[65px]!"
+         }
+      }
    },
    {
       id: 'tag',
@@ -262,22 +269,8 @@ const imageClicked = (() => {
       gap: 10px;   
    }
 }
-.filename {
-   display: flex;
-   flex-flow: row nowrap;
-   gap: 10px;
-   align-items: center;
-   i.image-err {
-      font-size: 1.15em;
-      color: var(--uvalib-red-emergency);
-      cursor: pointer;
-   }
-}
 .undefined {
    font-style: italic;
    color: var(--uvalib-grey);
-}
-.nowrap {
-   white-space: nowrap;
 }
 </style>

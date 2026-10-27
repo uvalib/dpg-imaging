@@ -264,7 +264,9 @@ onBeforeMount( async () => {
          showSequenceControl: false,
          tileSources: unitStore.pageInfoURLs,
          initialPage: currPageIndex,
-         showFullPageControl: false
+         showFullPageControl: false,
+         navigatorDrawer: "canvas",
+         crossOriginPolicy: "Anonymous",
       })
       viewer.gestureSettingsMouse.clickToZoom = false
       viewer.addHandler("zoom", (data) => {
