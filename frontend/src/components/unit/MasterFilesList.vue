@@ -27,7 +27,7 @@
          <template v-if="editInfo.field=='title' && row.original.fileName == editInfo.fileName">
             <TitlePicker v-model="editInfo.value" @cancel="cancelEdit" @submit="submitEdit"/>
          </template>
-         <ULink v-else @click="startEdit('title', row)">
+         <ULink v-else @click="startEdit('title', row)" class="text-left whitespace-break-spaces">
             <span v-if="row.original.title">{{  row.original.title }}</span>
             <span v-else class="undefined">Undefined</span>
          </ULink>
@@ -38,7 +38,7 @@
             <UInput v-model="editInfo.value" class="w-full" autofocus
                @keydown.enter="submitEdit" @keydown.esc="cancelEdit" @keydown.tab="cancelEdit" />
          </template>
-         <ULink v-else @click="startEdit('description', row)">
+         <ULink v-else @click="startEdit('description', row)" class="text-left whitespace-break-spaces">
             <span v-if="row.original.description">{{  row.original.description }}</span>
             <span v-else class="undefined">Undefined</span>
          </ULink>
@@ -135,12 +135,6 @@ const columns = [
    },
    {
       id: 'image',
-      meta: {
-         class: {
-            th: "w-[65px]!",
-            td: "w-[65px]!"
-         }
-      }
    },
    {
       id: 'tag',
@@ -152,7 +146,7 @@ const columns = [
    },
    {
       accessorKey: 'title',
-      header: "Title"
+      header: "Title",
    },
    {
       accessorKey: 'description',
