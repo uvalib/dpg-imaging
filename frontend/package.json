@@ -17,21 +17,21 @@
     "openseadragon": "^6.1.1",
     "pinia": "^4.1.0",
     "sortablejs": "^1.15.7",
-    "tailwindcss": "^4.3.3",
-    "vue": "^3.5.44",
+    "tailwindcss": "^4.3.4",
+    "vue": "^3.5.45",
     "vue-chartjs": "^5.3.4",
     "vue-router": "^5.4.0",
     "vue3-cookies": "^1.0.6"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.10",
-    "sass-embedded": "^1.106.1",
-    "vite": "^8.3.5"
+    "sass-embedded": "^1.108.0",
+    "vite": "^8.3.6"
   },
   "allowScripts": {
     "vue-demi@0.14.10": true,
-    "esbuild@0.27.7": true,
     "fsevents@2.3.3": true,
-    "@parcel/watcher@2.6.0": true
+    "@parcel/watcher@2.6.0": true,
+    "esbuild@0.27.2": true
   }
 }

@@ -124,7 +124,6 @@ export const useUnitStore = defineStore('unit', {
          this.component.type = ""
       },
       clearUnitDetails() {
-         console.log("CLEAR UNIT DETAIL")
          this.masterFilesPage = []
          this.masterFiles = []
          this.rangeStartIdx = -1
@@ -276,21 +275,17 @@ export const useUnitStore = defineStore('unit', {
          })
       },
 
-      deleteSelectedMasterFiles() {
+      deleteMasterFiles( files ) {
          const system = useSystemStore()
          this.working = true
-         let data = []
-         for (let i=this.rangeStartIdx; i<=this.rangeEndIdx; i++) {
-            let mf = this.masterFiles[i]
-            data.push( mf.fileName )
-         }
-         axios.post(`/api/units/${this.unitID}/delete`, {filenames: data}).then( () => {
-            data.forEach( fn => {
+         axios.post(`/api/units/${this.unitID}/delete`, {filenames: files}).then( () => {
+            files.forEach( fn => {
                let idx = this.masterFiles.findIndex( mf => mf.fileName == fn)
                if (idx > -1 ) {
                   this.masterFiles.splice(idx, 1)
                }
             })
+            this.updateMasterFilesPage()
             this.working = false
          }).catch( e => {
             system.setError(e)

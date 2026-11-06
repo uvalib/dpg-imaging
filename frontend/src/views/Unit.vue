@@ -88,14 +88,20 @@ function paddedUnit() {
 }
 
 const handleDelete = ( async () => {
+   let files = []
+   for (let i=unitStore.rangeStartIdx; i<=unitStore.rangeEndIdx; i++) {
+      let mf = unitStore.masterFiles[i]
+      files.push( mf.fileName )
+   }
    let msg = `<div style="display:flex; flex-direction: column; gap: 5px; align-items: flex-start;">
-               <div>Delete the selected images? All data will be lost.</div>
-               <div>This is not reversable.</div>
+               <div>Delete these images?<div>
+               <div style="margin: 0 0 15px 10px; font-size: 0.9em">${files.join(", ")}</div>
+               <div>All data will be list. This is not reversable.</div>
                <div>Are you sure?</div>
             </div>`
    const resp = await useConfirm("Confirm Image Delete", msg, "Delete")
    if (resp) {
-      unitStore.deleteSelectedMasterFiles()
+      unitStore.deleteMasterFiles( files )
    } 
 })
 
