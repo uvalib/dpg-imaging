@@ -59,7 +59,7 @@ export default defineConfig({
             },
             checkbox: {
                slots: {
-                  label: "pl-2",
+                  label: "pl-2 font-medium!",
                   base: "hover:bg-brand-blue-alt-300 cursor-pointer! disabled:opacity-40 disabled:bg-brand-grey-100 disabled:cursor-not-allowed!"
                },
                variants: {

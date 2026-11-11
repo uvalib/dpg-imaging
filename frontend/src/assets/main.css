@@ -82,6 +82,25 @@
 }
 
 
+.row-wrap {
+   @apply flex flex-row flex-wrap justify-start;
+}
+.row-right {
+   @apply flex flex-row flex-nowrap justify-end items-center;
+}
+.row-center {
+   @apply flex flex-row flex-nowrap justify-center items-center;
+}
+.row-left {
+   @apply flex flex-row flex-nowrap justify-start;
+}
+.row-between {
+   @apply flex flex-row flex-nowrap justify-between;
+}
+.column {
+   @apply flex flex-col;
+}
+
 /* input[type=text],
 select,
 textarea {

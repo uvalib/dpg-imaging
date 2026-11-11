@@ -1,55 +1,53 @@
 <template>
-   <div class="project">
-      <h2>Digitization Project #{{route.params.id}}</h2>
-      <WaitSpinner v-if="projectStore.working" :overlay="true" message="Working..." />
-      <div v-if="projectStore.hasDetail" class="project-head">
-         <h3>
-            <a target="_blank" :href="metadataLink">{{detail.title}}</a>
-         </h3>
-         <div class="row">
-            <div>
-               <label>Customer:</label>
-               <span class="data">{{ systemStore.getCustomerName(detail.customerID) }}</span>
-            </div>
-            <div v-if="detail.agencyID > 0">
-               <label>Agency:</label>
-               <span class="data">{{ systemStore.getAgency(detail.agencyID) }}</span>
-            </div>
-            <div>
-               <label>Intended Use:</label>
-               <span class="data">{{detail.intendedUse}}</span>
-            </div>
+   <h2 class="mb-0!">Digitization Project #{{route.params.id}}</h2>
+   <WaitSpinner v-if="projectStore.working" :overlay="true" message="Working..." />
+   <div v-if="projectStore.hasDetail" class="column gap-1 items-center border-b border-brand-grey-100 pb-4">
+      
+         <a target="_blank" :href="metadataLink">{{detail.title}}</a>
+      
+      <div class="row-center gap-6">
+         <div class="row-left gap-2">
+            <label class="font-bold!">Customer:</label>
+            <span class="data">{{ systemStore.getCustomerName(detail.customerID) }}</span>
          </div>
-         <div class="row">
-            <div>
-               <label>Unit:</label>
-               <a target="_blank" :href="`${systemStore.adminURL}/units/${detail.unitID}`">{{detail.unitID}}</a>
-            </div>
-            <div>
-               <label>Order:</label>
-               <a target="_blank" :href="`${systemStore.adminURL}/orders/${detail.orderID}`">{{detail.orderID}}</a>
-            </div>
+         <div v-if="detail.agencyID > 0" class="row-left gap-2">
+            <label class="font-bold!">Agency:</label>
+            <span class="data">{{ systemStore.getAgency(detail.agencyID) }}</span>
          </div>
+         <div class="row-left gap-2">
+            <label class="font-bold!">Intended Use:</label>
+            <span class="data">{{detail.intendedUse}}</span>
+         </div>
+      </div>
+      <div class="row-center gap-6">
+         <div class="row-left gap-2">
+            <label class="font-bold!">Unit:</label>
+            <a target="_blank" :href="`${systemStore.adminURL}/units/${detail.unitID}`">{{detail.unitID}}</a>
+         </div>
+         <div class="row-left gap-2">
+            <label class="font-bold!">Order:</label>
+            <a target="_blank" :href="`${systemStore.adminURL}/orders/${detail.orderID}`">{{detail.orderID}}</a>
+         </div>
+      </div>
 
-         <div class="back">
-            <UButton icon="i-lucide-arrow-left" label="Back to projects" @click="backClicked" size="sm" color="secondary"/>
-            <span v-if="projectStore.working == false" class="due">
-               <label>Due:</label><span>{{projectStore.dueDate}}</span>
-            </span>
-         </div>
+      <div class="row-between px-4 w-full">
+         <UButton icon="i-lucide-arrow-left" label="Back to projects" @click="backClicked" size="sm" color="secondary"/>
+         <span v-if="projectStore.working == false" class="row-left gap-2 bg-brand-blue-alt-300 px-2 py-0.5 border border-brand-blue-alt">
+            <label class="font-bold!">Due:</label><span>{{projectStore.dueDate}}</span>
+         </span>
       </div>
-      <div  v-if="projectStore.hasDetail" class="project-main">
-         <div class="project-column">
-            <ItemInfo />
-            <Workflow />
-            <History />
-         </div>
-         <div class="project-column">
-            <Equipment v-if="projectStore.detail.workflow.name != 'Vendor'"/>
-            <Notes />
-         </div>
-         
+   </div>
+   <div  v-if="projectStore.hasDetail" class="project-main">
+      <div class="column gap-6">
+         <ItemInfo />
+         <Workflow />
+         <History />
       </div>
+      <div class="column gap-6">
+         <Equipment v-if="projectStore.detail.workflow.name != 'Vendor'"/>
+         <Notes />
+      </div>
+      
    </div>
 </template>
 
@@ -94,89 +92,11 @@ const backClicked = (() => {
 </script>
 
 <style scoped lang="scss">
-.project {
-   position: relative;
-   padding: 0;
-
-   label {
-      font-weight: bold;
-      margin-right: 5px;
-   }
-
-   h2  {
-      margin-bottom: 0px !important;
-   }
-
-   .project-head {
-      color: var(--uvalib-text);
-      padding-bottom: 15px;
-      border-bottom: 1px solid var(--uvalib-grey-light);
-      position: relative;
-      margin-bottom: 10px;
-      display: flex;
-      flex-direction: column;
-      h3  {
-         text-align: center;
-         font-weight: 500;
-         font-size: 1.25em;
-         margin: 5px 0;
-      }
-      h4 {
-         font-size: 0.9em;
-         display: flex;
-         flex-flow: row nowrap;
-         justify-content: center;
-         margin: 5px 0;
-
-         label {
-            margin-right: 10px;
-            width: 100px;
-            display: inline-block;
-            text-align: right;
-         }
-         .data {
-            font-weight: 500;
-         }
-         div {
-            margin: 5px 0;
-         }
-      }
-      .row  {
-         display: flex;
-         flex-flow: row nowrap;
-         justify-content: center;
-         label {
-            margin-left: 15px;
-         }
-      }
-      .back {
-         display: flex;
-         flex-flow: row nowrap;
-         justify-content: space-between;
-         align-items: center;
-         padding: 0 10px;
-         .due {
-            color: var(--uvalib-text);
-            font-size: 16px;
-            font-weight: 500;
-            background: var(--uvalib-blue-alt-light);
-            border: 1px solid var(--uvalib-blue-alt);
-            padding: 2px 8px;
-         }
-      }
-   }
-   .project-main {
-      padding: 20px 40px;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
-      align-items: start;
-      
-      .project-column {
-         display: flex;
-         flex-direction: column;
-         gap: 20px;    
-      }
-   }
+.project-main {
+   padding: 20px 40px;
+   display: grid;
+   grid-template-columns: repeat(2, 1fr);
+   gap: 20px;
+   align-items: start;
 }
 </style>

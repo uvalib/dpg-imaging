@@ -1,6 +1,6 @@
 <template>
-   <div class="grid-view sticky z-50" :style="{top: headerHeight}">
-      <div class="control-group">
+   <div class="sticky z-50 row-between p-4 bg-white border-t border-b border-brand-grey-100" :style="{top: headerHeight}">
+      <div class="row-left gap-2">
          <ViewMode />
          <UPagination  v-if="unitStore.totalFiles > unitStore.pageSize" color="neutral" variant="ghost"
             v-model:page="unitStore.currPage" :items-per-page="unitStore.pageSize" 
@@ -10,51 +10,51 @@
       </div>
       <UnitActions />
    </div>
-   <div class="gallery">
+   <div class="row-wrap gap-6 p-6 bg-gray-100">
       <UCard v-for="(image,idx) in unitStore.masterFilesPage" :key="image.fileName" :id="image.fileName">
          <template #header>
-            <div class="card-title">
+            <div class="row-between">
                <UCheckbox :modelValue="unitStore.masterFiles[idx].selected" @update:modelValue="unitStore.masterFileSelected(idx)"
                   size="xl" :label="image.fileName"
                />
                <UIcon name="i-lucide-move" class="size-6 cursor-grab text-brand-grey"/>
             </div>
          </template>
-         <div class="content">
+         <div class="content" :class="{medium: unitStore.viewMode == 'medium', large: unitStore.viewMode == 'large'}">
             <RouterLink :to="imageViewerURL(image)" @click="imageClicked">
                <img :src="image.mediumURL" v-if="unitStore.viewMode == 'medium'" />
                <img :src="image.largeURL" v-if="unitStore.viewMode == 'large'" />
             </RouterLink>
             <TagPicker :masterFile="image" display="wide" />
-            <div class="metadata">
-               <div class="row">
+            <div class="column gap-1 items-start pt-4">
+               <div class="column items-start">
                   <label>Title:</label>
                   <template v-if="editInfo.field=='title' && image.fileName == editInfo.fileName">
                      <TitlePicker v-model="editInfo.value" @cancel="cancelEdit" @submit="submitEdit"/>
                   </template>
-                  <ULink v-else @click="startEdit(idx, 'title', image)">
-                     <span v-if="image.title">{{  image.title }}</span>
-                     <span v-else class="undefined">Undefined</span>
+                  <ULink v-else @click="startEdit(idx, 'title', image)" class="text-left whitespace-break-spaces pl-2">
+                     <template v-if="image.title">{{  image.title }}</template>
+                     <template v-else class="italic">Undefined</template>
                   </ULink>
                </div>   
-               <div class="row">
+               <div class="column items-start">
                   <label>Caption:</label>
                   <template v-if="editInfo.field=='description' && image.fileName == editInfo.fileName">
                      <TitlePicker v-model="editInfo.value" @cancel="cancelEdit" @submit="submitEdit"/>
                   </template>
-                  <ULink v-else @click="startEdit(idx, 'description', image)">
-                     <span v-if="image.description">{{  image.description }}</span>
-                     <span v-else  class="undefined">Undefined</span>
+                  <ULink v-else @click="startEdit(idx, 'description', image)" class="text-left whitespace-break-spaces pl-2">
+                     <template v-if="image.description">{{  image.description }}</template>
+                     <template v-else  class="italic">Undefined</template>
                   </ULink>
                </div> 
                <template v-if="projectStore.isManuscript">
-                  <div class="row">
+                  <div class="column items-start">
                      <label>Location:</label>
-                     <div class="data pl-2">{{ image.location }}</div>
+                     <div class="data pl-4">{{ image.location }}</div>
                   </div> 
-                  <div class="row" v-if="image.componentID">
+                  <div class="column items-start" v-if="image.componentID">
                      <label>Component</label>
-                     <div class="data pl-2">{{ image.componentID }}</div>
+                     <div class="data pl-4">{{ image.componentID }}</div>
                   </div> 
                </template>
             </div>
@@ -150,89 +150,14 @@ const submitEdit = (() => {
 </script>
 
 <style lang="scss" scoped>
-.grid-view {
-   padding: 15px;
-   background: white;
-   border-top: 1px solid var(--uvalib-grey-light);
-   border-bottom: 1px solid var(--uvalib-grey-light);
-   display: flex;
-   flex-flow: row wrap;
-   justify-content: space-between;
-   align-items: center;
-   .control-group {
-      display: flex;
-      flex-flow: row wrap;
-      justify-content: flex-start;
-      align-items: center;
-      gap: 10px;   
-   }
+.content label {
+   font-weight: bold;
+   font-size: 0.9em;
 }
-.undefined {
-   font-style: italic;
+.content.medium {
+   max-width: 250px;
 }
-
-div.gallery {
-   padding: 15px;
-   text-align: left;
-   background: #e5e5e5;
-   display: flex;
-   flex-flow: row wrap;
-   justify-content: flex-start;
-   align-content: flex-start;
-   gap: 10px;
-
-   .card-title {
-      display: flex;
-      flex-flow: row nowrap;
-      justify-content: space-between;
-      align-items: center;
-   }
-
-   .content {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      .metadata {
-         text-align: left;
-         font-size: 0.9em;
-         display: flex;
-         flex-direction: column;
-         align-items: flex-start;
-         .row {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start; 
-         }
-         label {
-            font-weight: bold;
-         }
-
-         div.data {
-            margin: 5px 0 0 0;
-            text-align: left;
-         }
-      }
-   }
-}
-
-div.gallery.medium {
-   .card .metadata .data {
-      max-width: 230px;
-   }
-}
-
-div.gallery.large {
-   .card .metadata .data {
-      max-width: 380px;
-   }
-}
-
-.editable {
-   cursor: pointer;
-
-   &:hover {
-      text-decoration: underline;
-      color: var(--uvalib-blue-alt) !important;
-   }
+.content.large {
+   max-width: 400px;
 }
 </style>
