@@ -619,7 +619,7 @@ func (svc *serviceContext) assignProject(c *gin.Context) {
 			now := time.Now()
 			newA := assignment{ProjectID: proj.ID, StepID: *proj.CurrentStepID, StaffMemberID: out.OwnerID, AssignedAt: &now}
 			if err := svc.DB.Create(&newA).Error; err != nil {
-				log.Printf("ERROR: unable to create new assignment for project %d step %d: %s", proj.ID, proj.CurrentStepID, err.Error())
+				log.Printf("ERROR: unable to create new assignment for project %d step %d: %s", proj.ID, *proj.CurrentStepID, err.Error())
 				c.String(http.StatusInternalServerError, err.Error())
 				return
 			}

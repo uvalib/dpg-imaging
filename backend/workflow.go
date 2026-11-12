@@ -332,30 +332,6 @@ func (svc *serviceContext) validateFinishStep(proj *project, checkFolders bool) 
 		return errors.New("manuscript is missing container type")
 	}
 
-	//  When finishing the final QA step, call finalize on the viewer to cleanup up and apply final metadata to each image
-	if proj.CurrentStep.NextStepID > 0 && svc.nextStepName(proj) == "Finalize" {
-		log.Printf("INFO: finishing final qa step; prep images for finalization in unit %d", proj.UnitID)
-		resp, err := svc.finalizeUnitData(proj)
-		if err != nil {
-			log.Printf("ERROR: unable to prep unit [%d}] for finalization: %s", proj.UnitID, err.Error())
-			msg := "<p>Prep for finalization failed</p>"
-			msg += fmt.Sprintf("<p>DPG Imaging was unable to prep the unit for finalization: %s</p>", err.Error())
-			svc.failStep(proj, "Other", msg)
-			return fmt.Errorf("unable to prep unit for finalization: %s", err.Error())
-		}
-
-		if !resp.Success {
-			log.Printf("INFO: unit %d has finalize preparation errors: %v", proj.UnitID, resp.Problems)
-			msg := "<p>Prep for finalization failed</p>"
-			for _, p := range resp.Problems {
-				msg += fmt.Sprintf("<p>%s: %s</p>", p.File, p.Problem)
-			}
-			svc.failStep(proj, "Other", msg)
-			return fmt.Errorf("unit %d has finalization problems", proj.UnitID)
-		}
-		log.Printf("INFO: unit %d data has been finalized", proj.UnitID)
-	}
-
 	// Make sure  directory is clean and in proper structure
 	imagesMovedToFinalize := false
 	unitDir := padLeft(fmt.Sprintf("%d", proj.UnitID), 9)
@@ -389,15 +365,17 @@ func (svc *serviceContext) validateFinishStep(proj *project, checkFolders bool) 
 		if err != nil {
 			return err
 		}
+
+		// this ensures title, box, folder info is present in the headers
 		err = svc.validateImages(proj, tgtDir, checkFolders)
 		if err != nil {
 			return err
 		}
 	}
 
-	// Files get moved in two places; after Process and Finalization. Handle the case of a retried finalize when files have already been moved
 	switch proj.CurrentStep.Name {
 	case "Process":
+		// move from scan to dpg_imaging folder
 		srcDir := path.Join(svc.ScanDir, unitDir)
 		tgtDir := path.Join(svc.ImagesDir, unitDir)
 		moveErr := svc.moveFiles(proj, srcDir, tgtDir)
@@ -405,6 +383,28 @@ func (svc *serviceContext) validateFinishStep(proj *project, checkFolders bool) 
 			return moveErr
 		}
 	case "Finalize":
+		// clean up headers, then move to finalize
+		log.Printf("INFO: prep images for finalization in unit %d", proj.UnitID)
+		resp, err := svc.finalizeUnitData(proj)
+		if err != nil {
+			log.Printf("ERROR: unable to prep unit [%d}] for finalization: %s", proj.UnitID, err.Error())
+			msg := "<p>Prep for finalization failed</p>"
+			msg += fmt.Sprintf("<p>DPG Imaging was unable to prep the unit for finalization: %s</p>", err.Error())
+			svc.failStep(proj, "Other", msg)
+			return fmt.Errorf("unable to prep unit for finalization: %s", err.Error())
+		}
+
+		if !resp.Success {
+			log.Printf("INFO: unit %d has finalize preparation errors: %v", proj.UnitID, resp.Problems)
+			msg := "<p>Prep for finalization failed</p>"
+			for _, p := range resp.Problems {
+				msg += fmt.Sprintf("<p>%s: %s</p>", p.File, p.Problem)
+			}
+			svc.failStep(proj, "Other", msg)
+			return fmt.Errorf("unit %d has finalization problems", proj.UnitID)
+		}
+		log.Printf("INFO: unit %d data has been finalized", proj.UnitID)
+
 		if !imagesMovedToFinalize {
 			srcDir := path.Join(svc.ImagesDir, unitDir)
 			tgtDir := path.Join(svc.FinalizeDir, unitDir)
