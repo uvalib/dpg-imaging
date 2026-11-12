@@ -10,7 +10,7 @@
       </div>
       <UnitActions />
    </div>
-   <div class="row-wrap gap-6 p-6 bg-gray-100">
+   <div class="gallery row-wrap gap-6 p-6 bg-gray-100">
       <UCard v-for="(image,idx) in unitStore.masterFilesPage" :key="image.fileName" :id="image.fileName">
          <template #header>
             <div class="row-between">
@@ -107,7 +107,6 @@ const headerHeight = computed(() => {
    let hdr = document.querySelector('header')
    return `${hdr.clientHeight}px`
 })
-
 
 useSortable('.gallery', unitStore.masterFilesPage, {
    animation: 150,
