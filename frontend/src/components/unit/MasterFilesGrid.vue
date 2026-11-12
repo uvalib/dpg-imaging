@@ -14,9 +14,8 @@
       <UCard v-for="(image,idx) in unitStore.masterFilesPage" :key="image.fileName" :id="image.fileName">
          <template #header>
             <div class="row-between">
-               <UCheckbox :modelValue="unitStore.masterFiles[idx].selected" @update:modelValue="unitStore.masterFileSelected(idx)"
-                  size="xl" :label="image.fileName"
-               />
+               <UCheckbox :modelValue="unitStore.masterFiles[currentStoreIndex(idx)].selected" size="xl" 
+                  @update:modelValue="unitStore.masterFileSelected(currentStoreIndex(idx))" :label="image.fileName"/>
                <UIcon name="i-lucide-move" class="size-6 cursor-grab text-brand-grey"/>
             </div>
          </template>
@@ -117,6 +116,10 @@ useSortable('.gallery', unitStore.masterFilesPage, {
 
 const imageClicked = (() => {
    unitStore.lastURL = route.fullPath
+})
+
+const currentStoreIndex = ( (imgIndex) => {
+   return (unitStore.currPage-1)*unitStore.pageSize+imgIndex
 })
 
 // The pageNum info is already in the store; just set it in the URL and request metadata
