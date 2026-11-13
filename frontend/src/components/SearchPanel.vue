@@ -1,53 +1,53 @@
 <template>
-   <div class="search sticky z-50" :style="{top: headerHeight}">
-      <h3>Search</h3>
-      <div class="form">
-         <div class="row">
+   <div class="sticky z-50 h-fit border border-brand-grey-50 w-60" :style="{top: headerHeight}">
+      <h3 class="bg-brand-blue-alt-300 p-1 border-b border-brand-grey-50 text-center">Search</h3>
+      <div class="text-sm bg-white p-2 column gap-2">
+         <div class="column gap-1">
             <label for="workflow">Workflow</label>
             <USelect id="workflow" v-model="searchStore.search.workflow" :items="workflows" value-key="id" @change="doSearch()"/>
          </div>
 
-         <div class="row">
+         <div class="column gap-1">
             <label for="step">Step</label>
             <USelect id="step" v-model="searchStore.search.step" :items="steps" value-key="id" @change="doSearch()"/>
          </div>
 
-         <div class="row">
+         <div class="column gap-1">
             <label for="assigned">Assigned To</label>
             <USelectMenu id="assigned" v-model="searchStore.search.assignedTo" :items="staffMembers" value-key="id"  @change="doSearch()"/>
          </div>
 
-         <div class="row">
+         <div class="column gap-1">
             <label for="order">Order</label>
             <UInput type="text"  id="order"  v-model="searchStore.search.orderID" @keyup.enter="doSearch()" />
          </div>
 
-         <div class="row">
+         <div class="column gap-1">
             <label for="unit">Unit</label>
             <UInput type="text" id="unit" v-model="searchStore.search.unitID" @keyup.enter="doSearch()" />
          </div>
 
-         <div class="row">
+         <div class="column gap-1">
             <label for="call">Call Number</label>
             <UInput type="text" id="call" v-model="searchStore.search.callNumber" @keyup.enter="doSearch()" />
          </div>
 
-         <div class="row">
+         <div class="column gap-1">
             <label for="customer">Customer</label>
             <USelectMenu id="customer" v-model="searchStore.search.customer" :items="customers" value-key="id"  @change="doSearch()" virtualize/>
          </div>
 
-         <div class="row">
+         <div class="column gap-1">
             <label for="agency">Agency</label>
             <USelectMenu id="agency" v-model="searchStore.search.agency" :items="agencies" value-key="id"  @change="doSearch()" virtualize/>
          </div>
 
-         <div class="row">
+         <div class="column gap-1">
             <label for="workstation">Workstation</label>
             <USelect id="workstation" v-model="searchStore.search.workstation" :items="workstations" value-key="id" @change="doSearch()"/>
          </div>
       </div>
-      <div class="buttons">
+      <div class="row-right gap-2 p-4">
          <UButton color="secondary" size="sm" @click="resetSearch" label="Reset Search"/>
          <UButton color="secondary" size="sm" @click="doSearch" label="Search"/>
       </div>
@@ -189,44 +189,4 @@ const doSearch = ( async () => {
 </script>
 
 <style scoped lang="scss">
-.search {
-   width: 20%;
-   min-width: 275px;
-
-   h3 {
-      text-align: center;
-      padding: 5px;
-      margin: 0;
-      background: var(--uvalib-blue-alt-light);
-      border: 1px solid var(--uvalib-grey);
-      font-size: 1em;
-      font-weight: normal;
-   }
-   .form {
-      font-size: 0.9em;
-      background: white;
-      text-align: left;
-      padding: 15px;
-      display: flex;
-      flex-direction: column;
-      row-gap: 10px;
-      border-left: 1px solid var(--uvalib-grey);
-      border-right: 1px solid var(--uvalib-grey);
-      div.row {
-         display: flex;
-         flex-direction: column;
-         row-gap: 2px;
-      }
-   }
-   .buttons {
-      border: 1px solid var(--uvalib-grey);
-      border-top: 0;
-      background: white;
-      padding: 0 15px 15px 15px;
-      display: flex;
-      flex-flow: row nowrap;
-      justify-content: flex-end;
-      gap: 10px;
-   }
-}
 </style>

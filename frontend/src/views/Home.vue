@@ -1,102 +1,101 @@
 <template>
-   <div class="home">
-      <WaitSpinner v-if="searchStore.working" :overlay="true" message="Loading projects..." />
-      <div class="project-board">
-         <SearchPanel />
-         <template v-if="searchStore.working == false">
-            <div class="none" v-if="!searchStore.working && searchStore.projects.length == 0">
-               No projects match your search criteria
-            </div>
-            <ul v-else class="projects">
-               <li class="card" v-for="(p,idx) in searchStore.projects" :key="`p${p.id}`" :class="{finished: p.finishedAt}">
-                  <div class="top">
-                     <div class="due">
-                        <span>
-                           <label>Date Due:</label><span>{{searchStore.dueDate(idx)}}</span>
-                        </span>
-                        <span class="status-section">
-                           <span class="status-msg overdue" v-if="isOverdue(idx) && !p.finishedAt">OVERDUE</span>
-                           <UIcon v-if="searchStore.hasError(idx) && !p.finishedAt" name="i-lucide-circle-alert" 
-                              class="size-8 bg-brand-red-B text-white rounded-full" /> 
-                        </span>
-                        <span v-if="p.finishedAt">
-                           <label>Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span>
-                           <div class="time" v-if="p.totalDuration">
-                              <label>Duration:</label>
-                              <span>{{ p.totalDuration }} mins</span>
-                           </div>
-                        </span>
-                     </div>
-                     <router-link :to="`/projects/${p.id}`">
-                        <div class="title">
-                           <div class="project-id">
-                              <span>
-                                 <label>Project:</label><span>{{p.id}}</span>
-                              </span>
-                              <span v-if="p.imageCount > 0">
-                                 <label>Images:</label><span>{{p.imageCount}}</span>
-                              </span>
-                           </div>
-                           <div>{{p.title}}</div>
+   <WaitSpinner v-if="searchStore.working" :overlay="true" message="Loading projects..." />
+   <div class="row-wrap p-6 gap-5 relative">
+      <SearchPanel />
+      <template v-if="searchStore.working == false">
+         <div class="text-2xl text-center grow pt-15" v-if="!searchStore.working && searchStore.projects.length == 0">
+            No projects match your search criteria
+         </div>
+         <ul v-else class="row-wrap gap-6 grow">
+            <li class="relative w-1 min-w-24/50 border border-brand-grey text-sm h-fit" v-for="(p,idx) in searchStore.projects" :key="`p${p.id}`" :class="{finished: p.finishedAt}">
+               <div class="border-b border-brand-grey bg-brand-grey-200 column">
+                  <div class="bg-brand-grey-100 p-2 border-b border-brand-grey row-between items-center">
+                     <span class="row-left gap-2">
+                        <label class="font-bold!">Date Due:</label><span>{{searchStore.dueDate(idx)}}</span>
+                     </span>
+                     <span class="row-right gap-2">
+                        <span class="bg-brand-orange text-white px-2 font-bold!" v-if="isOverdue(idx) && !p.finishedAt">OVERDUE</span>
+                        <UIcon v-if="searchStore.hasError(idx) && !p.finishedAt" name="i-lucide-alert-circle" 
+                           class="size-7 bg-red-700 text-red-100 rounded-full" /> 
+                     </span>
+                     <span class="column" v-if="p.finishedAt">
+                        <div class="row-right gap-1">
+                           <label class="font-bold!">Finished:</label><span>{{p.finishedAt.split("T")[0]}}</span>
                         </div>
-                     </router-link>
-                  </div>
-                  <div class="data">
-                     <dl>
-                        <dt>Customer:</dt>
-                        <dd>{{ systemStore.getCustomerName(p.customerID) }} </dd>
-                        <template v-if="p.agencyID > 0">
-                           <dt>Agency:</dt>
-                           <dd>{{ systemStore.getAgency(p.agencyID)}}</dd>
-                        </template>
-                        <dt>Call Number:</dt>
-                        <dd>
-                           <span v-if="p.callNumber">{{p.callNumber}}</span>
-                           <span v-else class="na">N/A</span>
-                        </dd>
-                        <dt>Intended Use:</dt>
-                        <dd>{{ p.intendedUse }}</dd>
-                     </dl>
-                     <dl class="right">
-                        <dt>Order:</dt>
-                        <dd><a target="_blank" :href="`${systemStore.adminURL}/orders/${p.orderID}`">{{p.orderID}}</a></dd>
-                        <dt>Unit:</dt>
-                        <dd><a target="_blank" :href="`${systemStore.adminURL}/units/${p.unitID}`">{{p.unitID}}</a></dd>
-                        <dt>Workflow:</dt>
-                        <dd>{{p.workflow.name}}</dd>
-                        <dt>Category:</dt>
-                        <dd>{{p.category.name}}</dd>
-                     </dl>
-                  </div>
-                  <div class="special-instructions" v-if="p.specialInstructions">
-                     <label>Special Instructions:</label>
-                     <p>{{p.specialInstructions}}</p>
-                  </div>
-                  <div class="status" v-if="!p.finishedAt || p.finishedAt == ''">
-                     <div class="progress-panel">
-                        <span :class="{error: searchStore.hasError(idx)}">{{searchStore.statusText(p.id)}}</span>
-                        <div class="progress-bar" v-if="p.currentStep">
-                           <div class="percentage" :style="{width: searchStore.percentComplete(p.id) }"></div>
+                        <div class="row-right gap-1" v-if="p.totalDuration">
+                           <label class="font-bold!">Duration: </label>
+                           <span>{{ p.totalDuration }} mins</span>
                         </div>
-                     </div>
-                     <div class="owner-panel">
-                        <span class="assignment">
-                           <UIcon name="i-lucide-user"/> 
-                           <span v-if="!p.owner" class="unassigned">Unassigned</span>
-                           <span v-else class="assigned">{{ownerInfo(p)}}</span>
-                        </span>
-                        <span class="owner-buttons">
-                           <UButton @click="deleteProjectClicked(p)" class="delete" color="error" v-if="userStore.isSupervisor || userStore.isAdmin" label="Delete"/>
-                           <UButton v-if="canClaim(p)" @click="claimClicked(p.id)" color="secondary" label="Claim"/>
-                           <AssignModal  v-if="canAssign" :projectID="p.id" @assigned="searchStore.getProjects()" />
-                           <UButton  color="secondary" @click="viewClicked(p.id)" label="View"/>
-                        </span>
-                     </div>
+                     </span>
                   </div>
-               </li>
-            </ul>
-         </template>
-      </div>
+                  <router-link :to="`/projects/${p.id}`" class="border-none!">
+                     <div class="column p-2">
+                        <div class="row-between text-black!">
+                           <span class="row-left gap-1">
+                              <label class="font-bold!">Project:</label><span>{{p.id}}</span>
+                           </span>
+                           <span v-if="p.imageCount > 0" class="row-left gap-1">
+                              <label class="font-bold!">Images:</label><span>{{p.imageCount}}</span>
+                           </span>
+                        </div>
+                        <div class="text-black!">{{p.title}}</div>
+                     </div>
+                  </router-link>
+               </div>
+               <div class="row-between p-4 pb-0 text-md">
+                  <dl class="m-0!">
+                     <dt>Customer:</dt>
+                     <dd class="mb-0!">{{ systemStore.getCustomerName(p.customerID) }} </dd>
+                     <template v-if="p.agencyID > 0">
+                        <dt>Agency:</dt>
+                        <dd>{{ systemStore.getAgency(p.agencyID)}}</dd>
+                     </template>
+                     <dt>Call Number:</dt>
+                     <dd>
+                        <span v-if="p.callNumber">{{p.callNumber}}</span>
+                        <span v-else class="na">N/A</span>
+                     </dd>
+                     <dt>Intended Use:</dt>
+                     <dd>{{ p.intendedUse }}</dd>
+                  </dl>
+                  <dl>
+                     <dt>Order:</dt>
+                     <dd><a target="_blank" :href="`${systemStore.adminURL}/orders/${p.orderID}`">{{p.orderID}}</a></dd>
+                     <dt>Unit:</dt>
+                     <dd><a target="_blank" :href="`${systemStore.adminURL}/units/${p.unitID}`">{{p.unitID}}</a></dd>
+                     <dt>Workflow:</dt>
+                     <dd>{{p.workflow.name}}</dd>
+                     <dt>Category:</dt>
+                     <dd>{{p.category.name}}</dd>
+                  </dl>
+               </div>
+               <div class="column p-2" v-if="p.specialInstructions">
+                  <label class="font-bold!">Special Instructions:</label>
+                  <div class="text-sm px-4">{{p.specialInstructions}}</div>
+               </div>
+               <div class="status" v-if="!p.finishedAt || p.finishedAt == ''">
+                  <div class="row-between p-2 items-center gap-4">
+                     <span v-if="searchStore.hasError(idx)" class="text-nowrap text-brand-red-B">{{searchStore.statusText(p.id)}}</span>
+                     <span v-else class="text-nowrap">{{searchStore.statusText(p.id)}}</span>
+                     <UProgress v-if="p.currentStep" :modelValue="searchStore.percentComplete(p.id)" size="lg"/>
+                  </div>
+                  <div class="row-between p-2">
+                     <span class="row-left gap-2 items-center">
+                        <UIcon name="i-lucide-user"/> 
+                        <span v-if="!p.owner">Unassigned</span>
+                        <span v-else>{{ownerInfo(p)}}</span>
+                     </span>
+                     <span class="row-right gap-2">
+                        <UButton @click="deleteProjectClicked(p)" class="delete" color="error" v-if="userStore.isSupervisor || userStore.isAdmin" label="Delete"/>
+                        <UButton v-if="canClaim(p)" @click="claimClicked(p.id)" color="secondary" label="Claim"/>
+                        <AssignModal  v-if="canAssign" :projectID="p.id" @assigned="searchStore.getProjects()" />
+                        <UButton  color="secondary" @click="viewClicked(p.id)" label="View"/>
+                     </span>
+                  </div>
+               </div>
+            </li>
+         </ul>
+      </template>
    </div>
 </template>
 
@@ -194,204 +193,4 @@ const deleteProjectClicked = (async (p) => {
 </script>
 
 <style scoped lang="scss">
-.home {
-   position: relative;
-   padding: 0;
-   h2 {
-      color: var(--uvalib-brand-orange);
-      margin-bottom: 20px;
-   }
-   .none {
-      font-size: 1.25em;
-      text-align: center;
-      margin-top: 50px;
-      flex-grow: 1;
-   }
-
-   .project-board {
-      display: flex;
-      flex-flow: row nowrap;
-      display: flex;
-      flex-flow: row nowrap;
-      justify-content: flex-start;
-      align-items: flex-start;
-      padding: 20px 20px 0 20px;
-   }
-   .projects {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-flow: row wrap;
-      justify-content: center;
-      flex-grow: 1;
-      background: transparent;
-
-      .card.finished {
-         padding-bottom: 0px;
-      }
-      .card {
-         flex: 0 1 calc(25% - 1em);
-         border: 1px solid var(--uvalib-grey);
-         padding: 0;
-         margin: 0px 10px 20px 10px;
-         position: relative;
-         text-align: left;
-         box-sizing: border-box;
-         min-width: 48%;
-         color: var(--uvalib-text);
-         box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 4px 1px;
-         background: white;
-         padding-bottom: 110px;
-
-         .top {
-            border-bottom: 1px solid var(--uvalib-grey);
-            color: var(--uvalib-text);
-            .title {
-               padding: 10px;
-               color: var(--uvalib-text) !important;
-               background:var(--uvalib-grey-lightest);
-               .project-id {
-                  margin-bottom: 10px;
-                  padding-bottom: 10px;
-                  border-bottom: 1px solid var(--uvalib-grey-light);
-                  display: flex;
-                  flex-flow: row nowrap;
-                  justify-content: space-between;
-                  label {
-                     font-weight: bold;
-                     margin-right: 5px;
-                  }
-               }
-            }
-            .due {
-               padding: 10px;
-               border-bottom: 1px solid var(--uvalib-grey);
-               background: var(--uvalib-grey-light);
-               display: flex;
-               flex-flow: row nowrap;
-               justify-content: space-between;
-               align-items: center;
-               .status-section {
-                  display: flex;
-                  flex-flow: row nowrap;
-                  align-items: center;
-                  gap: 10px;
-               }
-               label {
-                  font-weight: bold;
-                  margin-right: 5px;
-               }
-               .status-msg {
-                  background: white;
-                  padding: 2px 10px;
-                  border: 1px solid var(--uvalib-grey);
-               }
-               .overdue {
-                  font-weight: bold;
-                  background: var(--uvalib-brand-orange);
-                  color: white;
-                  border: 0;
-               }
-            }
-         }
-         .special-instructions{
-            margin: 0 30px;
-            font-size: 0.95em;
-            label {
-               display: block;
-               font-weight: bold !important;
-            }
-            p {
-               padding:0;
-               margin: 10px;
-            }
-         }
-         .data {
-            padding: 10px;
-            display: flex;
-            flex-flow: row nowrap;
-            justify-content: flex-start;
-            align-items: flex-start;
-            font-size: 0.95em;
-   
-            dl {
-               margin: 0 auto;
-               display: inline-grid;
-               grid-template-columns: max-content 2fr;
-               grid-column-gap: 5px;
-               dt {
-                  font-weight: bold;
-                  text-align: right;
-               }
-               dd {
-                  word-break: break-word;
-                  -webkit-hyphens: auto;
-                  -moz-hyphens: auto;
-                  hyphens: auto;
-                  .na {
-                     color: #999;
-                  }
-               }
-            }
-         }
-         .status {
-            padding: 10px;
-            border-top: 1px solid var(--uvalib-grey-lightest);
-            position: absolute;
-            width: 100%;
-            box-sizing: border-box;
-            bottom: 0;
-
-            .owner-buttons {
-               display: flex;
-               flex-flow: row nowrap;
-               justify-content: flex-start;
-               align-items: flex-start;
-               gap: 10px;
-            }
-
-            .progress-panel {
-               margin: 5px 0 15px 0;
-               display: flex;
-               flex-flow: row nowrap;
-               justify-content: space-between;
-               align-items: center;
-               .error {
-                  color: var(--uvalib-red-darker);
-                  font-weight: bold;
-               }
-
-               .progress-bar {
-                  border: 1px solid var(--uvalib-grey);
-                  background: var(--uvalib-grey-lightest);
-                  height: 20px;
-                  margin-left: 15px;
-                  flex-grow: 1;
-                  .percentage {
-                     background: var(--uvalib-green);
-                     height: 100%;
-                  }
-               }
-            }
-            .owner-panel {
-               display: flex;
-               flex-flow: row nowrap;
-               justify-content: space-between;
-
-               .assignment {
-                  display: flex;
-                  flex-flow: row nowrap;
-                  gap: 5px;
-                  align-items: center;
-                  .unassigned {
-                     font-weight: 100;
-                     color: var(--uvalib-grey);
-                  }
-               }
-            }
-         }
-      }
-   }
-}
 </style>

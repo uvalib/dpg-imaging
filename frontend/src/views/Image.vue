@@ -5,14 +5,14 @@
          <table v-if="projectStore.hasDetail" class="table-fixed grow">
             <tbody>
                <tr>
-                  <td class="font-bold! text-right pr-2 max-w-21">Image:</td>
+                  <td class="label">Image:</td>
                   <td class="row-left gap-2 items-center" v-if="currMasterFile">
                      <span>{{currMasterFile.fileName}}</span>
                      <span class="text-sm">(Size: {{currMasterFile.width}} x {{currMasterFile.height}}, Resolution: {{currMasterFile.resolution}})</span>
                   </td>
                </tr>
                <tr>
-                  <td class="font-bold! text-right pr-2 max-w-21">Title:</td>
+                  <td class="label">Title:</td>
                   <td>
                      <TitlePicker v-if="isEditing('title')" v-model="newValue" @cancel="cancelEdit" @submit="submitEdit"/>
                      <ULink v-else @click="editMetadata('title')" class="text-left whitespace-break-spaces p-0">
@@ -22,7 +22,7 @@
                   </td>
                </tr>
                <tr>
-                  <td class="font-bold! text-right pr-2 max-w-21">Caption:</td>
+                  <td class="label">Caption:</td>
                   <td>
                      <UInput v-if="isEditing('description')" v-model="newValue" @keydown.enter="submitEdit" 
                         @keydown.esc="cancelEdit" @keydown.tab="submitEdit" class="w-full" autofocus/>
@@ -33,7 +33,7 @@
                   </td>
                </tr>
                <tr>
-                  <td class="font-bold! text-right pr-2 max-w-21">Keybard Shortcuts:</td>
+                  <td class="label">Keybard Shortcuts:</td>
                   <td class="data">Pan Image: w,a,s,d or arrow keys. Pagination: &lt; prior, &gt; next. Full Screen Toggle: z. 100% Zoom: 1.</td>
                </tr>
             </tbody>
@@ -281,6 +281,11 @@ onUnmounted( async () => {
 </script>
 
 <style scoped lang="css">
+@reference "@/assets/main.css";
+
+.label {
+   @apply label;
+}
 :deep(.openseadragon-container) {
    background: #555555 !important;
 }

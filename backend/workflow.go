@@ -640,13 +640,3 @@ func (svc *serviceContext) moveFiles(proj *project, srcDir string, destDir strin
 	log.Printf("INFO: files successfully moved to %s", destDir)
 	return nil
 }
-
-func (svc *serviceContext) nextStepName(proj *project) string {
-	nextStepID := proj.CurrentStep.NextStepID
-	var nextStep step
-	resp := svc.DB.First(&nextStep, nextStepID)
-	if resp.Error != nil {
-		return "Unknown"
-	}
-	return nextStep.Name
-}

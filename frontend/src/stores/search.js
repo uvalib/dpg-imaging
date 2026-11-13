@@ -134,9 +134,7 @@ export const useSearchStore = defineStore('search', {
                if (a.finishedAt) stepCount++    // Finished
             })
 
-            let percent = Math.round((stepCount/numSteps)*100.0)
-            percent = Math.min(100, percent)
-            return percent+"%"
+            return Math.min(Math.round((stepCount/numSteps)*100.0), 100)
          }
       }
    },

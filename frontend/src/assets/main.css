@@ -29,6 +29,10 @@
   --color-brand-blue-100: #0370B7; 
   --color-brand-blue: #232D4B;  
 
+   --color-brand-orange-light: #ffead6;
+   --color-brand-orange: #e57200;
+   --color-brand-orange-dark: #b35900;
+
   --color-brand-blue-alt-400: #E6F2F7;
   --color-brand-blue-alt-300: #BFE7F7;
   --color-brand-blue-alt-200: #91D8F2;
@@ -175,26 +179,5 @@ input[type=checkbox] {
          }
       }
    }
-
-
-/* 
-
-  a {
-      color: var(--uvalib-blue-alt-dark);
-      font-weight: 500;
-      text-decoration: none;
-      &:hover {
-        text-decoration: underline;
-      }
-  }
-
-   */
-
-   /* .sticky-bar {
-      position: fixed;
-      z-index: 1000;
-      top: 0;
-      border-bottom: 1px solid var(--uvalib-grey-light);
-   }  */
 }
 
