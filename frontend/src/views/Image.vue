@@ -284,7 +284,7 @@ onUnmounted( async () => {
 @reference "@/assets/main.css";
 
 .label {
-   @apply label;
+   @apply font-bold! text-right pr-2 max-w-22;
 }
 :deep(.openseadragon-container) {
    background: #555555 !important;
