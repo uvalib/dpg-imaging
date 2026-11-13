@@ -29,7 +29,7 @@
                      </span>
                   </div>
                   <router-link :to="`/projects/${p.id}`" class="border-none!">
-                     <div class="column p-2">
+                     <div class="column p-2 gap-2">
                         <div class="row-between text-black!">
                            <span class="row-left gap-1">
                               <label class="font-bold!">Project:</label><span>{{p.id}}</span>
@@ -38,7 +38,7 @@
                               <label class="font-bold!">Images:</label><span>{{p.imageCount}}</span>
                            </span>
                         </div>
-                        <div class="text-black!">{{p.title}}</div>
+                        <div class="text-black! border-t border-brand-grey-100 pt-2">{{p.title}}</div>
                      </div>
                   </router-link>
                </div>
