@@ -1,5 +1,5 @@
 <template>
-   <div class="sticky z-50 row-between p-4 bg-white border-t border-b border-brand-grey-100" :style="{top: headerHeight}">
+   <div class="sticky z-50 row-between p-3 bg-white/85 border-t border-b border-brand-grey-100" :style="{top: headerHeight}">
       <div class="row-left gap-2">
          <ViewMode />
          <UPagination  v-if="unitStore.totalFiles > unitStore.pageSize" color="neutral" variant="ghost"
@@ -8,6 +8,7 @@
          />
          <USelect v-model="unitStore.pageSize" :items="['20','50','75']" @change="pageChanged()" />
       </div>
+      <div>{{ unitStore.masterFiles.length }} Images</div>
       <UnitActions />
    </div>
    <div class="gallery row-wrap gap-6 p-6 bg-gray-100">
@@ -19,14 +20,14 @@
                <UIcon name="i-lucide-move" class="size-6 cursor-grab text-brand-grey"/>
             </div>
          </template>
-         <div class="content" :class="{medium: unitStore.viewMode == 'medium', large: unitStore.viewMode == 'large'}">
+         <div class="content text-sm" :class="{medium: unitStore.viewMode == 'medium', large: unitStore.viewMode == 'large'}">
             <RouterLink :to="imageViewerURL(image)" @click="imageClicked">
                <img :src="image.mediumURL" v-if="unitStore.viewMode == 'medium'" />
                <img :src="image.largeURL" v-if="unitStore.viewMode == 'large'" />
             </RouterLink>
             <TagPicker :masterFile="image" display="wide" />
             <div class="column gap-1 items-start pt-4">
-               <div class="column items-start">
+               <div class="column items-start w-full">
                   <label>Title:</label>
                   <template v-if="editInfo.field=='title' && image.fileName == editInfo.fileName">
                      <TitlePicker v-model="editInfo.value" @cancel="cancelEdit" @submit="submitEdit"/>
@@ -36,10 +37,11 @@
                      <template v-else class="italic">Undefined</template>
                   </ULink>
                </div>   
-               <div class="column items-start">
+               <div class="column items-start w-full">
                   <label>Caption:</label>
                   <template v-if="editInfo.field=='description' && image.fileName == editInfo.fileName">
-                     <TitlePicker v-model="editInfo.value" @cancel="cancelEdit" @submit="submitEdit"/>
+                     <UInput v-model="editInfo.value" class="w-full" @keydown.enter="submitEdit" 
+                        @keydown.esc="cancelEdit" @keydown.tab="submitEdit" autofocus/>
                   </template>
                   <ULink v-else @click="startEdit(idx, 'description', image)" class="text-left whitespace-break-spaces pl-2">
                      <template v-if="image.description">{{  image.description }}</template>
@@ -47,11 +49,32 @@
                   </ULink>
                </div> 
                <template v-if="projectStore.isManuscript">
-                  <div class="column items-start">
+                  <div class="column gap-0 items-start w-full">
                      <label>Location:</label>
-                     <div class="data pl-4">{{ image.location }}</div>
+                     <div class="pl-4 row-left gap-1 items-center">
+                        <span>{{  projectStore.detail?.containerType?.name }}</span>
+                        <template v-if="editInfo.field=='box' && image.fileName == editInfo.fileName">
+                           <UInput v-model="editInfo.value" class="w-full" @keydown.enter="submitEdit" 
+                              @keydown.esc="cancelEdit" @keydown.tab="submitEdit" autofocus/>
+                        </template>
+                        <ULink v-else @click="startEdit(idx, 'box', image)" class="text-left whitespace-break-spaces pl-2">
+                           <template v-if="image.title">{{  image.box }}</template>
+                           <template v-else class="italic">Undefined</template>
+                        </ULink>
+                     </div>
+                      <div v-if="projectStore.detail?.containerType?.hasFolders" class="pl-4 row-left gap-2  items-center">
+                        <span>Folder</span>
+                        <template v-if="editInfo.field=='folder' && image.fileName == editInfo.fileName">
+                           <UInput v-model="editInfo.value" class="w-full" @keydown.enter="submitEdit" 
+                              @keydown.esc="cancelEdit" @keydown.tab="submitEdit" autofocus/>
+                        </template>
+                        <ULink v-else @click="startEdit(idx, 'folder', image)" class="text-left whitespace-break-spaces pl-2">
+                           <template v-if="image.title">{{  image.folder }}</template>
+                           <template v-else class="italic">Undefined</template>
+                        </ULink>
+                     </div>
                   </div> 
-                  <div class="column items-start" v-if="image.componentID">
+                  <div class="column items-start w-full" v-if="image.componentID">
                      <label>Component</label>
                      <div class="data pl-4">{{ image.componentID }}</div>
                   </div> 
@@ -152,9 +175,10 @@ const submitEdit = (() => {
 </script>
 
 <style lang="scss" scoped>
-.content label {
-   font-weight: bold;
-   font-size: 0.9em;
+.content {
+   label {
+      font-weight: bold;
+   }
 }
 .content.medium {
    max-width: 250px;

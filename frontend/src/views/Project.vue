@@ -2,9 +2,7 @@
    <h2 class="mb-0!">Digitization Project #{{route.params.id}}</h2>
    <WaitSpinner v-if="projectStore.working" :overlay="true" message="Working..." />
    <div v-if="projectStore.hasDetail" class="column gap-1 items-center border-b border-brand-grey-100 pb-4">
-      
-         <a target="_blank" :href="metadataLink">{{detail.title}}</a>
-      
+      <a target="_blank" :href="metadataLink">{{detail.title}}</a>
       <div class="row-center gap-6">
          <div class="row-left gap-2">
             <label class="font-bold!">Customer:</label>
@@ -37,13 +35,13 @@
          </span>
       </div>
    </div>
-   <div  v-if="projectStore.hasDetail" class="project-main">
-      <div class="column gap-6">
+   <div  v-if="projectStore.hasDetail" class="row-left gap-6 p-6">
+      <div class="column gap-6 w-full">
          <ItemInfo />
          <Workflow />
          <History />
       </div>
-      <div class="column gap-6">
+      <div class="column gap-6 w-full">
          <Equipment v-if="projectStore.detail.workflow.name != 'Vendor'"/>
          <Notes />
       </div>
@@ -92,11 +90,4 @@ const backClicked = (() => {
 </script>
 
 <style scoped lang="scss">
-.project-main {
-   padding: 20px 40px;
-   display: grid;
-   grid-template-columns: repeat(2, 1fr);
-   gap: 20px;
-   align-items: start;
-}
 </style>

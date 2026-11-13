@@ -1,30 +1,31 @@
 <template>
-   <div class="unit">
-      <WaitSpinner  v-if="unitStore.working" :overlay="true" message="Working..." />
-      <div class="metadata" v-if="projectStore.hasDetail">
-         <h2>
-            <router-link :to="`/projects/${projectStore.detail.id}`">{{truncateTitle(title)}}</router-link>
-         </h2>
-         <h3>
-            <div><label>Unit:</label><a target="_blank" :href="`${systemStore.adminURL}/units/${unitStore.unitID}`">{{unitStore.unitID}}</a></div>
-            <div><label>Directory:</label>{{workingDir}}</div>
-            <div>{{unitStore.masterFiles.length}} Images</div>
-         </h3>
-         <div class="toolbar">
-            <UButton icon="i-lucide-arrow-left" label="Back to project" @click="backClicked" size="sm" color="secondary"/>
-            <ProblemsDisplay    v-if="unitStore.problems.length > 0"/>
-            <KeyboardShortcutHelp />
+   <WaitSpinner  v-if="unitStore.working" :overlay="true" message="Working..." />
+   <div class="column items-center" v-if="projectStore.hasDetail">
+      <h2>
+         <router-link :to="`/projects/${projectStore.detail.id}`">{{truncateTitle(title)}}</router-link>
+      </h2>
+      <div class="column items-center gap-1">
+         <div class="row-left gap-2">
+            <label class="font-semibold!">Unit:</label><a target="_blank" :href="`${systemStore.adminURL}/units/${unitStore.unitID}`">{{unitStore.unitID}}</a>
+         </div>
+         <div class="row-left gap-2">
+            <label class="font-semibold!">Directory:</label>{{workingDir}}
          </div>
       </div>
-      <div class="master-files" ref="masterfiles">
-         <div v-if="unitStore.masterFiles.length == 0" class="no-images">
-            No images found
-         </div> 
-         <template v-else>
-            <MasterFilesList  v-if="unitStore.viewMode == 'list'" />
-            <MasterFilesGrid  v-else />
-         </template>
+      <div class="row-between px-3 w-full pb-4">
+         <UButton icon="i-lucide-arrow-left" label="Back to project" @click="backClicked" size="sm" color="secondary"/>
+         <ProblemsDisplay    v-if="unitStore.problems.length > 0"/>
+         <KeyboardShortcutHelp />
       </div>
+   </div>
+   <div class="master-files" ref="masterfiles">
+      <div v-if="unitStore.masterFiles.length == 0" class="text-center text-xl border-t border-brand-grey-100 pt-10">
+         No images found
+      </div> 
+      <template v-else>
+         <MasterFilesList  v-if="unitStore.viewMode == 'list'" />
+         <MasterFilesGrid  v-else />
+      </template>
    </div>
 </template>
 
@@ -132,48 +133,4 @@ onMounted( async () => {
 </script>
 
 <style lang="scss" scoped>
-.unit {
-   padding: 0;
-   text-align: center;
-
-   .no-images {
-      border-top: 1px solid var(--uvalib-grey-light);
-      padding-top: 3%;
-      margin-top: 20px;
-      font-size: 1.25em;
-   }
-
-   label {
-      font-weight: bold;
-      margin-right: 5px;
-   }
-
-   h2 {
-      a {
-         margin: 0 40px;
-      }
-   }
-
-   .metadata {
-      margin-bottom: 15px;
-      position: relative;
-      .small {
-         font-size: 0.95em;
-         margin-bottom: 5px;
-      }
-      .topleft {
-         position: absolute;
-         top:0;
-         left: 0px;
-      }
-      .toolbar {
-         margin-top: 15px;
-         padding: 0 15px;
-         text-align: left;
-         display: flex;
-         flex-flow: row nowrap;
-         justify-content: space-between;
-      }
-   }
-}
 </style>

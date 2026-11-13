@@ -1,6 +1,6 @@
 <template>
-   <div class="list-view sticky z-50" :style="{top: headerHeight}">
-      <div class="control-group">
+   <div class="row-between p-3 bg-white/85 border-t border-b border-brand-grey-100 sticky z-50" :style="{top: headerHeight}">
+      <div class="row-left gap-2 items-center">
          <ViewMode />
          <UPagination  v-if="unitStore.totalFiles > unitStore.pageSize" color="neutral" variant="ghost"
             v-model:page="unitStore.currPage" :items-per-page="unitStore.pageSize" 
@@ -8,6 +8,7 @@
          />
          <USelect v-model="unitStore.pageSize" :items="['20','50','75']" @change="pageChanged()" />
       </div>
+      <div>{{ unitStore.masterFiles.length }} Images</div>
       <UnitActions />
    </div>
    <UTable :data="unitStore.masterFilesPage" :columns="columns" v-model:column-visibility="columnVisibility" :ui="{tbody: 'mf-tbody'}">
@@ -44,6 +45,10 @@
          </ULink>
       </template>
 
+      <template #box-header>
+         <template v-if="projectStore.detail">{{ projectStore.detail.containerType.name }}</template>
+         <template v-else>Container</template>
+      </template>
       <template #box-cell="{ row }">
          <template v-if="editInfo.field=='box' && row.original.fileName == editInfo.fileName">
             <UInput v-model="editInfo.value" class="w-full" autofocus 
@@ -76,7 +81,9 @@
             <span v-else class="undefined">Undefined</span>
          </ULink>
       </template>
-
+      <template #fileSize-cell="{ row }">
+         {{ row.original.width }} x {{ row.original.height }}
+      </template>
       <template #reorder-cell="{ }">
          <UIcon name="i-lucide-arrow-down-up" class="handle size-6 cursor-grab text-brand-grey"/>
       </template>
@@ -130,61 +137,19 @@ onKeyStroke(['<',','], () => {
 })
 
 const columns = [
-   {
-      id: 'select',
-   },
-   {
-      id: 'image',
-   },
-   {
-      id: 'tag',
-      header: "Tag",
-   },
-   {
-      accessorKey: 'fileName',
-      header: "File Name"
-   },
-   {
-      accessorKey: 'title',
-      header: "Title",
-   },
-   {
-      accessorKey: 'description',
-      header: "Caption"
-   },
-   {
-      accessorKey: 'box',
-      header: () => {
-         if (projectStore.detail) {
-            return projectStore.detail.containerType.name
-         }
-         return "Container"
-      }
-   },
-   {
-      accessorKey: 'folder',
-      header: "Folder"
-   },
-   {
-      accessorKey: 'component',
-      header: "Component",
-   },
-   {
-      accessorKey: 'fileSize',
-      header: "Size",
-      cell: ({ row }) => `${row.original.width} x ${row.original.height}`
-   },
-   {
-      accessorKey: 'resolution',
-      header: "Resolution"
-   },
-   {
-      accessorKey: 'colorProfile',
-      header: "Color Profile"
-   },
-   {
-      accessorKey: "reorder", header: ""
-   }
+   { id: 'select' },
+   { id: 'image' },
+   { id: 'tag', header: "Tag" },
+   { accessorKey: 'fileName', header: "File Name" },
+   { accessorKey: 'title', header: "Title" },
+   { accessorKey: 'description', header: "Caption" },
+   { accessorKey: 'box', header: "Container"}, 
+   { accessorKey: 'folder', header: "Folder" },
+   { accessorKey: 'component', header: "Component" },
+   { accessorKey: 'fileSize', header: "Size" },
+   { accessorKey: 'resolution', header: "Resolution" },
+   { accessorKey: 'colorProfile', header: "Color Profile" },
+   { accessorKey: "reorder", header: "" }
 ]
 
 const columnVisibility = computed(() => {
@@ -246,23 +211,6 @@ const imageClicked = (() => {
 </script>
 
 <style lang="scss" scoped>
-.list-view {
-   padding: 15px;
-   background: white;
-   border-top: 1px solid var(--uvalib-grey-light);
-   border-bottom: 1px solid var(--uvalib-grey-light);
-   display: flex;
-   flex-flow: row wrap;
-   justify-content: space-between;
-   align-items: center;
-   .control-group {
-      display: flex;
-      flex-flow: row wrap;
-      justify-content: flex-start;
-      align-items: center;
-      gap: 10px;   
-   }
-}
 .undefined {
    font-style: italic;
    color: var(--uvalib-grey);

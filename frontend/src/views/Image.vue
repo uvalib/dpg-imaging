@@ -1,70 +1,64 @@
 <template>
-   <div class="viewer">
-      <WaitSpinner v-if="unitStore.working" :overlay="true" message="Working..." />
-      <div id="iiif-header" class="toolbar" v-show="fullScreen == false">
-         <div class="header-top">
-            <table class="info" v-if="projectStore.hasDetail">
-               <tbody>
-                  <tr class="line">
-                     <td class="label">Image:</td>
-                     <td class="data" v-if="currMasterFile">
-                        <span>{{currMasterFile.fileName}}</span>
-                        <span class="detail">(Size: {{currMasterFile.width}} x {{currMasterFile.height}}, Resolution: {{currMasterFile.resolution}})</span>
-                     </td>
-                  </tr>
-                  <tr class="line">
-                     <td class="label">Title:</td>
-                     <td class="data" @click="editMetadata('title')" >
-                        <template v-if="isEditing('title')">
-                           <TitlePicker v-model="newValue" @cancel="cancelEdit" @submit="submitEdit"/>
-                        </template>
-                        <template v-else>
-                           <span v-if="currMasterFile && currMasterFile.title" class="editable">{{currMasterFile.title}}</span>
-                           <span v-else class="undefined editable">Undefined</span>
-                        </template>
-                     </td>
-                  </tr>
-                  <tr class="line">
-                     <td class="label">Caption:</td>
-                     <td class="data editable" @click="editMetadata('description')" >
-                        <input  v-if="isEditing('description')" id="edit-desc" type="text" v-model="newValue"
-                           @keyup.enter="submitEdit()" @keydown.stop.prevent.esc="cancelEdit" @keydown.tab="cancelEdit"/>
-                        <template v-else>
-                           <span v-if="currMasterFile && currMasterFile.description">{{currMasterFile.description}}</span>
-                           <span v-else class="undefined editable">Undefined</span>
-                        </template>
-                     </td>
-                  </tr>
-                  <tr class="line">
-                     <td class="label">Keybard Shortcuts:</td>
-                     <td class="data">Pan Image: w,a,s,d or arrow keys. Pagination: &lt; prior, &gt; next. Full Screen Toggle: z. 100% Zoom: 1.</td>
-                  </tr>
-               </tbody>
-            </table>
-            <TagPicker v-if="currMasterFile" :masterFile="currMasterFile" display="large" />
-         </div>
-         <div class="acts">
-            <span class="back">
-               <UButton icon="i-lucide-arrow-left" label="Back to unit" @click="backClicked" size="sm" color="secondary"/>
-            </span>
-            <span class="paging group">
-               <UButton icon="i-lucide-arrow-left" @click="prevImage" size="sm" color="secondary" :disabled="prevDisabled"/>
-               <span class="page">{{page}} of {{unitStore.pageInfoURLs.length}}</span>
-               <UButton icon="i-lucide-arrow-right" @click="nextImage" size="sm" color="secondary" :disabled="nextDisabled"/>
-            </span>
-            <span class="zoom group">
-               <UButton id="rotate-left" icon="i-lucide-rotate-ccw" @click="rotateImage('left')" color="secondary"/>
-               <UButton id="rotate-left" icon="i-lucide-rotate-cw" @click="rotateImage('right')" color="secondary"/>
-               <UButton id="zoom-in" icon="i-lucide-zoom-in" color="secondary"/>
-               <span class="page">{{Math.round(zoom*100)}} %</span>
-               <UButton id="zoom-out" icon="i-lucide-zoom-out" color="secondary"/>
-               <UButton id="actual-size" label="1:1" color="secondary" @click="viewActualSize"/>
-               <UButton id="home" icon="i-lucide-home" color="secondary" />
-            </span>
-         </div>
+   <WaitSpinner v-if="unitStore.working" :overlay="true" message="Working..." />
+   <div id="iiif-header" v-show="fullScreen == false">
+      <div class="row-between gap-4 p-2">
+         <table v-if="projectStore.hasDetail" class="table-fixed grow">
+            <tbody>
+               <tr>
+                  <td class="font-bold! text-right pr-2 max-w-21">Image:</td>
+                  <td class="row-left gap-2 items-center" v-if="currMasterFile">
+                     <span>{{currMasterFile.fileName}}</span>
+                     <span class="text-sm">(Size: {{currMasterFile.width}} x {{currMasterFile.height}}, Resolution: {{currMasterFile.resolution}})</span>
+                  </td>
+               </tr>
+               <tr>
+                  <td class="font-bold! text-right pr-2 max-w-21">Title:</td>
+                  <td>
+                     <TitlePicker v-if="isEditing('title')" v-model="newValue" @cancel="cancelEdit" @submit="submitEdit"/>
+                     <ULink v-else @click="editMetadata('title')" class="text-left whitespace-break-spaces p-0">
+                        <template v-if="currMasterFile?.title">{{  currMasterFile.title }}</template>
+                        <template v-else class="italic">Undefined</template>
+                     </ULink>
+                  </td>
+               </tr>
+               <tr>
+                  <td class="font-bold! text-right pr-2 max-w-21">Caption:</td>
+                  <td>
+                     <UInput v-if="isEditing('description')" v-model="newValue" @keydown.enter="submitEdit" 
+                        @keydown.esc="cancelEdit" @keydown.tab="submitEdit" class="w-full" autofocus/>
+                     <ULink v-else @click="editMetadata('description')" class="text-left whitespace-break-spaces p-0">
+                        <template v-if="currMasterFile?.description">{{  currMasterFile.description }}</template>
+                        <template v-else class="italic">Undefined</template>
+                     </ULink>
+                  </td>
+               </tr>
+               <tr>
+                  <td class="font-bold! text-right pr-2 max-w-21">Keybard Shortcuts:</td>
+                  <td class="data">Pan Image: w,a,s,d or arrow keys. Pagination: &lt; prior, &gt; next. Full Screen Toggle: z. 100% Zoom: 1.</td>
+               </tr>
+            </tbody>
+         </table>
+         <TagPicker v-if="currMasterFile" :masterFile="currMasterFile" display="large" />
       </div>
-      <div id="iiif-viewer"></div>
+      <div class="row-between border-t border-brand-grey-100 p-2 items-center bg-gray-50">
+         <UButton icon="i-lucide-arrow-left" label="Back to unit" @click="backClicked" size="sm" color="secondary"/>
+         <span class="row-left gap-2 items-center">
+            <UButton icon="i-lucide-arrow-left" @click="prevImage" size="sm" color="secondary" :disabled="prevDisabled"/>
+            <span class="page">{{page}} of {{unitStore.pageInfoURLs.length}}</span>
+            <UButton icon="i-lucide-arrow-right" @click="nextImage" size="sm" color="secondary" :disabled="nextDisabled"/>
+         </span>
+         <span class="row-left gap-2 items-center">
+            <UButton id="rotate-left" icon="i-lucide-rotate-ccw" @click="rotateImage('left')" color="secondary"/>
+            <UButton id="rotate-left" icon="i-lucide-rotate-cw" @click="rotateImage('right')" color="secondary"/>
+            <UButton id="zoom-in" icon="i-lucide-zoom-in" color="secondary"/>
+            <span class="page">{{Math.round(zoom*100)}} %</span>
+            <UButton id="zoom-out" icon="i-lucide-zoom-out" color="secondary"/>
+            <UButton id="actual-size" label="1:1" color="secondary" @click="viewActualSize"/>
+            <UButton id="home" icon="i-lucide-home" color="secondary" />
+         </span>
+      </div>
    </div>
+   <div id="iiif-viewer"></div>
 </template>
 
 <script setup>
@@ -286,90 +280,11 @@ onUnmounted( async () => {
 })
 </script>
 
-<style scoped lang="scss">
-.viewer {
-   :deep(.openseadragon-container) {
-      background: #555555 !important;
-   }
-   .toolbar {
-      background: #fafafa;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      .header-top {
-         display: flex;
-         flex-flow: row nowrap;
-         justify-content: space-between;
-         align-items: flex-start;
-         padding: 10px 10px 0 10px;
-      }
-      .undefined {
-         font-style: italic;
-         color: var(--uvalib-grey);
-      }
-      .editable {
-         display: inline-block;
-         cursor: pointer;
-         &:hover {
-            text-decoration: underline;
-            color: var(--uvalib-blue-alt) !important;
-         }
-      }
-      .acts {
-         padding: 5px 10px;
-         border-top: 1px solid var(--uvalib-grey-light);
-         display: flex;
-         flex-flow: row nowrap;
-         justify-content: space-between;
-         background: #f0f0f0;
-         .group {
-            display: flex;
-            flex-flow: row nowrap;
-            align-items: center;
-            gap: 10px;
-         }
-         .back {
-            width: 25%;
-            display: flex;
-            flex-flow: row nowrap;
-            align-items: center;
-            justify-content: flex-start;
-         }
-         .zoom {
-            gap: 5px;
-         }
-      }
-
-      .info {
-         text-align: left;
-         padding-bottom: 10px;
-         margin-bottom: 0;
-
-         .line {
-            padding: 3px 0;
-
-            td {
-               padding: 5px;
-            }
-            td.label {
-               font-weight: bold;
-               text-align: right;
-               width: max-content;
-               white-space: nowrap;
-            }
-            td.data {
-               text-align: left;
-               width:100%;
-               .detail {
-                  font-weight: 100;
-                  font-size: 0.8em;
-                  margin-left: 15px;
-               }
-            }
-         }
-      }
-   }
+<style scoped lang="css">
+:deep(.openseadragon-container) {
+   background: #555555 !important;
 }
+
 #iiif-viewer {
    position: absolute;
    width: 100%;
