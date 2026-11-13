@@ -192,6 +192,7 @@ func getExifTag(fieldName string) string {
 		{FieldName: "title", ExifTag: "iptc:headline"}, {FieldName: "description", ExifTag: "iptc:caption-abstract"},
 		{FieldName: "box", ExifTag: "iptc:Keywords"}, {FieldName: "folder", ExifTag: "iptc:ContentLocationName"},
 		{FieldName: "tag", ExifTag: "iptc:ClassifyState"}, {FieldName: "component", ExifTag: "iptc:OwnerID"},
+		{FieldName: "componentID", ExifTag: "iptc:OwnerID"}, // the single field edit submits componentID rather than component
 	}
 	exifTag := ""
 	for _, fv := range fields {

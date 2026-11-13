@@ -74,9 +74,16 @@
                         </ULink>
                      </div>
                   </div> 
-                  <div class="column items-start w-full" v-if="image.componentID">
+                  <div class="column items-start w-full">
                      <label>Component</label>
-                     <div class="data pl-4">{{ image.componentID }}</div>
+                     <template v-if="editInfo.field=='componentID' && image.fileName == editInfo.fileName">
+                        <UInput v-model="editInfo.value" class="w-full" @keydown.enter="submitEdit" 
+                           @keydown.esc="cancelEdit" @keydown.tab="submitEdit" autofocus/>
+                     </template>
+                     <ULink v-else @click="startEdit(idx, 'componentID', image)" class="text-left whitespace-break-spaces pl-2">
+                        <template v-if="image.componentID">{{  image.componentID }}</template>
+                        <template v-else class="italic">Undefined</template>
+                     </ULink>
                   </div> 
                </template>
             </div>
